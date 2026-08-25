@@ -7,6 +7,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { formatLedgerDateHeader } from '@/lib/utils/date'
 import { formatCurrency } from '@/lib/utils/currency'
 import { useLanguage } from '@/lib/i18n/language-context'
+import { useUndo } from '@/lib/context/undo-context'
 
 interface TransactionListProps {
   transactions: EnrichedTransaction[]
@@ -15,8 +16,11 @@ interface TransactionListProps {
 
 export function TransactionList({ transactions, onAddClick }: TransactionListProps) {
   const { t, language } = useLanguage()
+  const { isPendingDelete } = useUndo()
 
-  if (transactions.length === 0) {
+  const visibleTransactions = transactions.filter((tx) => !isPendingDelete(tx.id))
+
+  if (visibleTransactions.length === 0) {
     return (
       <EmptyState
         icon="Receipt"
@@ -30,7 +34,7 @@ export function TransactionList({ transactions, onAddClick }: TransactionListPro
 
   const groups = new Map<string, EnrichedTransaction[]>()
 
-  for (const tx of transactions) {
+  for (const tx of visibleTransactions) {
     const dateKey = tx.transaction_date.split('T')[0]
     const list = groups.get(dateKey) || []
     list.push(tx)

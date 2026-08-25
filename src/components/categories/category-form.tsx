@@ -10,7 +10,8 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { AVAILABLE_ICONS } from '@/lib/constants/default-categories'
 import { DynamicIcon } from '@/components/ui/dynamic-icon'
 import { useLanguage } from '@/lib/i18n/language-context'
-import { Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
+import { Trash2, AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 
 interface CategoryFormProps {
@@ -20,7 +21,7 @@ interface CategoryFormProps {
 
 export function CategoryForm({ initialData, onSuccess }: CategoryFormProps) {
   const router = useRouter()
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const isEditing = !!initialData
 
   const [name, setName] = useState(initialData?.name || '')
@@ -80,17 +81,26 @@ export function CategoryForm({ initialData, onSuccess }: CategoryFormProps) {
   const handleDelete = async () => {
     if (!initialData) return
     setIsDeleting(true)
+    setShowDeleteConfirm(false)
+    setError(null)
 
     try {
       const res = await deleteCategory(initialData.id)
       if (res.error) {
         setError(res.error)
       } else {
-        setShowDeleteConfirm(false)
-        router.push('/categories')
+        toast.success(
+          language === 'en' ? 'Category deleted successfully' : 'Kategori berhasil dihapus'
+        )
+        if (onSuccess) {
+          onSuccess()
+        } else {
+          router.push('/categories')
+        }
       }
     } catch (err) {
-      setError((err as Error).message)
+      const msg = (err as Error).message
+      setError(msg)
     } finally {
       setIsDeleting(false)
     }
@@ -98,6 +108,13 @@ export function CategoryForm({ initialData, onSuccess }: CategoryFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      {error && (
+        <div className="p-3 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 text-xs font-medium flex items-start gap-2">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+          <span className="leading-relaxed">{error}</span>
+        </div>
+      )}
+
       {/* Type Toggle */}
       {!isEditing && (
         <div className="grid grid-cols-2 p-1 bg-[#F1F3F5] dark:bg-[#1A1A20] rounded-lg border border-[#E5E7EB] dark:border-[#27272A]">
@@ -160,8 +177,6 @@ export function CategoryForm({ initialData, onSuccess }: CategoryFormProps) {
           ))}
         </div>
       </div>
-
-      {error && <p className="text-xs font-semibold text-[#E11D48]">{error}</p>}
 
       <div className="flex items-center gap-2 pt-2">
         {isEditing && (

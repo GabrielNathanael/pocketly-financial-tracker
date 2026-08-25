@@ -5,6 +5,7 @@ import Link from "next/link";
 import { EnrichedTransaction } from "@/types/database";
 import { DynamicIcon } from "@/components/ui/dynamic-icon";
 import { formatCurrency } from "@/lib/utils/currency";
+import { usePrivacyMode, maskCurrency } from "@/lib/storage/privacy-mode";
 import { formatDate } from "@/lib/utils/date";
 import { getCleanDescription } from "@/lib/utils/description";
 import { cn } from "@/lib/utils/cn";
@@ -14,10 +15,13 @@ interface TransactionCardProps {
 }
 
 export function TransactionCard({ transaction }: TransactionCardProps) {
+  const isPrivate = usePrivacyMode();
   const isIncome = transaction.type === "income";
   const cat = transaction.category;
   const acc = transaction.account;
   const cleanDesc = getCleanDescription(transaction.description);
+
+  const formattedAmount = `${isIncome ? "+" : "-"}${formatCurrency(transaction.amount, transaction.currency)}`;
 
   return (
     <Link
@@ -54,8 +58,7 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
             isIncome ? "text-[#0D9488]" : "text-[#0F172A] dark:text-[#F8FAFC]",
           )}
         >
-          {isIncome ? "+" : "-"}
-          {formatCurrency(transaction.amount, transaction.currency)}
+          {maskCurrency(formattedAmount, isPrivate)}
         </span>
         <span className="text-[10px] font-mono text-[#94A3B8]">
           {formatDate(transaction.transaction_date, "dd MMM")}

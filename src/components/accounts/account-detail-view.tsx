@@ -6,10 +6,12 @@ import { Account } from '@/types/database'
 import { AccountMutation } from '@/actions/accounts'
 import { DynamicIcon } from '@/components/ui/dynamic-icon'
 import { formatCurrency } from '@/lib/utils/currency'
+import { usePrivacyMode, maskCurrency } from '@/lib/storage/privacy-mode'
 import { formatDate } from '@/lib/utils/date'
 import { useLanguage } from '@/lib/i18n/language-context'
 import { ArrowLeft, ArrowDownRight, ArrowUpRight } from 'lucide-react'
 import { AccountEditTrigger } from '@/components/accounts/account-edit-trigger'
+import { cn } from '@/lib/utils/cn'
 
 interface AccountDetailViewProps {
   account: Account
@@ -18,32 +20,31 @@ interface AccountDetailViewProps {
 
 export function AccountDetailView({ account, mutations }: AccountDetailViewProps) {
   const { t, language } = useLanguage()
+  const isPrivate = usePrivacyMode()
 
   return (
     <div className="flex flex-col gap-5 max-w-xl mx-auto">
-      {/* Top Back Nav */}
-      <div className="flex items-center justify-between">
-        <Link
-          href="/accounts"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>{t.accounts.backToAccounts}</span>
-        </Link>
-      </div>
+      {/* Back button */}
+      <Link
+        href="/accounts"
+        className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] transition-colors self-start"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        <span>{t.accounts.backToAccounts}</span>
+      </Link>
 
-      {/* Account Balance Card */}
-      <div className="p-5 sm:p-6 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-3.5">
-        <div className="flex items-center justify-between">
+      {/* Account Info Card */}
+      <div className="p-5 sm:p-6 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-4">
+        <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-[#F1F3F5] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] flex items-center justify-center">
-              <DynamicIcon name={account.icon || 'Wallet'} className="w-5 h-5" />
+            <div className="w-12 h-12 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] flex items-center justify-center shrink-0">
+              <DynamicIcon name={account.icon || 'Wallet'} className="w-6 h-6" />
             </div>
-            <div>
-              <h1 className="text-base font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+            <div className="flex flex-col">
+              <h1 className="text-lg font-bold text-[#0F172A] dark:text-[#F8FAFC]">
                 {account.name}
               </h1>
-              <span className="text-[10px] font-mono uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+              <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">
                 {t.accounts.types[account.type] || account.type} • {account.currency}
               </span>
             </div>
@@ -57,7 +58,7 @@ export function AccountDetailView({ account, mutations }: AccountDetailViewProps
             {t.accounts.settledBalance}
           </span>
           <span className="text-2xl sm:text-3xl font-mono font-bold text-[#0F172A] dark:text-[#F8FAFC] tracking-tight tnum">
-            {formatCurrency(account.current_balance, account.currency)}
+            {maskCurrency(formatCurrency(account.current_balance, account.currency), isPrivate)}
           </span>
         </div>
       </div>
@@ -78,6 +79,7 @@ export function AccountDetailView({ account, mutations }: AccountDetailViewProps
           <div className="flex flex-col gap-1.5">
             {mutations.map((m) => {
               const isPlus = m.type === 'income' || m.type === 'transfer_in'
+              const formattedMutation = `${isPlus ? '+' : '-'}${formatCurrency(m.amount, m.currency)}`
               return (
                 <div
                   key={m.id}
@@ -98,25 +100,28 @@ export function AccountDetailView({ account, mutations }: AccountDetailViewProps
                       <span className="text-xs sm:text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate">
                         {m.title}
                       </span>
-                      <span className="text-[11px] text-[#64748B] dark:text-[#94A3B8] truncate">
-                        {m.description || m.counterpartyOrCategory}
-                      </span>
+                      <div className="flex items-center gap-1.5 text-[11px] text-[#64748B] dark:text-[#94A3B8] truncate">
+                        {m.description && (
+                          <>
+                            <span className="truncate max-w-40 sm:max-w-60 text-[#475569] dark:text-[#CBD5E1]">
+                              {m.description}
+                            </span>
+                            <span>•</span>
+                          </>
+                        )}
+                        <span>{formatDate(m.date, 'dd MMM yyyy, HH:mm')}</span>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex flex-col items-end shrink-0 ml-3">
-                    <span
-                      className={`text-xs sm:text-sm font-mono font-bold tnum ${
-                        isPlus ? 'text-[#0D9488]' : 'text-[#0F172A] dark:text-[#F8FAFC]'
-                      }`}
-                    >
-                      {isPlus ? '+' : '-'}
-                      {formatCurrency(m.amount, m.currency)}
-                    </span>
-                    <span className="text-[10px] font-mono text-[#94A3B8]">
-                      {formatDate(m.date, 'd MMM yyyy', language)}
-                    </span>
-                  </div>
+                  <span
+                    className={cn(
+                      'text-xs sm:text-sm font-mono font-bold tracking-tight shrink-0 ml-3 tnum',
+                      isPlus ? 'text-[#0D9488]' : 'text-[#0F172A] dark:text-[#F8FAFC]'
+                    )}
+                  >
+                    {maskCurrency(formattedMutation, isPrivate)}
+                  </span>
                 </div>
               )
             })}

@@ -51,6 +51,16 @@ export function DebtsManager({ debts, accounts }: DebtsManagerProps) {
 
   return (
     <div className="flex flex-col gap-5">
+      {/* Dynamic Bilingual Header */}
+      <div>
+        <h1 className="text-xl font-bold tracking-tight text-[#0F172A] dark:text-[#F8FAFC]">
+          {t.debts.title}
+        </h1>
+        <p className="text-xs text-[#64748B] dark:text-[#94A3B8] font-mono">
+          {t.debts.subtitle}
+        </p>
+      </div>
+
       {/* Overview stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center gap-3.5">

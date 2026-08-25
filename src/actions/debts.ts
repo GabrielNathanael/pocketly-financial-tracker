@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { Debt, DebtPayment, DebtType, DebtStatus, CurrencyCode } from '@/types/database'
 import { debtSchema, debtPaymentSchema } from '@/lib/validations/debt'
+import { formatCurrency } from '@/lib/utils/currency'
 
 export interface EnrichedDebtPayment extends DebtPayment {
   transaction?: {
@@ -108,6 +109,7 @@ export async function createDebt(input: {
 
   revalidatePath('/debts')
   revalidatePath('/net-worth')
+  revalidatePath('/dashboard')
   revalidatePath('/')
   return { data }
 }
@@ -139,6 +141,7 @@ export async function updateDebt(
   revalidatePath('/debts')
   revalidatePath(`/debts/${id}`)
   revalidatePath('/net-worth')
+  revalidatePath('/dashboard')
   revalidatePath('/')
   return { success: true }
 }
@@ -153,6 +156,7 @@ export async function deleteDebt(id: string) {
 
   revalidatePath('/debts')
   revalidatePath('/net-worth')
+  revalidatePath('/dashboard')
   revalidatePath('/')
   return { success: true }
 }
@@ -176,13 +180,42 @@ export async function addDebtPayment(input: {
     return { error: 'Unauthorized' }
   }
 
+  // 1. Fetch Debt Record
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: debt } = await (supabase.from('debts') as any).select('*').eq('id', input.debtId).single()
-  if (!debt) return { error: 'Debt not found' }
+  if (!debt) return { error: 'Data utang/piutang tidak ditemukan' }
 
   let linkedTxId: string | null = null
 
+  // 2. Multi-Currency & Balance Guard if account is selected
   if (input.accountId) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: acc, error: accErr } = await (supabase.from('accounts') as any)
+      .select('id, name, currency, current_balance')
+      .eq('id', input.accountId)
+      .single()
+
+    if (accErr || !acc) {
+      return { error: 'Akun mutasi tidak ditemukan' }
+    }
+
+    // Strict Multi-Currency Rule: Account Currency must match Debt Currency
+    if (acc.currency !== debt.currency) {
+      return {
+        error: `Mata uang akun (${acc.currency}) tidak sesuai dengan mata uang utang (${debt.currency}). Silakan pilih akun bermata uang ${debt.currency} atau lakukan konversi di menu Transfer.`,
+      }
+    }
+
+    // Strict Non-Negative Balance Guard for Debt Payment (Expense)
+    if (debt.type === 'debt') {
+      const currentBal = Number(acc.current_balance) || 0
+      if (currentBal - input.amount < 0) {
+        return {
+          error: `Saldo akun ${acc.name} tidak mencukupi untuk membayar cicilan. (Tersedia: ${formatCurrency(currentBal, acc.currency)}, Dibutuhkan: ${formatCurrency(input.amount, acc.currency)})`,
+        }
+      }
+    }
+
     const txType = debt.type === 'debt' ? 'expense' : 'income'
     
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -199,7 +232,7 @@ export async function addDebtPayment(input: {
         : `Penerimaan Pelunasan Piutang dari ${debt.counterparty_name}`
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: tx } = await (supabase.from('transactions') as any)
+      const { data: tx, error: txError } = await (supabase.from('transactions') as any)
         .insert({
           user_id: user.id,
           account_id: input.accountId,
@@ -212,6 +245,10 @@ export async function addDebtPayment(input: {
         })
         .select('id')
         .single()
+
+      if (txError) {
+        return { error: txError.message }
+      }
 
       if (tx) {
         linkedTxId = tx.id
@@ -239,6 +276,7 @@ export async function addDebtPayment(input: {
   revalidatePath('/transactions')
   revalidatePath('/accounts')
   revalidatePath('/net-worth')
+  revalidatePath('/dashboard')
   revalidatePath('/')
   return { data }
 }
@@ -268,10 +306,50 @@ export async function updateDebtPayment(input: {
   const debt = payment.debt
   let linkedTxId: string | null = payment.linked_transaction_id
 
-  // 2. Handle linked transaction account & amount sync
+  // 2. Multi-Currency & Balance Guard
   if (input.accountId) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: targetAcc, error: targetAccErr } = await (supabase.from('accounts') as any)
+      .select('id, name, currency, current_balance')
+      .eq('id', input.accountId)
+      .single()
+
+    if (targetAccErr || !targetAcc) {
+      return { error: 'Akun mutasi tidak ditemukan' }
+    }
+
+    if (targetAcc.currency !== debt.currency) {
+      return {
+        error: `Mata uang akun (${targetAcc.currency}) tidak sesuai dengan mata uang utang (${debt.currency}).`,
+      }
+    }
+
+    const oldAmount = Number(payment.amount) || 0
+    const newAmount = Number(input.amount) || 0
+
+    if (debt.type === 'debt') {
+      // Paying debt = expense
+      const currentBal = Number(targetAcc.current_balance) || 0
+      const delta = newAmount - oldAmount
+      if (currentBal - delta < 0) {
+        return {
+          error: `Perubahan gagal: Saldo akun ${targetAcc.name} tidak mencukupi untuk kenaikan pembayaran. (Tersedia: ${formatCurrency(currentBal, targetAcc.currency)})`,
+        }
+      }
+    } else {
+      // Receiving receivable = income
+      // If payment amount is reduced, money is deducted from account
+      const currentBal = Number(targetAcc.current_balance) || 0
+      const delta = oldAmount - newAmount
+      if (currentBal - delta < 0) {
+        return {
+          error: `Perubahan gagal: Saldo akun ${targetAcc.name} tidak mencukupi untuk menarik kembali kelebihan dana (${formatCurrency(delta, targetAcc.currency)}).`,
+        }
+      }
+    }
+
     if (linkedTxId) {
-      // Update existing linked transaction's account, amount, and date
+      // Update existing linked transaction
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (supabase.from('transactions') as any)
         .update({
@@ -337,7 +415,7 @@ export async function updateDebtPayment(input: {
     return { error: error.message }
   }
 
-  // 4. Robust Application-level recalculation of debt remaining_amount and status
+  // 4. Recalculate remaining amount & status
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: allPayments } = await (supabase.from('debt_payments') as any)
     .select('id, amount')
@@ -372,6 +450,7 @@ export async function updateDebtPayment(input: {
   revalidatePath('/transactions')
   revalidatePath('/accounts')
   revalidatePath('/net-worth')
+  revalidatePath('/dashboard')
   revalidatePath('/')
   return { success: true }
 }
@@ -379,16 +458,28 @@ export async function updateDebtPayment(input: {
 export async function deleteDebtPayment(paymentId: string, debtId: string) {
   const supabase = await createServerSupabaseClient()
 
-  // 1. Check if linked transaction exists and delete it
+  // 1. Check if linked transaction exists and if deleting it creates negative balance
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: payment } = await (supabase.from('debt_payments') as any)
-    .select('linked_transaction_id')
+    .select('*, debt:debts(*), transaction:transactions(*, account:accounts(*))')
     .eq('id', paymentId)
     .single()
 
-  if (payment?.linked_transaction_id) {
+  if (payment?.transaction) {
+    const tx = payment.transaction
+    // If it was an income transaction (Receivable payment collected into account)
+    if (tx.type === 'income' && tx.account) {
+      const currentBal = Number(tx.account.current_balance) || 0
+      const paymentAmount = Number(payment.amount) || 0
+      if (currentBal - paymentAmount < 0) {
+        return {
+          error: `Gagal membatalkan pelunasan piutang: Saldo akun ${tx.account.name} saat ini (${formatCurrency(currentBal, tx.account.currency)}) tidak mencukupi untuk menarik kembali dana sebesar ${formatCurrency(paymentAmount, tx.account.currency)}.`,
+        }
+      }
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from('transactions') as any).delete().eq('id', payment.linked_transaction_id)
+    await (supabase.from('transactions') as any).delete().eq('id', tx.id)
   }
 
   // 2. Delete the payment
@@ -398,11 +489,41 @@ export async function deleteDebtPayment(paymentId: string, debtId: string) {
     return { error: error.message }
   }
 
+  // 3. Recalculate remaining amount & status
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: allPayments } = await (supabase.from('debt_payments') as any)
+    .select('amount')
+    .eq('debt_id', debtId)
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: debtRecord } = await (supabase.from('debts') as any)
+    .select('initial_amount')
+    .eq('id', debtId)
+    .single()
+
+  if (debtRecord) {
+    const totalPaid = (allPayments || []).reduce(
+      (sum: number, p: { amount: number }) => sum + Number(p.amount),
+      0
+    )
+    const remaining = Math.max(0, Number(debtRecord.initial_amount) - totalPaid)
+    const newStatus = remaining <= 0 ? 'paid' : 'active'
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.from('debts') as any)
+      .update({
+        remaining_amount: remaining,
+        status: newStatus,
+      })
+      .eq('id', debtId)
+  }
+
   revalidatePath('/debts')
   revalidatePath(`/debts/${debtId}`)
   revalidatePath('/transactions')
   revalidatePath('/accounts')
   revalidatePath('/net-worth')
+  revalidatePath('/dashboard')
   revalidatePath('/')
   return { success: true }
 }

@@ -7,16 +7,20 @@ import { CategoryHistoryItem } from '@/actions/budgets'
 import { DynamicIcon } from '@/components/ui/dynamic-icon'
 import { BudgetProgressBar } from '@/components/budget/budget-progress-bar'
 import { formatCurrency } from '@/lib/utils/currency'
+import { usePrivacyMode, maskCurrency } from '@/lib/storage/privacy-mode'
+import { CurrencyCode } from '@/lib/constants/currencies'
 import { useLanguage } from '@/lib/i18n/language-context'
 import { ArrowLeft, AlertTriangle } from 'lucide-react'
 
 interface BudgetHistoryViewProps {
   category: Category
+  currency?: CurrencyCode
   history: CategoryHistoryItem[]
 }
 
-export function BudgetHistoryView({ category, history }: BudgetHistoryViewProps) {
+export function BudgetHistoryView({ category, currency = 'IDR', history }: BudgetHistoryViewProps) {
   const { t } = useLanguage()
+  const isPrivate = usePrivacyMode()
 
   return (
     <div className="flex flex-col gap-5 max-w-xl mx-auto">
@@ -36,10 +40,15 @@ export function BudgetHistoryView({ category, history }: BudgetHistoryViewProps)
           <DynamicIcon name={category.icon} className="w-5 h-5" />
         </div>
 
-        <div>
-          <h1 className="text-base font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-            {category.name}
-          </h1>
+        <div className="flex flex-col min-w-0">
+          <div className="flex items-center gap-2">
+            <h1 className="text-base font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+              {category.name}
+            </h1>
+            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-[#F1F3F5] dark:bg-[#1A1A20] text-[#64748B] dark:text-[#94A3B8] border border-[#E5E7EB] dark:border-[#27272A]">
+              {currency}
+            </span>
+          </div>
           <p className="text-xs text-[#64748B] dark:text-[#94A3B8] font-mono">
             {t.budgets.historySubtitle}
           </p>
@@ -85,7 +94,7 @@ export function BudgetHistoryView({ category, history }: BudgetHistoryViewProps)
                     {t.budgets.actualSpent}
                   </span>
                   <span className="font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-                    {formatCurrency(item.actualSpent, 'IDR')}
+                    {maskCurrency(formatCurrency(item.actualSpent, currency), isPrivate)}
                   </span>
                 </div>
                 <div className="text-right">
@@ -93,7 +102,7 @@ export function BudgetHistoryView({ category, history }: BudgetHistoryViewProps)
                     {t.budgets.totalLimit}
                   </span>
                   <span className="font-medium text-[#64748B] dark:text-[#94A3B8]">
-                    {item.budgetAmount > 0 ? formatCurrency(item.budgetAmount, 'IDR') : '—'}
+                    {item.budgetAmount > 0 ? maskCurrency(formatCurrency(item.budgetAmount, currency), isPrivate) : '—'}
                   </span>
                 </div>
               </div>

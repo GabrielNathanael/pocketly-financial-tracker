@@ -9,7 +9,7 @@ import { logout } from '@/actions/auth'
 import { fetchAndSaveForexRates, getLatestForexRates } from '@/actions/exchange-rate'
 import { seedDemoData, clearUserData } from '@/actions/seed-demo'
 import { formatCurrency, ForexRatesMap, DEFAULT_FALLBACK_RATES, getCrossRate } from '@/lib/utils/currency'
-import { getPreferredCurrency, setPreferredCurrency, usePreferredCurrency } from '@/lib/storage/preferred-currency'
+import { setPreferredCurrency, usePreferredCurrency } from '@/lib/storage/preferred-currency'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { CURRENCY_LIST, CurrencyCode } from '@/lib/constants/currencies'
 import { useLanguage } from '@/lib/i18n/language-context'
@@ -69,7 +69,7 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
   }
 
   const handleClearData = async () => {
-    if (!window.confirm('Apakah Anda yakin ingin mengosongkan seluruh data transaksi, akun, dan anggaran?')) {
+    if (!window.confirm(t.settings.clearConfirm || 'Apakah Anda yakin ingin mengosongkan seluruh data transaksi, akun, dan anggaran?')) {
       return
     }
     setIsClearing(true)
@@ -89,6 +89,16 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Dynamic Bilingual Header */}
+      <div>
+        <h1 className="text-xl font-bold tracking-tight text-[#0F172A] dark:text-[#F8FAFC]">
+          {t.settings.title}
+        </h1>
+        <p className="text-xs text-[#64748B] dark:text-[#94A3B8] font-mono">
+          {t.settings.subtitle}
+        </p>
+      </div>
+
       {/* Account Info */}
       <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-3">
         <div className="flex items-center gap-3">
@@ -100,7 +110,7 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
               {t.settings.sessionTitle}
             </h3>
             <span className="text-xs font-mono text-[#64748B] dark:text-[#94A3B8] truncate">
-              {userEmail}
+              {userEmail || t.settings.authenticatedUser || 'Pengguna Terautentikasi'}
             </span>
           </div>
         </div>
@@ -139,17 +149,15 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
           </div>
           <div className="flex flex-col min-w-0">
             <h3 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
-              {language === 'en' ? 'Primary Display Currency' : 'Mata Uang Utama Tampilan'}
+              {t.settings.primaryCurrencyTitle}
             </h3>
             <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">
-              {language === 'en'
-                ? 'Base currency used to calculate dashboard total net worth & cashflow analytics'
-                : 'Mata uang acuan untuk total saldo dashboard & ringkasan kekayaan bersih'}
+              {t.settings.primaryCurrencyDesc}
             </p>
           </div>
         </div>
 
-        <div className="w-48 shrink-0">
+        <div className="w-full sm:w-48 shrink-0">
           <Select
             value={displayCurrency}
             onValueChange={(val) => handleSelectDisplayCurrency(val as CurrencyCode)}
@@ -181,9 +189,7 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
               {t.settings.exchangeRateTitle}
             </h3>
             <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-0.5">
-              {language === 'en'
-                ? 'Real-time multi-currency forex matrix (USD, IDR, SGD)'
-                : 'Pusat kurs valuta asing real-time (USD, IDR, SGD)'}
+              {t.settings.forexMatrixDesc}
             </p>
           </div>
 
@@ -249,12 +255,12 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
           </div>
         </div>
 
-        <div className="inline-flex p-1 bg-[#F1F3F5] dark:bg-[#1A1A20] rounded-lg border border-[#E5E7EB] dark:border-[#27272A] shrink-0">
+        <div className="grid grid-cols-2 w-full sm:w-auto p-1 bg-[#F1F3F5] dark:bg-[#1A1A20] rounded-lg border border-[#E5E7EB] dark:border-[#27272A] shrink-0">
           <button
             type="button"
             onClick={() => setLanguage('id')}
             className={cn(
-              'px-3.5 py-1.5 rounded-md text-xs whitespace-nowrap transition-all cursor-pointer font-medium',
+              'px-3.5 py-1.5 rounded-md text-xs whitespace-nowrap transition-all cursor-pointer font-medium text-center',
               language === 'id'
                 ? 'bg-white dark:bg-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] border border-[#E5E7EB] dark:border-transparent font-bold shadow-xs'
                 : 'text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
@@ -266,7 +272,7 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
             type="button"
             onClick={() => setLanguage('en')}
             className={cn(
-              'px-3.5 py-1.5 rounded-md text-xs whitespace-nowrap transition-all cursor-pointer font-medium',
+              'px-3.5 py-1.5 rounded-md text-xs whitespace-nowrap transition-all cursor-pointer font-medium text-center',
               language === 'en'
                 ? 'bg-[#0F172A] text-white dark:bg-[#27272A] dark:text-[#FAFAFA] font-bold shadow-xs'
                 : 'text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
@@ -287,7 +293,7 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
             {t.settings.themeDesc}
           </p>
         </div>
-        <ThemeToggle />
+        <ThemeToggle showLabels className="w-full sm:w-auto" />
       </div>
 
       {/* Demo Data Seeder Card */}

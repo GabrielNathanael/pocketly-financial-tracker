@@ -4,6 +4,7 @@ import React from 'react'
 import Link from 'next/link'
 import { formatCurrency, ForexRatesMap, convertAmount } from '@/lib/utils/currency'
 import { usePreferredCurrency } from '@/lib/storage/preferred-currency'
+import { usePrivacyMode, maskCurrency } from '@/lib/storage/privacy-mode'
 import { useLanguage } from '@/lib/i18n/language-context'
 import { ArrowLeft, Wallet, ArrowUpRight, ArrowDownRight } from 'lucide-react'
 
@@ -22,6 +23,7 @@ interface NetWorthViewProps {
 
 export function NetWorthView({ data }: NetWorthViewProps) {
   const { t } = useLanguage()
+  const isPrivate = usePrivacyMode()
   const displayCurrency = usePreferredCurrency()
 
   const convertedTotalAccounts = convertAmount(data.totalAccountsIdr, 'IDR', displayCurrency, data.rates)
@@ -53,12 +55,12 @@ export function NetWorthView({ data }: NetWorthViewProps) {
         </div>
 
         <h1 className="text-3xl sm:text-4xl font-mono font-bold text-[#0F172A] dark:text-[#F8FAFC] tracking-tight tnum">
-          {formatCurrency(convertedNetWorth, displayCurrency)}
+          {maskCurrency(formatCurrency(convertedNetWorth, displayCurrency), isPrivate)}
         </h1>
 
         {displayCurrency !== 'IDR' && (
           <span className="text-xs font-mono text-[#94A3B8] tnum">
-            ≈ {formatCurrency(data.netWorthIdr, 'IDR')}
+            ≈ {maskCurrency(formatCurrency(data.netWorthIdr, 'IDR'), isPrivate)}
           </span>
         )}
 
@@ -85,7 +87,7 @@ export function NetWorthView({ data }: NetWorthViewProps) {
               </span>
             </div>
             <span className="text-xs sm:text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-              {formatCurrency(convertedTotalAccounts, displayCurrency)}
+              {maskCurrency(formatCurrency(convertedTotalAccounts, displayCurrency), isPrivate)}
             </span>
           </div>
 
@@ -100,7 +102,7 @@ export function NetWorthView({ data }: NetWorthViewProps) {
               </span>
             </div>
             <span className="text-xs sm:text-sm font-bold text-[#0D9488]">
-              +{formatCurrency(convertedReceivables, displayCurrency)}
+              +{maskCurrency(formatCurrency(convertedReceivables, displayCurrency), isPrivate)}
             </span>
           </div>
 
@@ -115,7 +117,7 @@ export function NetWorthView({ data }: NetWorthViewProps) {
               </span>
             </div>
             <span className="text-xs sm:text-sm font-bold text-[#E11D48]">
-              -{formatCurrency(convertedDebts, displayCurrency)}
+              -{maskCurrency(formatCurrency(convertedDebts, displayCurrency), isPrivate)}
             </span>
           </div>
         </div>
@@ -125,7 +127,7 @@ export function NetWorthView({ data }: NetWorthViewProps) {
             {t.netWorth.netTotal}
           </span>
           <span className="text-base sm:text-lg font-bold text-[#0F172A] dark:text-[#F8FAFC] tnum">
-            {formatCurrency(convertedNetWorth, displayCurrency)}
+            {maskCurrency(formatCurrency(convertedNetWorth, displayCurrency), isPrivate)}
           </span>
         </div>
       </div>

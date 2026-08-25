@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { AuditLog, EnrichedTransaction, TransactionType, CurrencyCode } from '@/types/database'
 import { transactionSchema } from '@/lib/validations/transaction'
+import { formatCurrency } from '@/lib/utils/currency'
 
 export interface TransactionFilterParams {
   categoryId?: string
@@ -118,16 +119,30 @@ export async function createTransaction(input: {
     return { error: 'Unauthorized' }
   }
 
-  let txCurrency = input.currency
-  if (!txCurrency) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: acc } = await (supabase.from('accounts') as any)
-      .select('currency')
-      .eq('id', input.accountId)
-      .single()
-    txCurrency = (acc?.currency as CurrencyCode) || 'IDR'
+  // 1. Fetch Account Details
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: acc, error: accError } = await (supabase.from('accounts') as any)
+    .select('id, name, currency, current_balance')
+    .eq('id', input.accountId)
+    .single()
+
+  if (accError || !acc) {
+    return { error: 'Akun tidak ditemukan' }
   }
 
+  const txCurrency = input.currency || (acc.currency as CurrencyCode) || 'IDR'
+
+  // 2. Strict Non-Negative Balance Guard for Expense
+  if (input.type === 'expense') {
+    const currentBal = Number(acc.current_balance) || 0
+    if (currentBal - input.amount < 0) {
+      return {
+        error: `Saldo ${acc.name} tidak mencukupi. (Tersedia: ${formatCurrency(currentBal, acc.currency)}, Dibutuhkan: ${formatCurrency(input.amount, acc.currency)})`,
+      }
+    }
+  }
+
+  // 3. Insert Transaction
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase.from('transactions') as any)
     .insert({
@@ -148,6 +163,7 @@ export async function createTransaction(input: {
   }
 
   revalidatePath('/transactions')
+  revalidatePath('/dashboard')
   revalidatePath('/')
   revalidatePath('/budget')
   revalidatePath('/accounts')
@@ -174,6 +190,76 @@ export async function updateTransaction(
   }
 
   const supabase = await createServerSupabaseClient()
+
+  // 1. Fetch Existing Transaction
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: oldTx, error: oldTxErr } = await (supabase.from('transactions') as any)
+    .select('*, account:accounts(*)')
+    .eq('id', id)
+    .single()
+
+  if (oldTxErr || !oldTx) {
+    return { error: 'Transaksi tidak ditemukan' }
+  }
+
+  // 2. Fetch Target Account
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: targetAcc, error: targetAccErr } = await (supabase.from('accounts') as any)
+    .select('id, name, currency, current_balance')
+    .eq('id', input.accountId)
+    .single()
+
+  if (targetAccErr || !targetAcc) {
+    return { error: 'Akun tujuan tidak ditemukan' }
+  }
+
+  // 3. Strict Non-Negative Balance Guard
+  const oldAmount = Number(oldTx.amount) || 0
+  const newAmount = Number(input.amount) || 0
+
+  if (oldTx.account_id === input.accountId) {
+    // Same Account: Compute net delta
+    const currentBal = Number(targetAcc.current_balance) || 0
+    const oldEffect = oldTx.type === 'expense' ? -oldAmount : oldAmount
+    const newEffect = input.type === 'expense' ? -newAmount : newAmount
+    const delta = newEffect - oldEffect
+    const projectedBal = currentBal + delta
+
+    if (projectedBal < 0) {
+      return {
+        error: `Perubahan gagal: Saldo ${targetAcc.name} akan menjadi minus (${formatCurrency(projectedBal, targetAcc.currency)}).`,
+      }
+    }
+  } else {
+    // Different Account: Check old account and new account separately
+    // Old account loses oldEffect
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: oldAcc } = await (supabase.from('accounts') as any)
+      .select('id, name, currency, current_balance')
+      .eq('id', oldTx.account_id)
+      .single()
+
+    if (oldAcc) {
+      const oldBal = Number(oldAcc.current_balance) || 0
+      const revertOldEffect = oldTx.type === 'income' ? -oldAmount : oldAmount
+      if (oldBal + revertOldEffect < 0) {
+        return {
+          error: `Perubahan gagal: Saldo akun asal (${oldAcc.name}) akan menjadi minus jika transaksi dipindahkan.`,
+        }
+      }
+    }
+
+    // New account receives newEffect
+    if (input.type === 'expense') {
+      const targetBal = Number(targetAcc.current_balance) || 0
+      if (targetBal - newAmount < 0) {
+        return {
+          error: `Perubahan gagal: Saldo akun tujuan (${targetAcc.name}) tidak mencukupi untuk pengeluaran ${formatCurrency(newAmount, targetAcc.currency)}.`,
+        }
+      }
+    }
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabase.from('transactions') as any)
     .update({
@@ -181,7 +267,7 @@ export async function updateTransaction(
       category_id: input.categoryId,
       type: input.type,
       amount: input.amount,
-      currency: input.currency || 'IDR',
+      currency: input.currency || targetAcc.currency || 'IDR',
       description: input.description?.trim() || null,
       transaction_date: input.transactionDate,
       updated_at: new Date().toISOString(),
@@ -194,6 +280,7 @@ export async function updateTransaction(
 
   revalidatePath('/transactions')
   revalidatePath(`/transactions/${id}`)
+  revalidatePath('/dashboard')
   revalidatePath('/')
   revalidatePath('/budget')
   revalidatePath('/accounts')
@@ -203,6 +290,31 @@ export async function updateTransaction(
 
 export async function deleteTransaction(id: string) {
   const supabase = await createServerSupabaseClient()
+
+  // 1. Fetch transaction and account before delete
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: tx, error: txErr } = await (supabase.from('transactions') as any)
+    .select('*, account:accounts(*)')
+    .eq('id', id)
+    .single()
+
+  if (txErr || !tx) {
+    return { error: 'Transaksi tidak ditemukan' }
+  }
+
+  // 2. Strict Guard: Deleting an Income transaction reduces account balance
+  if (tx.type === 'income' && tx.account) {
+    const currentBal = Number(tx.account.current_balance) || 0
+    const txAmount = Number(tx.amount) || 0
+    const projectedBal = currentBal - txAmount
+
+    if (projectedBal < 0) {
+      return {
+        error: `Gagal menghapus pemasukan: Saldo ${tx.account.name} saat ini (${formatCurrency(currentBal, tx.account.currency)}) tidak mencukupi untuk menarik kembali dana sebesar ${formatCurrency(txAmount, tx.account.currency)}.`,
+      }
+    }
+  }
+
   const { error } = await supabase.from('transactions').delete().eq('id', id)
 
   if (error) {
@@ -210,6 +322,7 @@ export async function deleteTransaction(id: string) {
   }
 
   revalidatePath('/transactions')
+  revalidatePath('/dashboard')
   revalidatePath('/')
   revalidatePath('/budget')
   revalidatePath('/accounts')

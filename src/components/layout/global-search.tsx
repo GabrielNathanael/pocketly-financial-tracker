@@ -298,7 +298,7 @@ function GlobalSearchContent({
           filteredTransactions.length === 0 &&
           filteredDebts.length === 0 && (
             <div className="py-8 text-center text-xs text-[#94A3B8]">
-              Tidak ada hasil ditemukan untuk &ldquo;{query}&rdquo;
+              {t.nav.noResultsFor ? t.nav.noResultsFor.replace('{query}', query) : `No results found for "${query}"`}
             </div>
           )}
       </div>

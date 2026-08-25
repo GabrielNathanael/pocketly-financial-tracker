@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Account } from '@/types/database'
 import { DynamicIcon } from '@/components/ui/dynamic-icon'
 import { formatCurrency } from '@/lib/utils/currency'
+import { usePrivacyMode, maskCurrency } from '@/lib/storage/privacy-mode'
 import { TransferModal } from '@/components/accounts/transfer-modal'
 import { useLanguage } from '@/lib/i18n/language-context'
 import { ArrowRightLeft, Plus, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react'
@@ -16,6 +17,7 @@ interface AccountsWidgetProps {
 
 export function AccountsWidget({ accounts, exchangeRate }: AccountsWidgetProps) {
   const { t } = useLanguage()
+  const isPrivate = usePrivacyMode()
   const [isTransferOpen, setIsTransferOpen] = useState(false)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
@@ -42,13 +44,13 @@ export function AccountsWidget({ accounts, exchangeRate }: AccountsWidgetProps) 
         </div>
 
         <div className="flex items-center gap-2.5">
-          {/* Scroll Navigation Arrows */}
-          <div className="flex items-center gap-1">
+          {/* Scroll Navigation Arrows: Hidden on mobile (touch swipe), visible on desktop */}
+          <div className="hidden sm:flex items-center gap-1">
             <button
               type="button"
               onClick={scrollLeft}
               className="p-1 rounded-md bg-[#F1F3F5] dark:bg-[#1A1A20] hover:bg-[#E2E8F0] dark:hover:bg-[#27272A] text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8] dark:hover:text-[#FAFAFA] border border-[#E5E7EB] dark:border-[#27272A] transition-colors cursor-pointer"
-              title="Scroll Kiri"
+              title={t.dashboard.scrollLeft || 'Scroll Left'}
             >
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>
@@ -56,7 +58,7 @@ export function AccountsWidget({ accounts, exchangeRate }: AccountsWidgetProps) 
               type="button"
               onClick={scrollRight}
               className="p-1 rounded-md bg-[#F1F3F5] dark:bg-[#1A1A20] hover:bg-[#E2E8F0] dark:hover:bg-[#27272A] text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8] dark:hover:text-[#FAFAFA] border border-[#E5E7EB] dark:border-[#27272A] transition-colors cursor-pointer"
-              title="Scroll Kanan"
+              title={t.dashboard.scrollRight || 'Scroll Right'}
             >
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
@@ -107,7 +109,7 @@ export function AccountsWidget({ accounts, exchangeRate }: AccountsWidgetProps) 
                 {acc.name}
               </span>
               <span className="text-sm sm:text-base font-mono font-bold text-[#0F172A] dark:text-[#F8FAFC] tracking-tight truncate mt-0.5 tnum">
-                {formatCurrency(acc.current_balance, acc.currency)}
+                {maskCurrency(formatCurrency(acc.current_balance, acc.currency), isPrivate)}
               </span>
             </div>
           </Link>
@@ -118,19 +120,19 @@ export function AccountsWidget({ accounts, exchangeRate }: AccountsWidgetProps) 
           href="/accounts"
           className="flex flex-col items-center justify-center p-3.5 rounded-xl border border-dashed border-[#CBD5E1] dark:border-[#334155] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] shrink-0 w-28 h-28 transition-colors cursor-pointer"
         >
-          <Plus className="w-4 h-4 mb-1" />
-          <span className="text-xs font-bold whitespace-nowrap">{t.dashboard.addAccount}</span>
+          <div className="w-8 h-8 rounded-full bg-[#F1F3F5] dark:bg-[#1A1A20] flex items-center justify-center mb-1">
+            <Plus className="w-4 h-4" />
+          </div>
+          <span className="text-xs font-semibold">{t.dashboard.addAccount}</span>
         </Link>
       </div>
 
-      {accounts.length >= 2 && (
-        <TransferModal
-          isOpen={isTransferOpen}
-          onClose={() => setIsTransferOpen(false)}
-          accounts={accounts}
-          defaultExchangeRate={exchangeRate || 16000}
-        />
-      )}
+      <TransferModal
+        isOpen={isTransferOpen}
+        onClose={() => setIsTransferOpen(false)}
+        accounts={accounts}
+        defaultExchangeRate={exchangeRate}
+      />
     </div>
   )
 }

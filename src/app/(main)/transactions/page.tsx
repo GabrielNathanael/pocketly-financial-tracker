@@ -2,6 +2,7 @@ import React from 'react'
 import { getTransactions, TransactionFilterParams } from '@/actions/transactions'
 import { getAccounts } from '@/actions/accounts'
 import { getCategories } from '@/actions/categories'
+import { TransactionsHeader } from '@/components/transactions/transactions-header'
 import { TransactionFilters } from '@/components/transactions/transaction-filters'
 import { TransactionList } from '@/components/transactions/transaction-list'
 import { TransactionType } from '@/types/database'
@@ -42,16 +43,8 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-[#0F172A] dark:text-[#F8FAFC]">
-            Buku Kas Transaksi
-          </h1>
-          <p className="text-xs text-[#64748B] dark:text-[#94A3B8] font-mono">
-            {transactions.length} catatan transaksi sesuai filter
-          </p>
-        </div>
-      </div>
+      {/* Dynamic Bilingual Header */}
+      <TransactionsHeader count={transactions.length} />
 
       {/* URL-Persisted Filter Bar */}
       <TransactionFilters accounts={accounts} categories={categories} />

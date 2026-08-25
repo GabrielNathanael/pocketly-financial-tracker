@@ -180,6 +180,7 @@ export interface Database {
           user_id: string
           category_id: string
           amount: number
+          currency: CurrencyCode
           period_start_date: string
           created_at: string
         }
@@ -188,6 +189,7 @@ export interface Database {
           user_id: string
           category_id: string
           amount: number
+          currency?: CurrencyCode
           period_start_date: string
           created_at?: string
         }
@@ -196,6 +198,7 @@ export interface Database {
           user_id?: string
           category_id?: string
           amount?: number
+          currency?: CurrencyCode
           period_start_date?: string
           created_at?: string
         }

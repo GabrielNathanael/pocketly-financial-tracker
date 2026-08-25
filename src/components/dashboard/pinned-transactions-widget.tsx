@@ -1,22 +1,37 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { usePinnedTemplates, removePinnedTemplate, PinnedTemplate } from '@/lib/storage/pinned-templates'
 import { formatCurrency } from '@/lib/utils/currency'
+import { usePrivacyMode, maskCurrency } from '@/lib/storage/privacy-mode'
 import { useLanguage } from '@/lib/i18n/language-context'
 import { createTransaction } from '@/actions/transactions'
-import { Pin, Zap, X, Check } from 'lucide-react'
+import { Pin, Zap, X, Check, ChevronLeft, ChevronRight } from 'lucide-react'
 
 export function PinnedTransactionsWidget() {
   const router = useRouter()
-  const { t } = useLanguage()
+  const { language, t } = useLanguage()
+  const isPrivate = usePrivacyMode()
   const templates = usePinnedTemplates()
   const [loggingId, setLoggingId] = useState<string | null>(null)
   const [successId, setSuccessId] = useState<string | null>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   if (templates.length === 0) {
     return null
+  }
+
+  const scrollLeft = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: -220, behavior: 'smooth' })
+    }
+  }
+
+  const scrollRight = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: 220, behavior: 'smooth' })
+    }
   }
 
   const handleInstantLog = async (tpl: PinnedTemplate) => {
@@ -46,12 +61,38 @@ export function PinnedTransactionsWidget() {
           <Pin className="w-3.5 h-3.5 text-[#0F172A] dark:text-[#FAFAFA]" />
           <span>{t.dashboard.pinnedTitle}</span>
         </h2>
-        <span className="text-[11px] text-[#64748B] dark:text-[#94A3B8]">
-          {t.dashboard.pinnedTapToLog}
-        </span>
+
+        <div className="flex items-center gap-2">
+          {/* Scroll Navigation Arrows: Hidden on mobile (swipe), visible on desktop */}
+          <div className="hidden sm:flex items-center gap-1">
+            <button
+              type="button"
+              onClick={scrollLeft}
+              className="p-1 rounded-md bg-[#F1F3F5] dark:bg-[#1A1A20] hover:bg-[#E2E8F0] dark:hover:bg-[#27272A] text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8] dark:hover:text-[#FAFAFA] border border-[#E5E7EB] dark:border-[#27272A] transition-colors cursor-pointer"
+              title={t.dashboard.scrollLeft || 'Scroll Left'}
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={scrollRight}
+              className="p-1 rounded-md bg-[#F1F3F5] dark:bg-[#1A1A20] hover:bg-[#E2E8F0] dark:hover:bg-[#27272A] text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8] dark:hover:text-[#FAFAFA] border border-[#E5E7EB] dark:border-[#27272A] transition-colors cursor-pointer"
+              title={t.dashboard.scrollRight || 'Scroll Right'}
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <span className="text-[11px] text-[#64748B] dark:text-[#94A3B8]">
+            {t.dashboard.pinnedTapToLog}
+          </span>
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+      <div
+        ref={scrollContainerRef}
+        className="flex items-center gap-2.5 overflow-x-auto pb-2 pt-0.5 no-scrollbar scroll-smooth"
+      >
         {templates.map((tpl) => {
           const isLogging = loggingId === tpl.id
           const isSuccess = successId === tpl.id
@@ -59,13 +100,13 @@ export function PinnedTransactionsWidget() {
           return (
             <div
               key={tpl.id}
-              className="relative p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors flex flex-col justify-between group shadow-2xs"
+              className="relative min-w-[160px] sm:min-w-[190px] shrink-0 p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors flex flex-col justify-between group shadow-2xs"
             >
               <button
                 type="button"
                 onClick={() => removePinnedTemplate(tpl.id)}
                 className="absolute right-2 top-2 p-1 text-[#94A3B8] hover:text-[#E11D48] opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-10"
-                title="Hapus sematan"
+                title={t.dashboard.deletePinnedTitle || 'Remove pin'}
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -80,7 +121,7 @@ export function PinnedTransactionsWidget() {
                   {tpl.name}
                 </span>
                 <span className="text-[11px] text-[#64748B] dark:text-[#94A3B8] truncate mt-0.5">
-                  {tpl.categoryName || 'Kategori'} • {tpl.accountName || 'Akun'}
+                  {tpl.categoryName || (language === 'en' ? 'Category' : 'Kategori')} • {tpl.accountName || (language === 'en' ? 'Account' : 'Akun')}
                 </span>
 
                 <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-[#E5E7EB] dark:border-[#27272A]">
@@ -89,7 +130,7 @@ export function PinnedTransactionsWidget() {
                       tpl.type === 'income' ? 'text-[#0D9488]' : 'text-[#E11D48]'
                     }`}
                   >
-                    {formatCurrency(tpl.amount, tpl.currency)}
+                    {maskCurrency(formatCurrency(tpl.amount, tpl.currency), isPrivate)}
                   </span>
 
                   <div className="w-5 h-5 rounded bg-[#F1F3F5] dark:bg-[#1A1A20] flex items-center justify-center text-[#0F172A] dark:text-[#FAFAFA] shrink-0 ml-1">

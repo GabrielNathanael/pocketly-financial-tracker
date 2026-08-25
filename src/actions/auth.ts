@@ -33,6 +33,13 @@ export async function login(input: FormData | { email: string; password: string 
 }
 
 export async function register(input: FormData | { email: string; password: string }) {
+  // Jalur pendaftaran akun baru dinonaktifkan untuk buku kas pribadi
+  return {
+    error: 'Pendaftaran akun baru saat ini dinonaktifkan oleh administrator.',
+  }
+
+  /*
+  // Logika asli pendaftaran (disimpan jika suatu saat ingin dibuka kembali):
   let email = ''
   let password = ''
 
@@ -73,6 +80,7 @@ export async function register(input: FormData | { email: string; password: stri
   }
 
   return { success: true }
+  */
 }
 
 export async function logout() {

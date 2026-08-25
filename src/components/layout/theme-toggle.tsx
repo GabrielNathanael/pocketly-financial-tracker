@@ -6,7 +6,13 @@ import { useLanguage } from '@/lib/i18n/language-context'
 import { Sun, Moon, Monitor } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 
-export function ThemeToggle({ className }: { className?: string }) {
+export function ThemeToggle({
+  className,
+  showLabels = false,
+}: {
+  className?: string
+  showLabels?: boolean
+}) {
   const { theme, setTheme } = useTheme()
   const { language } = useLanguage()
 
@@ -31,7 +37,8 @@ export function ThemeToggle({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'inline-flex items-center p-0.5 bg-[#F1F3F5] dark:bg-[#1A1A20] rounded-lg border border-[#E5E7EB] dark:border-[#27272A]',
+        'p-0.5 bg-[#F1F3F5] dark:bg-[#1A1A20] rounded-lg border border-[#E5E7EB] dark:border-[#27272A]',
+        showLabels ? 'grid grid-cols-3 w-full sm:w-auto' : 'inline-flex items-center',
         className
       )}
     >
@@ -43,15 +50,17 @@ export function ThemeToggle({ className }: { className?: string }) {
               type="button"
               onClick={() => setTheme(id)}
               className={cn(
-                'p-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center justify-center',
+                'rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 w-full',
+                showLabels ? 'px-3 py-1.5' : 'p-1.5',
                 isActive
-                  ? 'bg-white dark:bg-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] border border-[#E5E7EB] dark:border-transparent shadow-2xs'
+                  ? 'bg-white dark:bg-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] border border-[#E5E7EB] dark:border-transparent shadow-2xs font-bold'
                   : 'text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
               )}
               aria-label={label}
               title={label}
             >
               <Icon className="w-3.5 h-3.5" />
+              {showLabels && <span className="text-xs">{label}</span>}
             </button>
 
             {/* Hover Floating Tooltip (Positioned below to prevent clipping at top edges) */}

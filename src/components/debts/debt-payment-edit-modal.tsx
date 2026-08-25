@@ -8,9 +8,11 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { DatePicker } from '@/components/ui/date-picker'
 import { Debt, Account } from '@/types/database'
 import { EnrichedDebtPayment, updateDebtPayment } from '@/actions/debts'
+import { formatCurrency } from '@/lib/utils/currency'
 import { useLanguage } from '@/lib/i18n/language-context'
 import { getDefaultAccountId } from '@/lib/storage/default-account'
-import { Wallet } from 'lucide-react'
+import { Wallet, AlertTriangle } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface DebtPaymentEditModalProps {
   isOpen: boolean
@@ -69,12 +71,15 @@ function DebtPaymentEditForm({
   onClose,
   onSuccess,
 }: DebtPaymentEditFormProps) {
-  const { t } = useLanguage()
+  const { language, t } = useLanguage()
   const savedDefaultId = typeof window !== 'undefined' ? getDefaultAccountId() : null
+
+  // Strict currency filter
+  const matchingAccounts = accounts.filter((a) => a.currency === debt.currency)
 
   const initialAccountId =
     payment.transaction?.account_id ||
-    (payment.linked_transaction_id ? savedDefaultId || accounts[0]?.id || '' : savedDefaultId || accounts[0]?.id || '')
+    (matchingAccounts.find((a) => a.id === savedDefaultId)?.id || matchingAccounts[0]?.id || '')
 
   const [amount, setAmount] = useState<string>(String(payment.amount))
   const [paymentDate, setPaymentDate] = useState<string>(
@@ -83,6 +88,8 @@ function DebtPaymentEditForm({
   const [selectedAccountId, setSelectedAccountId] = useState<string>(initialAccountId)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const selectedAccount = matchingAccounts.find((a) => a.id === selectedAccountId)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -93,9 +100,28 @@ function DebtPaymentEditForm({
       return
     }
 
-    if (!selectedAccountId) {
-      setError('Pilih rekening transaksi')
+    if (!selectedAccountId || !selectedAccount) {
+      const err = t.debts.selectMatchingCurrencyAccount
+        ? t.debts.selectMatchingCurrencyAccount.replace('{currency}', debt.currency)
+        : `Pilih rekening transaksi bermata uang ${debt.currency}`
+      setError(err)
+      toast.error(err)
       return
+    }
+
+    // Client-side Strict Balance Guard
+    if (debt.type === 'debt') {
+      const oldAmount = Number(payment.amount) || 0
+      const currentBal = Number(selectedAccount.current_balance) || 0
+      const delta = numericAmount - oldAmount
+      if (currentBal - delta < 0) {
+        const err = language === 'en'
+          ? `Insufficient balance in ${selectedAccount.name} for payment increase. (Available: ${formatCurrency(currentBal, selectedAccount.currency)})`
+          : `Saldo ${selectedAccount.name} tidak mencukupi untuk kenaikan pembayaran. (Tersedia: ${formatCurrency(currentBal, selectedAccount.currency)})`
+        setError(err)
+        toast.error(t.transactions.insufficientBalance || (language === 'en' ? 'Insufficient Balance' : 'Saldo Tidak Mencukupi'), { description: err })
+        return
+      }
     }
 
     setIsLoading(true)
@@ -112,12 +138,16 @@ function DebtPaymentEditForm({
 
       if (res.error) {
         setError(res.error)
+        toast.error(t.debts.updatePaymentFailed || (language === 'en' ? 'Failed to Update Payment' : 'Gagal Mengubah Cicilan'), { description: res.error })
       } else {
+        toast.success(language === 'en' ? 'Installment updated successfully' : 'Perubahan cicilan berhasil disimpan')
         onSuccess?.()
         onClose()
       }
     } catch (err) {
-      setError((err as Error).message)
+      const msg = (err as Error).message
+      setError(msg)
+      toast.error(language === 'en' ? 'An error occurred' : 'Terjadi Kesalahan', { description: msg })
     } finally {
       setIsLoading(false)
     }
@@ -146,53 +176,71 @@ function DebtPaymentEditForm({
         <DatePicker value={paymentDate} onChange={setPaymentDate} />
       </div>
 
-      {/* Rekening Transaksi (Mandatory - No Checkbox) */}
+      {/* Rekening Transaksi (Strict Currency Matched) */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
-          {t.debts.selectLinkedAccount}
-        </label>
-        <Select
-          value={selectedAccountId}
-          onValueChange={setSelectedAccountId}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder={t.debts.selectLinkedAccount} />
-          </SelectTrigger>
-          <SelectContent>
-            {accounts.map((a) => {
-              const isDef = a.id === savedDefaultId
-              return (
-                <SelectItem key={a.id} value={a.id}>
-                  <div className="flex items-center gap-2">
-                    <Wallet className="w-3.5 h-3.5 text-[#94A3B8]" />
-                    <span>{a.name}</span>
-                    <span className="text-[10px] font-mono text-[#94A3B8]">({a.currency})</span>
-                    {isDef && (
-                      <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A]">
-                        Default
+        <div className="flex items-center justify-between">
+          <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+            {t.debts.selectLinkedAccount}
+          </label>
+          <span className="text-[10px] font-mono font-bold text-[#D97706]">
+            {t.debts.mustMatchCurrency ? t.debts.mustMatchCurrency.replace('{currency}', debt.currency) : `Wajib ${debt.currency}`}
+          </span>
+        </div>
+
+        {matchingAccounts.length === 0 ? (
+          <div className="p-3 rounded-xl bg-[#FFFBEB] dark:bg-[#78350F]/20 border border-[#FDE68A] dark:border-[#92400E]/40 text-xs text-[#B45309] dark:text-[#FDE68A] flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>
+              {t.debts.noMatchingAccountShort
+                ? t.debts.noMatchingAccountShort.replace('{currency}', debt.currency)
+                : `Belum ada akun dengan mata uang ${debt.currency}. Silakan buat akun baru di menu Akun.`}
+            </span>
+          </div>
+        ) : (
+          <Select
+            value={selectedAccountId}
+            onValueChange={setSelectedAccountId}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder={t.debts.selectLinkedAccount} />
+            </SelectTrigger>
+            <SelectContent>
+              {matchingAccounts.map((a) => {
+                const isDef = a.id === savedDefaultId
+                return (
+                  <SelectItem key={a.id} value={a.id}>
+                    <div className="flex items-center justify-between gap-3 w-full">
+                      <div className="flex items-center gap-2">
+                        <Wallet className="w-3.5 h-3.5 text-[#94A3B8]" />
+                        <span>{a.name}</span>
+                        {isDef && (
+                          <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A]">
+                            Default
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[10px] font-mono font-bold text-[#64748B] dark:text-[#94A3B8] tnum">
+                        {formatCurrency(a.current_balance, a.currency)}
                       </span>
-                    )}
-                  </div>
-                </SelectItem>
-              )
-            })}
-          </SelectContent>
-        </Select>
-        <p className="text-[10px] text-[#64748B] dark:text-[#94A3B8]">
-          {debt.type === 'debt'
-            ? 'Saldo rekening yang dipilih akan otomatis disinkronkan ke mutasi saldo akun ini.'
-            : 'Saldo rekening yang dipilih akan otomatis bertambah sesuai penerimaan pembayaran ini.'}
-        </p>
+                    </div>
+                  </SelectItem>
+                )
+              })}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
-      {error && <p className="text-xs font-semibold text-[#E11D48]">{error}</p>}
+      {error && (
+        <p className="text-xs font-semibold text-[#E11D48] text-center">{error}</p>
+      )}
 
-      <div className="flex items-center gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+      <div className="flex items-center justify-end gap-2 mt-2 pt-2 border-t border-[#E5E7EB] dark:border-[#27272A]">
+        <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
           {t.common.cancel}
         </Button>
-        <Button type="submit" isLoading={isLoading} className="flex-1 font-bold">
-          {t.debts.updatePayment || 'Simpan'}
+        <Button type="submit" isLoading={isLoading} disabled={matchingAccounts.length === 0}>
+          {t.common.save}
         </Button>
       </div>
     </form>

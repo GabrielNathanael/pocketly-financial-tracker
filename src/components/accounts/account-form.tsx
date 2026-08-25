@@ -13,7 +13,8 @@ import { CURRENCY_LIST } from '@/lib/constants/currencies'
 import { DynamicIcon } from '@/components/ui/dynamic-icon'
 import { getDefaultAccountId, setDefaultAccountId } from '@/lib/storage/default-account'
 import { useLanguage } from '@/lib/i18n/language-context'
-import { Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
+import { Trash2, AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 
 interface AccountFormProps {
@@ -23,7 +24,7 @@ interface AccountFormProps {
 
 export function AccountForm({ initialData, onSuccess }: AccountFormProps) {
   const router = useRouter()
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const isEditing = !!initialData
 
   const [name, setName] = useState(initialData?.name || '')
@@ -107,6 +108,8 @@ export function AccountForm({ initialData, onSuccess }: AccountFormProps) {
   const handleDelete = async () => {
     if (!initialData) return
     setIsDeleting(true)
+    setShowDeleteConfirm(false)
+    setError(null)
 
     try {
       const res = await deleteAccount(initialData.id)
@@ -116,11 +119,18 @@ export function AccountForm({ initialData, onSuccess }: AccountFormProps) {
         if (getDefaultAccountId() === initialData.id) {
           setDefaultAccountId(null)
         }
-        setShowDeleteConfirm(false)
-        router.push('/accounts')
+        toast.success(
+          language === 'en' ? 'Account deleted successfully' : 'Akun berhasil dihapus'
+        )
+        if (onSuccess) {
+          onSuccess()
+        } else {
+          router.push('/accounts')
+        }
       }
     } catch (err) {
-      setError((err as Error).message)
+      const msg = (err as Error).message
+      setError(msg)
     } finally {
       setIsDeleting(false)
     }
@@ -128,6 +138,12 @@ export function AccountForm({ initialData, onSuccess }: AccountFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      {error && (
+        <div className="p-3 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 text-xs font-medium flex items-start gap-2">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+          <span className="leading-relaxed">{error}</span>
+        </div>
+      )}
       <Input
         label={t.accounts.nameLabel}
         type="text"
@@ -163,7 +179,7 @@ export function AccountForm({ initialData, onSuccess }: AccountFormProps) {
           </label>
           <Select value={currency} onValueChange={(val) => setCurrency(val as CurrencyCode)}>
             <SelectTrigger className="w-full">
-              <SelectValue />
+              <SelectValue>{currency}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               {CURRENCY_LIST.map((c) => (

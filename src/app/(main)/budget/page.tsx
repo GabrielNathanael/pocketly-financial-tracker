@@ -1,5 +1,7 @@
 import React from 'react'
 import { getBudgetsWithActuals } from '@/actions/budgets'
+import { getCategories } from '@/actions/categories'
+import { getLatestExchangeRate } from '@/actions/exchange-rate'
 import { BudgetManager } from '@/components/budget/budget-manager'
 import { getCurrentPeriodStartDate } from '@/lib/utils/date'
 
@@ -12,20 +14,21 @@ interface BudgetPageProps {
 export default async function BudgetPage({ searchParams }: BudgetPageProps) {
   const params = await searchParams
   const currentPeriod = params.period || getCurrentPeriodStartDate()
-  const budgets = await getBudgetsWithActuals(currentPeriod)
+
+  const [budgets, categories, exchangeRate] = await Promise.all([
+    getBudgetsWithActuals(currentPeriod),
+    getCategories('expense'),
+    getLatestExchangeRate(),
+  ])
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-xl font-bold tracking-tight text-[#0F172A] dark:text-[#F8FAFC]">
-          Alokasi & Batas Anggaran
-        </h1>
-        <p className="text-xs text-[#64748B] dark:text-[#94A3B8] font-mono">
-          Batas pengeluaran per kategori dan pantauan realisasi bulanan
-        </p>
-      </div>
-
-      <BudgetManager budgets={budgets} currentPeriod={currentPeriod} />
+      <BudgetManager
+        budgets={budgets}
+        categories={categories}
+        exchangeRate={exchangeRate}
+        currentPeriod={currentPeriod}
+      />
     </div>
   )
 }

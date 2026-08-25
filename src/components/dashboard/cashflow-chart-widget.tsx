@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from 'react'
 import { EnrichedTransaction } from '@/types/database'
 import { formatCurrency, convertAmount } from '@/lib/utils/currency'
+import { usePrivacyMode, maskCurrency } from '@/lib/storage/privacy-mode'
 import { useLanguage } from '@/lib/i18n/language-context'
 import { DynamicIcon } from '@/components/ui/dynamic-icon'
 import { BarChart3, ArrowUpRight, ArrowDownRight } from 'lucide-react'
@@ -29,6 +30,7 @@ export function CashflowChartWidget({
   exchangeRate = 16000,
 }: CashflowChartWidgetProps) {
   const { t } = useLanguage()
+  const isPrivate = usePrivacyMode()
   const [period, setPeriod] = useState<PeriodFilter>('this_month')
   const [activeTab, setActiveTab] = useState<'cashflow' | 'categories'>('cashflow')
 
@@ -146,53 +148,56 @@ export function CashflowChartWidget({
       </div>
 
       {/* Metric Cards Banner */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-3 font-mono tnum text-xs">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 font-mono tnum text-xs">
         {/* Income Card */}
-        <div className="p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-0.5">
+        <div className="p-2.5 sm:p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-0.5">
           <span className="text-[10px] font-sans font-bold uppercase tracking-wider text-[#0D9488] flex items-center gap-1">
             <ArrowUpRight className="w-3 h-3 stroke-[2.5]" />
             {t.dashboard.inflow}
           </span>
-          <span className="text-xs sm:text-sm font-bold text-[#0D9488] truncate">
-            {formatCurrency(totalIncome, 'IDR')}
+          <span className="text-xs sm:text-sm font-bold text-[#0D9488] whitespace-nowrap">
+            {maskCurrency(formatCurrency(totalIncome, 'IDR'), isPrivate)}
           </span>
         </div>
 
         {/* Expense Card */}
-        <div className="p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-0.5">
+        <div className="p-2.5 sm:p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-0.5">
           <span className="text-[10px] font-sans font-bold uppercase tracking-wider text-[#E11D48] flex items-center gap-1">
             <ArrowDownRight className="w-3 h-3 stroke-[2.5]" />
             {t.dashboard.outflow}
           </span>
-          <span className="text-xs sm:text-sm font-bold text-[#E11D48] truncate">
-            {formatCurrency(totalExpense, 'IDR')}
+          <span className="text-xs sm:text-sm font-bold text-[#E11D48] whitespace-nowrap">
+            {maskCurrency(formatCurrency(totalExpense, 'IDR'), isPrivate)}
           </span>
         </div>
 
         {/* Net Delta Card */}
-        <div className="p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-0.5">
+        <div className="col-span-2 sm:col-span-1 p-2.5 sm:p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-0.5">
           <span className="text-[10px] font-sans font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
             {t.dashboard.netSavings}
           </span>
           <span
             className={cn(
-              'text-xs sm:text-sm font-bold truncate',
+              'text-xs sm:text-sm font-bold whitespace-nowrap',
               netSavings >= 0 ? 'text-[#0D9488]' : 'text-[#E11D48]'
             )}
           >
-            {netSavings >= 0 ? '+' : ''}{formatCurrency(netSavings, 'IDR')}
+            {maskCurrency(
+              `${netSavings >= 0 ? '+' : ''}${formatCurrency(netSavings, 'IDR')}`,
+              isPrivate
+            )}
           </span>
         </div>
       </div>
 
       {/* Sub-view Switcher Tabs */}
       <div className="flex items-center justify-between pt-1 border-t border-[#E5E7EB] dark:border-[#27272A]">
-        <div className="inline-flex p-0.5 bg-[#F1F3F5] dark:bg-[#1A1A20] rounded-lg border border-[#E5E7EB] dark:border-[#27272A]">
+        <div className="grid grid-cols-2 w-full sm:w-auto p-0.5 bg-[#F1F3F5] dark:bg-[#1A1A20] rounded-lg border border-[#E5E7EB] dark:border-[#27272A]">
           <button
             type="button"
             onClick={() => setActiveTab('cashflow')}
             className={cn(
-              'px-3 py-1 rounded-md text-xs font-bold transition-colors cursor-pointer',
+              'px-3 py-1.5 rounded-md text-xs font-bold transition-colors cursor-pointer text-center whitespace-nowrap',
               activeTab === 'cashflow'
                 ? 'bg-white dark:bg-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] shadow-2xs'
                 : 'text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
@@ -204,7 +209,7 @@ export function CashflowChartWidget({
             type="button"
             onClick={() => setActiveTab('categories')}
             className={cn(
-              'px-3 py-1 rounded-md text-xs font-bold transition-colors cursor-pointer',
+              'px-3 py-1.5 rounded-md text-xs font-bold transition-colors cursor-pointer text-center whitespace-nowrap',
               activeTab === 'categories'
                 ? 'bg-white dark:bg-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] shadow-2xs'
                 : 'text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
@@ -225,7 +230,7 @@ export function CashflowChartWidget({
                 {t.dashboard.totalIncome}
               </span>
               <span className="font-bold text-[#0D9488] tnum">
-                {formatCurrency(totalIncome, 'IDR')}
+                {maskCurrency(formatCurrency(totalIncome, 'IDR'), isPrivate)}
               </span>
             </div>
             <div className="w-full bg-[#F1F3F5] dark:bg-[#1A1A20] h-3 rounded-full overflow-hidden border border-[#E5E7EB] dark:border-[#27272A]">
@@ -243,7 +248,7 @@ export function CashflowChartWidget({
                 {t.dashboard.totalExpense}
               </span>
               <span className="font-bold text-[#E11D48] tnum">
-                {formatCurrency(totalExpense, 'IDR')}
+                {maskCurrency(formatCurrency(totalExpense, 'IDR'), isPrivate)}
               </span>
             </div>
             <div className="w-full bg-[#F1F3F5] dark:bg-[#1A1A20] h-3 rounded-full overflow-hidden border border-[#E5E7EB] dark:border-[#27272A]">
@@ -284,10 +289,10 @@ export function CashflowChartWidget({
 
                     <div className="flex items-center gap-2 font-mono shrink-0 ml-2">
                       <span className="font-bold text-[#0F172A] dark:text-[#F8FAFC] tnum">
-                        {formatCurrency(cat.amount, 'IDR')}
+                        {maskCurrency(formatCurrency(cat.amount, 'IDR'), isPrivate)}
                       </span>
                       <span className="text-[10px] text-[#64748B] dark:text-[#94A3B8] w-8 text-right tnum">
-                        {pct.toFixed(0)}%
+                        {isPrivate ? '••%' : `${pct.toFixed(0)}%`}
                       </span>
                     </div>
                   </div>

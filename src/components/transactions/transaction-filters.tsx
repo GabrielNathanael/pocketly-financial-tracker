@@ -11,8 +11,9 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { DatePicker } from "@/components/ui/date-picker";
-import { Search, Filter, X, ArrowDownRight, ArrowUpRight } from "lucide-react";
+import { DynamicIcon } from "@/components/ui/dynamic-icon";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { Search, Filter, X, ArrowDownRight, ArrowUpRight, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 interface TransactionFiltersProps {
@@ -41,6 +42,21 @@ export function TransactionFilters({
   const currentEndDate = searchParams.get("endDate") || "";
   const currentSort = searchParams.get("sort") || "date_desc";
 
+  const expenseCategories = categories.filter((c) => c.type === "expense");
+  const incomeCategories = categories.filter((c) => c.type === "income");
+
+  const currentExpenseCategoryVal = expenseCategories.some(
+    (c) => c.id === currentCategoryId,
+  )
+    ? currentCategoryId
+    : "all";
+
+  const currentIncomeCategoryVal = incomeCategories.some(
+    (c) => c.id === currentCategoryId,
+  )
+    ? currentCategoryId
+    : "all";
+
   const updateFilters = (updates: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams.toString());
     for (const [key, value] of Object.entries(updates)) {
@@ -51,6 +67,17 @@ export function TransactionFilters({
       }
     }
     router.replace(`${pathname}?${params.toString()}`);
+  };
+
+  const handleTypeChange = (newType: "all" | "expense" | "income") => {
+    if (newType !== "all" && currentCategoryId !== "all") {
+      const selectedCat = categories.find((c) => c.id === currentCategoryId);
+      if (selectedCat && selectedCat.type !== newType) {
+        updateFilters({ type: newType, categoryId: null });
+        return;
+      }
+    }
+    updateFilters({ type: newType });
   };
 
   const hasAdvancedFilters =
@@ -101,11 +128,11 @@ export function TransactionFilters({
 
       {/* Row 2: Compact Mobile Pills & Radix Select Sort */}
       <div className="flex items-center justify-between gap-1.5 pt-0.5">
-        {/* Type Filter Pills (Compact with responsive text/icons) */}
+        {/* Type Filter Pills */}
         <div className="flex items-center gap-1 shrink-0">
           <button
             type="button"
-            onClick={() => updateFilters({ type: "all" })}
+            onClick={() => handleTypeChange("all")}
             className={cn(
               "px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-md text-[11px] font-semibold transition-colors shrink-0 cursor-pointer border",
               currentType === "all"
@@ -118,7 +145,7 @@ export function TransactionFilters({
 
           <button
             type="button"
-            onClick={() => updateFilters({ type: "expense" })}
+            onClick={() => handleTypeChange("expense")}
             className={cn(
               "px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-md text-[11px] font-semibold transition-colors shrink-0 cursor-pointer border inline-flex items-center gap-1",
               currentType === "expense"
@@ -134,7 +161,7 @@ export function TransactionFilters({
 
           <button
             type="button"
-            onClick={() => updateFilters({ type: "income" })}
+            onClick={() => handleTypeChange("income")}
             className={cn(
               "px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-md text-[11px] font-semibold transition-colors shrink-0 cursor-pointer border inline-flex items-center gap-1",
               currentType === "income"
@@ -174,10 +201,10 @@ export function TransactionFilters({
         </Select>
       </div>
 
-      {/* Row 3: Collapsible Advanced Filters */}
+      {/* Row 3: Collapsible Advanced 4-Column Filters */}
       {isOpen && (
         <div className="pt-2.5 border-t border-[#E5E7EB] dark:border-[#27272A] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-          {/* Account Filter */}
+          {/* 1. Account Filter */}
           <div className="flex flex-col gap-1">
             <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
               {t.common.account}
@@ -193,20 +220,27 @@ export function TransactionFilters({
                 <SelectItem value="all">{t.common.all}</SelectItem>
                 {accounts.map((a) => (
                   <SelectItem key={a.id} value={a.id}>
-                    {a.name} ({a.currency})
+                    <div className="flex items-center gap-2">
+                      <Wallet className="w-3.5 h-3.5 text-[#94A3B8]" />
+                      <span>
+                        {a.name} ({a.currency})
+                      </span>
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          {/* Category Filter */}
+          {/* 2. Category (Expense) Filter */}
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
-              {t.common.category}
+            <label className="text-[10px] font-bold uppercase tracking-wider text-[#E11D48] flex items-center gap-1">
+              <ArrowDownRight className="w-3 h-3 stroke-[2.5]" />
+              <span>{t.transactions.categoryExpense}</span>
             </label>
             <Select
-              value={currentCategoryId}
+              value={currentExpenseCategoryVal}
+              disabled={currentType === "income"}
               onValueChange={(val) => updateFilters({ categoryId: val })}
             >
               <SelectTrigger className="w-full">
@@ -214,36 +248,64 @@ export function TransactionFilters({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t.common.all}</SelectItem>
-                {categories.map((c) => (
+                {expenseCategories.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
-                    {c.name} ({c.type})
+                    <div className="flex items-center gap-2">
+                      <DynamicIcon
+                        name={c.icon || "Tag"}
+                        className="w-3.5 h-3.5 text-[#E11D48]"
+                      />
+                      <span>{c.name}</span>
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          {/* Start Date */}
+          {/* 3. Category (Income) Filter */}
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
-              {t.transactions.startDate}
+            <label className="text-[10px] font-bold uppercase tracking-wider text-[#0D9488] flex items-center gap-1">
+              <ArrowUpRight className="w-3 h-3 stroke-[2.5]" />
+              <span>{t.transactions.categoryIncome}</span>
             </label>
-            <DatePicker
-              value={currentStartDate}
-              onChange={(val) => updateFilters({ startDate: val })}
-              placeholder={t.transactions.startDate}
-            />
+            <Select
+              value={currentIncomeCategoryVal}
+              disabled={currentType === "expense"}
+              onValueChange={(val) => updateFilters({ categoryId: val })}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={t.common.all} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t.common.all}</SelectItem>
+                {incomeCategories.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    <div className="flex items-center gap-2">
+                      <DynamicIcon
+                        name={c.icon || "Tag"}
+                        className="w-3.5 h-3.5 text-[#0D9488]"
+                      />
+                      <span>{c.name}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          {/* End Date */}
+          {/* 4. Unified Date Range Filter */}
           <div className="flex flex-col gap-1">
             <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
-              {t.transactions.endDate}
+              {t.transactions.dateRange}
             </label>
-            <DatePicker
-              value={currentEndDate}
-              onChange={(val) => updateFilters({ endDate: val })}
-              placeholder={t.transactions.endDate}
+            <DateRangePicker
+              startDate={currentStartDate}
+              endDate={currentEndDate}
+              onChange={(start, end) =>
+                updateFilters({ startDate: start, endDate: end })
+              }
+              placeholder={t.transactions.dateRange}
             />
           </div>
 

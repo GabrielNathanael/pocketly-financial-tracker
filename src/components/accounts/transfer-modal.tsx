@@ -12,6 +12,7 @@ import { getLatestForexRates } from '@/actions/exchange-rate'
 import { formatCurrency, getCrossRate, ForexRatesMap, DEFAULT_FALLBACK_RATES } from '@/lib/utils/currency'
 import { useLanguage } from '@/lib/i18n/language-context'
 import { ArrowRightLeft, RefreshCw } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface TransferModalProps {
   isOpen: boolean
@@ -54,7 +55,7 @@ interface TransferFormProps {
 }
 
 function TransferForm({ accounts, onClose, onSuccess }: TransferFormProps) {
-  const { t } = useLanguage()
+  const { language, t } = useLanguage()
   const [fromAccountId, setFromAccountId] = useState<string>(accounts[0]?.id || '')
   const [toAccountId, setToAccountId] = useState<string>(accounts[1]?.id || accounts[0]?.id || '')
   const [amount, setAmount] = useState<string>('')
@@ -172,7 +173,9 @@ function TransferForm({ accounts, onClose, onSuccess }: TransferFormProps) {
     setError(null)
 
     if (fromAccountId === toAccountId) {
-      setError('Akun sumber dan tujuan tidak boleh sama')
+      const err = t.transfer.sameAccountError || 'Akun sumber dan tujuan tidak boleh sama'
+      setError(err)
+      toast.error(err)
       return
     }
 
@@ -183,9 +186,11 @@ function TransferForm({ accounts, onClose, onSuccess }: TransferFormProps) {
     }
 
     if (fromAccount && Number(fromAccount.current_balance) < numAmount) {
-      setError(
-        `Saldo tidak mencukupi (${formatCurrency(fromAccount.current_balance, fromAccount.currency)})`
-      )
+      const err = language === 'en'
+        ? `Insufficient balance in ${fromAccount.name} (Available: ${formatCurrency(fromAccount.current_balance, fromAccount.currency)}, Required: ${formatCurrency(numAmount, fromAccount.currency)})`
+        : `Saldo ${fromAccount.name} tidak mencukupi (Tersedia: ${formatCurrency(fromAccount.current_balance, fromAccount.currency)}, Diperlukan: ${formatCurrency(numAmount, fromAccount.currency)})`
+      setError(err)
+      toast.error(t.transactions?.insufficientBalance || (language === 'en' ? 'Insufficient Balance' : 'Saldo Tidak Mencukupi'), { description: err })
       return
     }
 
@@ -205,12 +210,20 @@ function TransferForm({ accounts, onClose, onSuccess }: TransferFormProps) {
 
       if (res.error) {
         setError(res.error)
+        toast.error(t.transfer.transferFailed || (language === 'en' ? 'Transfer Failed' : 'Gagal Transfer'), { description: res.error })
       } else {
+        toast.success(
+          isCrossCurrency
+            ? (language === 'en' ? 'Currency exchange & transfer successful' : 'Tukar valas & transfer berhasil')
+            : (language === 'en' ? 'Transfer completed successfully' : 'Transfer saldo berhasil')
+        )
         onSuccess?.()
         onClose()
       }
     } catch (err) {
-      setError((err as Error).message)
+      const msg = (err as Error).message
+      setError(msg)
+      toast.error(language === 'en' ? 'An error occurred' : 'Terjadi Kesalahan', { description: msg })
     } finally {
       setIsLoading(false)
     }
@@ -302,7 +315,7 @@ function TransferForm({ accounts, onClose, onSuccess }: TransferFormProps) {
           {/* Editable Received Amount */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1 border-t border-[#E5E7EB] dark:border-[#27272A]">
             <Input
-              label={`Nominal Diterima (${toAccount?.currency})`}
+              label={`${t.transfer.receivedAmountLabel || (language === 'en' ? 'Received Amount' : 'Nominal Diterima')} (${toAccount?.currency})`}
               type="number"
               step="any"
               placeholder="0"
@@ -313,7 +326,7 @@ function TransferForm({ accounts, onClose, onSuccess }: TransferFormProps) {
             />
 
             <Input
-              label={`Kurs (1 ${fromAccount?.currency} = ... ${toAccount?.currency})`}
+              label={`${language === 'en' ? 'Exchange Rate' : 'Kurs'} (1 ${fromAccount?.currency} = ... ${toAccount?.currency})`}
               type="number"
               step="any"
               value={exchangeRate}

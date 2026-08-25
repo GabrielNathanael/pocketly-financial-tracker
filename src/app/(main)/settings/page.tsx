@@ -12,17 +12,8 @@ export default async function SettingsPage() {
 
   return (
     <div className="flex flex-col gap-4 max-w-xl mx-auto">
-      <div>
-        <h1 className="text-xl font-bold tracking-tight text-[#0F172A] dark:text-[#F8FAFC]">
-          Pengaturan Sistem
-        </h1>
-        <p className="text-xs text-[#64748B] dark:text-[#94A3B8] font-mono">
-          Preferensi antarmuka, tema tampilan dan konfigurasi kurs mata uang
-        </p>
-      </div>
-
       <SettingsView
-        userEmail={user?.email || 'Pengguna Terautentikasi'}
+        userEmail={user?.email || ''}
         currentExchangeRate={exchangeRate}
       />
     </div>

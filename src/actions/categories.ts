@@ -133,7 +133,7 @@ export async function deleteCategory(id: string) {
     .eq('category_id', id)
 
   if (count && count > 0) {
-    return { error: `Cannot delete category: ${count} transactions are linked to it. Please reassign them first.` }
+    return { error: `Kategori ini tidak dapat dihapus karena masih digunakan oleh ${count} catatan transaksi. Ubah atau hapus transaksi terkait terlebih dahulu.` }
   }
 
   const { error } = await supabase.from('categories').delete().eq('id', id)

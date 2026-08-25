@@ -12,6 +12,8 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { formatCurrency } from '@/lib/utils/currency'
 import { savePinnedTemplate } from '@/lib/storage/pinned-templates'
 import { useLanguage } from '@/lib/i18n/language-context'
+import { useUndo } from '@/lib/context/undo-context'
+import { toast } from 'sonner'
 import {
   ArrowLeft,
   History,
@@ -41,7 +43,8 @@ export function TransactionDetailView({
   categories,
 }: TransactionDetailViewProps) {
   const router = useRouter()
-  const { t } = useLanguage()
+  const { language, t } = useLanguage()
+  const { queueDelete } = useUndo()
   const [isEditing, setIsEditing] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -89,17 +92,26 @@ export function TransactionDetailView({
     setTimeout(() => setIsPinned(false), 3000)
   }
 
-  const handleDelete = async () => {
-    setIsDeleting(true)
-    try {
-      const res = await deleteTransaction(transaction.id)
-      if (!res.error) {
-        setShowDeleteConfirm(false)
-        router.push('/transactions')
-      }
-    } finally {
-      setIsDeleting(false)
-    }
+  const handleDelete = () => {
+    setShowDeleteConfirm(false)
+    router.push('/transactions')
+
+    queueDelete({
+      id: transaction.id,
+      title: transaction.description || category?.name || (language === 'en' ? 'Transaction' : 'Transaksi'),
+      onExecuteDelete: async () => {
+        const res = await deleteTransaction(transaction.id)
+        if (res?.error) {
+          toast.error(t.transactions.deleteFailed, { description: res.error })
+        } else {
+          router.refresh()
+        }
+      },
+      onUndo: () => {
+        toast.success(t.undo.transactionRestored)
+        router.refresh()
+      },
+    })
   }
 
   if (isEditing) {
@@ -254,7 +266,7 @@ export function TransactionDetailView({
           <div className="flex flex-col gap-1 p-3 rounded-lg bg-[#F0FDF4] dark:bg-[#052E16]/30 border border-[#BBF7D0] dark:border-[#166534]/40">
             <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#15803D] dark:text-[#4ADE80]">
               <FileText className="w-3 h-3" />
-              <span>Catatan Tambahan (Memo)</span>
+              <span>{t.transactions.memoTitle || (language === 'en' ? 'Additional Notes (Memo)' : 'Catatan Tambahan (Memo)')}</span>
             </div>
             <p className="text-xs text-[#0F172A] dark:text-[#FAFAFA]">{memoText}</p>
           </div>
@@ -265,7 +277,7 @@ export function TransactionDetailView({
           <div className="flex flex-col gap-2 p-3.5 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A]">
             <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
               <ListPlus className="w-3.5 h-3.5" />
-              <span>Rincian Item Belanja ({itemsList.length})</span>
+              <span>{language === 'en' ? `Item Breakdown (${itemsList.length})` : `Rincian Belanja (${itemsList.length})`}</span>
             </div>
             <div className="flex flex-col gap-1.5">
               {itemsList.map((item, idx) => (
@@ -281,7 +293,7 @@ export function TransactionDetailView({
         )}
 
         {/* Action Buttons: Pin, Edit, Delete */}
-        <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-[#E5E7EB] dark:border-[#27272A]">
+        <div className="flex items-center gap-2 pt-3 border-t border-[#E5E7EB] dark:border-[#27272A]">
           <Button
             type="button"
             variant="outline"
@@ -292,12 +304,12 @@ export function TransactionDetailView({
             {isPinned ? (
               <>
                 <Check className="w-3.5 h-3.5 text-[#0D9488]" />
-                <span>Tersimpan di Cepat!</span>
+                <span>{language === 'en' ? 'Pinned' : 'Tersimpan'}</span>
               </>
             ) : (
               <>
                 <Pin className="w-3.5 h-3.5" />
-                <span>{t.transactions.pinAction || 'Sematkan ke Cepat'}</span>
+                <span>{language === 'en' ? 'Pin' : 'Sematkan'}</span>
               </>
             )}
           </Button>
@@ -309,7 +321,7 @@ export function TransactionDetailView({
             className="gap-1.5 flex-1"
           >
             <Edit2 className="w-3.5 h-3.5" />
-            <span>Ubah Transaksi</span>
+            <span>{t.common.edit}</span>
           </Button>
 
           <Button
@@ -317,7 +329,7 @@ export function TransactionDetailView({
             variant="danger"
             size="sm"
             onClick={() => setShowDeleteConfirm(true)}
-            className="gap-1.5 px-3"
+            className="gap-1.5 px-3 shrink-0"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </Button>

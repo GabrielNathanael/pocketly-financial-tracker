@@ -28,6 +28,9 @@ export const SUPPORTED_CURRENCIES: Record<CurrencyCode, CurrencyConfig> = {
   },
 }
 
+export const CURRENCY_CODES: CurrencyCode[] = ['IDR', 'USD', 'SGD']
+export const CURRENCIES = CURRENCY_CODES
+
 export const CURRENCY_LIST = Object.values(SUPPORTED_CURRENCIES)
 
 export const DEFAULT_CURRENCY: CurrencyCode = 'IDR'

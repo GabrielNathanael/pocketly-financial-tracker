@@ -10,6 +10,7 @@ import { Modal } from '@/components/ui/modal'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Button } from '@/components/ui/button'
 import { formatCurrency, convertAmount } from '@/lib/utils/currency'
+import { usePrivacyMode, maskCurrency } from '@/lib/storage/privacy-mode'
 import { useLanguage } from '@/lib/i18n/language-context'
 import { Plus, ArrowRightLeft } from 'lucide-react'
 
@@ -21,6 +22,7 @@ interface AccountsManagerProps {
 export function AccountsManager({ accounts, exchangeRate }: AccountsManagerProps) {
   const router = useRouter()
   const { t } = useLanguage()
+  const isPrivate = usePrivacyMode()
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [isTransferOpen, setIsTransferOpen] = useState(false)
 
@@ -31,16 +33,33 @@ export function AccountsManager({ accounts, exchangeRate }: AccountsManagerProps
     }
   }
 
+  const formattedLiquidity = maskCurrency(formatCurrency(totalIdr, 'IDR'), isPrivate)
+  const getLiquidityFontSize = (len: number) => {
+    if (len > 22) return 'text-lg sm:text-2xl'
+    if (len > 16) return 'text-xl sm:text-2xl md:text-3xl'
+    return 'text-2xl sm:text-3xl'
+  }
+
   return (
     <div className="flex flex-col gap-5">
+      {/* Dynamic Bilingual Header */}
+      <div>
+        <h1 className="text-xl font-bold tracking-tight text-[#0F172A] dark:text-[#F8FAFC]">
+          {t.accounts.title}
+        </h1>
+        <p className="text-xs text-[#64748B] dark:text-[#94A3B8] font-mono">
+          {t.accounts.subtitle}
+        </p>
+      </div>
+
       {/* Top Banner Card */}
       <div className="p-5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
+        <div className="min-w-0">
           <span className="text-[10px] font-bold text-[#64748B] dark:text-[#94A3B8] uppercase tracking-wider block">
             {t.accounts.aggregateLiquidity}
           </span>
-          <h2 className="text-2xl sm:text-3xl font-mono font-bold text-[#0F172A] dark:text-[#F8FAFC] tracking-tight mt-0.5 tnum">
-            {formatCurrency(totalIdr, 'IDR')}
+          <h2 className={`font-mono font-bold text-[#0F172A] dark:text-[#F8FAFC] tracking-tight mt-0.5 tnum leading-tight ${getLiquidityFontSize(formattedLiquidity.length)}`}>
+            {formattedLiquidity}
           </h2>
           <span className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-1 block">
             {t.accounts.acrossAccounts.replace('{n}', String(accounts.length))}

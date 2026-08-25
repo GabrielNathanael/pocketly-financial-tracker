@@ -11,7 +11,8 @@ import { DatePicker } from '@/components/ui/date-picker'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { CURRENCY_LIST } from '@/lib/constants/currencies'
 import { useLanguage } from '@/lib/i18n/language-context'
-import { Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
+import { Trash2, AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 
 interface DebtFormProps {
@@ -21,7 +22,7 @@ interface DebtFormProps {
 
 export function DebtForm({ initialData, onSuccess }: DebtFormProps) {
   const router = useRouter()
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const isEditing = !!initialData
 
   const [type, setType] = useState<DebtType>(initialData?.type || 'debt')
@@ -59,7 +60,7 @@ export function DebtForm({ initialData, onSuccess }: DebtFormProps) {
         const res = await updateDebt(initialData.id, {
           counterpartyName,
           dueDate: dueDate || null,
-          notes: notes.trim() || null,
+          notes: notes || null,
         })
         if (res.error) {
           setError(res.error)
@@ -72,7 +73,7 @@ export function DebtForm({ initialData, onSuccess }: DebtFormProps) {
           initialAmount: numericAmount,
           currency,
           dueDate: dueDate || null,
-          notes: notes.trim() || null,
+          notes: notes || null,
         })
         if (res.error) {
           setError(res.error)
@@ -95,17 +96,26 @@ export function DebtForm({ initialData, onSuccess }: DebtFormProps) {
   const handleDelete = async () => {
     if (!initialData) return
     setIsDeleting(true)
+    setShowDeleteConfirm(false)
+    setError(null)
 
     try {
       const res = await deleteDebt(initialData.id)
       if (res.error) {
         setError(res.error)
       } else {
-        setShowDeleteConfirm(false)
-        router.push('/debts')
+        toast.success(
+          language === 'en' ? 'Debt record deleted successfully' : 'Catatan utang berhasil dihapus'
+        )
+        if (onSuccess) {
+          onSuccess()
+        } else {
+          router.push('/debts')
+        }
       }
     } catch (err) {
-      setError((err as Error).message)
+      const msg = (err as Error).message
+      setError(msg)
     } finally {
       setIsDeleting(false)
     }
@@ -113,6 +123,12 @@ export function DebtForm({ initialData, onSuccess }: DebtFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      {error && (
+        <div className="p-3 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 text-xs font-medium flex items-start gap-2">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+          <span className="leading-relaxed">{error}</span>
+        </div>
+      )}
       {/* Type toggle */}
       {!isEditing && (
         <div className="grid grid-cols-2 p-1 bg-[#F1F3F5] dark:bg-[#1A1A20] rounded-lg border border-[#E5E7EB] dark:border-[#27272A]">

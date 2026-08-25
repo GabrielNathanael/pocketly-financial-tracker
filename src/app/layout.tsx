@@ -2,6 +2,9 @@ import type { Metadata, Viewport } from 'next'
 import { Plus_Jakarta_Sans, Geist_Mono } from 'next/font/google'
 import { ThemeProvider } from '@/components/layout/theme-provider'
 import { LanguageProvider } from '@/lib/i18n/language-context'
+import { UndoProvider } from '@/lib/context/undo-context'
+import { UndoSnackbar } from '@/components/ui/undo-snackbar'
+import { Toaster } from 'sonner'
 import './globals.css'
 
 const jakartaSans = Plus_Jakarta_Sans({
@@ -21,6 +24,14 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'Pocketly — Personal Financial Ledger',
   description: 'Precision personal finance and liquidity management platform.',
+  icons: {
+    icon: [
+      { url: '/logo.png', sizes: 'any' },
+      { url: '/logo.png', type: 'image/png' },
+    ],
+    shortcut: '/logo.png',
+    apple: '/logo.png',
+  },
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
@@ -47,7 +58,18 @@ export default function RootLayout({
       <body className="min-h-screen bg-[#F8F9FA] dark:bg-[#09090B] text-[#0F172A] dark:text-[#F8FAFC] font-sans antialiased selection:bg-[#0F172A] selection:text-white dark:selection:bg-white dark:selection:text-[#0F172A]">
         <ThemeProvider>
           <LanguageProvider>
-            {children}
+            <UndoProvider>
+              {children}
+              <UndoSnackbar />
+              <Toaster
+                position="top-center"
+                richColors
+                closeButton
+                toastOptions={{
+                  className: '!font-sans !text-xs !rounded-xl !shadow-xl',
+                }}
+              />
+            </UndoProvider>
           </LanguageProvider>
         </ThemeProvider>
       </body>

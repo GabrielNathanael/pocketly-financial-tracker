@@ -6,6 +6,7 @@ import { Account } from '@/types/database'
 import { DynamicIcon } from '@/components/ui/dynamic-icon'
 import { formatCurrency } from '@/lib/utils/currency'
 import { useDefaultAccountId } from '@/lib/storage/default-account'
+import { usePrivacyMode, maskCurrency } from '@/lib/storage/privacy-mode'
 import { useLanguage } from '@/lib/i18n/language-context'
 import { ChevronRight, Star } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
@@ -16,6 +17,7 @@ interface AccountCardProps {
 
 export function AccountCard({ account }: AccountCardProps) {
   const { t } = useLanguage()
+  const isPrivate = usePrivacyMode()
   const defaultAccountId = useDefaultAccountId()
   const isDefault = defaultAccountId === account.id
 
@@ -56,7 +58,7 @@ export function AccountCard({ account }: AccountCardProps) {
               : 'text-[#0F172A] dark:text-[#F8FAFC]'
           )}
         >
-          {formatCurrency(account.current_balance, account.currency)}
+          {maskCurrency(formatCurrency(account.current_balance, account.currency), isPrivate)}
         </span>
         <ChevronRight className="w-4 h-4 text-[#94A3B8] group-hover:text-[#0F172A] dark:group-hover:text-[#FAFAFA] transition-colors" />
       </div>

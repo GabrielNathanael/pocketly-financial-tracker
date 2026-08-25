@@ -16,6 +16,7 @@ import { DebtPaymentModal } from '@/components/debts/debt-payment-modal'
 import { DebtPaymentEditModal } from '@/components/debts/debt-payment-edit-modal'
 import { deleteDebtPayment, deleteDebt } from '@/actions/debts'
 import { useLanguage } from '@/lib/i18n/language-context'
+import { toast } from 'sonner'
 import {
   ArrowLeft,
   ArrowDownRight,
@@ -57,8 +58,16 @@ export function DebtDetailView({ debt, accounts }: DebtDetailViewProps) {
   const handleDeletePayment = async (paymentId: string) => {
     setDeletingPaymentId(paymentId)
     try {
-      await deleteDebtPayment(paymentId, debt.id)
-      router.refresh()
+      const res = await deleteDebtPayment(paymentId, debt.id)
+      if (res?.error) {
+        toast.error(t.debts.deletePaymentFailed || (language === 'en' ? 'Failed to Delete Payment' : 'Gagal Menghapus Cicilan'), { description: res.error })
+      } else {
+        toast.success(language === 'en' ? 'Installment record deleted successfully' : 'Riwayat cicilan berhasil dihapus')
+        router.refresh()
+      }
+    } catch (err) {
+      const msg = (err as Error).message
+      toast.error(language === 'en' ? 'An error occurred' : 'Terjadi Kesalahan', { description: msg })
     } finally {
       setDeletingPaymentId(null)
     }
@@ -66,12 +75,18 @@ export function DebtDetailView({ debt, accounts }: DebtDetailViewProps) {
 
   const handleDeleteDebt = async () => {
     setIsDeletingDebt(true)
+    setShowDeleteDebtConfirm(false)
     try {
       const res = await deleteDebt(debt.id)
-      if (!res.error) {
-        setShowDeleteDebtConfirm(false)
+      if (res?.error) {
+        toast.error(t.debts.deleteDebtFailed || (language === 'en' ? 'Failed to Delete Debt' : 'Gagal Menghapus Utang'), { description: res.error })
+      } else {
+        toast.success(language === 'en' ? 'Debt record deleted successfully' : 'Data utang/piutang berhasil dihapus')
         router.push('/debts')
       }
+    } catch (err) {
+      const msg = (err as Error).message
+      toast.error(language === 'en' ? 'An error occurred' : 'Terjadi Kesalahan', { description: msg })
     } finally {
       setIsDeletingDebt(false)
     }

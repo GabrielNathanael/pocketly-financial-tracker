@@ -162,8 +162,8 @@ export function BottomNav({
 
       {/* Desktop Header */}
       <header className="hidden md:flex items-center justify-between fixed top-0 left-0 right-0 z-40 h-14 bg-white dark:bg-[#121215] border-b border-[#E5E7EB] dark:border-[#27272A] px-6 lg:px-8">
-        <div className="flex items-center gap-6 lg:gap-8 min-w-0">
-          {/* Brand with logo.png */}
+        {/* Brand with logo.png */}
+        <div className="flex items-center shrink-0">
           <Link href="/dashboard" className="flex items-center gap-2.5 shrink-0 group">
             <Image
               src="/logo.png"
@@ -177,99 +177,100 @@ export function BottomNav({
               Pocketly
             </span>
           </Link>
-
-          <nav className="flex items-center gap-1 text-xs overflow-x-auto no-scrollbar">
-            <Link
-              href="/dashboard"
-              className={cn(
-                'px-2.5 py-1.5 rounded-md font-semibold transition-colors whitespace-nowrap',
-                pathname === '/dashboard'
-                  ? 'bg-[#F1F3F5] dark:bg-[#1A1A20] text-[#0F172A] dark:text-[#FAFAFA]'
-                  : 'text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
-              )}
-            >
-              {t.nav.overview}
-            </Link>
-            <Link
-              href="/transactions"
-              className={cn(
-                'px-2.5 py-1.5 rounded-md font-semibold transition-colors whitespace-nowrap',
-                pathname.startsWith('/transactions')
-                  ? 'bg-[#F1F3F5] dark:bg-[#1A1A20] text-[#0F172A] dark:text-[#FAFAFA]'
-                  : 'text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
-              )}
-            >
-              {t.nav.transactions}
-            </Link>
-            <Link
-              href="/budget"
-              className={cn(
-                'px-2.5 py-1.5 rounded-md font-semibold transition-colors whitespace-nowrap',
-                pathname.startsWith('/budget')
-                  ? 'bg-[#F1F3F5] dark:bg-[#1A1A20] text-[#0F172A] dark:text-[#FAFAFA]'
-                  : 'text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
-              )}
-            >
-              {t.nav.budget}
-            </Link>
-            <Link
-              href="/accounts"
-              className={cn(
-                'px-2.5 py-1.5 rounded-md font-semibold transition-colors whitespace-nowrap',
-                pathname.startsWith('/accounts')
-                  ? 'bg-[#F1F3F5] dark:bg-[#1A1A20] text-[#0F172A] dark:text-[#FAFAFA]'
-                  : 'text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
-              )}
-            >
-              {t.accounts.title}
-            </Link>
-            <Link
-              href="/debts"
-              className={cn(
-                'px-2.5 py-1.5 rounded-md font-semibold transition-colors whitespace-nowrap',
-                pathname.startsWith('/debts')
-                  ? 'bg-[#F1F3F5] dark:bg-[#1A1A20] text-[#0F172A] dark:text-[#FAFAFA]'
-                  : 'text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
-              )}
-            >
-              {t.debts.title}
-            </Link>
-            <Link
-              href="/categories"
-              className={cn(
-                'px-2.5 py-1.5 rounded-md font-semibold transition-colors whitespace-nowrap',
-                pathname.startsWith('/categories')
-                  ? 'bg-[#F1F3F5] dark:bg-[#1A1A20] text-[#0F172A] dark:text-[#FAFAFA]'
-                  : 'text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
-              )}
-            >
-              {t.categories.title}
-            </Link>
-            <Link
-              href="/net-worth"
-              className={cn(
-                'px-2.5 py-1.5 rounded-md font-semibold transition-colors whitespace-nowrap',
-                pathname.startsWith('/net-worth')
-                  ? 'bg-[#F1F3F5] dark:bg-[#1A1A20] text-[#0F172A] dark:text-[#FAFAFA]'
-                  : 'text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
-              )}
-            >
-              {t.netWorth.title.split(' ')[0]}
-            </Link>
-            <Link
-              href="/guide"
-              className={cn(
-                'px-2.5 py-1.5 rounded-md font-semibold transition-colors whitespace-nowrap flex items-center gap-1',
-                pathname.startsWith('/guide')
-                  ? 'bg-[#F1F3F5] dark:bg-[#1A1A20] text-[#0F172A] dark:text-[#FAFAFA]'
-                  : 'text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
-              )}
-            >
-              <BookOpen className="w-3.5 h-3.5" />
-              <span>{t.nav.guide.split(' ')[0]}</span>
-            </Link>
-          </nav>
         </div>
+
+        {/* Centered Navigation Menu */}
+        <nav className="flex items-center justify-center gap-1 text-xs mx-auto overflow-x-auto no-scrollbar">
+          <Link
+            href="/dashboard"
+            className={cn(
+              'px-2.5 py-1.5 rounded-md font-semibold transition-colors whitespace-nowrap',
+              pathname === '/dashboard'
+                ? 'bg-[#F1F3F5] dark:bg-[#1A1A20] text-[#0F172A] dark:text-[#FAFAFA]'
+                : 'text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
+            )}
+          >
+            {t.nav.overview}
+          </Link>
+          <Link
+            href="/transactions"
+            className={cn(
+              'px-2.5 py-1.5 rounded-md font-semibold transition-colors whitespace-nowrap',
+              pathname.startsWith('/transactions')
+                ? 'bg-[#F1F3F5] dark:bg-[#1A1A20] text-[#0F172A] dark:text-[#FAFAFA]'
+                : 'text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
+            )}
+          >
+            {t.nav.transactions}
+          </Link>
+          <Link
+            href="/budget"
+            className={cn(
+              'px-2.5 py-1.5 rounded-md font-semibold transition-colors whitespace-nowrap',
+              pathname.startsWith('/budget')
+                ? 'bg-[#F1F3F5] dark:bg-[#1A1A20] text-[#0F172A] dark:text-[#FAFAFA]'
+                : 'text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
+            )}
+          >
+            {t.nav.budget}
+          </Link>
+          <Link
+            href="/accounts"
+            className={cn(
+              'px-2.5 py-1.5 rounded-md font-semibold transition-colors whitespace-nowrap',
+              pathname.startsWith('/accounts')
+                ? 'bg-[#F1F3F5] dark:bg-[#1A1A20] text-[#0F172A] dark:text-[#FAFAFA]'
+                : 'text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
+            )}
+          >
+            {t.accounts.title}
+          </Link>
+          <Link
+            href="/debts"
+            className={cn(
+              'px-2.5 py-1.5 rounded-md font-semibold transition-colors whitespace-nowrap',
+              pathname.startsWith('/debts')
+                ? 'bg-[#F1F3F5] dark:bg-[#1A1A20] text-[#0F172A] dark:text-[#FAFAFA]'
+                : 'text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
+            )}
+          >
+            {t.debts.title}
+          </Link>
+          <Link
+            href="/categories"
+            className={cn(
+              'px-2.5 py-1.5 rounded-md font-semibold transition-colors whitespace-nowrap',
+              pathname.startsWith('/categories')
+                ? 'bg-[#F1F3F5] dark:bg-[#1A1A20] text-[#0F172A] dark:text-[#FAFAFA]'
+                : 'text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
+            )}
+          >
+            {t.categories.title}
+          </Link>
+          <Link
+            href="/net-worth"
+            className={cn(
+              'px-2.5 py-1.5 rounded-md font-semibold transition-colors whitespace-nowrap',
+              pathname.startsWith('/net-worth')
+                ? 'bg-[#F1F3F5] dark:bg-[#1A1A20] text-[#0F172A] dark:text-[#FAFAFA]'
+                : 'text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
+            )}
+          >
+            {t.netWorth.title.split(' ')[0]}
+          </Link>
+          <Link
+            href="/guide"
+            className={cn(
+              'px-2.5 py-1.5 rounded-md font-semibold transition-colors whitespace-nowrap flex items-center gap-1',
+              pathname.startsWith('/guide')
+                ? 'bg-[#F1F3F5] dark:bg-[#1A1A20] text-[#0F172A] dark:text-[#FAFAFA]'
+                : 'text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
+            )}
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            <span>{t.nav.guide.split(' ')[0]}</span>
+          </Link>
+        </nav>
 
         {/* Right-hand side action cluster with aligned heights */}
         <div className="flex items-center gap-2.5 shrink-0">

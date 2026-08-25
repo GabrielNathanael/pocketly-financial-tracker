@@ -121,7 +121,7 @@ export async function deleteAccount(id: string) {
 
   if (txCount && txCount > 0) {
     return {
-      error: `Cannot delete this account because it has ${txCount} transaction(s). You may archive it instead.`,
+      error: `Akun ini tidak dapat dihapus karena masih memiliki ${txCount} riwayat transaksi. Hapus atau pindahkan riwayat transaksi terlebih dahulu.`,
     }
   }
 
