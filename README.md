@@ -19,10 +19,10 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Next.js-15.0-black?style=flat-square&logo=next.js" alt="Next.js" />
-  <img src="https://img.shields.io/badge/React-19.0-61DAFB?style=flat-square&logo=react" alt="React" />
+  <img src="https://img.shields.io/badge/Next.js-16.3-black?style=flat-square&logo=next.js" alt="Next.js" />
+  <img src="https://img.shields.io/badge/React-19.2-61DAFB?style=flat-square&logo=react" alt="React" />
   <img src="https://img.shields.io/badge/TypeScript-5.0-blue?style=flat-square&logo=typescript" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/TailwindCSS-3.4-38B2AC?style=flat-square&logo=tailwind-css" alt="Tailwind CSS" />
+  <img src="https://img.shields.io/badge/TailwindCSS-4.0-38B2AC?style=flat-square&logo=tailwind-css" alt="Tailwind CSS" />
   <img src="https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=flat-square&logo=supabase" alt="Supabase" />
   <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License" />
 </p>
@@ -33,7 +33,7 @@
 
 **Pocketly** is an end-to-end financial companion engineered for individuals, freelancers, and global travelers who handle multiple bank accounts, e-wallets, and foreign currencies (IDR, USD, SGD, EUR, JPY, GBP, etc.).
 
-Built with **Next.js 15 App Router**, **Supabase (PostgreSQL with Row Level Security & Triggers)**, and **Tailwind CSS**, Pocketly provides complete transparency over your financial life with bank-grade auditability and instant liquidity insights.
+Built with **Next.js 16 App Router**, **Supabase (PostgreSQL with Row Level Security & Triggers)**, and **Tailwind CSS 4**, Pocketly provides complete transparency over your financial life with bank-grade auditability and instant liquidity insights.
 
 ---
 
@@ -89,13 +89,12 @@ Built with **Next.js 15 App Router**, **Supabase (PostgreSQL with Row Level Secu
 
 | Layer | Technologies |
 | :--- | :--- |
-| **Framework** | Next.js 15 (App Router, Server Actions, React Server Components) |
-| **Language** | TypeScript (Strict Mode) |
-| **Styling & UI** | Tailwind CSS, Lucide React Icons, Radix UI Primitives |
+| **Framework** | Next.js 16 (App Router, Server Actions, React Server Components) |
+| **Language** | TypeScript 5 (Strict Mode) |
+| **Styling & UI** | Tailwind CSS 4, Lucide React Icons, Radix UI Primitives |
 | **Database & Auth** | Supabase (PostgreSQL, Row Level Security, Triggers & PL/pgSQL) |
-| **Charts & Data Viz** | Recharts |
-| **Validation** | Zod |
-| **OCR & AI** | Tesseract.js / Google Gemini Vision API |
+| **Validation** | Zod 4 |
+| **OCR & AI** | Tesseract.js 7 / Google Gemini Vision API |
 
 ---
 
