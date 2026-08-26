@@ -5,6 +5,7 @@ import { LanguageProvider } from "@/lib/i18n/language-context";
 import { UndoProvider } from "@/lib/context/undo-context";
 import { UndoSnackbar } from "@/components/ui/undo-snackbar";
 import { Toaster } from "sonner";
+import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 
 const jakartaSans = Plus_Jakarta_Sans({
@@ -76,6 +77,7 @@ export default function RootLayout({
             </UndoProvider>
           </LanguageProvider>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
