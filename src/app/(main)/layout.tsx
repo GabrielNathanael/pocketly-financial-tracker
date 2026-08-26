@@ -34,8 +34,8 @@ export default async function MainLayout({
   ])
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] dark:bg-[#09090B] text-[#0F172A] dark:text-[#F8FAFC] flex flex-col md:pt-14 pb-20 md:pb-10">
-      <main className="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-6 pt-5 pb-6">
+    <div className="min-h-screen bg-[#F8F9FA] dark:bg-[#09090B] text-[#0F172A] dark:text-[#F8FAFC] flex flex-col pb-20 md:pb-10">
+      <main className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 md:px-8 pt-5 md:pt-7 pb-6 md:pl-72">
         {children}
       </main>
 

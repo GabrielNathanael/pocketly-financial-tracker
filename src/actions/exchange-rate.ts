@@ -91,6 +91,7 @@ export async function getLatestExchangeRate(base = 'USD', target = 'IDR'): Promi
 
 export interface NetWorthSummary {
   totalAccountsIdr: number
+  totalStockHoldingsIdr: number
   totalReceivablesIdr: number
   totalDebtsIdr: number
   netWorthIdr: number
@@ -116,7 +117,22 @@ export async function getNetWorthData(displayCurrency: CurrencyCode = 'IDR'): Pr
     }
   }
 
-  // 2. Debts & Receivables
+  // 2. Stock Holdings
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: stockHoldings } = await (supabase.from('stock_holdings') as any)
+    .select('total_cost, account:accounts(currency)')
+    .gt('total_cost', 0)
+
+  let totalStockHoldingsIdr = 0
+  if (stockHoldings) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const h of stockHoldings as any[]) {
+      const cur = h.account?.currency || 'IDR'
+      totalStockHoldingsIdr += convertAmount(Number(h.total_cost), cur, displayCurrency, rates)
+    }
+  }
+
+  // 3. Debts & Receivables
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: debts } = await (supabase.from('debts') as any)
     .select('type, remaining_amount, currency, status')
@@ -137,10 +153,11 @@ export async function getNetWorthData(displayCurrency: CurrencyCode = 'IDR'): Pr
     }
   }
 
-  const netWorthIdr = totalAccountsIdr + totalReceivablesIdr - totalDebtsIdr
+  const netWorthIdr = totalAccountsIdr + totalStockHoldingsIdr + totalReceivablesIdr - totalDebtsIdr
 
   return {
     totalAccountsIdr,
+    totalStockHoldingsIdr,
     totalReceivablesIdr,
     totalDebtsIdr,
     netWorthIdr,

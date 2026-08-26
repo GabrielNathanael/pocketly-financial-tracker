@@ -1,10 +1,11 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import Link from 'next/link'
 import { Account } from '@/types/database'
 import { AccountMutation } from '@/actions/accounts'
 import { DynamicIcon } from '@/components/ui/dynamic-icon'
+import { Button } from '@/components/ui/button'
 import { formatCurrency } from '@/lib/utils/currency'
 import { usePrivacyMode, maskCurrency } from '@/lib/storage/privacy-mode'
 import { formatDate } from '@/lib/utils/date'
@@ -18,9 +19,12 @@ interface AccountDetailViewProps {
   mutations: AccountMutation[]
 }
 
+const BATCH_SIZE = 50
+
 export function AccountDetailView({ account, mutations }: AccountDetailViewProps) {
   const { t, language } = useLanguage()
   const isPrivate = usePrivacyMode()
+  const [displayLimit, setDisplayLimit] = useState(BATCH_SIZE)
 
   return (
     <div className="flex flex-col gap-5 max-w-xl mx-auto">
@@ -77,16 +81,17 @@ export function AccountDetailView({ account, mutations }: AccountDetailViewProps
           </div>
         ) : (
           <div className="flex flex-col gap-1.5">
-            {mutations.map((m) => {
+            {mutations.slice(0, displayLimit).map((m) => {
               const isPlus = m.type === 'income' || m.type === 'transfer_in'
+              const isRegularTx = m.type === 'income' || m.type === 'expense'
               const formattedMutation = `${isPlus ? '+' : '-'}${formatCurrency(m.amount, m.currency)}`
-              return (
+              
+              const content = (
                 <div
-                  key={m.id}
-                  className="flex items-center justify-between p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A]"
+                  className="flex items-center justify-between p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-all shadow-2xs group cursor-pointer"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-[#F1F3F5] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-[#F1F3F5] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
                       {m.type === 'transfer_out' ? (
                         <ArrowDownRight className="w-4 h-4 text-[#E11D48]" />
                       ) : m.type === 'transfer_in' ? (
@@ -97,7 +102,7 @@ export function AccountDetailView({ account, mutations }: AccountDetailViewProps
                     </div>
 
                     <div className="flex flex-col min-w-0">
-                      <span className="text-xs sm:text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate">
+                      <span className="text-xs sm:text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate group-hover:text-[#0D9488] transition-colors">
                         {m.title}
                       </span>
                       <div className="flex items-center gap-1.5 text-[11px] text-[#64748B] dark:text-[#94A3B8] truncate">
@@ -124,7 +129,44 @@ export function AccountDetailView({ account, mutations }: AccountDetailViewProps
                   </span>
                 </div>
               )
+
+              if (isRegularTx) {
+                return (
+                  <Link key={m.id} href={`/transactions/${m.id}`} className="block">
+                    {content}
+                  </Link>
+                )
+              }
+
+              return <div key={m.id}>{content}</div>
             })}
+
+            {/* Pagination Load More Controls */}
+            {displayLimit < mutations.length && (
+              <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs">
+                <span className="text-[#64748B] dark:text-[#94A3B8] font-medium text-center sm:text-left">
+                  {t.common.showing} <span className="font-bold text-[#0F172A] dark:text-[#FAFAFA]">{Math.min(displayLimit, mutations.length)}</span> / {mutations.length}
+                </span>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setDisplayLimit((prev) => prev + BATCH_SIZE)}
+                    className="flex-1 sm:flex-initial text-xs font-bold cursor-pointer"
+                  >
+                    {t.common.loadMore} (+{Math.min(BATCH_SIZE, mutations.length - displayLimit)})
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setDisplayLimit(mutations.length)}
+                    className="flex-1 sm:flex-initial text-xs text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] cursor-pointer"
+                  >
+                    {t.common.showAll}
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

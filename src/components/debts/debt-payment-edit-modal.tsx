@@ -201,8 +201,13 @@ function DebtPaymentEditForm({
             value={selectedAccountId}
             onValueChange={setSelectedAccountId}
           >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder={t.debts.selectLinkedAccount} />
+            <SelectTrigger className="w-full min-w-0">
+              <SelectValue placeholder={t.debts.selectLinkedAccount}>
+                {(() => {
+                  const acc = matchingAccounts.find((a) => a.id === selectedAccountId)
+                  return acc ? `${acc.name} (${formatCurrency(acc.current_balance, acc.currency)})` : t.debts.selectLinkedAccount
+                })()}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {matchingAccounts.map((a) => {

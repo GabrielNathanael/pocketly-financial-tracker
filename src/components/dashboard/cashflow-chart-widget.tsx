@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react'
 import { EnrichedTransaction } from '@/types/database'
 import { formatCurrency, convertAmount } from '@/lib/utils/currency'
 import { usePrivacyMode, maskCurrency } from '@/lib/storage/privacy-mode'
+import { usePreferredCurrency } from '@/lib/storage/preferred-currency'
 import { useLanguage } from '@/lib/i18n/language-context'
 import { DynamicIcon } from '@/components/ui/dynamic-icon'
 import { BarChart3, ArrowUpRight, ArrowDownRight } from 'lucide-react'
@@ -31,6 +32,7 @@ export function CashflowChartWidget({
 }: CashflowChartWidgetProps) {
   const { t } = useLanguage()
   const isPrivate = usePrivacyMode()
+  const displayCurrency = usePreferredCurrency()
   const [period, setPeriod] = useState<PeriodFilter>('this_month')
   const [activeTab, setActiveTab] = useState<'cashflow' | 'categories'>('cashflow')
 
@@ -64,26 +66,26 @@ export function CashflowChartWidget({
     })
   }, [transactions, period, now])
 
-  // Compute Aggregates in IDR
+  // Compute Aggregates in displayCurrency
   const { totalIncome, totalExpense, netSavings, categoryDistribution } = useMemo(() => {
     let income = 0
     let expense = 0
     const catMap = new Map<string, { name: string; icon: string; amount: number; count: number }>()
 
     for (const tx of filteredTransactions) {
-      const amtIdr = convertAmount(Number(tx.amount), tx.currency, 'IDR', exchangeRate)
+      const amt = convertAmount(Number(tx.amount), tx.currency, displayCurrency, exchangeRate)
 
       if (tx.type === 'income') {
-        income += amtIdr
+        income += amt
       } else {
-        expense += amtIdr
+        expense += amt
 
         const catId = tx.category_id || 'other'
         const catName = tx.category?.name || 'Other'
         const catIcon = tx.category?.icon || 'Tag'
 
         const existing = catMap.get(catId) || { name: catName, icon: catIcon, amount: 0, count: 0 }
-        existing.amount += amtIdr
+        existing.amount += amt
         existing.count += 1
         catMap.set(catId, existing)
       }
@@ -98,7 +100,7 @@ export function CashflowChartWidget({
       netSavings: net,
       categoryDistribution: sortedCats,
     }
-  }, [filteredTransactions, exchangeRate])
+  }, [filteredTransactions, displayCurrency, exchangeRate])
 
   const maxCompare = Math.max(totalIncome, totalExpense, 1)
   const incomeBarWidth = Math.min(100, Math.max(2, (totalIncome / maxCompare) * 100))
@@ -156,7 +158,7 @@ export function CashflowChartWidget({
             {t.dashboard.inflow}
           </span>
           <span className="text-xs sm:text-sm font-bold text-[#0D9488] whitespace-nowrap">
-            {maskCurrency(formatCurrency(totalIncome, 'IDR'), isPrivate)}
+            {maskCurrency(formatCurrency(totalIncome, displayCurrency), isPrivate)}
           </span>
         </div>
 
@@ -167,7 +169,7 @@ export function CashflowChartWidget({
             {t.dashboard.outflow}
           </span>
           <span className="text-xs sm:text-sm font-bold text-[#E11D48] whitespace-nowrap">
-            {maskCurrency(formatCurrency(totalExpense, 'IDR'), isPrivate)}
+            {maskCurrency(formatCurrency(totalExpense, displayCurrency), isPrivate)}
           </span>
         </div>
 
@@ -183,7 +185,7 @@ export function CashflowChartWidget({
             )}
           >
             {maskCurrency(
-              `${netSavings >= 0 ? '+' : ''}${formatCurrency(netSavings, 'IDR')}`,
+              `${netSavings >= 0 ? '+' : ''}${formatCurrency(netSavings, displayCurrency)}`,
               isPrivate
             )}
           </span>
@@ -230,7 +232,7 @@ export function CashflowChartWidget({
                 {t.dashboard.totalIncome}
               </span>
               <span className="font-bold text-[#0D9488] tnum">
-                {maskCurrency(formatCurrency(totalIncome, 'IDR'), isPrivate)}
+                {maskCurrency(formatCurrency(totalIncome, displayCurrency), isPrivate)}
               </span>
             </div>
             <div className="w-full bg-[#F1F3F5] dark:bg-[#1A1A20] h-3 rounded-full overflow-hidden border border-[#E5E7EB] dark:border-[#27272A]">
@@ -248,7 +250,7 @@ export function CashflowChartWidget({
                 {t.dashboard.totalExpense}
               </span>
               <span className="font-bold text-[#E11D48] tnum">
-                {maskCurrency(formatCurrency(totalExpense, 'IDR'), isPrivate)}
+                {maskCurrency(formatCurrency(totalExpense, displayCurrency), isPrivate)}
               </span>
             </div>
             <div className="w-full bg-[#F1F3F5] dark:bg-[#1A1A20] h-3 rounded-full overflow-hidden border border-[#E5E7EB] dark:border-[#27272A]">
@@ -289,7 +291,7 @@ export function CashflowChartWidget({
 
                     <div className="flex items-center gap-2 font-mono shrink-0 ml-2">
                       <span className="font-bold text-[#0F172A] dark:text-[#F8FAFC] tnum">
-                        {maskCurrency(formatCurrency(cat.amount, 'IDR'), isPrivate)}
+                        {maskCurrency(formatCurrency(cat.amount, displayCurrency), isPrivate)}
                       </span>
                       <span className="text-[10px] text-[#64748B] dark:text-[#94A3B8] w-8 text-right tnum">
                         {isPrivate ? '••%' : `${pct.toFixed(0)}%`}

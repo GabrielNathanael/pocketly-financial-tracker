@@ -6,12 +6,15 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-export type AccountType = 'bank' | 'cash' | 'ewallet' | 'credit_card'
+export type AccountType = 'bank' | 'cash' | 'ewallet' | 'credit_card' | 'investment'
 export type CurrencyCode = 'IDR' | 'USD' | 'SGD'
 export type TransactionType = 'income' | 'expense'
 export type DebtType = 'debt' | 'receivable'
 export type DebtStatus = 'active' | 'paid'
 export type AuditAction = 'INSERT' | 'UPDATE' | 'DELETE'
+export type RecurringFrequency = 'daily' | 'weekly' | 'monthly' | 'yearly'
+export type GoalStatus = 'in_progress' | 'completed' | 'paused'
+export type GoalDepositType = 'deposit' | 'withdraw'
 
 export interface Database {
   public: {
@@ -102,6 +105,7 @@ export interface Database {
           amount: number
           currency: CurrencyCode
           description: string | null
+          tags: string[]
           transaction_date: string
           created_at: string
           updated_at: string
@@ -115,6 +119,7 @@ export interface Database {
           amount: number
           currency?: CurrencyCode
           description?: string | null
+          tags?: string[]
           transaction_date?: string
           created_at?: string
           updated_at?: string
@@ -128,6 +133,7 @@ export interface Database {
           amount?: number
           currency?: CurrencyCode
           description?: string | null
+          tags?: string[]
           transaction_date?: string
           created_at?: string
           updated_at?: string
@@ -325,6 +331,235 @@ export interface Database {
           fetched_at?: string
         }
       }
+      recurring_transactions: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          type: TransactionType
+          amount: number
+          currency: CurrencyCode
+          account_id: string
+          category_id: string | null
+          frequency: RecurringFrequency
+          interval_count: number
+          start_date: string
+          next_due_date: string
+          end_date: string | null
+          is_active: boolean
+          auto_process: boolean
+          notes: string | null
+          last_processed_date: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          type: TransactionType
+          amount: number
+          currency?: CurrencyCode
+          account_id: string
+          category_id?: string | null
+          frequency: RecurringFrequency
+          interval_count?: number
+          start_date?: string
+          next_due_date: string
+          end_date?: string | null
+          is_active?: boolean
+          auto_process?: boolean
+          notes?: string | null
+          last_processed_date?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          type?: TransactionType
+          amount?: number
+          currency?: CurrencyCode
+          account_id?: string
+          category_id?: string | null
+          frequency?: RecurringFrequency
+          interval_count?: number
+          start_date?: string
+          next_due_date?: string
+          end_date?: string | null
+          is_active?: boolean
+          auto_process?: boolean
+          notes?: string | null
+          last_processed_date?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      savings_goals: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          target_amount: number
+          current_amount: number
+          currency: CurrencyCode
+          target_date: string
+          category_id: string | null
+          icon: string
+          color: string
+          status: GoalStatus
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          target_amount: number
+          current_amount?: number
+          currency?: CurrencyCode
+          target_date: string
+          category_id?: string | null
+          icon?: string
+          color?: string
+          status?: GoalStatus
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          target_amount?: number
+          current_amount?: number
+          currency?: CurrencyCode
+          target_date?: string
+          category_id?: string | null
+          icon?: string
+          color?: string
+          status?: GoalStatus
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      savings_goal_deposits: {
+        Row: {
+          id: string
+          user_id: string
+          goal_id: string
+          account_id: string | null
+          type: GoalDepositType
+          amount: number
+          currency: CurrencyCode
+          deposit_date: string
+          notes: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          goal_id: string
+          account_id?: string | null
+          type: GoalDepositType
+          amount: number
+          currency?: CurrencyCode
+          deposit_date?: string
+          notes?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          goal_id?: string
+          account_id?: string | null
+          type?: GoalDepositType
+          amount?: number
+          currency?: CurrencyCode
+          deposit_date?: string
+          notes?: string | null
+          created_at?: string
+        }
+      }
+      stock_holdings: {
+        Row: {
+          id: string
+          user_id: string
+          account_id: string
+          ticker: string
+          total_cost: number
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          account_id: string
+          ticker: string
+          total_cost: number
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          account_id?: string
+          ticker?: string
+          total_cost?: number
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      stock_trades: {
+        Row: {
+          id: string
+          user_id: string
+          account_id: string
+          holding_id: string | null
+          ticker: string
+          type: 'buy' | 'sell'
+          net_amount: number
+          buy_cost: number
+          realized_pnl: number
+          notes: string | null
+          trade_date: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          account_id: string
+          holding_id?: string | null
+          ticker: string
+          type: 'buy' | 'sell'
+          net_amount: number
+          buy_cost?: number
+          realized_pnl?: number
+          notes?: string | null
+          trade_date?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          account_id?: string
+          holding_id?: string | null
+          ticker?: string
+          type?: 'buy' | 'sell'
+          net_amount?: number
+          buy_cost?: number
+          realized_pnl?: number
+          notes?: string | null
+          trade_date?: string
+          created_at?: string
+        }
+      }
     }
   }
 }
@@ -341,6 +576,11 @@ export type Debt = Tables<'debts'>
 export type DebtPayment = Tables<'debt_payments'>
 export type AuditLog = Tables<'audit_logs'>
 export type ExchangeRate = Tables<'exchange_rates'>
+export type RecurringTransaction = Tables<'recurring_transactions'>
+export type SavingsGoal = Tables<'savings_goals'>
+export type SavingsGoalDeposit = Tables<'savings_goal_deposits'>
+export type StockHolding = Tables<'stock_holdings'>
+export type StockTrade = Tables<'stock_trades'>
 
 // Joined / enriched view types
 export interface EnrichedTransaction extends Transaction {
@@ -360,4 +600,26 @@ export interface EnrichedBudget extends Budget {
 
 export interface EnrichedDebt extends Debt {
   payments?: DebtPayment[]
+}
+
+export interface EnrichedRecurringTransaction extends RecurringTransaction {
+  account?: Account
+  category?: Category
+}
+
+export interface EnrichedSavingsGoalDeposit extends SavingsGoalDeposit {
+  account?: Account
+}
+
+export interface EnrichedSavingsGoal extends SavingsGoal {
+  category?: Category
+  deposits?: EnrichedSavingsGoalDeposit[]
+}
+
+export interface EnrichedStockHolding extends StockHolding {
+  account?: Account
+}
+
+export interface EnrichedStockTrade extends StockTrade {
+  account?: Account
 }

@@ -9,6 +9,7 @@ import { Modal } from '@/components/ui/modal'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/lib/i18n/language-context'
+import { formatCategoryName } from '@/lib/utils/category-i18n'
 import { Plus } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 
@@ -105,7 +106,7 @@ export function CategoriesManager({ categories }: CategoriesManagerProps) {
               </div>
               <div className="flex flex-col min-w-0">
                 <span className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC] line-clamp-2 leading-tight">
-                  {cat.name}
+                  {formatCategoryName(cat.name, language)}
                 </span>
                 <span className="text-[10px] text-[#94A3B8] mt-0.5">
                   {cat.is_default ? t.common.systemDefault : t.common.custom}

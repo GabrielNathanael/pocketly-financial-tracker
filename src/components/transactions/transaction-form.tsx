@@ -23,10 +23,16 @@ import {
   Pin,
   Save,
   X,
+  Hash,
+  Check,
+  AlertCircle,
+  Camera,
+  Loader2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import { toast } from 'sonner'
 import { savePinnedTemplate } from '@/lib/storage/pinned-templates'
+import { scanReceipt } from '@/lib/ocr/receipt-scanner'
 
 interface ItemRow {
   name: string
@@ -40,40 +46,55 @@ interface TransactionFormProps {
   onSuccess?: () => void
 }
 
-function parseTransactionDescription(rawDesc?: string | null) {
-  if (!rawDesc) return { baseDescription: '', items: [] as ItemRow[], memo: '' }
-
-  let desc = rawDesc
-  let memo = ''
-  const items: ItemRow[] = []
-
-  // Extract memo
-  const memoMatch = desc.match(/\[Memo:\s*([^\]]+)\]/)
-  if (memoMatch) {
-    memo = memoMatch[1].trim()
-    desc = desc.replace(memoMatch[0], '').trim()
+function parseTransactionDescription(rawDesc?: string | null, rawTags?: string[]) {
+  if (!rawDesc && (!rawTags || rawTags.length === 0)) {
+    return { baseDescription: '', items: [], memo: '', tags: [] }
   }
 
-  // Extract items
-  const itemsMatch = desc.match(/\[Items:\s*([^\]]+)\]/)
+  let text = rawDesc || ''
+  const items: ItemRow[] = []
+  let memo = ''
+  const tagsSet = new Set<string>(rawTags || [])
+
+  // Extract [Items: ...]
+  const itemsMatch = text.match(/\[Items:\s*([^\]]+)\]/)
   if (itemsMatch) {
     const rawItems = itemsMatch[1].split(',')
-    for (const rawItem of rawItems) {
-      const itemParts = rawItem.trim().match(/^(.+?)\s*\((?:[^0-9]*)([0-9.,]+)\)$/)
-      if (itemParts) {
-        const cleanPrice = itemParts[2].replace(/[.,]/g, '')
-        items.push({ name: itemParts[1].trim(), price: cleanPrice })
-      } else if (rawItem.trim()) {
-        items.push({ name: rawItem.trim(), price: '' })
+    for (const item of rawItems) {
+      const parts = item.split('(')
+      const name = parts[0]?.trim() || ''
+      let price = ''
+      if (parts[1]) {
+        price = parts[1].replace(/[^0-9.]/g, '')
+      }
+      if (name) {
+        items.push({ name, price })
       }
     }
-    desc = desc.replace(itemsMatch[0], '').trim()
+    text = text.replace(itemsMatch[0], '').trim()
+  }
+
+  // Extract [Memo: ...]
+  const memoMatch = text.match(/\[Memo:\s*([^\]]+)\]/)
+  if (memoMatch) {
+    memo = memoMatch[1].trim()
+    text = text.replace(memoMatch[0], '').trim()
+  }
+
+  // Extract inline hashtags #tag
+  const inlineTags = text.match(/#(\w+)/g)
+  if (inlineTags) {
+    inlineTags.forEach((t) => {
+      tagsSet.add(t.replace('#', '').toLowerCase())
+    })
+    text = text.replace(/#(\w+)/g, '').trim()
   }
 
   return {
-    baseDescription: desc,
+    baseDescription: text.replace(/\s+/g, ' ').trim(),
     items,
     memo,
+    tags: Array.from(tagsSet),
   }
 }
 
@@ -88,7 +109,7 @@ export function TransactionForm({
   const { queueDelete } = useUndo()
   const isEditing = !!initialData
 
-  const parsed = parseTransactionDescription(initialData?.description)
+  const parsed = parseTransactionDescription(initialData?.description, initialData?.tags)
 
   const [type, setType] = useState<TransactionType>(initialData?.type || 'expense')
   const [amountStr, setAmountStr] = useState<string>(
@@ -117,6 +138,17 @@ export function TransactionForm({
   const [freeTextMemo, setFreeTextMemo] = useState<string>(parsed.memo)
   const [showFreeMemo, setShowFreeMemo] = useState<boolean>(!!parsed.memo)
 
+  // Tags (#tags)
+  const [tags, setTags] = useState<string[]>(parsed.tags)
+  const [showTags, setShowTags] = useState<boolean>(parsed.tags.length > 0)
+  const [tagInput, setTagInput] = useState<string>('')
+
+  // OCR Scan State
+  const [isScanning, setIsScanning] = useState(false)
+  const [ocrProgress, setOcrProgress] = useState<number>(0)
+  const [ocrStatus, setOcrStatus] = useState<string>('')
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
+
   // Popover controls
   const [isAccountPopoverOpen, setIsAccountPopoverOpen] = useState(false)
   const [isCategoryPopoverOpen, setIsCategoryPopoverOpen] = useState(false)
@@ -124,6 +156,47 @@ export function TransactionForm({
   const [isLoading, setIsLoading] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Receipt OCR File Handler
+  const handleReceiptUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setIsScanning(true)
+    setOcrProgress(10)
+    setOcrStatus(t.quickAdd.scanningReceipt)
+
+    try {
+      const parsed = await scanReceipt(file, (pct, status) => {
+        setOcrProgress(pct)
+        setOcrStatus(status)
+      })
+
+      if (parsed.amount > 0) {
+        setAmountStr(String(Math.round(parsed.amount)))
+      }
+      if (parsed.description) {
+        setDescription(parsed.description)
+      }
+      if (parsed.date) {
+        setTxDate(parsed.date)
+      }
+      if (parsed.items && parsed.items.length > 0) {
+        setItems(parsed.items)
+        setShowItemsBreakdown(true)
+      }
+
+      toast.success(t.quickAdd.scanSuccess)
+    } catch (err: any) {
+      console.error('OCR Error:', err)
+      toast.error(t.quickAdd.scanFailed)
+    } finally {
+      setIsScanning(false)
+      setOcrProgress(0)
+      setOcrStatus('')
+      if (e.target) e.target.value = ''
+    }
+  }
 
   const activeAccount = accounts.find((a) => a.id === selectedAccountId) || accounts[0]
   const activeCategory = categories.find((c) => c.id === selectedCategoryId) || categories[0]
@@ -137,12 +210,15 @@ export function TransactionForm({
     return sum + p
   }, 0)
 
-  // Numeric amount
-  const numericAmount = showItemsBreakdown && items.length > 0 ? itemsTotal : parseFloat(amountStr) || 0
+  // Numeric amount is strictly driven by the main amountStr input/keypad
+  const numericAmount = parseFloat(amountStr) || 0
+  const remainingAmount = numericAmount - itemsTotal
+  const isItemsExceeding = showItemsBreakdown && items.length > 0 && itemsTotal > numericAmount && numericAmount > 0
+  const isItemsMatching = showItemsBreakdown && items.length > 0 && itemsTotal === numericAmount && numericAmount > 0
+  const hasRemainingUnitemized = showItemsBreakdown && items.length > 0 && remainingAmount > 0 && numericAmount > 0
 
-  // Quick Keypad Press
+  // Quick Keypad Press (Always enabled so user can type main amount freely)
   const handleKeypadPress = (val: string) => {
-    if (showItemsBreakdown) return
     setError(null)
     if (amountStr === '0') {
       if (val === '000') return
@@ -154,7 +230,6 @@ export function TransactionForm({
   }
 
   const handleKeypadBackspace = () => {
-    if (showItemsBreakdown) return
     setError(null)
     if (amountStr.length <= 1) {
       setAmountStr('0')
@@ -208,6 +283,11 @@ export function TransactionForm({
       return
     }
 
+    if (showItemsBreakdown && items.length > 0 && itemsTotal > numericAmount && numericAmount > 0) {
+      setError(`${t.quickAdd.itemsExceedWarning} ${formatCurrency(itemsTotal - numericAmount, currentCurrency)}`)
+      return
+    }
+
     // Client-side Strict Non-Negative Balance Guard for Expense
     if (!isEditing && type === 'expense' && activeAccount) {
       const currentBal = Number(activeAccount.current_balance) || 0
@@ -255,6 +335,14 @@ export function TransactionForm({
     }
 
     try {
+      const finalTags = [...tags]
+      if (tagInput.trim()) {
+        const clean = tagInput.replace(/^#/, '').toLowerCase().trim()
+        if (clean && !finalTags.includes(clean)) {
+          finalTags.push(clean)
+        }
+      }
+
       const payload = {
         accountId: selectedAccountId,
         categoryId: selectedCategoryId,
@@ -262,6 +350,7 @@ export function TransactionForm({
         amount: numericAmount,
         currency: currentCurrency,
         description: finalDesc,
+        tags: finalTags.length > 0 ? finalTags : undefined,
         transactionDate: `${txDate}T${new Date().toTimeString().split(' ')[0]}.000Z`,
       }
 
@@ -315,12 +404,8 @@ export function TransactionForm({
       } else {
         router.push('/transactions')
       }
-    } catch (err) {
-      const msg = (err as Error).message
-      setError(msg)
-      toast.error(language === 'en' ? 'An error occurred' : 'Terjadi Kesalahan', {
-        description: msg,
-      })
+    } catch (err: any) {
+      setError(err?.message || 'Failed to save transaction')
     } finally {
       setIsLoading(false)
     }
@@ -355,20 +440,29 @@ export function TransactionForm({
   }
 
   return (
-    <form onSubmit={handleSave} className="flex flex-col gap-3 max-w-lg mx-auto w-full">
-      {/* 1. Header: Segmented Type Switcher */}
-      <div className="grid grid-cols-2 p-0.5 bg-[#F1F3F5] dark:bg-[#1A1A20] rounded-lg border border-[#E5E7EB] dark:border-[#27272A]">
+    <form onSubmit={handleSave} className="flex flex-col gap-4">
+      {error && (
+        <div className="p-3 rounded-lg bg-[#FFF1F2] dark:bg-[#881337]/20 border border-[#FECDD3] dark:border-[#9F1239]/40 text-xs text-[#E11D48] flex items-center justify-between">
+          <span>{error}</span>
+          <button type="button" onClick={() => setError(null)} className="text-[#E11D48] hover:opacity-80">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* 1. Transaction Type Toggle */}
+      <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A]">
         <button
           type="button"
           onClick={() => handleTypeChange('expense')}
           className={cn(
-            'flex items-center justify-center gap-1.5 py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer',
+            'flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer',
             type === 'expense'
-              ? 'bg-[#E11D48] text-white shadow-2xs'
-              : 'text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
+              ? 'bg-[#E11D48] text-white shadow-xs'
+              : 'text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
           )}
         >
-          <ArrowDownRight className="w-3.5 h-3.5" />
+          <ArrowDownRight className="w-4 h-4" />
           <span>{t.quickAdd.expense}</span>
         </button>
 
@@ -376,102 +470,125 @@ export function TransactionForm({
           type="button"
           onClick={() => handleTypeChange('income')}
           className={cn(
-            'flex items-center justify-center gap-1.5 py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer',
+            'flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer',
             type === 'income'
-              ? 'bg-[#0D9488] text-white shadow-2xs'
-              : 'text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
+              ? 'bg-[#0D9488] text-white shadow-xs'
+              : 'text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
           )}
         >
-          <ArrowUpRight className="w-3.5 h-3.5" />
+          <ArrowUpRight className="w-4 h-4" />
           <span>{t.quickAdd.income}</span>
         </button>
       </div>
 
-      {/* 2. Amount Display with Toggleable Pin Button on Top-Right */}
-      <div className="flex flex-col items-center justify-center py-2.5 px-3 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] relative">
-        <span className="text-[10px] uppercase font-bold tracking-wider text-[#64748B] dark:text-[#94A3B8]">
-          {t.quickAdd.nominal} ({currentCurrency})
-        </span>
-        <div className="flex items-baseline gap-1 mt-0.5">
-          <span className="text-2xl sm:text-3xl font-extrabold font-mono tracking-tight text-[#0F172A] dark:text-[#F8FAFC] tnum">
+      {/* 2. Amount Input & Pin Shortcut */}
+      <div className="relative p-3.5 sm:p-4 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] shadow-2xs flex flex-col gap-1">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
+            {t.quickAdd.nominal} ({currentCurrency})
+          </span>
+          <button
+            type="button"
+            onClick={() => setIsPinned(!isPinned)}
+            className={cn(
+              'p-1 rounded-md transition-colors cursor-pointer',
+              isPinned
+                ? 'text-amber-500 bg-amber-50 dark:bg-amber-950/40'
+                : 'text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
+            )}
+            title={isPinned ? 'Sematkan aktif' : 'Sematkan transaksi ini'}
+          >
+            <Pin className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        <div className="flex items-baseline gap-2">
+          <span className="text-xl sm:text-2xl font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+            {currentCurrency}
+          </span>
+          <span className="flex-1 min-w-0 text-2xl sm:text-3xl font-mono font-bold tracking-tight text-[#0F172A] dark:text-[#F8FAFC]">
             {formatCurrency(numericAmount, currentCurrency)}
           </span>
         </div>
-
-        {/* Pin Toggle Button in Top-Right corner */}
-        <button
-          type="button"
-          onClick={() => setIsPinned(!isPinned)}
-          title={isPinned ? 'Sematkan aktif' : 'Sematkan transaksi ini'}
-          className={cn(
-            'absolute right-2.5 top-2.5 px-2 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer flex items-center gap-1',
-            isPinned
-              ? 'bg-[#FEF3C7] dark:bg-[#78350F]/50 text-[#D97706] border border-[#FDE68A] dark:border-[#92400E] shadow-2xs'
-              : 'text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20]'
-          )}
-        >
-          <Pin className={cn('w-3.5 h-3.5', isPinned && 'fill-current')} />
-          {isPinned && <span>Sematkan</span>}
-        </button>
       </div>
 
-      {/* 3. Date Picker */}
-      <DatePicker value={txDate} onChange={setTxDate} />
+      {/* 3. Date Picker & Clear Shortcut */}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <input
+            type="date"
+            value={txDate}
+            onChange={(e) => setTxDate(e.target.value)}
+            className="w-full px-3 py-2 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs font-medium text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:border-[#0F172A] dark:focus:border-[#FAFAFA]"
+          />
+        </div>
+        {txDate !== new Date().toISOString().split('T')[0] && (
+          <button
+            type="button"
+            onClick={() => setTxDate(new Date().toISOString().split('T')[0])}
+            className="p-2 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]"
+            title="Set to today"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
 
-      {/* 4. Account Popover */}
+      {/* 4. Account Picker */}
       <PopoverPrimitive.Root open={isAccountPopoverOpen} onOpenChange={setIsAccountPopoverOpen}>
         <PopoverPrimitive.Trigger asChild>
           <button
             type="button"
-            className="flex items-center justify-between p-2.5 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors text-left cursor-pointer w-full"
+            className="w-full flex items-center justify-between p-3 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors cursor-pointer"
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              <DynamicIcon
-                name={activeAccount?.icon || 'Wallet'}
-                className="w-4 h-4 text-[#0F172A] dark:text-[#FAFAFA] shrink-0"
-              />
-              <div className="flex flex-col min-w-0">
-                <span className="text-[9px] uppercase font-bold text-[#64748B] dark:text-[#94A3B8] leading-none">
+              <div className="w-6 h-6 rounded bg-[#F1F3F5] dark:bg-[#1A1A20] text-[#0F172A] dark:text-[#FAFAFA] flex items-center justify-center shrink-0">
+                <DynamicIcon name={activeAccount?.icon || 'Wallet'} className="w-3.5 h-3.5" />
+              </div>
+              <div className="flex flex-col text-left min-w-0">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-[#94A3B8]">
                   {t.quickAdd.account}
                 </span>
-                <span className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate mt-0.5">
+                <span className="font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate">
                   {activeAccount?.name || t.quickAdd.selectAccount}
                 </span>
               </div>
             </div>
-            <div className="flex items-center gap-1.5 shrink-0">
-              <span className="text-[11px] font-mono text-[#94A3B8]">({currentCurrency})</span>
-              <ChevronDown className="w-3.5 h-3.5 text-[#94A3B8]" />
+            <div className="flex items-center gap-1.5 shrink-0 text-[#64748B] dark:text-[#94A3B8]">
+              <span className="text-[10px] font-bold">({activeAccount?.currency})</span>
+              <ChevronDown className="w-4 h-4" />
             </div>
           </button>
         </PopoverPrimitive.Trigger>
+
         <PopoverPrimitive.Portal>
           <PopoverPrimitive.Content
             align="start"
-            className="z-50 w-64 p-1 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] shadow-xl animate-in fade-in-0 zoom-in-95"
+            sideOffset={4}
+            className="z-50 w-72 max-h-60 overflow-y-auto p-1 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] shadow-lg animate-in fade-in zoom-in-95"
           >
-            <div className="flex flex-col gap-0.5 max-h-48 overflow-y-auto">
-              {accounts.map((a) => (
+            <div className="flex flex-col gap-0.5">
+              {accounts.map((acc) => (
                 <button
-                  key={a.id}
+                  key={acc.id}
                   type="button"
                   onClick={() => {
-                    setSelectedAccountId(a.id)
+                    setSelectedAccountId(acc.id)
                     setIsAccountPopoverOpen(false)
                   }}
                   className={cn(
-                    'flex items-center justify-between p-2 rounded-lg text-xs font-medium transition-colors text-left cursor-pointer',
-                    a.id === selectedAccountId
+                    'w-full flex items-center justify-between p-2 rounded-lg text-xs transition-colors text-left cursor-pointer',
+                    acc.id === selectedAccountId
                       ? 'bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A]'
-                      : 'hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] text-[#0F172A] dark:text-[#F8FAFC]'
+                      : 'text-[#0F172A] dark:text-[#F8FAFC] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20]'
                   )}
                 >
-                  <div className="flex items-center gap-2 truncate">
-                    <DynamicIcon name={a.icon || 'Wallet'} className="w-3.5 h-3.5 shrink-0" />
-                    <span className="truncate">{a.name}</span>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <DynamicIcon name={acc.icon || 'Wallet'} className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate font-medium">{acc.name}</span>
                   </div>
-                  <span className="text-[10px] font-mono opacity-80 shrink-0 ml-1">
-                    {a.currency}
+                  <span className="text-[10px] font-bold opacity-80 shrink-0">
+                    {acc.currency}
                   </span>
                 </button>
               ))}
@@ -480,36 +597,40 @@ export function TransactionForm({
         </PopoverPrimitive.Portal>
       </PopoverPrimitive.Root>
 
-      {/* 5. Category Popover */}
+      {/* 5. Category Picker */}
       <PopoverPrimitive.Root open={isCategoryPopoverOpen} onOpenChange={setIsCategoryPopoverOpen}>
         <PopoverPrimitive.Trigger asChild>
           <button
             type="button"
-            className="flex items-center justify-between p-2.5 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors text-left cursor-pointer w-full"
+            className="w-full flex items-center justify-between p-3 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors cursor-pointer"
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              <DynamicIcon
-                name={activeCategory?.icon || 'Tag'}
-                className="w-4 h-4 text-[#0F172A] dark:text-[#FAFAFA] shrink-0"
-              />
-              <div className="flex flex-col min-w-0">
-                <span className="text-[9px] uppercase font-bold text-[#64748B] dark:text-[#94A3B8] leading-none">
+              <div
+                className="w-6 h-6 rounded flex items-center justify-center shrink-0 text-white"
+                style={{ backgroundColor: activeCategory?.color || '#3B82F6' }}
+              >
+                <DynamicIcon name={activeCategory?.icon || 'Tag'} className="w-3.5 h-3.5" />
+              </div>
+              <div className="flex flex-col text-left min-w-0">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-[#94A3B8]">
                   {t.quickAdd.category}
                 </span>
-                <span className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate mt-0.5">
+                <span className="font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate">
                   {activeCategory?.name || t.quickAdd.selectCategory}
                 </span>
               </div>
             </div>
-            <ChevronDown className="w-3.5 h-3.5 text-[#94A3B8]" />
+            <ChevronDown className="w-4 h-4 text-[#64748B] dark:text-[#94A3B8] shrink-0" />
           </button>
         </PopoverPrimitive.Trigger>
+
         <PopoverPrimitive.Portal>
           <PopoverPrimitive.Content
             align="start"
-            className="z-50 w-64 p-1 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] shadow-xl animate-in fade-in-0 zoom-in-95"
+            sideOffset={4}
+            className="z-50 w-72 max-h-60 overflow-y-auto p-1 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] shadow-lg animate-in fade-in zoom-in-95"
           >
-            <div className="flex flex-col gap-0.5 max-h-48 overflow-y-auto">
+            <div className="flex flex-col gap-0.5">
               {filteredCategories.map((c) => (
                 <button
                   key={c.id}
@@ -519,10 +640,10 @@ export function TransactionForm({
                     setIsCategoryPopoverOpen(false)
                   }}
                   className={cn(
-                    'flex items-center gap-2 p-2 rounded-lg text-xs font-medium transition-colors text-left cursor-pointer',
+                    'w-full flex items-center gap-2 p-2 rounded-lg text-xs transition-colors text-left cursor-pointer',
                     c.id === selectedCategoryId
                       ? 'bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A]'
-                      : 'hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] text-[#0F172A] dark:text-[#F8FAFC]'
+                      : 'text-[#0F172A] dark:text-[#F8FAFC] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20]'
                   )}
                 >
                   <DynamicIcon name={c.icon || 'Tag'} className="w-3.5 h-3.5 shrink-0" />
@@ -534,49 +655,162 @@ export function TransactionForm({
         </PopoverPrimitive.Portal>
       </PopoverPrimitive.Root>
 
-      {/* 6. Description Input with Action Buttons for (+ Rincian) & (+ Catatan) */}
-      <div className="flex items-center gap-1.5">
+      {/* 6. Base Description Input (Full Width) */}
+      <div className="flex flex-col gap-2">
         <input
           type="text"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder={t.quickAdd.notePlaceholder}
-          className="flex-1 min-w-0 px-3 py-2 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-xs text-[#0F172A] dark:text-[#F8FAFC] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#0F172A] dark:focus:border-[#FAFAFA]"
+          className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs font-medium text-[#0F172A] dark:text-[#F8FAFC] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#0F172A] dark:focus:border-[#FAFAFA]"
         />
 
-        <button
-          type="button"
-          onClick={() => setShowItemsBreakdown(!showItemsBreakdown)}
-          title={t.quickAdd.itemizedBreakdownTitle}
-          className={cn(
-            'p-2.5 rounded-xl border transition-colors cursor-pointer shrink-0 flex items-center justify-center relative',
-            showItemsBreakdown
-              ? 'bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A]'
-              : 'bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]'
-          )}
-        >
-          <ListPlus className="w-4 h-4" />
-          {items.length > 0 && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A] text-[9px] font-bold flex items-center justify-center">
-              {items.length}
-            </span>
-          )}
-        </button>
+        {/* Hidden File Input for Receipt Photo */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          accept="image/*"
+          className="hidden"
+          onChange={handleReceiptUpload}
+        />
 
-        <button
-          type="button"
-          onClick={() => setShowFreeMemo(!showFreeMemo)}
-          title={t.quickAdd.memoTitle}
-          className={cn(
-            'p-2.5 rounded-xl border transition-colors cursor-pointer shrink-0 flex items-center justify-center',
-            showFreeMemo
-              ? 'bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A]'
-              : 'bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]'
-          )}
-        >
-          <AlignLeft className="w-4 h-4" />
-        </button>
+        {/* OCR Scanning Status Banner */}
+        {isScanning && (
+          <div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 flex items-center justify-between gap-2 animate-pulse">
+            <div className="flex items-center gap-2 min-w-0">
+              <Loader2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400 animate-spin shrink-0" />
+              <span className="text-xs font-medium text-indigo-900 dark:text-indigo-200 truncate">
+                {ocrStatus || t.quickAdd.scanningReceipt}
+              </span>
+            </div>
+            <span className="text-xs font-mono font-bold text-indigo-600 dark:text-indigo-400 shrink-0">
+              {ocrProgress}%
+            </span>
+          </div>
+        )}
+
+        {/* Action Toolbar Grid (4 Columns: Scan, Items, Memo, Tags) */}
+        <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
+          {/* OCR Scan Button */}
+          <button
+            type="button"
+            disabled={isScanning}
+            onClick={() => fileInputRef.current?.click()}
+            className={cn(
+              'py-2 px-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none',
+              isScanning
+                ? 'opacity-60 cursor-not-allowed bg-indigo-50 text-indigo-600 border-indigo-200 dark:bg-indigo-950/40 dark:border-indigo-800'
+                : 'bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#0F172A] dark:text-[#F8FAFC] hover:border-indigo-400 dark:hover:border-indigo-600 border-[#E5E7EB] dark:border-[#27272A]'
+            )}
+            title={t.quickAdd.scanReceiptBtn}
+          >
+            {isScanning ? (
+              <Loader2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 animate-spin shrink-0" />
+            ) : (
+              <Camera className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+            )}
+            <span className="truncate">{language === 'en' ? 'Scan' : 'Pindai'}</span>
+          </button>
+
+          {/* Breakdown Items Button */}
+          <button
+            type="button"
+            onClick={() => setShowItemsBreakdown(!showItemsBreakdown)}
+            className={cn(
+              'py-2 px-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none',
+              showItemsBreakdown
+                ? 'bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A] shadow-xs'
+                : 'bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]'
+            )}
+          >
+            <ListPlus className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">{language === 'en' ? 'Items' : 'Rincian'}</span>
+            {items.length > 0 && (
+              <span className="px-1 py-0.2 rounded-full bg-white/20 text-[9px] font-bold">
+                {items.length}
+              </span>
+            )}
+          </button>
+
+          {/* Free Text Memo Button */}
+          <button
+            type="button"
+            onClick={() => setShowFreeMemo(!showFreeMemo)}
+            className={cn(
+              'py-2 px-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none',
+              showFreeMemo
+                ? 'bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A] shadow-xs'
+                : 'bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]'
+            )}
+          >
+            <AlignLeft className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">{language === 'en' ? 'Memo' : 'Memo'}</span>
+          </button>
+
+          {/* Tags (#tags) Button */}
+          <button
+            type="button"
+            onClick={() => setShowTags(!showTags)}
+            className={cn(
+              'py-2 px-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none',
+              showTags
+                ? 'bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A] shadow-xs'
+                : 'bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]'
+            )}
+          >
+            <Hash className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">{language === 'en' ? 'Tags' : 'Tagar'}</span>
+            {tags.length > 0 && (
+              <span className="px-1 py-0.2 rounded-full bg-white/20 text-[9px] font-bold">
+                {tags.length}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
+
+      {/* 6. Expandable Tags (#tags) Drawer */}
+      {showTags && (
+        <div className="p-3 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-2 animate-in fade-in duration-150">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+            {t.transactions.tagLabel}
+          </span>
+          <div className="flex flex-wrap items-center gap-1.5 min-h-[28px]">
+            {tags.map((tag) => (
+              <span
+                key={tag}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs font-bold text-[#0F172A] dark:text-[#FAFAFA] shadow-2xs"
+              >
+                <span>#{tag}</span>
+                <button
+                  type="button"
+                  onClick={() => setTags(tags.filter((t) => t !== tag))}
+                  className="text-[#94A3B8] hover:text-rose-500 cursor-pointer"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ))}
+            <input
+              type="text"
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ',') {
+                  e.preventDefault()
+                  const clean = tagInput.replace(/^#/, '').toLowerCase().trim()
+                  if (clean && !tags.includes(clean)) {
+                    setTags([...tags, clean])
+                    setTagInput('')
+                  }
+                }
+              }}
+              placeholder={tags.length === 0 ? t.transactions.tagPlaceholder : '+ tag...'}
+              className="flex-1 min-w-[120px] px-2 py-1 bg-transparent text-xs text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8] focus:outline-none"
+            />
+          </div>
+        </div>
+      )}
 
       {/* 7. Expandable Sub-items Breakdown Drawer */}
       {showItemsBreakdown && (
@@ -626,6 +860,48 @@ export function TransactionForm({
                   </button>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Smart Allocation Summary Bar */}
+          {items.length > 0 && (
+            <div className="pt-2 border-t border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-2">
+              <div className="flex items-center justify-between text-[11px] font-mono">
+                <span className="text-[#64748B] dark:text-[#94A3B8]">
+                  {t.quickAdd.itemizedTotal}: <strong className="text-[#0F172A] dark:text-[#FAFAFA]">{formatCurrency(itemsTotal, currentCurrency)}</strong>
+                </span>
+
+                {isItemsMatching ? (
+                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                    <Check className="w-3 h-3" />
+                    <span>{language === 'en' ? 'Matched 100%' : 'Cocok 100%'}</span>
+                  </span>
+                ) : hasRemainingUnitemized ? (
+                  <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400">
+                    {t.quickAdd.unitemizedRemaining}: +{formatCurrency(remainingAmount, currentCurrency)}
+                  </span>
+                ) : isItemsExceeding ? (
+                  <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    <span>+{formatCurrency(itemsTotal - numericAmount, currentCurrency)} ({language === 'en' ? 'Exceeds' : 'Melebihi'})</span>
+                  </span>
+                ) : null}
+              </div>
+
+              {/* Sync Button when total does not match */}
+              {itemsTotal > 0 && itemsTotal !== numericAmount && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAmountStr(String(Math.round(itemsTotal)))
+                    setError(null)
+                  }}
+                  className="w-full py-1.5 px-2 rounded-lg bg-white dark:bg-[#121215] border border-dashed border-[#CBD5E1] dark:border-[#334155] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] text-[11px] font-medium text-[#475569] dark:text-[#CBD5E1] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Check className="w-3 h-3 text-[#0D9488]" />
+                  <span>{t.quickAdd.syncTotalWithItems}: <strong>{formatCurrency(itemsTotal, currentCurrency)}</strong></span>
+                </button>
+              )}
             </div>
           )}
         </div>

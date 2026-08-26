@@ -6,26 +6,26 @@ export interface DefaultCategory {
 }
 
 export const DEFAULT_EXPENSE_CATEGORIES: DefaultCategory[] = [
-  { name: 'Makanan & Minuman', type: 'expense', icon: 'Utensils', color: '#EF4444' },
-  { name: 'Transportasi & Bensin', type: 'expense', icon: 'Car', color: '#F97316' },
-  { name: 'Belanja & Kebutuhan', type: 'expense', icon: 'ShoppingBag', color: '#F59E0B' },
-  { name: 'Tagihan & Utilitas', type: 'expense', icon: 'Receipt', color: '#EAB308' },
-  { name: 'Tempat Tinggal / Sewa', type: 'expense', icon: 'Home', color: '#84CC16' },
-  { name: 'Hiburan & Liburan', type: 'expense', icon: 'Film', color: '#10B981' },
-  { name: 'Kesehatan & Medis', type: 'expense', icon: 'HeartPulse', color: '#06B6D4' },
-  { name: 'Pendidikan & Kursus', type: 'expense', icon: 'GraduationCap', color: '#3B82F6' },
-  { name: 'Keluarga & Anak', type: 'expense', icon: 'Users', color: '#6366F1' },
-  { name: 'Langganan & Digital', type: 'expense', icon: 'Sparkles', color: '#8B5CF6' },
-  { name: 'Lain-lain', type: 'expense', icon: 'MoreHorizontal', color: '#64748B' },
+  { name: 'Food & Drinks', type: 'expense', icon: 'Utensils', color: '#EF4444' },
+  { name: 'Transportation', type: 'expense', icon: 'Car', color: '#F97316' },
+  { name: 'Shopping', type: 'expense', icon: 'ShoppingBag', color: '#F59E0B' },
+  { name: 'Bills & Utilities', type: 'expense', icon: 'Receipt', color: '#EAB308' },
+  { name: 'Housing', type: 'expense', icon: 'Home', color: '#84CC16' },
+  { name: 'Entertainment', type: 'expense', icon: 'Film', color: '#10B981' },
+  { name: 'Health & Medical', type: 'expense', icon: 'HeartPulse', color: '#06B6D4' },
+  { name: 'Education', type: 'expense', icon: 'GraduationCap', color: '#3B82F6' },
+  { name: 'Personal Care', type: 'expense', icon: 'Sparkles', color: '#F43F5E' },
+  { name: 'Family & Kids', type: 'expense', icon: 'Users', color: '#6366F1' },
+  { name: 'Other Expense', type: 'expense', icon: 'MoreHorizontal', color: '#64748B' },
 ]
 
 export const DEFAULT_INCOME_CATEGORIES: DefaultCategory[] = [
-  { name: 'Gaji Pokok', type: 'income', icon: 'Banknote', color: '#10B981' },
-  { name: 'Freelance & Proyek', type: 'income', icon: 'Briefcase', color: '#059669' },
-  { name: 'Bisnis & Penjualan', type: 'income', icon: 'TrendingUp', color: '#0D9488' },
-  { name: 'Investasi & Dividen', type: 'income', icon: 'PieChart', color: '#0284C7' },
-  { name: 'Hadiah & Bonus', type: 'income', icon: 'Gift', color: '#6366F1' },
-  { name: 'Pendapatan Lain', type: 'income', icon: 'PlusCircle', color: '#64748B' },
+  { name: 'Salary', type: 'income', icon: 'Banknote', color: '#10B981' },
+  { name: 'Freelance & Side Gig', type: 'income', icon: 'Briefcase', color: '#059669' },
+  { name: 'Business & Sales', type: 'income', icon: 'TrendingUp', color: '#0D9488' },
+  { name: 'Investments & Dividends', type: 'income', icon: 'PieChart', color: '#0284C7' },
+  { name: 'Gifts & Grants', type: 'income', icon: 'Gift', color: '#EC4899' },
+  { name: 'Other Income', type: 'income', icon: 'PlusCircle', color: '#64748B' },
 ]
 
 export const AVAILABLE_ICONS = [

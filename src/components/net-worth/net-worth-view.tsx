@@ -1,35 +1,74 @@
-'use client'
+"use client";
 
-import React from 'react'
-import Link from 'next/link'
-import { formatCurrency, ForexRatesMap, convertAmount } from '@/lib/utils/currency'
-import { usePreferredCurrency } from '@/lib/storage/preferred-currency'
-import { usePrivacyMode, maskCurrency } from '@/lib/storage/privacy-mode'
-import { useLanguage } from '@/lib/i18n/language-context'
-import { ArrowLeft, Wallet, ArrowUpRight, ArrowDownRight } from 'lucide-react'
+import React from "react";
+import Link from "next/link";
+import {
+  formatCurrency,
+  ForexRatesMap,
+  convertAmount,
+} from "@/lib/utils/currency";
+import { usePreferredCurrency } from "@/lib/storage/preferred-currency";
+import { usePrivacyMode, maskCurrency } from "@/lib/storage/privacy-mode";
+import { useLanguage } from "@/lib/i18n/language-context";
+import { ArrowLeft, Wallet, ArrowUpRight, ArrowDownRight, TrendingUp } from "lucide-react";
 
 interface NetWorthData {
-  totalAccountsIdr: number
-  totalDebtsIdr: number
-  totalReceivablesIdr: number
-  netWorthIdr: number
-  exchangeRate: number
-  rates?: ForexRatesMap
+  totalAccountsIdr: number;
+  totalStockHoldingsIdr?: number;
+  totalDebtsIdr: number;
+  totalReceivablesIdr: number;
+  netWorthIdr: number;
+  exchangeRate: number;
+  rates?: ForexRatesMap;
 }
 
 interface NetWorthViewProps {
-  data: NetWorthData
+  data: NetWorthData;
 }
 
 export function NetWorthView({ data }: NetWorthViewProps) {
-  const { t } = useLanguage()
-  const isPrivate = usePrivacyMode()
-  const displayCurrency = usePreferredCurrency()
+  const { t, language } = useLanguage();
+  const isPrivate = usePrivacyMode();
+  const displayCurrency = usePreferredCurrency();
 
-  const convertedTotalAccounts = convertAmount(data.totalAccountsIdr, 'IDR', displayCurrency, data.rates)
-  const convertedReceivables = convertAmount(data.totalReceivablesIdr, 'IDR', displayCurrency, data.rates)
-  const convertedDebts = convertAmount(data.totalDebtsIdr, 'IDR', displayCurrency, data.rates)
-  const convertedNetWorth = convertedTotalAccounts + convertedReceivables - convertedDebts
+  const convertedTotalAccounts = convertAmount(
+    data.totalAccountsIdr,
+    "IDR",
+    displayCurrency,
+    data.rates,
+  );
+  const convertedStockHoldings = convertAmount(
+    data.totalStockHoldingsIdr || 0,
+    "IDR",
+    displayCurrency,
+    data.rates,
+  );
+  const convertedReceivables = convertAmount(
+    data.totalReceivablesIdr,
+    "IDR",
+    displayCurrency,
+    data.rates,
+  );
+  const convertedDebts = convertAmount(
+    data.totalDebtsIdr,
+    "IDR",
+    displayCurrency,
+    data.rates,
+  );
+  const convertedNetWorth =
+    convertedTotalAccounts + convertedStockHoldings + convertedReceivables - convertedDebts;
+
+  const formattedNetWorth = maskCurrency(
+    formatCurrency(convertedNetWorth, displayCurrency),
+    isPrivate,
+  );
+
+  const getNetWorthFontSize = (len: number) => {
+    if (len > 22) return "text-xl sm:text-2xl md:text-3xl";
+    if (len > 16) return "text-2xl sm:text-3xl md:text-4xl";
+    if (len > 12) return "text-[1.7rem] sm:text-3xl md:text-4xl";
+    return "text-3xl sm:text-4xl";
+  };
 
   return (
     <div className="flex flex-col gap-5 max-w-xl mx-auto">
@@ -49,18 +88,15 @@ export function NetWorthView({ data }: NetWorthViewProps) {
           <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
             {t.netWorth.calculatedPosition} ({displayCurrency})
           </span>
-          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#F1F3F5] dark:bg-[#1A1A20] text-[#64748B] dark:text-[#94A3B8] border border-[#E5E7EB] dark:border-[#27272A]">
-            Real-time Forex
-          </span>
         </div>
 
-        <h1 className="text-3xl sm:text-4xl font-mono font-bold text-[#0F172A] dark:text-[#F8FAFC] tracking-tight tnum">
-          {maskCurrency(formatCurrency(convertedNetWorth, displayCurrency), isPrivate)}
+        <h1 className={`font-mono font-bold text-[#0F172A] dark:text-[#F8FAFC] tracking-tight tnum leading-none break-words ${getNetWorthFontSize(formattedNetWorth.length)}`}>
+          {formattedNetWorth}
         </h1>
 
-        {displayCurrency !== 'IDR' && (
+        {displayCurrency !== "IDR" && (
           <span className="text-xs font-mono text-[#94A3B8] tnum">
-            ≈ {maskCurrency(formatCurrency(data.netWorthIdr, 'IDR'), isPrivate)}
+            ≈ {maskCurrency(formatCurrency(data.netWorthIdr, "IDR"), isPrivate)}
           </span>
         )}
 
@@ -87,9 +123,33 @@ export function NetWorthView({ data }: NetWorthViewProps) {
               </span>
             </div>
             <span className="text-xs sm:text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-              {maskCurrency(formatCurrency(convertedTotalAccounts, displayCurrency), isPrivate)}
+              {maskCurrency(
+                formatCurrency(convertedTotalAccounts, displayCurrency),
+                isPrivate,
+              )}
             </span>
           </div>
+
+          {/* Stock Holdings */}
+          {convertedStockHoldings > 0 && (
+            <div className="flex items-center justify-between p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A]">
+              <div className="flex items-center gap-2.5 font-sans">
+                <div className="w-7 h-7 rounded bg-indigo-500/10 border border-indigo-200 dark:border-indigo-800/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                  <TrendingUp className="w-3.5 h-3.5 stroke-[2.5]" />
+                </div>
+                <span className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                  {language === 'en' ? 'Stock Assets (IDX)' : 'Aset Saham (IDX)'}
+                </span>
+              </div>
+              <span className="text-xs sm:text-sm font-bold text-indigo-600 dark:text-indigo-400">
+                +
+                {maskCurrency(
+                  formatCurrency(convertedStockHoldings, displayCurrency),
+                  isPrivate,
+                )}
+              </span>
+            </div>
+          )}
 
           {/* Receivables */}
           <div className="flex items-center justify-between p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A]">
@@ -102,7 +162,11 @@ export function NetWorthView({ data }: NetWorthViewProps) {
               </span>
             </div>
             <span className="text-xs sm:text-sm font-bold text-[#0D9488]">
-              +{maskCurrency(formatCurrency(convertedReceivables, displayCurrency), isPrivate)}
+              +
+              {maskCurrency(
+                formatCurrency(convertedReceivables, displayCurrency),
+                isPrivate,
+              )}
             </span>
           </div>
 
@@ -117,7 +181,11 @@ export function NetWorthView({ data }: NetWorthViewProps) {
               </span>
             </div>
             <span className="text-xs sm:text-sm font-bold text-[#E11D48]">
-              -{maskCurrency(formatCurrency(convertedDebts, displayCurrency), isPrivate)}
+              -
+              {maskCurrency(
+                formatCurrency(convertedDebts, displayCurrency),
+                isPrivate,
+              )}
             </span>
           </div>
         </div>
@@ -127,10 +195,13 @@ export function NetWorthView({ data }: NetWorthViewProps) {
             {t.netWorth.netTotal}
           </span>
           <span className="text-base sm:text-lg font-bold text-[#0F172A] dark:text-[#F8FAFC] tnum">
-            {maskCurrency(formatCurrency(convertedNetWorth, displayCurrency), isPrivate)}
+            {maskCurrency(
+              formatCurrency(convertedNetWorth, displayCurrency),
+              isPrivate,
+            )}
           </span>
         </div>
       </div>
     </div>
-  )
+  );
 }

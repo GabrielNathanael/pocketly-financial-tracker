@@ -5,8 +5,15 @@ import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { Category, TransactionType } from '@/types/database'
 import { DEFAULT_EXPENSE_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from '@/lib/constants/default-categories'
 
+import { getCanonicalCategoryName } from '@/lib/utils/category-i18n'
+
 export async function getCategories(type?: TransactionType): Promise<Category[]> {
   const supabase = await createServerSupabaseClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) {
+    await seedUserDefaultCategories(user.id)
+  }
+
   let query = supabase.from('categories').select('*').order('name', { ascending: true })
 
   if (type) {
@@ -20,6 +27,104 @@ export async function getCategories(type?: TransactionType): Promise<Category[]>
   }
 
   return (data as Category[]) || []
+}
+
+/**
+ * Merges and removes any duplicate categories (e.g., matching Indonesian & English pairs).
+ */
+export async function deduplicateUserCategories(userId?: string) {
+  const supabase = await createServerSupabaseClient()
+  let targetUserId = userId
+
+  if (!targetUserId) {
+    const { data: { user } } = await supabase.auth.getUser()
+    targetUserId = user?.id
+  }
+
+  if (!targetUserId) return { success: false, error: 'Unauthorized' }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: allCategories, error } = await (supabase.from('categories') as any)
+    .select('*')
+    .eq('user_id', targetUserId)
+
+  if (error || !allCategories || allCategories.length === 0) {
+    return { success: true }
+  }
+
+  // Group by (type + canonical English name)
+  const canonicalMap = new Map<string, Category[]>()
+  for (const cat of allCategories as Category[]) {
+    const canonicalName = getCanonicalCategoryName(cat.name) || cat.name
+    const key = `${cat.type}_${canonicalName.toLowerCase()}`
+    const existing = canonicalMap.get(key) || []
+    existing.push(cat)
+    canonicalMap.set(key, existing)
+  }
+
+  for (const [, catList] of canonicalMap.entries()) {
+    const canonicalEnglishName = getCanonicalCategoryName(catList[0].name) || catList[0].name
+
+    if (catList.length > 1) {
+      // Pick survivor: prefer one that already has the English canonical name, or is_default
+      const survivor =
+        catList.find(c => c.name === canonicalEnglishName) ||
+        catList.find(c => c.is_default) ||
+        catList[0]
+
+      // Ensure survivor has the canonical English name
+      if (survivor.name !== canonicalEnglishName) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase.from('categories') as any)
+          .update({ name: canonicalEnglishName, is_default: true })
+          .eq('id', survivor.id)
+      }
+
+      const toDelete = catList.filter(c => c.id !== survivor.id)
+      const deleteIds = toDelete.map(c => c.id)
+
+      // Re-point transactions
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase.from('transactions') as any)
+        .update({ category_id: survivor.id })
+        .in('category_id', deleteIds)
+
+      // Re-point budgets
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase.from('budgets') as any)
+        .update({ category_id: survivor.id })
+        .in('category_id', deleteIds)
+
+      // Re-point recurring_transactions
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase.from('recurring_transactions') as any)
+        .update({ category_id: survivor.id })
+        .in('category_id', deleteIds)
+
+      // Re-point savings_goals
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase.from('savings_goals') as any)
+        .update({ category_id: survivor.id })
+        .in('category_id', deleteIds)
+
+      // Delete duplicate category records
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase.from('categories') as any)
+        .delete()
+        .in('id', deleteIds)
+    } else if (catList.length === 1) {
+      // Single category: check if it's currently an Indonesian default name that needs renaming to English
+      const singleCat = catList[0]
+      if (singleCat.name !== canonicalEnglishName) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase.from('categories') as any)
+          .update({ name: canonicalEnglishName, is_default: true })
+          .eq('id', singleCat.id)
+      }
+    }
+  }
+
+  return { success: true }
 }
 
 export async function seedUserDefaultCategories(userId?: string) {
@@ -38,7 +143,11 @@ export async function seedUserDefaultCategories(userId?: string) {
     .select('*', { count: 'exact', head: true })
     .eq('user_id', targetUserId)
 
-  if (count && count > 0) return
+  if (count && count > 0) {
+    // Run deduplication in case duplicate defaults existed
+    await deduplicateUserCategories(targetUserId)
+    return
+  }
 
   const toInsert = [
     ...DEFAULT_EXPENSE_CATEGORIES.map(c => ({

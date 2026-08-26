@@ -8,6 +8,7 @@ import { BudgetFormModal } from '@/components/budget/budget-form'
 import { EmptyState } from '@/components/ui/empty-state'
 import { formatCurrency, convertAmount } from '@/lib/utils/currency'
 import { usePrivacyMode, maskCurrency } from '@/lib/storage/privacy-mode'
+import { usePreferredCurrency } from '@/lib/storage/preferred-currency'
 import { getNextMonth, getPrevMonth, formatDate } from '@/lib/utils/date'
 import { useLanguage } from '@/lib/i18n/language-context'
 import { ChevronLeft, ChevronRight, Plus, Search, X } from 'lucide-react'
@@ -30,12 +31,13 @@ export function BudgetManager({
   currentPeriod,
 }: BudgetManagerProps) {
   const router = useRouter()
-  const { language, t } = useLanguage()
+  const { t, language } = useLanguage()
   const isId = language === 'id'
   const isPrivate = usePrivacyMode()
+  const displayCurrency = usePreferredCurrency()
 
-  const [selectedBudget, setSelectedBudget] = useState<EnrichedBudget | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedBudget, setSelectedBudget] = useState<EnrichedBudget | null>(null)
   const [statusFilter, setStatusFilter] = useState<BudgetStatusFilter>('all')
   const [currencyFilter, setCurrencyFilter] = useState<BudgetCurrencyFilter>('all')
   const [search, setSearch] = useState('')
@@ -60,13 +62,13 @@ export function BudgetManager({
     setIsModalOpen(true)
   }
 
-  // Aggregate in IDR using live exchange rates
+  // Aggregate in displayCurrency using live exchange rates
   const totalBudget = budgets.reduce(
-    (acc, b) => acc + convertAmount(b.amount || 0, b.currency || 'IDR', 'IDR', exchangeRate),
+    (acc, b) => acc + convertAmount(b.amount || 0, b.currency || 'IDR', displayCurrency, exchangeRate),
     0
   )
   const totalSpent = budgets.reduce(
-    (acc, b) => acc + convertAmount(b.actual_spent || 0, b.currency || 'IDR', 'IDR', exchangeRate),
+    (acc, b) => acc + convertAmount(b.actual_spent || 0, b.currency || 'IDR', displayCurrency, exchangeRate),
     0
   )
   const totalRemaining = totalBudget - totalSpent
@@ -178,12 +180,12 @@ export function BudgetManager({
         )}
       </div>
 
-      {/* Aggregate Overview Tile (Normalized in IDR) */}
+      {/* Aggregate Overview Tile (Normalized in displayCurrency) */}
       {totalBudget > 0 && (
         <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-3 font-mono">
           <div className="flex items-center justify-between text-xs">
             <span className="font-sans font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] text-[10px]">
-              {t.budgets.aggregateTitle} (IDR)
+              {t.budgets.aggregateTitle} ({displayCurrency})
             </span>
             <span className="font-bold text-[#0F172A] dark:text-[#F8FAFC] tnum">
               {isPrivate ? '••%' : `${overallPercentage.toFixed(0)}%`} {t.budgets.consumed}
@@ -205,13 +207,13 @@ export function BudgetManager({
             <div>
               <span className="text-[10px] font-sans text-[#94A3B8] uppercase tracking-wider block">{t.budgets.totalLimit}</span>
               <span className="font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-                {maskCurrency(formatCurrency(totalBudget, 'IDR'), isPrivate)}
+                {maskCurrency(formatCurrency(totalBudget, displayCurrency), isPrivate)}
               </span>
             </div>
             <div className="text-center">
               <span className="text-[10px] font-sans text-[#94A3B8] uppercase tracking-wider block">{t.common.spent}</span>
               <span className="font-bold text-[#E11D48]">
-                {maskCurrency(formatCurrency(totalSpent, 'IDR'), isPrivate)}
+                {maskCurrency(formatCurrency(totalSpent, displayCurrency), isPrivate)}
               </span>
             </div>
             <div className="text-right">
@@ -221,7 +223,7 @@ export function BudgetManager({
                   totalRemaining < 0 ? 'text-[#E11D48]' : 'text-[#0D9488]'
                 }`}
               >
-                {maskCurrency(formatCurrency(totalRemaining, 'IDR'), isPrivate)}
+                {maskCurrency(formatCurrency(totalRemaining, displayCurrency), isPrivate)}
               </span>
             </div>
           </div>

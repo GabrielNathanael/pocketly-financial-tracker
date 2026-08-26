@@ -168,6 +168,7 @@ export function AccountForm({ initialData, onSuccess }: AccountFormProps) {
               <SelectItem value="cash">{t.accounts.types.cash}</SelectItem>
               <SelectItem value="ewallet">{t.accounts.types.ewallet}</SelectItem>
               <SelectItem value="credit_card">{t.accounts.types.credit_card}</SelectItem>
+              <SelectItem value="investment">{t.accounts.types.investment || (language === 'en' ? 'Investment / Stocks' : 'Investasi / RDN')}</SelectItem>
             </SelectContent>
           </Select>
         </div>

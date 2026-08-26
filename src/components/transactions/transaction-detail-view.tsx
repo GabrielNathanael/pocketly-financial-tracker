@@ -12,6 +12,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { formatCurrency } from '@/lib/utils/currency'
 import { savePinnedTemplate } from '@/lib/storage/pinned-templates'
 import { useLanguage } from '@/lib/i18n/language-context'
+import { formatCategoryName } from '@/lib/utils/category-i18n'
 import { useUndo } from '@/lib/context/undo-context'
 import { toast } from 'sonner'
 import {
@@ -28,6 +29,7 @@ import {
   ListPlus,
   ArrowUpRight,
   ArrowDownRight,
+  Hash,
 } from 'lucide-react'
 import { format } from 'date-fns'
 
@@ -72,7 +74,15 @@ export function TransactionDetailView({
     .replace(/\[Memo:\s*[^\]]+\]/g, '')
     .replace(/\[Items:\s*[^\]]+\]/g, '')
     .replace(/\[Tukar Valas:\s*[^\]]+\]/g, '')
+    .replace(/#[a-zA-Z0-9_\-]+/g, '')
     .trim()
+
+  const allTags = Array.from(
+    new Set([
+      ...(transaction.tags || []),
+      ...(rawDesc.match(/#[a-zA-Z0-9_\-]+/g)?.map((t) => t.replace(/^#/, '').toLowerCase()) || []),
+    ])
+  )
 
   const handlePin = () => {
     const name = cleanDescription || memoText || category?.name || 'Template'
@@ -137,7 +147,7 @@ export function TransactionDetailView({
           </div>
 
           <TransactionForm
-            initialData={transaction}
+            initialData={{ ...transaction, tags: allTags }}
             accounts={accounts}
             categories={categories}
             onSuccess={() => {
@@ -173,28 +183,12 @@ export function TransactionDetailView({
         </Link>
       </div>
 
-      {/* Main Detail Card */}
-      <div className="p-5 sm:p-6 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-5">
-        {/* Header with Type Badge */}
-        <div className="flex items-center justify-between">
-          <span
-            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold ${
-              isExpense
-                ? 'bg-[#FFF1F2] dark:bg-[#881337]/20 text-[#E11D48] border border-[#FECDD3] dark:border-[#9F1239]/40'
-                : 'bg-[#ECFDF5] dark:bg-[#064E3B]/20 text-[#0D9488] border border-[#A7F3D0] dark:border-[#065F46]/40'
-            }`}
-          >
-            {isExpense ? <ArrowDownRight className="w-3.5 h-3.5" /> : <ArrowUpRight className="w-3.5 h-3.5" />}
-            <span>{isExpense ? t.quickAdd.expense : t.quickAdd.income}</span>
-          </span>
-
-          <span className="text-[10px] font-mono text-[#94A3B8]">ID: {transaction.id.slice(0, 8)}...</span>
-        </div>
-
-        {/* Large Monetary Display */}
-        <div className="flex flex-col">
+      {/* Hero Detail Card */}
+      <div className="p-5 sm:p-6 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] shadow-2xs flex flex-col gap-4">
+        {/* Amount & Type Header */}
+        <div>
           <span className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
-            {t.quickAdd.amountTitle}
+            {isExpense ? t.quickAdd.expense : t.quickAdd.income}
           </span>
           <h1
             className={`text-3xl sm:text-4xl font-mono font-bold tracking-tight mt-0.5 tnum ${
@@ -236,7 +230,7 @@ export function TransactionDetailView({
                 {t.common.category}
               </span>
               <span className="text-xs font-bold text-[#0F172A] dark:text-[#FAFAFA] truncate">
-                {category?.name || 'Category'}
+                {formatCategoryName(category?.name || 'Category', language)}
               </span>
             </div>
           </div>
@@ -269,6 +263,26 @@ export function TransactionDetailView({
               <span>{t.transactions.memoTitle || (language === 'en' ? 'Additional Notes (Memo)' : 'Catatan Tambahan (Memo)')}</span>
             </div>
             <p className="text-xs text-[#0F172A] dark:text-[#FAFAFA]">{memoText}</p>
+          </div>
+        )}
+
+        {/* Tags (#tags) */}
+        {allTags.length > 0 && (
+          <div className="flex flex-col gap-1.5 p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A]">
+            <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
+              <Hash className="w-3 h-3" />
+              <span>{t.transactions.tagLabel}</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+              {allTags.map((tag) => (
+                <span
+                  key={tag}
+                  className="px-2.5 py-1 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs font-bold text-[#0F172A] dark:text-[#FAFAFA] shadow-2xs"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
           </div>
         )}
 

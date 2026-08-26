@@ -44,6 +44,7 @@ export function DebtDetailView({ debt, accounts }: DebtDetailViewProps) {
   const [editingPayment, setEditingPayment] = useState<EnrichedDebtPayment | null>(null)
   const [deletingPaymentId, setDeletingPaymentId] = useState<string | null>(null)
   const [showDeleteDebtConfirm, setShowDeleteDebtConfirm] = useState(false)
+  const [displayLimit, setDisplayLimit] = useState(30)
   const [isDeletingDebt, setIsDeletingDebt] = useState(false)
 
   const isDebt = debt.type === 'debt'
@@ -193,13 +194,20 @@ export function DebtDetailView({ debt, accounts }: DebtDetailViewProps) {
         {/* Action Buttons */}
         <div className="flex items-center gap-2 pt-2 border-t border-[#E5E7EB] dark:border-[#27272A]">
           {!isPaid && (
-            <Button onClick={() => setIsPaymentOpen(true)} className="gap-1.5 flex-1 font-bold">
+            <Button
+              onClick={() => setIsPaymentOpen(true)}
+              className="gap-1.5 flex-1 font-bold whitespace-nowrap"
+            >
               <Plus className="w-4 h-4" />
               <span>{t.debts.recordPayment}</span>
             </Button>
           )}
 
-          <Button variant="outline" onClick={() => setIsEditOpen(true)} className="gap-1.5 flex-1">
+          <Button
+            variant="outline"
+            onClick={() => setIsEditOpen(true)}
+            className="gap-1.5 flex-1 whitespace-nowrap"
+          >
             <Edit2 className="w-3.5 h-3.5" />
             <span>{t.common.edit}</span>
           </Button>
@@ -208,7 +216,7 @@ export function DebtDetailView({ debt, accounts }: DebtDetailViewProps) {
             variant="danger"
             size="sm"
             onClick={() => setShowDeleteDebtConfirm(true)}
-            className="px-3"
+            className="px-3 shrink-0"
             title={t.common.delete}
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -237,25 +245,47 @@ export function DebtDetailView({ debt, accounts }: DebtDetailViewProps) {
           <div className="flex flex-col gap-2">
             {debt.payments
               .sort((a, b) => new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime())
+              .slice(0, displayLimit)
               .map((p, idx) => (
                 <div
                   key={p.id}
                   className="flex items-center justify-between p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors gap-3"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-7 h-7 rounded-full bg-[#ECFDF5] dark:bg-[#064E3B]/20 text-[#0D9488] flex items-center justify-center text-xs font-bold shrink-0">
-                      {debt.payments.length - idx}
-                    </div>
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-xs sm:text-sm font-mono font-bold text-[#0F172A] dark:text-[#F8FAFC] tnum truncate">
-                        {formatCurrency(p.amount, debt.currency)}
-                      </span>
-                      <div className="flex items-center gap-1 text-[10px] font-mono text-[#94A3B8] truncate">
-                        <Clock className="w-3 h-3 shrink-0" />
-                        <span>{formatDate(p.payment_date, 'd MMM yyyy, HH:mm', language)}</span>
+                  {p.linked_transaction_id ? (
+                    <Link
+                      href={`/transactions/${p.linked_transaction_id}`}
+                      className="flex items-center gap-3 min-w-0 flex-1 hover:opacity-80 transition-opacity cursor-pointer group"
+                    >
+                      <div className="w-7 h-7 rounded-full bg-[#ECFDF5] dark:bg-[#064E3B]/20 text-[#0D9488] flex items-center justify-center text-xs font-bold shrink-0 group-hover:scale-105 transition-transform">
+                        {debt.payments.length - idx}
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-xs sm:text-sm font-mono font-bold text-[#0F172A] dark:text-[#F8FAFC] tnum truncate group-hover:text-[#0D9488] transition-colors">
+                          {formatCurrency(p.amount, debt.currency)}
+                        </span>
+                        <div className="flex items-center gap-1 text-[10px] font-mono text-[#94A3B8] truncate">
+                          <Clock className="w-3 h-3 shrink-0" />
+                          <span>{formatDate(p.payment_date, 'd MMM yyyy, HH:mm', language)}</span>
+                          <span className="text-[9px] text-[#0D9488] underline ml-1 hidden sm:inline">Lihat Transaksi</span>
+                        </div>
+                      </div>
+                    </Link>
+                  ) : (
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="w-7 h-7 rounded-full bg-[#ECFDF5] dark:bg-[#064E3B]/20 text-[#0D9488] flex items-center justify-center text-xs font-bold shrink-0">
+                        {debt.payments.length - idx}
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-xs sm:text-sm font-mono font-bold text-[#0F172A] dark:text-[#F8FAFC] tnum truncate">
+                          {formatCurrency(p.amount, debt.currency)}
+                        </span>
+                        <div className="flex items-center gap-1 text-[10px] font-mono text-[#94A3B8] truncate">
+                          <Clock className="w-3 h-3 shrink-0" />
+                          <span>{formatDate(p.payment_date, 'd MMM yyyy, HH:mm', language)}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Actions for installment: Edit & Delete */}
                   <div className="flex items-center gap-1 shrink-0">
@@ -279,6 +309,33 @@ export function DebtDetailView({ debt, accounts }: DebtDetailViewProps) {
                   </div>
                 </div>
               ))}
+
+            {/* Pagination Load More Controls */}
+            {displayLimit < debt.payments.length && (
+              <div className="pt-1 flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs">
+                <span className="text-[#64748B] dark:text-[#94A3B8] font-medium text-center sm:text-left">
+                  {t.common.showing} <span className="font-bold text-[#0F172A] dark:text-[#FAFAFA]">{Math.min(displayLimit, debt.payments.length)}</span> / {debt.payments.length}
+                </span>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setDisplayLimit((prev) => prev + 30)}
+                    className="flex-1 sm:flex-initial text-xs font-bold cursor-pointer"
+                  >
+                    {t.common.loadMore} (+{Math.min(30, debt.payments.length - displayLimit)})
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setDisplayLimit(debt.payments.length)}
+                    className="flex-1 sm:flex-initial text-xs text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] cursor-pointer"
+                  >
+                    {t.common.showAll}
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

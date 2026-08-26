@@ -13,6 +13,7 @@ export interface TransactionFilterParams {
   startDate?: string
   endDate?: string
   search?: string
+  tag?: string
   sort?: 'date_desc' | 'date_asc' | 'amount_desc' | 'amount_asc'
   limit?: number
 }
@@ -37,6 +38,11 @@ export async function getTransactions(params: TransactionFilterParams = {}): Pro
 
   if (params.type && params.type !== 'all') {
     query = query.eq('type', params.type)
+  }
+
+  if (params.tag && params.tag !== 'all') {
+    const cleanTag = params.tag.replace(/^#/, '').toLowerCase().trim()
+    query = query.contains('tags', [cleanTag])
   }
 
   if (params.startDate) {
@@ -97,6 +103,26 @@ export async function getTransactionById(id: string): Promise<EnrichedTransactio
   return data as unknown as EnrichedTransaction
 }
 
+function extractTags(description?: string | null, explicitTags?: string[]): string[] {
+  const set = new Set<string>()
+  if (explicitTags && Array.isArray(explicitTags)) {
+    explicitTags.forEach((t) => {
+      const clean = t.replace(/^#/, '').toLowerCase().trim()
+      if (clean) set.add(clean)
+    })
+  }
+  if (description) {
+    const hashMatches = description.match(/#[a-zA-Z0-9_\-]+/g)
+    if (hashMatches) {
+      hashMatches.forEach((t) => {
+        const clean = t.replace(/^#/, '').toLowerCase().trim()
+        if (clean) set.add(clean)
+      })
+    }
+  }
+  return Array.from(set)
+}
+
 export async function createTransaction(input: {
   accountId: string
   categoryId: string
@@ -104,6 +130,7 @@ export async function createTransaction(input: {
   amount: number
   currency?: CurrencyCode
   description?: string | null
+  tags?: string[]
   transactionDate: string
 }) {
   const validation = transactionSchema.safeParse(input)
@@ -131,6 +158,7 @@ export async function createTransaction(input: {
   }
 
   const txCurrency = input.currency || (acc.currency as CurrencyCode) || 'IDR'
+  const computedTags = extractTags(input.description, input.tags)
 
   // 2. Strict Non-Negative Balance Guard for Expense
   if (input.type === 'expense') {
@@ -153,6 +181,7 @@ export async function createTransaction(input: {
       amount: input.amount,
       currency: txCurrency,
       description: input.description?.trim() || null,
+      tags: computedTags,
       transaction_date: input.transactionDate || new Date().toISOString(),
     })
     .select(`*, category:categories(*), account:accounts(*)`)
@@ -180,6 +209,7 @@ export async function updateTransaction(
     amount: number
     currency?: CurrencyCode
     description?: string | null
+    tags?: string[]
     transactionDate: string
   }
 ) {
@@ -212,6 +242,8 @@ export async function updateTransaction(
   if (targetAccErr || !targetAcc) {
     return { error: 'Akun tujuan tidak ditemukan' }
   }
+
+  const computedTags = extractTags(input.description, input.tags)
 
   // 3. Strict Non-Negative Balance Guard
   const oldAmount = Number(oldTx.amount) || 0
@@ -269,6 +301,7 @@ export async function updateTransaction(
       amount: input.amount,
       currency: input.currency || targetAcc.currency || 'IDR',
       description: input.description?.trim() || null,
+      tags: computedTags,
       transaction_date: input.transactionDate,
       updated_at: new Date().toISOString(),
     })
@@ -361,4 +394,26 @@ export async function getGlobalAuditLogs(limit: number = 100): Promise<AuditLog[
   }
 
   return (data as unknown as AuditLog[]) || []
+}
+
+export async function getAllUserTags(): Promise<string[]> {
+  const supabase = await createServerSupabaseClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.from('transactions') as any)
+    .select('tags')
+    .eq('user_id', user.id)
+
+  if (error || !data) return []
+
+  const tagSet = new Set<string>()
+  data.forEach((row: { tags?: string[] }) => {
+    if (Array.isArray(row.tags)) {
+      row.tags.forEach((t) => tagSet.add(t))
+    }
+  })
+
+  return Array.from(tagSet).sort()
 }

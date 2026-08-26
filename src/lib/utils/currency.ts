@@ -46,12 +46,11 @@ export function formatCurrency(
       formatted = `S$${(absValue / 1000).toFixed(1)}k`
     } else {
       const decimals = options?.decimals !== undefined ? options.decimals : (config?.decimals ?? 2)
-      formatted = new Intl.NumberFormat('en-SG', {
-        style: 'currency',
-        currency: 'SGD',
+      const numPart = new Intl.NumberFormat('en-SG', {
         minimumFractionDigits: decimals,
         maximumFractionDigits: decimals,
       }).format(absValue)
+      formatted = `S$${numPart}`
     }
   } else {
     // Default IDR or fallback
@@ -89,28 +88,27 @@ export function convertAmount(
   toCurrency: CurrencyCode | string,
   rates: ForexRatesMap | number = DEFAULT_FALLBACK_RATES
 ): number {
-  if (!amount || fromCurrency === toCurrency) {
-    return Number(amount) || 0
-  }
+  const numericAmount = Number(amount) || 0
+  if (!numericAmount) return 0
 
   const from = (fromCurrency || 'IDR').toUpperCase()
   const to = (toCurrency || 'IDR').toUpperCase()
 
-  // Backward compatibility if single number rate (USD->IDR) was passed
-  if (typeof rates === 'number') {
-    const usdToIdr = rates || 16200
-    if (from === 'USD' && to === 'IDR') return amount * usdToIdr
-    if (from === 'IDR' && to === 'USD') return amount / usdToIdr
-    return amount
-  }
+  if (from === to) return numericAmount
 
-  const rateMatrix = { ...DEFAULT_FALLBACK_RATES, ...rates }
-  const fromRate = rateMatrix[from] || 1
-  const toRate = rateMatrix[to] || 1
+  // Construct complete rate matrix with USD as 1.0 base
+  const rateMatrix: ForexRatesMap =
+    typeof rates === 'number'
+      ? { ...DEFAULT_FALLBACK_RATES, IDR: rates > 100 ? rates : (DEFAULT_FALLBACK_RATES.IDR || 16200), USD: 1 }
+      : { ...DEFAULT_FALLBACK_RATES, ...rates }
 
-  // (amount / fromRate) converts to USD, then * toRate converts to target currency
-  const converted = (amount / fromRate) * toRate
-  return converted
+  const fromRate = rateMatrix[from] ?? (from === 'USD' ? 1 : from === 'IDR' ? 16200 : 1.34)
+  const toRate = rateMatrix[to] ?? (to === 'USD' ? 1 : to === 'IDR' ? 16200 : 1.34)
+
+  if (!fromRate || !toRate) return numericAmount
+
+  // (numericAmount / fromRate) converts to USD base, then * toRate converts to target currency
+  return (numericAmount / fromRate) * toRate
 }
 
 /**

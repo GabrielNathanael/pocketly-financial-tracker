@@ -11,6 +11,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { Button } from '@/components/ui/button'
 import { formatCurrency, convertAmount } from '@/lib/utils/currency'
 import { usePrivacyMode, maskCurrency } from '@/lib/storage/privacy-mode'
+import { usePreferredCurrency } from '@/lib/storage/preferred-currency'
 import { useLanguage } from '@/lib/i18n/language-context'
 import { Plus, ArrowRightLeft } from 'lucide-react'
 
@@ -23,17 +24,18 @@ export function AccountsManager({ accounts, exchangeRate }: AccountsManagerProps
   const router = useRouter()
   const { t } = useLanguage()
   const isPrivate = usePrivacyMode()
+  const displayCurrency = usePreferredCurrency()
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [isTransferOpen, setIsTransferOpen] = useState(false)
 
-  let totalIdr = 0
+  let totalBalance = 0
   for (const acc of accounts) {
     if (acc.is_active) {
-      totalIdr += convertAmount(Number(acc.current_balance), acc.currency, 'IDR', exchangeRate)
+      totalBalance += convertAmount(Number(acc.current_balance), acc.currency, displayCurrency, exchangeRate)
     }
   }
 
-  const formattedLiquidity = maskCurrency(formatCurrency(totalIdr, 'IDR'), isPrivate)
+  const formattedLiquidity = maskCurrency(formatCurrency(totalBalance, displayCurrency), isPrivate)
   const getLiquidityFontSize = (len: number) => {
     if (len > 22) return 'text-lg sm:text-2xl'
     if (len > 16) return 'text-xl sm:text-2xl md:text-3xl'

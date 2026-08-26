@@ -2,19 +2,20 @@
 
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { ThemeToggle } from '@/components/layout/theme-toggle'
 import { Button } from '@/components/ui/button'
 import { ExportDataCard } from '@/components/settings/export-data-card'
 import { logout } from '@/actions/auth'
 import { fetchAndSaveForexRates, getLatestForexRates } from '@/actions/exchange-rate'
-import { seedDemoData, clearUserData } from '@/actions/seed-demo'
 import { formatCurrency, ForexRatesMap, DEFAULT_FALLBACK_RATES, getCrossRate } from '@/lib/utils/currency'
 import { setPreferredCurrency, usePreferredCurrency } from '@/lib/storage/preferred-currency'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { CURRENCY_LIST, CurrencyCode } from '@/lib/constants/currencies'
 import { useLanguage } from '@/lib/i18n/language-context'
-import { RefreshCw, LogOut, Check, Shield, Globe, BookOpen, ArrowRight, Sparkles, Trash2, History, Coins } from 'lucide-react'
+import { RefreshCw, LogOut, Check, Shield, Globe, BookOpen, ArrowRight, History, Coins } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
+import { toast } from 'sonner'
 
 interface SettingsViewProps {
   userEmail: string
@@ -22,16 +23,12 @@ interface SettingsViewProps {
 }
 
 export function SettingsView({ userEmail }: SettingsViewProps) {
+  const router = useRouter()
   const { language, setLanguage, t } = useLanguage()
   const [forexRates, setForexRates] = useState<ForexRatesMap>(DEFAULT_FALLBACK_RATES)
   const displayCurrency = usePreferredCurrency()
   const [isSyncing, setIsSyncing] = useState(false)
   const [syncSuccess, setSyncSuccess] = useState(false)
-
-  const [isSeeding, setIsSeeding] = useState(false)
-  const [seedSuccess, setSeedSuccess] = useState(false)
-  const [isClearing, setIsClearing] = useState(false)
-  const [clearSuccess, setClearSuccess] = useState(false)
 
   useEffect(() => {
     getLatestForexRates().then(setForexRates)
@@ -48,40 +45,20 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
       const newRates = await fetchAndSaveForexRates()
       setForexRates(newRates)
       setSyncSuccess(true)
+      toast.success(
+        language === 'en'
+          ? 'Currency exchange rates updated successfully'
+          : 'Kurs mata uang berhasil diperbarui'
+      )
       setTimeout(() => setSyncSuccess(false), 3000)
+    } catch {
+      toast.error(
+        language === 'en'
+          ? 'Failed to fetch exchange rates'
+          : 'Gagal memperbarui kurs mata uang'
+      )
     } finally {
       setIsSyncing(false)
-    }
-  }
-
-  const handleSeedDemo = async () => {
-    setIsSeeding(true)
-    setSeedSuccess(false)
-    try {
-      const res = await seedDemoData()
-      if (res.success) {
-        setSeedSuccess(true)
-        setTimeout(() => setSeedSuccess(false), 4000)
-      }
-    } finally {
-      setIsSeeding(false)
-    }
-  }
-
-  const handleClearData = async () => {
-    if (!window.confirm(t.settings.clearConfirm || 'Apakah Anda yakin ingin mengosongkan seluruh data transaksi, akun, dan anggaran?')) {
-      return
-    }
-    setIsClearing(true)
-    setClearSuccess(false)
-    try {
-      const res = await clearUserData()
-      if (res.success) {
-        setClearSuccess(true)
-        setTimeout(() => setClearSuccess(false), 4000)
-      }
-    } finally {
-      setIsClearing(false)
     }
   }
 
@@ -294,64 +271,6 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
           </p>
         </div>
         <ThemeToggle showLabels className="w-full sm:w-auto" />
-      </div>
-
-      {/* Demo Data Seeder Card */}
-      <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 rounded-lg bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A] flex items-center justify-center shrink-0">
-            <Sparkles className="w-4 h-4" />
-          </div>
-          <div className="flex flex-col min-w-0">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
-              {t.settings.demoTitle}
-            </h3>
-            <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">
-              {t.settings.demoDesc}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[#E5E7EB] dark:border-[#27272A]">
-          <Button
-            size="sm"
-            onClick={handleSeedDemo}
-            isLoading={isSeeding}
-            className="gap-1.5"
-          >
-            {seedSuccess ? (
-              <>
-                <Check className="w-3.5 h-3.5 text-[#0D9488]" />
-                <span>{t.settings.seedSuccess}</span>
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>{t.settings.seedBtn}</span>
-              </>
-            )}
-          </Button>
-
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleClearData}
-            isLoading={isClearing}
-            className="gap-1.5 text-[#E11D48] hover:text-[#E11D48] border-[#FECDD3] dark:border-[#9F1239]/40"
-          >
-            {clearSuccess ? (
-              <>
-                <Check className="w-3.5 h-3.5 text-[#0D9488]" />
-                <span>{t.settings.clearSuccess}</span>
-              </>
-            ) : (
-              <>
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>{t.settings.clearDataBtn}</span>
-              </>
-            )}
-          </Button>
-        </div>
       </div>
 
       {/* User Guide Card */}

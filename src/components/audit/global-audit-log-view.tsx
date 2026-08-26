@@ -6,6 +6,7 @@ import { AuditLog } from '@/types/database'
 import { formatDate } from '@/lib/utils/date'
 import { humanizeAuditLog } from '@/lib/utils/audit-humanizer'
 import { DateRangePicker } from '@/components/ui/date-range-picker'
+import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/lib/i18n/language-context'
 import { Search, PlusCircle, Edit, Trash2, ArrowRight, ArrowLeft, History, Filter, X } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
@@ -14,8 +15,22 @@ interface GlobalAuditLogViewProps {
   initialLogs: AuditLog[]
 }
 
-type ModuleFilter = 'all' | 'transactions' | 'transfers' | 'debts' | 'debt_payments' | 'accounts' | 'categories' | 'budgets'
+type ModuleFilter =
+  | 'all'
+  | 'transactions'
+  | 'transfers'
+  | 'stock_trades'
+  | 'recurring_transactions'
+  | 'savings_goals'
+  | 'savings_goal_deposits'
+  | 'debts'
+  | 'debt_payments'
+  | 'accounts'
+  | 'categories'
+  | 'budgets'
 type ActionFilter = 'all' | 'INSERT' | 'UPDATE' | 'DELETE'
+
+const BATCH_SIZE = 50
 
 export function GlobalAuditLogView({ initialLogs }: GlobalAuditLogViewProps) {
   const { language, t } = useLanguage()
@@ -26,11 +41,16 @@ export function GlobalAuditLogView({ initialLogs }: GlobalAuditLogViewProps) {
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [search, setSearch] = useState('')
+  const [displayLimit, setDisplayLimit] = useState(BATCH_SIZE)
 
   const moduleOptions: Array<{ label: string; value: ModuleFilter }> = [
     { label: isId ? 'Semua Modul' : 'All Modules', value: 'all' },
     { label: isId ? 'Transaksi' : 'Transactions', value: 'transactions' },
     { label: isId ? 'Transfer' : 'Transfers', value: 'transfers' },
+    { label: isId ? 'Investasi Saham' : 'Stock Trades', value: 'stock_trades' },
+    { label: isId ? 'Tagihan Rutin' : 'Recurring Bills', value: 'recurring_transactions' },
+    { label: isId ? 'Target Tabungan' : 'Savings Goals', value: 'savings_goals' },
+    { label: isId ? 'Setoran Tabungan' : 'Goal Deposits', value: 'savings_goal_deposits' },
     { label: isId ? 'Hutang & Piutang' : 'Debts & Loans', value: 'debts' },
     { label: isId ? 'Cicilan' : 'Payments', value: 'debt_payments' },
     { label: isId ? 'Rekening' : 'Accounts', value: 'accounts' },
@@ -210,7 +230,7 @@ export function GlobalAuditLogView({ initialLogs }: GlobalAuditLogViewProps) {
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {filteredLogs.map((log) => {
+          {filteredLogs.slice(0, displayLimit).map((log) => {
             const h = humanizeAuditLog(log, language)
 
             return (
@@ -280,6 +300,33 @@ export function GlobalAuditLogView({ initialLogs }: GlobalAuditLogViewProps) {
               </div>
             )
           })}
+
+          {/* Pagination Load More Controls */}
+          {displayLimit < filteredLogs.length && (
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs">
+              <span className="text-[#64748B] dark:text-[#94A3B8] font-medium text-center sm:text-left">
+                {t.common.showing} <span className="font-bold text-[#0F172A] dark:text-[#FAFAFA]">{Math.min(displayLimit, filteredLogs.length)}</span> / {filteredLogs.length}
+              </span>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setDisplayLimit((prev) => prev + BATCH_SIZE)}
+                  className="flex-1 sm:flex-initial text-xs font-bold cursor-pointer"
+                >
+                  {t.common.loadMore} (+{Math.min(BATCH_SIZE, filteredLogs.length - displayLimit)})
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setDisplayLimit(filteredLogs.length)}
+                  className="flex-1 sm:flex-initial text-xs text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] cursor-pointer"
+                >
+                  {t.common.showAll}
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

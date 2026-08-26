@@ -8,6 +8,8 @@ import { formatCurrency } from "@/lib/utils/currency";
 import { usePrivacyMode, maskCurrency } from "@/lib/storage/privacy-mode";
 import { formatDate } from "@/lib/utils/date";
 import { getCleanDescription } from "@/lib/utils/description";
+import { formatCategoryName } from "@/lib/utils/category-i18n";
+import { useLanguage } from "@/lib/i18n/language-context";
 import { cn } from "@/lib/utils/cn";
 
 interface TransactionCardProps {
@@ -15,11 +17,19 @@ interface TransactionCardProps {
 }
 
 export function TransactionCard({ transaction }: TransactionCardProps) {
+  const { language } = useLanguage();
   const isPrivate = usePrivacyMode();
   const isIncome = transaction.type === "income";
   const cat = transaction.category;
   const acc = transaction.account;
   const cleanDesc = getCleanDescription(transaction.description);
+
+  const allTags = Array.from(
+    new Set([
+      ...(transaction.tags || []),
+      ...(transaction.description?.match(/#[a-zA-Z0-9_\-]+/g)?.map((t) => t.replace(/^#/, '').toLowerCase()) || []),
+    ])
+  )
 
   const formattedAmount = `${isIncome ? "+" : "-"}${formatCurrency(transaction.amount, transaction.currency)}`;
 
@@ -35,7 +45,7 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
 
         <div className="flex flex-col min-w-0">
           <span className="text-xs sm:text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate">
-            {cat?.name || "Uncategorized"}
+            {formatCategoryName(cat?.name || "Uncategorized", language)}
           </span>
           <div className="flex items-center gap-1.5 text-[11px] text-[#64748B] dark:text-[#94A3B8] truncate">
             {cleanDesc && (
@@ -48,6 +58,24 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
             )}
             <span>{acc?.name || "Account"}</span>
           </div>
+
+          {allTags.length > 0 && (
+            <div className="flex items-center gap-1 mt-1 overflow-hidden">
+              {allTags.slice(0, 3).map((tag) => (
+                <span
+                  key={tag}
+                  className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-[#F1F3F5] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-[#64748B] dark:text-[#94A3B8]"
+                >
+                  #{tag}
+                </span>
+              ))}
+              {allTags.length > 3 && (
+                <span className="text-[9px] text-[#94A3B8]">
+                  +{allTags.length - 3}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

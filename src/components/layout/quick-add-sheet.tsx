@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import * as PopoverPrimitive from '@radix-ui/react-popover'
 import { BottomSheet } from '@/components/ui/bottom-sheet'
 import { Button } from '@/components/ui/button'
@@ -24,9 +25,15 @@ import {
   ListPlus,
   ChevronDown,
   AlignLeft,
+  Hash,
+  X,
+  AlertCircle,
+  Camera,
+  Loader2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import { toast } from 'sonner'
+import { scanReceipt } from '@/lib/ocr/receipt-scanner'
 
 interface QuickAddSheetProps {
   isOpen: boolean
@@ -39,6 +46,13 @@ interface QuickAddSheetProps {
 interface ItemRow {
   name: string
   price: string
+}
+
+interface QuickAddSheetContentProps {
+  accounts: Account[]
+  categories: Category[]
+  onClose: () => void
+  onSuccess?: () => void
 }
 
 export function QuickAddSheet({
@@ -64,35 +78,23 @@ export function QuickAddSheet({
   )
 }
 
-interface QuickAddSheetContentProps {
-  accounts: Account[]
-  categories: Category[]
-  onClose: () => void
-  onSuccess?: () => void
-}
-
 function QuickAddSheetContent({
+  onClose,
   accounts,
   categories,
-  onClose,
   onSuccess,
 }: QuickAddSheetContentProps) {
+  const router = useRouter()
   const { language, t } = useLanguage()
-  const defaultAccId = typeof window !== 'undefined' ? getDefaultAccountId() : null
-  const initialAccountId =
-    defaultAccId && accounts.some((a) => a.id === defaultAccId) ? defaultAccId : accounts[0]?.id || ''
-  const defaultCats = categories.filter((c) => c.type === 'expense')
-  const initialCategoryId = defaultCats[0]?.id || categories[0]?.id || ''
-
   const [type, setType] = useState<TransactionType>('expense')
   const [amountStr, setAmountStr] = useState<string>('0')
-  const [selectedAccountId, setSelectedAccountId] = useState<string>(initialAccountId)
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>(initialCategoryId)
+  const [selectedAccountId, setSelectedAccountId] = useState<string>('')
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('')
   const [description, setDescription] = useState<string>('')
   const [txDate, setTxDate] = useState<string>(new Date().toISOString().split('T')[0])
   const [isPinned, setIsPinned] = useState<boolean>(false)
 
-  // Sub-items list
+  // Sub-items breakdown
   const [items, setItems] = useState<ItemRow[]>([])
   const [showItemsBreakdown, setShowItemsBreakdown] = useState<boolean>(false)
 
@@ -100,13 +102,77 @@ function QuickAddSheetContent({
   const [freeTextMemo, setFreeTextMemo] = useState<string>('')
   const [showFreeMemo, setShowFreeMemo] = useState<boolean>(false)
 
+  // Tags (#tags)
+  const [tags, setTags] = useState<string[]>([])
+  const [showTags, setShowTags] = useState<boolean>(false)
+  const [tagInput, setTagInput] = useState<string>('')
+
+  // OCR Scan State
+  const [isScanning, setIsScanning] = useState(false)
+  const [ocrProgress, setOcrProgress] = useState<number>(0)
+  const [ocrStatus, setOcrStatus] = useState<string>('')
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
+
   // Popover controls
   const [isAccountPopoverOpen, setIsAccountPopoverOpen] = useState(false)
   const [isCategoryPopoverOpen, setIsCategoryPopoverOpen] = useState(false)
 
-  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [pinnedTemplates, setPinnedTemplates] = useState<PinnedTemplate[]>(getPinnedTemplates)
+
+  // Receipt OCR File Handler
+  const handleReceiptUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setIsScanning(true)
+    setOcrProgress(10)
+    setOcrStatus(t.quickAdd.scanningReceipt)
+
+    try {
+      const parsed = await scanReceipt(file, (pct, status) => {
+        setOcrProgress(pct)
+        setOcrStatus(status)
+      })
+
+      if (parsed.amount > 0) {
+        setAmountStr(String(Math.round(parsed.amount)))
+      }
+      if (parsed.description) {
+        setDescription(parsed.description)
+      }
+      if (parsed.date) {
+        setTxDate(parsed.date)
+      }
+      if (parsed.items && parsed.items.length > 0) {
+        setItems(parsed.items)
+        setShowItemsBreakdown(true)
+      }
+
+      toast.success(t.quickAdd.scanSuccess)
+    } catch (err: any) {
+      console.error('OCR Error:', err)
+      toast.error(t.quickAdd.scanFailed)
+    } finally {
+      setIsScanning(false)
+      setOcrProgress(0)
+      setOcrStatus('')
+      if (e.target) e.target.value = ''
+    }
+  }
+
+  // Initialize defaults
+  React.useEffect(() => {
+    if (true) {
+      const defaultId = getDefaultAccountId()
+      const primary = accounts.find((a) => a.id === defaultId) || accounts[0]
+      if (primary) setSelectedAccountId(primary.id)
+
+      const matchingCats = categories.filter((c) => c.type === 'expense')
+      if (matchingCats.length > 0) setSelectedCategoryId(matchingCats[0].id)
+    }
+  }, [accounts, categories])
 
   const activeAccount = accounts.find((a) => a.id === selectedAccountId) || accounts[0]
   const activeCategory = categories.find((c) => c.id === selectedCategoryId) || categories[0]
@@ -120,12 +186,15 @@ function QuickAddSheetContent({
     return sum + p
   }, 0)
 
-  // Numeric amount
-  const numericAmount = showItemsBreakdown && items.length > 0 ? itemsTotal : parseFloat(amountStr) || 0
+  // Numeric amount is strictly driven by the main amountStr input/keypad
+  const numericAmount = parseFloat(amountStr) || 0
+  const remainingAmount = numericAmount - itemsTotal
+  const isItemsExceeding = showItemsBreakdown && items.length > 0 && itemsTotal > numericAmount && numericAmount > 0
+  const isItemsMatching = showItemsBreakdown && items.length > 0 && itemsTotal === numericAmount && numericAmount > 0
+  const hasRemainingUnitemized = showItemsBreakdown && items.length > 0 && remainingAmount > 0 && numericAmount > 0
 
-  // Quick Calculator Keypad
+  // Quick Calculator Keypad (Always enabled so user can type main amount freely)
   const handleKeypadPress = (val: string) => {
-    if (showItemsBreakdown) return
     setError(null)
     if (amountStr === '0') {
       if (val === '000') return
@@ -137,7 +206,6 @@ function QuickAddSheetContent({
   }
 
   const handleKeypadBackspace = () => {
-    if (showItemsBreakdown) return
     setError(null)
     if (amountStr.length <= 1) {
       setAmountStr('0')
@@ -199,6 +267,11 @@ function QuickAddSheetContent({
       return
     }
 
+    if (showItemsBreakdown && items.length > 0 && itemsTotal > numericAmount && numericAmount > 0) {
+      setError(`${t.quickAdd.itemsExceedWarning} ${formatCurrency(itemsTotal - numericAmount, currentCurrency)}`)
+      return
+    }
+
     // Strict Non-Negative Balance Guard for Expense
     if (type === 'expense' && activeAccount) {
       const currentBal = Number(activeAccount.current_balance) || 0
@@ -236,6 +309,14 @@ function QuickAddSheetContent({
     }
 
     try {
+      const finalTags = [...tags]
+      if (tagInput.trim()) {
+        const clean = tagInput.replace(/^#/, '').toLowerCase().trim()
+        if (clean && !finalTags.includes(clean)) {
+          finalTags.push(clean)
+        }
+      }
+
       const res = await createTransaction({
         accountId: selectedAccountId,
         categoryId: selectedCategoryId,
@@ -243,6 +324,7 @@ function QuickAddSheetContent({
         amount: numericAmount,
         currency: currentCurrency,
         description: finalDesc,
+        tags: finalTags.length > 0 ? finalTags : undefined,
         transactionDate: `${txDate}T${new Date().toTimeString().split(' ')[0]}.000Z`,
       })
 
@@ -269,6 +351,7 @@ function QuickAddSheetContent({
         }
 
         onSuccess?.()
+        router.refresh()
         onClose()
       }
     } catch (err) {
@@ -474,49 +557,162 @@ function QuickAddSheetContent({
         </PopoverPrimitive.Portal>
       </PopoverPrimitive.Root>
 
-      {/* 6. Description Input with Compact Side Action Buttons for (+ Rincian) & (+ Catatan) */}
-      <div className="flex items-center gap-1.5">
+      {/* 6. Base Description Input (Full Width) */}
+      <div className="flex flex-col gap-2">
         <input
           type="text"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder={t.quickAdd.notePlaceholder}
-          className="flex-1 min-w-0 px-3 py-2 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-xs text-[#0F172A] dark:text-[#F8FAFC] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#0F172A] dark:focus:border-[#FAFAFA]"
+          className="w-full px-3.5 py-2.5 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-xs text-[#0F172A] dark:text-[#F8FAFC] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#0F172A] dark:focus:border-[#FAFAFA]"
         />
 
-        <button
-          type="button"
-          onClick={() => setShowItemsBreakdown(!showItemsBreakdown)}
-          title={t.quickAdd.itemizedBreakdownTitle}
-          className={cn(
-            'p-2.5 rounded-xl border transition-colors cursor-pointer shrink-0 flex items-center justify-center relative',
-            showItemsBreakdown
-              ? 'bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A]'
-              : 'bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]'
-          )}
-        >
-          <ListPlus className="w-4 h-4" />
-          {items.length > 0 && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A] text-[9px] font-bold flex items-center justify-center">
-              {items.length}
-            </span>
-          )}
-        </button>
+        {/* Hidden File Input for Receipt Photo */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          accept="image/*"
+          className="hidden"
+          onChange={handleReceiptUpload}
+        />
 
-        <button
-          type="button"
-          onClick={() => setShowFreeMemo(!showFreeMemo)}
-          title={t.quickAdd.memoTitle}
-          className={cn(
-            'p-2.5 rounded-xl border transition-colors cursor-pointer shrink-0 flex items-center justify-center',
-            showFreeMemo
-              ? 'bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A]'
-              : 'bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]'
-          )}
-        >
-          <AlignLeft className="w-4 h-4" />
-        </button>
+        {/* OCR Scanning Status Banner */}
+        {isScanning && (
+          <div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 flex items-center justify-between gap-2 animate-pulse">
+            <div className="flex items-center gap-2 min-w-0">
+              <Loader2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400 animate-spin shrink-0" />
+              <span className="text-xs font-medium text-indigo-900 dark:text-indigo-200 truncate">
+                {ocrStatus || t.quickAdd.scanningReceipt}
+              </span>
+            </div>
+            <span className="text-xs font-mono font-bold text-indigo-600 dark:text-indigo-400 shrink-0">
+              {ocrProgress}%
+            </span>
+          </div>
+        )}
+
+        {/* Action Toolbar Grid (4 Columns: Scan, Items, Memo, Tags) */}
+        <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
+          {/* OCR Scan Button */}
+          <button
+            type="button"
+            disabled={isScanning}
+            onClick={() => fileInputRef.current?.click()}
+            className={cn(
+              'py-2 px-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none',
+              isScanning
+                ? 'opacity-60 cursor-not-allowed bg-indigo-50 text-indigo-600 border-indigo-200 dark:bg-indigo-950/40 dark:border-indigo-800'
+                : 'bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#0F172A] dark:text-[#F8FAFC] hover:border-indigo-400 dark:hover:border-indigo-600 border-[#E5E7EB] dark:border-[#27272A]'
+            )}
+            title={t.quickAdd.scanReceiptBtn}
+          >
+            {isScanning ? (
+              <Loader2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 animate-spin shrink-0" />
+            ) : (
+              <Camera className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+            )}
+            <span className="truncate">{language === 'en' ? 'Scan' : 'Pindai'}</span>
+          </button>
+
+          {/* Sub-items Button */}
+          <button
+            type="button"
+            onClick={() => setShowItemsBreakdown(!showItemsBreakdown)}
+            className={cn(
+              'py-2 px-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none',
+              showItemsBreakdown
+                ? 'bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A] shadow-xs'
+                : 'bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]'
+            )}
+          >
+            <ListPlus className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">{language === 'en' ? 'Items' : 'Rincian'}</span>
+            {items.length > 0 && (
+              <span className="px-1 py-0.2 rounded-full bg-white/20 text-[9px] font-bold">
+                {items.length}
+              </span>
+            )}
+          </button>
+
+          {/* Memo Button */}
+          <button
+            type="button"
+            onClick={() => setShowFreeMemo(!showFreeMemo)}
+            className={cn(
+              'py-2 px-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none',
+              showFreeMemo
+                ? 'bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A] shadow-xs'
+                : 'bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]'
+            )}
+          >
+            <AlignLeft className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">{language === 'en' ? 'Memo' : 'Memo'}</span>
+          </button>
+
+          {/* Tags Button */}
+          <button
+            type="button"
+            onClick={() => setShowTags(!showTags)}
+            className={cn(
+              'py-2 px-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none',
+              showTags
+                ? 'bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A] shadow-xs'
+                : 'bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]'
+            )}
+          >
+            <Hash className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">{language === 'en' ? 'Tags' : 'Tagar'}</span>
+            {tags.length > 0 && (
+              <span className="px-1 py-0.2 rounded-full bg-white/20 text-[9px] font-bold">
+                {tags.length}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
+
+      {/* 6.5 Expandable Tags (#tags) Drawer */}
+      {showTags && (
+        <div className="p-3 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-2 animate-in fade-in duration-150">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+            {t.transactions.tagLabel}
+          </span>
+          <div className="flex flex-wrap items-center gap-1.5 min-h-[28px]">
+            {tags.map((tag) => (
+              <span
+                key={tag}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs font-bold text-[#0F172A] dark:text-[#FAFAFA] shadow-2xs"
+              >
+                <span>#{tag}</span>
+                <button
+                  type="button"
+                  onClick={() => setTags(tags.filter((t) => t !== tag))}
+                  className="text-[#94A3B8] hover:text-rose-500 cursor-pointer"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ))}
+            <input
+              type="text"
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ',') {
+                  e.preventDefault()
+                  const clean = tagInput.replace(/^#/, '').toLowerCase().trim()
+                  if (clean && !tags.includes(clean)) {
+                    setTags([...tags, clean])
+                    setTagInput('')
+                  }
+                }
+              }}
+              placeholder={tags.length === 0 ? t.transactions.tagPlaceholder : '+ tag...'}
+              className="flex-1 min-w-[120px] px-2 py-1 bg-transparent text-xs text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8] focus:outline-none"
+            />
+          </div>
+        </div>
+      )}
 
       {/* 7. Expandable Sub-items Breakdown Drawer */}
       {showItemsBreakdown && (
@@ -566,6 +762,48 @@ function QuickAddSheetContent({
                   </button>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Smart Allocation Summary Bar */}
+          {items.length > 0 && (
+            <div className="pt-2 border-t border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-2">
+              <div className="flex items-center justify-between text-[11px] font-mono">
+                <span className="text-[#64748B] dark:text-[#94A3B8]">
+                  {t.quickAdd.itemizedTotal}: <strong className="text-[#0F172A] dark:text-[#FAFAFA]">{formatCurrency(itemsTotal, currentCurrency)}</strong>
+                </span>
+
+                {isItemsMatching ? (
+                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                    <Check className="w-3 h-3" />
+                    <span>{language === 'en' ? 'Matched 100%' : 'Cocok 100%'}</span>
+                  </span>
+                ) : hasRemainingUnitemized ? (
+                  <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400">
+                    {t.quickAdd.unitemizedRemaining}: +{formatCurrency(remainingAmount, currentCurrency)}
+                  </span>
+                ) : isItemsExceeding ? (
+                  <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    <span>+{formatCurrency(itemsTotal - numericAmount, currentCurrency)} ({language === 'en' ? 'Exceeds' : 'Melebihi'})</span>
+                  </span>
+                ) : null}
+              </div>
+
+              {/* Sync Button when total does not match */}
+              {itemsTotal > 0 && itemsTotal !== numericAmount && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAmountStr(String(Math.round(itemsTotal)))
+                    setError(null)
+                  }}
+                  className="w-full py-1.5 px-2 rounded-lg bg-white dark:bg-[#121215] border border-dashed border-[#CBD5E1] dark:border-[#334155] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] text-[11px] font-medium text-[#475569] dark:text-[#CBD5E1] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Check className="w-3 h-3 text-[#0D9488]" />
+                  <span>{t.quickAdd.syncTotalWithItems}: <strong>{formatCurrency(itemsTotal, currentCurrency)}</strong></span>
+                </button>
+              )}
             </div>
           )}
         </div>

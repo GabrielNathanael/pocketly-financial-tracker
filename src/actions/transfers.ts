@@ -29,6 +29,7 @@ export async function createTransfer(input: {
   fromAccountId: string
   toAccountId: string
   amount: number
+  transferFee?: number
   exchangeRateUsed?: number
   description?: string | null
   transferDate: string
@@ -45,6 +46,8 @@ export async function createTransfer(input: {
   if (!user) {
     return { error: 'Unauthorized' }
   }
+
+  const fee = Number(input.transferFee) || 0
 
   // 1. Fetch Accounts
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -63,11 +66,13 @@ export async function createTransfer(input: {
     return { error: 'Akun pengirim atau penerima tidak ditemukan' }
   }
 
-  // 2. Strict Non-Negative Balance Guard for Source Account
+  // 2. Strict Non-Negative Balance Guard for Source Account (Amount + Fee)
   const fromBal = Number(fromAcc.current_balance) || 0
-  if (fromBal - input.amount < 0) {
+  const totalDeducted = input.amount + fee
+
+  if (fromBal - totalDeducted < 0) {
     return {
-      error: `Saldo akun asal (${fromAcc.name}) tidak mencukupi untuk transfer. (Tersedia: ${formatCurrency(fromBal, fromAcc.currency)}, Diperlukan: ${formatCurrency(input.amount, fromAcc.currency)})`,
+      error: `Saldo akun asal (${fromAcc.name}) tidak mencukupi untuk transfer & biaya admin. (Tersedia: ${formatCurrency(fromBal, fromAcc.currency)}, Diperlukan: ${formatCurrency(totalDeducted, fromAcc.currency)})`,
     }
   }
 
@@ -100,8 +105,37 @@ export async function createTransfer(input: {
     return { error: error.message }
   }
 
+  // 4. Record Admin/Transfer Fee as Expense Transaction if fee > 0
+  if (fee > 0) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: expCat } = await (supabase.from('categories') as any)
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('type', 'expense')
+      .limit(1)
+      .maybeSingle()
+
+    if (expCat) {
+      const feeTxDate = input.transferDate ? `${input.transferDate.split('T')[0]}T12:00:00.000Z` : new Date().toISOString()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase.from('transactions') as any).insert({
+        user_id: user.id,
+        account_id: input.fromAccountId,
+        category_id: expCat.id,
+        type: 'expense',
+        amount: fee,
+        currency: fromCurrency,
+        description: `Biaya Transfer ke ${toAcc.name}${input.description ? ` (${input.description})` : ''}`,
+        transaction_date: feeTxDate,
+      })
+    }
+  }
+
   revalidatePath('/accounts')
   revalidatePath('/dashboard')
+  revalidatePath('/transactions')
+  revalidatePath('/reports')
+  revalidatePath('/net-worth')
   revalidatePath('/')
   return { data }
 }

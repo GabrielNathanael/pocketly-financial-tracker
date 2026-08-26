@@ -6,6 +6,8 @@ import { DynamicIcon } from '@/components/ui/dynamic-icon'
 import { useLanguage } from '@/lib/i18n/language-context'
 import { cn } from '@/lib/utils/cn'
 
+import { formatCategoryName } from '@/lib/utils/category-i18n'
+
 interface CategoryPickerProps {
   categories: Category[]
   selectedId?: string
@@ -19,7 +21,7 @@ export function CategoryPicker({
   onSelect,
   typeFilter,
 }: CategoryPickerProps) {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const filtered = typeFilter ? categories.filter((c) => c.type === typeFilter) : categories
 
   if (filtered.length === 0) {
@@ -57,7 +59,7 @@ export function CategoryPicker({
               <DynamicIcon name={cat.icon} className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
             </div>
             <span className="text-[9px] sm:text-[10px] leading-tight truncate w-full px-0.5">
-              {cat.name}
+              {formatCategoryName(cat.name, language)}
             </span>
           </button>
         )

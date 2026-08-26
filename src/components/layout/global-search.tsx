@@ -74,12 +74,18 @@ function GlobalSearchContent({
       { name: t.nav.home, href: '/dashboard', icon: 'LayoutDashboard' },
       { name: t.nav.transactions, href: '/transactions', icon: 'Receipt' },
       { name: t.nav.budget, href: '/budget', icon: 'PieChart' },
+      { name: t.dueCenter?.title || 'Pusat Tagihan', href: '/due-center', icon: 'CalendarClock' },
+      { name: t.investments?.title || 'Investasi & Saham', href: '/investments', icon: 'TrendingUp' },
+      { name: t.nav.reports, href: '/reports', icon: 'BarChart3' },
+      { name: t.nav.goals, href: '/goals', icon: 'Target' },
+      { name: t.nav.recurring, href: '/recurring', icon: 'RefreshCw' },
       { name: t.nav.accounts, href: '/accounts', icon: 'Wallet' },
       { name: t.nav.debts, href: '/debts', icon: 'Scale' },
       { name: t.nav.categories, href: '/categories', icon: 'Tags' },
       { name: t.nav.netWorth, href: '/net-worth', icon: 'Coins' },
       { name: t.nav.guide, href: '/guide', icon: 'BookOpen' },
       { name: t.nav.settings, href: '/settings', icon: 'Settings' },
+      { name: t.auditLog?.title || 'Audit Trail', href: '/audit-log', icon: 'History' },
     ],
     [t]
   )
@@ -87,7 +93,7 @@ function GlobalSearchContent({
   const q = query.trim().toLowerCase()
 
   const filteredRoutes = useMemo(() => {
-    if (!q) return navRoutes.slice(0, 4)
+    if (!q) return navRoutes.slice(0, 5)
     return navRoutes.filter((r) => r.name.toLowerCase().includes(q))
   }, [navRoutes, q])
 
@@ -103,11 +109,13 @@ function GlobalSearchContent({
 
   const filteredTransactions = useMemo(() => {
     if (!q) return []
+    const cleanQ = q.replace(/^#/, '')
     return transactions
       .filter(
         (tx) =>
           tx.category?.name.toLowerCase().includes(q) ||
-          (tx.description && getCleanDescription(tx.description).toLowerCase().includes(q))
+          (tx.description && getCleanDescription(tx.description).toLowerCase().includes(q)) ||
+          tx.tags?.some((t) => t.toLowerCase().includes(cleanQ))
       )
       .slice(0, 6)
   }, [transactions, q])

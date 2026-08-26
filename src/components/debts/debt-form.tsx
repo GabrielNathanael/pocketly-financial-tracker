@@ -210,13 +210,19 @@ export function DebtForm({ initialData, onSuccess }: DebtFormProps) {
         <DatePicker value={dueDate} onChange={setDueDate} placeholder={t.debts.dueDatePlaceholder} />
       </div>
 
-      <Input
-        label={t.debts.termsLabel}
-        type="text"
-        placeholder={t.debts.termsPlaceholder}
-        value={notes}
-        onChange={(e) => setNotes(e.target.value)}
-      />
+      {/* Expandable Free-Text Notes */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+          {t.debts.termsLabel}
+        </label>
+        <textarea
+          rows={3}
+          placeholder={t.debts.termsPlaceholder}
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          className="w-full px-3.5 py-2.5 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-xs text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0F172A] dark:focus:ring-[#FAFAFA] transition-all resize-y min-h-[70px] leading-relaxed"
+        />
+      </div>
 
       {error && <p className="text-xs font-semibold text-[#E11D48]">{error}</p>}
 
