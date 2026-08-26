@@ -5,7 +5,7 @@ import { LanguageProvider } from "@/lib/i18n/language-context";
 import { UndoProvider } from "@/lib/context/undo-context";
 import { UndoSnackbar } from "@/components/ui/undo-snackbar";
 import { Toaster } from "sonner";
-import { Analytics } from "@vercel/analytics/react";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const jakartaSans = Plus_Jakarta_Sans({
