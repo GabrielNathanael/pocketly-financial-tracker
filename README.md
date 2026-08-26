@@ -83,6 +83,32 @@ Built with **Next.js 16 App Router**, **Supabase (PostgreSQL with Row Level Secu
 * **Custom Date Ranges**: Filter by date range, account, type, or category.
 * **Instant Export**: Download structured CSV and financial summaries ready for spreadsheet analysis.
 
+### 11. Progressive Web App (PWA) & Mobile-First Experience
+* **Installable Application**: Install Pocketly directly onto iOS, Android, macOS, and Windows without app store downloads.
+* **Standalone Experience**: Runs full-screen with native app feel, smooth touch gestures, and instant launch.
+
+---
+
+## Installation as PWA (iOS & Android)
+
+Pocketly is built as a Progressive Web App (PWA), meaning you can install it directly to your home screen with a standalone app experience:
+
+### iOS (iPhone & iPad)
+1. Open your deployed Pocketly URL in **Safari**.
+2. Tap the **Share** button (the square with an arrow pointing up at the bottom toolbar).
+3. Scroll down and tap **Add to Home Screen** (`Tambahkan ke Layar Utama`).
+4. Tap **Add** in the top right corner. Pocketly will now appear on your Home Screen like a native app.
+
+### Android
+1. Open your deployed Pocketly URL in **Google Chrome**.
+2. Tap the **three dots menu** (`⋮`) in the top right corner (or tap the **Install app** prompt banner if shown).
+3. Tap **Install app** or **Add to Home screen** (`Instal aplikasi` / `Tambahkan ke layar utama`).
+4. Follow the prompt to confirm installation. Pocketly will be added to your app drawer and home screen.
+
+### Desktop (Chrome / Edge / Brave)
+1. Open the website in your browser.
+2. Click the **Install Pocketly** icon in the address bar (or browser menu -> Apps -> Install Pocketly).
+
 ---
 
 ## Tech Stack

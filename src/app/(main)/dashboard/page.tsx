@@ -21,13 +21,12 @@ export const dynamic = 'force-dynamic'
 
 export default async function DashboardPage() {
   const currentPeriod = getCurrentPeriodStartDate()
-  const exchangeRate = await getLatestExchangeRate('USD', 'IDR')
-
   const now = new Date()
   const startDate = format(startOfMonth(now), 'yyyy-MM-dd')
   const endDate = format(endOfMonth(now), 'yyyy-MM-dd')
 
   const [
+    exchangeRate,
     accounts,
     recentTransactions,
     monthTransactions,
@@ -37,6 +36,7 @@ export default async function DashboardPage() {
     debts,
     goals,
   ] = await Promise.all([
+    getLatestExchangeRate('USD', 'IDR'),
     getAccounts(),
     getTransactions({ limit: 5 }),
     getTransactions({ startDate, endDate }),

@@ -10,7 +10,13 @@ import {
 import { usePreferredCurrency } from "@/lib/storage/preferred-currency";
 import { usePrivacyMode, maskCurrency } from "@/lib/storage/privacy-mode";
 import { useLanguage } from "@/lib/i18n/language-context";
-import { ArrowLeft, Wallet, ArrowUpRight, ArrowDownRight, TrendingUp } from "lucide-react";
+import {
+  ArrowLeft,
+  Wallet,
+  ArrowUpRight,
+  ArrowDownRight,
+  TrendingUp,
+} from "lucide-react";
 
 interface NetWorthData {
   totalAccountsIdr: number;
@@ -55,8 +61,97 @@ export function NetWorthView({ data }: NetWorthViewProps) {
     displayCurrency,
     data.rates,
   );
-  const convertedNetWorth =
-    convertedTotalAccounts + convertedStockHoldings + convertedReceivables - convertedDebts;
+  const totalAssets = convertedTotalAccounts + convertedStockHoldings + convertedReceivables;
+  const totalLiabilities = convertedDebts;
+  const convertedNetWorth = totalAssets - totalLiabilities;
+  const accountsPct = totalAssets > 0 ? (convertedTotalAccounts / totalAssets) * 100 : 100;
+  const stocksPct = totalAssets > 0 ? (convertedStockHoldings / totalAssets) * 100 : 0;
+  const receivablesPct = totalAssets > 0 ? (convertedReceivables / totalAssets) * 100 : 0;
+
+  const [selectedSlice, setSelectedSlice] = React.useState<string | null>(null);
+
+  const assetCategories = React.useMemo(() => {
+    return [
+      {
+        id: "accounts",
+        name: language === "en" ? "Cash & Bank" : "Kas & Bank",
+        total: convertedTotalAccounts,
+        percentage: accountsPct,
+        color: "#3B82F6", // Blue
+      },
+      ...(convertedStockHoldings > 0
+        ? [
+            {
+              id: "stocks",
+              name: language === "en" ? "Investments" : "Investasi",
+              total: convertedStockHoldings,
+              percentage: stocksPct,
+              color: "#6366F1", // Indigo
+            },
+          ]
+        : []),
+      ...(convertedReceivables > 0
+        ? [
+            {
+              id: "receivables",
+              name: language === "en" ? "Receivables" : "Piutang",
+              total: convertedReceivables,
+              percentage: receivablesPct,
+              color: "#10B981", // Emerald
+            },
+          ]
+        : []),
+    ];
+  }, [
+    convertedTotalAccounts,
+    convertedStockHoldings,
+    convertedReceivables,
+    accountsPct,
+    stocksPct,
+    receivablesPct,
+    language,
+  ]);
+
+  // Half-Donut Math (180deg Arc from Left to Right)
+  const donutSlices = React.useMemo(() => {
+    let cumulative = 0;
+    const center = 120;
+    const centerY = 110;
+    const outerR = 96;
+    const innerR = 70;
+
+    return assetCategories.map((cat) => {
+      const startPct = cumulative;
+      cumulative += cat.percentage;
+      const endPct = cumulative;
+
+      // Map 0% to 180deg (left), 100% to 0deg (right)
+      const startDeg = 180 - (startPct / 100) * 180;
+      const endDeg = 180 - (endPct / 100) * 180;
+
+      const startRad = (startDeg * Math.PI) / 180;
+      const endRad = (endDeg * Math.PI) / 180;
+
+      const x1 = center + outerR * Math.cos(startRad);
+      const y1 = centerY - outerR * Math.sin(startRad);
+      const x2 = center + outerR * Math.cos(endRad);
+      const y2 = centerY - outerR * Math.sin(endRad);
+
+      const ix1 = center + innerR * Math.cos(startRad);
+      const iy1 = centerY - innerR * Math.sin(startRad);
+      const ix2 = center + innerR * Math.cos(endRad);
+      const iy2 = centerY - innerR * Math.sin(endRad);
+
+      const pathData = `M ${x1} ${y1} A ${outerR} ${outerR} 0 0 1 ${x2} ${y2} L ${ix2} ${iy2} A ${innerR} ${innerR} 0 0 0 ${ix1} ${iy1} Z`;
+
+      return {
+        ...cat,
+        pathData,
+      };
+    });
+  }, [assetCategories]);
+
+  const activeCategory = assetCategories.find((c) => c.id === selectedSlice);
 
   const formattedNetWorth = maskCurrency(
     formatCurrency(convertedNetWorth, displayCurrency),
@@ -83,39 +178,130 @@ export function NetWorthView({ data }: NetWorthViewProps) {
       </div>
 
       {/* Main Net Worth Total Hero */}
-      <div className="p-5 sm:p-6 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-3.5 shadow-2xs">
-        <div className="flex items-center justify-between">
+      <div className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-4 shadow-2xs">
+        <div>
           <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
             {t.netWorth.calculatedPosition} ({displayCurrency})
           </span>
         </div>
 
-        <h1 className={`font-mono font-bold text-[#0F172A] dark:text-[#F8FAFC] tracking-tight tnum leading-none break-words ${getNetWorthFontSize(formattedNetWorth.length)}`}>
-          {formattedNetWorth}
-        </h1>
+        {/* Net Worth Hero Number */}
+        <div className="flex flex-col gap-1">
+          <h1 className={`font-mono font-bold text-[#0F172A] dark:text-[#F8FAFC] tracking-tight tnum leading-none break-words ${getNetWorthFontSize(formattedNetWorth.length)}`}>
+            {formattedNetWorth}
+          </h1>
 
-        {displayCurrency !== "IDR" && (
-          <span className="text-xs font-mono text-[#94A3B8] tnum">
-            ≈ {maskCurrency(formatCurrency(data.netWorthIdr, "IDR"), isPrivate)}
-          </span>
-        )}
+          {/* Sub-label explaining where this Net Worth comes from */}
+          <div className="flex flex-wrap items-center gap-1.5 pt-1 text-xs font-mono text-[#64748B] dark:text-[#94A3B8]">
+            <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+              +{maskCurrency(formatCurrency(totalAssets, displayCurrency), isPrivate)} {language === "en" ? "Assets" : "Aset"}
+            </span>
+            {totalLiabilities > 0 && (
+              <>
+                <span>-</span>
+                <span className="text-rose-600 dark:text-rose-400 font-bold">
+                  {maskCurrency(formatCurrency(totalLiabilities, displayCurrency), isPrivate)} {language === "en" ? "Debts" : "Hutang"}
+                </span>
+              </>
+            )}
+            {displayCurrency !== "IDR" && (
+              <span className="text-[#94A3B8] tnum">
+                (≈ {maskCurrency(formatCurrency(data.netWorthIdr, "IDR"), isPrivate)})
+              </span>
+            )}
+          </div>
+        </div>
 
-        <p className="text-xs text-[#64748B] dark:text-[#94A3B8] font-mono">
-          {t.netWorth.formula}
-        </p>
+        {/* Interactive Half-Donut Wealth Allocation Chart */}
+        <div className="flex flex-col items-center pt-4 border-t border-[#E5E7EB] dark:border-[#27272A] gap-1">
+          <div className="flex items-center justify-between w-full">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+              {language === "en" ? "Asset Allocation Breakdown" : "Rincian Alokasi Aset"}
+            </span>
+            <span className="text-[11px] font-mono font-medium text-[#64748B] dark:text-[#94A3B8]">
+              {selectedSlice ? (language === "en" ? "Click to reset" : "Klik untuk reset") : (language === "en" ? "Click segment" : "Klik segmen")}
+            </span>
+          </div>
+
+          {/* Interactive SVG Half-Donut */}
+          <div className="relative flex items-center justify-center pt-2">
+            <svg
+              width="240"
+              height="115"
+              viewBox="0 0 240 115"
+              className="overflow-visible select-none"
+            >
+              {/* Background Guide Arc */}
+              <path
+                d="M 24 110 A 96 96 0 0 1 216 110 L 190 110 A 70 70 0 0 0 50 110 Z"
+                fill="currentColor"
+                className="text-[#F1F3F5] dark:text-[#1E1E24]"
+              />
+
+              {/* Slices */}
+              {donutSlices.map((slice) => {
+                const isSelected = selectedSlice === slice.id;
+                return (
+                  <path
+                    key={slice.id}
+                    d={slice.pathData}
+                    fill={slice.color}
+                    onClick={() =>
+                      setSelectedSlice(selectedSlice === slice.id ? null : slice.id)
+                    }
+                    className={`cursor-pointer transition-all duration-200 hover:opacity-85 ${
+                      isSelected
+                        ? "stroke-2 stroke-[#0F172A] dark:stroke-white brightness-110 filter drop-shadow-md"
+                        : "opacity-95"
+                    }`}
+                  />
+                );
+              })}
+            </svg>
+
+            {/* Dynamic Center Interactive Label inside Arch */}
+            <div className="absolute bottom-2 flex flex-col items-center pointer-events-none text-center">
+              <span className="text-[9px] uppercase font-bold text-[#64748B] dark:text-[#94A3B8] tracking-wider leading-tight">
+                {activeCategory
+                  ? activeCategory.name
+                  : language === "en"
+                    ? "Total Gross Assets"
+                    : "Total Seluruh Aset"}
+              </span>
+              <div className="flex items-center gap-1 mt-0.5">
+                <span className="text-xs font-mono font-black text-amber-500">
+                  {activeCategory ? `${activeCategory.percentage.toFixed(1)}%` : "100%"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Dynamic Valuation Amount for Donut Selection */}
+          <div className="flex flex-col items-center pt-2 pb-1 text-center">
+            <span className="text-xl sm:text-2xl font-mono font-black text-[#0F172A] dark:text-[#FAFAFA] tnum leading-tight">
+              {maskCurrency(
+                formatCurrency(
+                  activeCategory ? activeCategory.total : totalAssets,
+                  displayCurrency,
+                ),
+                isPrivate,
+              )}
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Structured Ledger Balance Sheet Breakdown (Vertical Stacked Cards) */}
-      <div className="p-5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-4 shadow-2xs">
+      <div className="p-5 rounded-2xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-4 shadow-2xs">
         <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
           {t.netWorth.breakdownTitle}
         </h2>
 
         <div className="flex flex-col gap-3 font-mono tnum">
           {/* Liquid Accounts */}
-          <div className="flex items-center justify-between p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A]">
+          <div className="flex items-center justify-between p-3 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A]">
             <div className="flex items-center gap-2.5 font-sans">
-              <div className="w-7 h-7 rounded bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] flex items-center justify-center">
+              <div className="w-7 h-7 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] flex items-center justify-center">
                 <Wallet className="w-3.5 h-3.5" />
               </div>
               <span className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
@@ -130,15 +316,15 @@ export function NetWorthView({ data }: NetWorthViewProps) {
             </span>
           </div>
 
-          {/* Stock Holdings */}
+          {/* Investment & Stock Holdings */}
           {convertedStockHoldings > 0 && (
-            <div className="flex items-center justify-between p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A]">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A]">
               <div className="flex items-center gap-2.5 font-sans">
-                <div className="w-7 h-7 rounded bg-indigo-500/10 border border-indigo-200 dark:border-indigo-800/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                <div className="w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-200 dark:border-indigo-800/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
                   <TrendingUp className="w-3.5 h-3.5 stroke-[2.5]" />
                 </div>
                 <span className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-                  {language === 'en' ? 'Stock Assets (IDX)' : 'Aset Saham (IDX)'}
+                  {language === 'en' ? 'Investment & Portfolio Assets' : 'Aset Investasi & Portofolio'}
                 </span>
               </div>
               <span className="text-xs sm:text-sm font-bold text-indigo-600 dark:text-indigo-400">

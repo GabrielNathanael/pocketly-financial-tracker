@@ -29,6 +29,7 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
   const displayCurrency = usePreferredCurrency()
   const [isSyncing, setIsSyncing] = useState(false)
   const [syncSuccess, setSyncSuccess] = useState(false)
+  const [lastSyncTime, setLastSyncTime] = useState<number | null>(null)
 
   useEffect(() => {
     getLatestForexRates().then(setForexRates)
@@ -39,11 +40,21 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
   }
 
   const handleSyncRate = async () => {
+    if (lastSyncTime && Date.now() - lastSyncTime < 30000) {
+      toast.success(
+        language === 'en'
+          ? 'Exchange rates are already up to date'
+          : 'Kurs mata uang sudah yang paling terbaru'
+      )
+      return
+    }
+
     setIsSyncing(true)
     setSyncSuccess(false)
     try {
       const newRates = await fetchAndSaveForexRates()
       setForexRates(newRates)
+      setLastSyncTime(Date.now())
       setSyncSuccess(true)
       toast.success(
         language === 'en'
@@ -300,6 +311,46 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
 
       {/* Data Export Card */}
       <ExportDataCard />
+
+      {/* Demo Account Reset Helper */}
+      {userEmail?.toLowerCase() === 'demo@pocketly.app' && (
+        <div className="p-4 sm:p-5 rounded-xl bg-amber-500/10 dark:bg-amber-500/5 border border-amber-500/30 dark:border-amber-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <RefreshCw className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              <h3 className="text-xs font-bold uppercase tracking-wider text-amber-900 dark:text-amber-300">
+                {language === 'id' ? 'Reset Data Demo Awal' : 'Reset Demo Data'}
+              </h3>
+            </div>
+            <p className="text-xs text-amber-800/80 dark:text-amber-300/70 max-w-md">
+              {language === 'id'
+                ? 'Kembalikan data akun bank, transaksi multi-valas, target tabungan, dan portofolio demo ke kondisi awal yang bersih.'
+                : 'Restore clean initial sample accounts, multi-currency transactions, savings goals, and portfolio holdings.'}
+            </p>
+          </div>
+
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={async () => {
+              toast.loading(language === 'id' ? 'Mereset data demo...' : 'Resetting demo data...')
+              const { seedDemoData } = await import('@/actions/seed-demo')
+              const res = await seedDemoData()
+              toast.dismiss()
+              if (res.success) {
+                toast.success(language === 'id' ? 'Data demo berhasil direset ke kondisi awal!' : 'Demo data reset successfully!')
+                window.location.reload()
+              } else {
+                toast.error(res.error || 'Gagal mereset data demo')
+              }
+            }}
+            className="border-amber-500/40 text-amber-900 dark:text-amber-200 hover:bg-amber-500/20 shrink-0 font-bold"
+          >
+            {language === 'id' ? 'Reset Data Demo' : 'Reset Demo'}
+          </Button>
+        </div>
+      )}
 
       {/* Sign Out */}
       <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-between">

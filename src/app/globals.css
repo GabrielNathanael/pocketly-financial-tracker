@@ -49,7 +49,13 @@ body {
 input:focus,
 select:focus,
 textarea:focus,
-button:focus-visible {
+button:focus-visible,
+.recharts-surface:focus,
+.recharts-pie-sector:focus,
+.recharts-sector:focus,
+.recharts-layer:focus,
+svg:focus,
+path:focus {
   outline: none !important;
 }
 

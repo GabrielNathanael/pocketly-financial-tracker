@@ -6,6 +6,7 @@ import { getCategories, seedUserDefaultCategories } from '@/actions/categories'
 import { getTransactions } from '@/actions/transactions'
 import { getDebts } from '@/actions/debts'
 import { BottomNav } from '@/components/layout/bottom-nav'
+import { DemoNoticeBanner } from '@/components/dashboard/demo-notice-banner'
 
 export const dynamic = 'force-dynamic'
 
@@ -35,6 +36,7 @@ export default async function MainLayout({
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] dark:bg-[#09090B] text-[#0F172A] dark:text-[#F8FAFC] flex flex-col pb-20 md:pb-10">
+      <DemoNoticeBanner userEmail={user.email} />
       <main className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 md:px-8 pt-5 md:pt-7 pb-6 md:pl-72">
         {children}
       </main>

@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { useTheme } from '@/components/layout/theme-provider'
 import { useLanguage } from '@/lib/i18n/language-context'
 import { Sun, Moon, Monitor } from 'lucide-react'
@@ -15,6 +15,11 @@ export function ThemeToggle({
 }) {
   const { theme, setTheme } = useTheme()
   const { language } = useLanguage()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const items = [
     {
@@ -43,7 +48,7 @@ export function ThemeToggle({
       )}
     >
       {items.map(({ id, icon: Icon, label }) => {
-        const isActive = theme === id
+        const isActive = mounted && theme === id
         return (
           <div key={id} className="relative group">
             <button

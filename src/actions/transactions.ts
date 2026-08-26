@@ -146,6 +146,20 @@ export async function createTransaction(input: {
     return { error: 'Unauthorized' }
   }
 
+  // Demo Account Safeguard: Cap at 50 transactions to prevent spam scripts
+  if (user.email?.toLowerCase() === 'demo@pocketly.app') {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { count } = await (supabase.from('transactions') as any)
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+
+    if (count && count >= 50) {
+      return {
+        error: 'Batas kuota akun demo tercapai (Maksimal 50 transaksi). Silakan hapus beberapa transaksi demo untuk mencoba menambah yang baru.',
+      }
+    }
+  }
+
   // 1. Fetch Account Details
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: acc, error: accError } = await (supabase.from('accounts') as any)

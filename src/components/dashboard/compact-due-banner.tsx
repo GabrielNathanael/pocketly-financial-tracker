@@ -146,10 +146,14 @@ export function CompactDueBanner({
             )}
           </div>
           <p className="text-[11px] text-[#64748B] dark:text-[#94A3B8] truncate mt-0.5">
-            {overdueCount > 0 && `${overdueCount} ${language === 'en' ? 'overdue' : 'terlewat'} • `}
-            {todayCount > 0 && `${todayCount} ${language === 'en' ? 'due today' : 'jatuh tempo hari ini'} • `}
-            {upcomingWeekCount > 0 && `${upcomingWeekCount} ${language === 'en' ? 'in next 7 days' : '7 hari ke depan'} • `}
-            {upcomingGoalsCount > 0 && `${upcomingGoalsCount} ${language === 'en' ? 'goals deadline' : 'target tabungan'}`}
+            {[
+              overdueCount > 0 ? `${overdueCount} ${language === 'en' ? 'overdue' : 'terlewat'}` : null,
+              todayCount > 0 ? `${todayCount} ${language === 'en' ? 'due today' : 'jatuh tempo hari ini'}` : null,
+              upcomingWeekCount > 0 ? `${upcomingWeekCount} ${language === 'en' ? 'in next 7 days' : '7 hari ke depan'}` : null,
+              upcomingGoalsCount > 0 ? `${upcomingGoalsCount} ${language === 'en' ? 'goals deadline' : 'target tabungan'}` : null,
+            ]
+              .filter(Boolean)
+              .join(' • ')}
           </p>
         </div>
       </div>

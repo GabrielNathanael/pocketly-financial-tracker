@@ -655,16 +655,16 @@ export const translations = {
           ],
         },
         investments: {
-          title: "4. Investasi & Portofolio Saham IDX (Akun RDN & Skema 1-Angka)",
-          subtitle: "Pencatatan jual beli saham, saldo kas RDN, dan kalkulasi cuan/cut loss otomatis",
+          title: "4. Portofolio Saham, Deposito & Reksa Dana",
+          subtitle: "Kelola aset saham BEI (IDX), tabungan deposito berjangka, dan reksa dana terintegrasi",
           content:
-            "Kelola aktivitas investasi saham di BEI (IDX) tanpa perlu menghitung manual atau mengganggu anggaran belanja harian:",
+            "Pocketly mendukung pencatatan seluruh instrumen investasi Anda secara terstruktur tanpa mengganggu anggaran belanja harian:",
           steps: [
-            "Akun Khusus RDN: Buat akun bertipe Investasi / RDN (misal: RDN Stockbit, IPOT, Ajaib) di menu Akun.",
-            "Catat Beli Saham (1 Angka Bersih): Masukkan kode saham (misal: BBCA) dan total nominal beli bersih dari sekuritas. Saldo kas RDN terpotong dan aset saham tercatat.",
-            "Averaging Beli Otomatis: Jika membeli saham yang sama berulang kali, modal saham akan otomatis terakumulasi secara rapi.",
-            "Catat Jual Saham (TP / Cut Loss): Masukkan nominal penerimaan bersih. Sistem otomatis menghitung selisih Realized P&L (+Cuan atau -Cut Loss) dan mengembalikan dana ke kas RDN.",
-            "Sinkronisasi Total Kekayaan (Net Worth): Nilai kas RDN dan modal saham aktif langsung tercermin di Neraca Kekayaan Bersih Anda.",
+            "Saham IDX & Akun RDN: Buat akun bertipe Investasi / RDN di menu Akun. Catat pembelian saham (misal: BBCA) dengan nominal bersih dari sekuritas. Saldo kas RDN terpotong dan aset saham tercatat otomatis.",
+            "Pencatatan Deposito: Buat akun bertipe Investasi (misal: 'Deposito BCA 5% p.a'). Lakukan Transfer Antar Akun dari rekening utama ke akun Deposito. Saat menerima bunga bulanan, catat sebagai Pemasukan kategori Bunga/Investasi.",
+            "Reksa Dana & Obligasi (Bibit/Bareksa): Buat akun bertipe Investasi (misal: 'Bibit - Portofolio'). Catat transfer saat top up atau pencairan reksa dana.",
+            "Averaging Beli & Realized P&L: Sistem otomatis menghitung modal beli rata-rata saham serta keuntungan (+Cuan) atau kerugian (-Cut Loss) saat melakukan penjualan saham.",
+            "Sinkronisasi Total Kekayaan (Net Worth): Seluruh saldo kas RDN, modal saham aktif, deposito, dan reksa dana otomatis tercermin di Neraca Kekayaan Bersih Anda.",
           ],
         },
         savingsGoals: {
@@ -728,14 +728,15 @@ export const translations = {
           ],
         },
         netWorth: {
-          title: "10. Laporan Kekayaan Bersih (Net Worth Balance Sheet)",
-          subtitle: "Ketahui posisi riil seluruh aset dan liabilitas Anda",
+          title: "10. Laporan Kekayaan Bersih & Rasio Solvabilitas (Net Worth)",
+          subtitle: "Ketahui posisi riil seluruh aset, portofolio investasi, dan liabilitas Anda",
           content:
-            "Laporan Neraca menghitung total nilai kekayaan bersih Anda secara akurat:",
+            "Laporan Neraca menghitung total nilai kekayaan bersih dan tingkat kesehatan solvabilitas Anda secara akurat:",
           steps: [
-            "Formula Lengkap: (Saldo Kas & Bank) + (Modal Saham IDX) + (Piutang Aktif) - (Total Utang).",
-            "Dikonversi otomatis ke Mata Uang Utama tampilan berdasarkan nilai kurs valas terkini.",
-            "Menyajikan gambaran pertumbuhan kekayaan jangka panjang Anda secara utuh.",
+            "Formula Lengkap: (Saldo Kas Likuid) + (Aset Investasi & Portofolio) + (Piutang Aktif) - (Total Utang).",
+            "Bar Rasio Solvabilitas: Memvisualisasikan perbandingan Total Aset vs Total Hutang. Status '100% Bebas Hutang' muncul otomatis jika Anda tidak memiliki kewajiban hutang aktif.",
+            "Deteksi Neraca Negatif: Jika total tanggungan hutang melebihi seluruh aset likuid dan investasi yang dimiliki, neraca akan menunjukkan posisi defisit (insolven).",
+            "Dikonversi otomatis ke Mata Uang Utama tampilan berdasarkan nilai kurs valas realtime terkini.",
           ],
         },
         cashflowAnalytics: {
@@ -1420,16 +1421,16 @@ export const translations = {
           ],
         },
         investments: {
-          title: "4. Investments & IDX Stock Portfolio (RDN & 1-Net Settlement)",
-          subtitle: "Stock trading logs, RDN cash balance, and automated realized P&L calculations",
+          title: "4. Stock Portfolio, Deposits & Mutual Funds",
+          subtitle: "Track Indonesian stock trades (IDX), bank time deposits, and mutual funds seamlessly",
           content:
-            "Track Indonesian stock market (IDX) trades effortlessly without manual spreadsheets or contaminating living expense budgets:",
+            "Pocketly supports all of your investment vehicles in one unified ledger without contaminating daily budgets:",
           steps: [
-            "Dedicated Investment / RDN Account: Create an account typed as 'Investment / RDN' (e.g. Stockbit, IPOT, Ajaib).",
-            "Record Stock Buy (1 Net Amount): Enter ticker symbol (e.g. BBCA) and net purchase settlement. RDN cash balance is deducted and stock holding is recorded.",
-            "Automated Buy Averaging: Buying the same stock multiple times automatically consolidates your invested cost basis.",
-            "Record Stock Sell (Take Profit / Cut Loss): Enter net sell proceeds. The system computes Realized Gain (+Profit) or Realized Loss (-Cut Loss) and credits funds back to RDN.",
-            "Net Worth Integration: RDN cash and active stock holdings are automatically synchronized into your total Net Worth.",
+            "IDX Stocks & RDN Account: Create an account typed as 'Investment / RDN'. Log stock purchases (e.g. BBCA) with net amounts from your broker. Cash is deducted and stock holding is automatically recorded.",
+            "Time Deposits (Deposito): Create an account typed as Investment (e.g. 'BCA Deposit 5% p.a'). Use Inter-Account Transfer to move funds from your primary bank. Log monthly interest yields as Income under Interest/Dividends.",
+            "Mutual Funds & Bonds (Bibit/Bareksa): Create an account typed as Investment (e.g. 'Bibit Portfolio'). Log inter-account transfers whenever topping up or redeeming funds.",
+            "Automated Buy Averaging & Realized P&L: Automatically computes your average cost basis and tracks Realized Gain (+Profit) or Realized Loss (-Cut Loss) on sale.",
+            "Net Worth Synchronization: All RDN cash, active stock cost basis, deposits, and mutual funds automatically reflect in your Net Worth Balance Sheet.",
           ],
         },
         savingsGoals: {
@@ -1493,14 +1494,15 @@ export const translations = {
           ],
         },
         netWorth: {
-          title: "10. Net Worth Balance Sheet",
-          subtitle: "Understand your real net wealth across all assets and liabilities",
+          title: "10. Net Worth Balance Sheet & Solvency Ratio",
+          subtitle: "Understand your real net wealth, portfolio assets, and debt solvency",
           content:
-            "The Balance Sheet calculates your real net financial health accurately:",
+            "The Balance Sheet calculates your real net financial health and debt coverage accurately:",
           steps: [
-            "Calculation Formula: (Liquid Bank Balances) + (IDX Stock Holdings) + (Active Receivables) - (Total Debts).",
-            "Automatically converted into your Primary Currency using live exchange rates.",
-            "Provides a clear single metric to monitor long-term wealth accumulation.",
+            "Calculation Formula: (Liquid Bank Balances) + (Investment & Portfolio Assets) + (Active Receivables) - (Total Debts).",
+            "Solvency Ratio Bar: Visually compares Total Assets against Total Liabilities. Automatically indicates '100% Debt Free' when you hold zero debt.",
+            "Negative Net Worth Warning: If total active liabilities exceed all liquid and portfolio assets, the ledger reflects an insolvent/deficit position.",
+            "Multi-Currency Conversion: Automatically converted into your Primary Currency using live exchange rates.",
           ],
         },
         cashflowAnalytics: {

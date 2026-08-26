@@ -172,12 +172,35 @@ function TransferForm({ accounts, onClose, onSuccess }: TransferFormProps) {
     }
   };
 
+  const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
+
   const handleManualRateRefresh = async () => {
+    if (lastSyncTime && Date.now() - lastSyncTime < 30000) {
+      toast.success(
+        language === "en"
+          ? "Exchange rates are already up to date"
+          : "Kurs mata uang sudah yang paling terbaru",
+      );
+      return;
+    }
+
     setIsFetchingRates(true);
     try {
       const live = await getLatestForexRates();
       setRates(live);
+      setLastSyncTime(Date.now());
       recalculateAmounts(fromAccountId, toAccountId, amount, live);
+      toast.success(
+        language === "en"
+          ? "Currency exchange rates updated successfully"
+          : "Kurs mata uang berhasil diperbarui",
+      );
+    } catch {
+      toast.error(
+        language === "en"
+          ? "Failed to fetch exchange rates"
+          : "Gagal memperbarui kurs mata uang",
+      );
     } finally {
       setIsFetchingRates(false);
     }
@@ -188,9 +211,7 @@ function TransferForm({ accounts, onClose, onSuccess }: TransferFormProps) {
     setError(null);
 
     if (fromAccountId === toAccountId) {
-      const err =
-        t.transfer.sameAccountError ||
-        "Akun sumber dan tujuan tidak boleh sama";
+      const err = t.transfer.sameAccountError || "Akun sumber dan tujuan tidak boleh sama";
       setError(err);
       toast.error(err);
       return;
@@ -208,21 +229,14 @@ function TransferForm({ accounts, onClose, onSuccess }: TransferFormProps) {
     if (fromAccount && Number(fromAccount.current_balance) < totalRequired) {
       const err =
         language === "en"
-          ? `Insufficient balance in ${fromAccount.name} (Available: ${formatCurrency(fromAccount.current_balance, fromAccount.currency)}, Required: ${formatCurrency(totalRequired, fromAccount.currency)})`
-          : `Saldo ${fromAccount.name} tidak mencukupi (Tersedia: ${formatCurrency(fromAccount.current_balance, fromAccount.currency)}, Diperlukan: ${formatCurrency(totalRequired, fromAccount.currency)})`;
+          ? `Insufficient balance in ${fromAccount.name}`
+          : `Saldo ${fromAccount.name} tidak mencukupi`;
       setError(err);
-      toast.error(
-        t.transactions?.insufficientBalance ||
-        (language === "en"
-          ? "Insufficient Balance"
-          : "Saldo Tidak Mencukupi"),
-        { description: err },
-      );
+      toast.error(err);
       return;
     }
 
     const numRate = isCrossCurrency ? parseFloat(exchangeRate) || 1 : 1;
-
     setIsLoading(true);
 
     try {
@@ -238,56 +252,50 @@ function TransferForm({ accounts, onClose, onSuccess }: TransferFormProps) {
 
       if (res.error) {
         setError(res.error);
-        toast.error(
-          t.transfer.transferFailed ||
-            (language === "en" ? "Transfer Failed" : "Gagal Transfer"),
-          { description: res.error },
-        );
+        toast.error(t.transfer.transferFailed || "Gagal Transfer", { description: res.error });
       } else {
         toast.success(
           isCrossCurrency
             ? language === "en"
               ? "Currency exchange & transfer successful"
-              : "Tukar valas & transfer berhasil"
+              : "Transfer & konversi valas berhasil disimpan"
             : language === "en"
-              ? "Transfer completed successfully"
-              : "Transfer saldo berhasil",
+              ? "Transfer saved successfully"
+              : "Transfer berhasil disimpan",
         );
         onSuccess?.();
         onClose();
       }
-    } catch (err) {
-      const msg = (err as Error).message;
-      setError(msg);
-      toast.error(
-        language === "en" ? "An error occurred" : "Terjadi Kesalahan",
-        { description: msg },
-      );
+    } catch {
+      const err = language === "en" ? "Failed to save transfer" : "Gagal menyimpan transfer";
+      setError(err);
+      toast.error(t.transfer.transferFailed || "Gagal Transfer", { description: err });
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
-      {/* Account Pickers */}
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      {error && (
+        <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs">
+          {error}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-        <div className="flex flex-col gap-1.5 min-w-0">
+        <div className="flex flex-col gap-1.5">
           <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
             {t.transfer.sourceLabel}
           </label>
           <Select value={fromAccountId} onValueChange={handleFromChange}>
-            <SelectTrigger className="w-full min-w-0">
-              <SelectValue placeholder={t.transfer.sourceLabel}>
-                {fromAccount
-                  ? `${fromAccount.name} (${fromAccount.currency})`
-                  : t.transfer.sourceLabel}
-              </SelectValue>
+            <SelectTrigger className="w-full text-xs">
+              <SelectValue placeholder={t.transfer.sourceLabel} />
             </SelectTrigger>
             <SelectContent>
               {accounts.map((a) => (
-                <SelectItem key={a.id} value={a.id}>
-                  <div className="flex items-center justify-between w-full gap-2">
+                <SelectItem key={a.id} value={a.id} className="text-xs">
+                  <div className="flex items-center justify-between gap-2 w-full">
                     <span className="truncate">
                       {a.name} ({a.currency})
                     </span>
@@ -301,22 +309,18 @@ function TransferForm({ accounts, onClose, onSuccess }: TransferFormProps) {
           </Select>
         </div>
 
-        <div className="flex flex-col gap-1.5 min-w-0">
+        <div className="flex flex-col gap-1.5">
           <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
             {t.transfer.destLabel}
           </label>
           <Select value={toAccountId} onValueChange={handleToChange}>
-            <SelectTrigger className="w-full min-w-0">
-              <SelectValue placeholder={t.transfer.destLabel}>
-                {toAccount
-                  ? `${toAccount.name} (${toAccount.currency})`
-                  : t.transfer.destLabel}
-              </SelectValue>
+            <SelectTrigger className="w-full text-xs">
+              <SelectValue placeholder={t.transfer.destLabel} />
             </SelectTrigger>
             <SelectContent>
               {accounts.map((a) => (
-                <SelectItem key={a.id} value={a.id}>
-                  <div className="flex items-center justify-between w-full gap-2">
+                <SelectItem key={a.id} value={a.id} className="text-xs">
+                  <div className="flex items-center justify-between gap-2 w-full">
                     <span className="truncate">
                       {a.name} ({a.currency})
                     </span>
@@ -331,10 +335,9 @@ function TransferForm({ accounts, onClose, onSuccess }: TransferFormProps) {
         </div>
       </div>
 
-      {/* Amount Sent & Transfer Fee */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+      <div className="flex flex-col gap-2.5">
         <Input
-          label={`${t.transfer.amountLabel} (${fromAccount?.currency})`}
+          label={`${t.transfer.amountLabel} (${fromAccount?.currency || 'IDR'})`}
           type="number"
           step="any"
           placeholder="0"
@@ -345,13 +348,13 @@ function TransferForm({ accounts, onClose, onSuccess }: TransferFormProps) {
           className="font-mono font-bold text-sm tnum"
           rightIcon={
             <span className="text-xs font-mono font-bold text-[#94A3B8]">
-              {fromAccount?.currency}
+              {fromAccount?.currency || 'IDR'}
             </span>
           }
         />
 
         <Input
-          label={`${t.transfer.adminFeeLabel || (language === "en" ? "Admin Fee (Optional)" : "Biaya Admin (Opsional)")} (${fromAccount?.currency})`}
+          label={`${t.transfer.adminFeeLabel || (language === "en" ? "Admin Fee (Optional)" : "Biaya Admin (Opsional)")} (${fromAccount?.currency || 'IDR'})`}
           type="number"
           step="any"
           placeholder="0"
@@ -360,17 +363,16 @@ function TransferForm({ accounts, onClose, onSuccess }: TransferFormProps) {
           className="font-mono text-sm tnum"
           rightIcon={
             <span className="text-xs font-mono font-bold text-[#94A3B8]">
-              {fromAccount?.currency}
+              {fromAccount?.currency || 'IDR'}
             </span>
           }
         />
       </div>
 
-      {/* Total Deducted Preview Badge */}
       {parseFloat(transferFee) > 0 && parseFloat(amount) > 0 && (
         <div className="p-2.5 rounded-xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 text-[11px] text-amber-900 dark:text-amber-300 flex items-center justify-between">
           <span className="font-medium">
-            {t.transfer.totalDeductedLabel || (language === "en" ? "Total Deducted from Source" : "Total Terpotong dari Rekening Asal")}:
+            {t.transfer.totalDeductedLabel || "Total Terpotong"}:
           </span>
           <span className="font-mono font-black">
             {formatCurrency((parseFloat(amount) || 0) + (parseFloat(transferFee) || 0), fromAccount?.currency)}
@@ -378,7 +380,6 @@ function TransferForm({ accounts, onClose, onSuccess }: TransferFormProps) {
         </div>
       )}
 
-      {/* Cross-Currency Details */}
       {isCrossCurrency && (
         <div className="p-3 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-2.5">
           <div className="flex items-center justify-between">
@@ -394,14 +395,17 @@ function TransferForm({ accounts, onClose, onSuccess }: TransferFormProps) {
               <RefreshCw
                 className={`w-3 h-3 ${isFetchingRates ? "animate-spin" : ""}`}
               />
-              <span>{isFetchingRates ? "Memperbarui..." : "Sinkron Kurs"}</span>
+              <span>
+                {isFetchingRates
+                  ? (language === "en" ? "Updating..." : "Memperbarui...")
+                  : (language === "en" ? "Sync Rates" : "Sinkron Kurs")}
+              </span>
             </button>
           </div>
 
-          {/* Editable Received Amount */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1 border-t border-[#E5E7EB] dark:border-[#27272A]">
+          <div className="flex flex-col gap-2.5 pt-1 border-t border-[#E5E7EB] dark:border-[#27272A]">
             <Input
-              label={`${t.transfer.receivedAmountLabel || (language === "en" ? "Received Amount" : "Nominal Diterima")} (${toAccount?.currency})`}
+              label={`${t.transfer.receivedAmountLabel || "Nominal Diterima"} (${toAccount?.currency})`}
               type="number"
               step="any"
               placeholder="0"
@@ -423,7 +427,6 @@ function TransferForm({ accounts, onClose, onSuccess }: TransferFormProps) {
         </div>
       )}
 
-      {/* Date Picker */}
       <div className="flex flex-col gap-1.5">
         <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
           {t.transfer.dateLabel}
@@ -431,14 +434,19 @@ function TransferForm({ accounts, onClose, onSuccess }: TransferFormProps) {
         <DatePicker value={transferDate} onChange={setTransferDate} />
       </div>
 
-      {/* Description */}
-      <Input
-        label={t.transfer.noteLabel}
-        type="text"
-        placeholder={t.transfer.notePlaceholder}
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-      />
+      {/* Description / Free-Text Note */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+          {t.transfer.noteLabel}
+        </label>
+        <textarea
+          rows={2}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder={t.transfer.notePlaceholder || (language === 'en' ? 'e.g. Monthly savings, Wise FX conversion, family transfer...' : 'Contoh: Tabungan bulanan, konversi Wise, transfer keluarga...')}
+          className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#F8FAFC] placeholder:text-[#94A3B8] focus:outline-none focus:ring-1 focus:ring-[#0F172A] dark:focus:ring-white resize-y min-h-[56px] max-h-[160px] transition-colors"
+        />
+      </div>
 
       {error && <p className="text-xs font-semibold text-[#E11D48]">{error}</p>}
 
