@@ -1,12 +1,12 @@
-'use client'
+"use client";
 
-import React, { useState } from 'react'
-import Link from 'next/link'
-import Image from 'next/image'
-import { useLanguage } from '@/lib/i18n/language-context'
-import { ThemeToggle } from '@/components/layout/theme-toggle'
-import { useTheme } from '@/components/layout/theme-provider'
-import { formatCurrency } from '@/lib/utils/currency'
+import React, { useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { useLanguage } from "@/lib/i18n/language-context";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { useTheme } from "@/components/layout/theme-provider";
+import { formatCurrency } from "@/lib/utils/currency";
 import {
   ArrowRight,
   Globe2,
@@ -35,33 +35,69 @@ import {
   CheckCircle2,
   DollarSign,
   Landmark,
-} from 'lucide-react'
+} from "lucide-react";
 
 export default function LandingPage() {
-  const { language, setLanguage } = useLanguage()
-  const { theme, setTheme } = useTheme()
-  const [demoCurrency, setDemoCurrency] = useState<'IDR' | 'USD' | 'SGD'>('IDR')
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [isDemoPrivate, setIsDemoPrivate] = useState(false)
+  const { language, setLanguage } = useLanguage();
+  const { theme, setTheme } = useTheme();
+  const [demoCurrency, setDemoCurrency] = useState<"IDR" | "USD" | "SGD">(
+    "IDR",
+  );
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isDemoPrivate, setIsDemoPrivate] = useState(false);
 
   // Real native balances (NO messy converted parentheses)
   const nativeWallets = [
-    { name: 'BCA Utama', type: language === 'id' ? 'Rekening Bank' : 'Bank Account', balance: 'Rp 22.500.000', icon: Landmark, color: '#3B82F6' },
-    { name: 'Wise USD Vault', type: language === 'id' ? 'Valas USD' : 'USD Vault', balance: '$1,250.00', icon: DollarSign, color: '#10B981' },
-    { name: 'DBS Singapore', type: language === 'id' ? 'Valas SGD' : 'SGD Account', balance: 'S$ 1,450.00', icon: Coins, color: '#F59E0B' },
-    { name: 'RDN Mandiri', type: language === 'id' ? 'Investasi Saham' : 'Stock Brokerage', balance: 'Rp 15.600.000', icon: TrendingUp, color: '#8B5CF6' },
-  ]
+    {
+      name: "BCA Utama",
+      type: language === "id" ? "Rekening Bank" : "Bank Account",
+      balance: "Rp 22.500.000",
+      icon: Landmark,
+      color: "#3B82F6",
+    },
+    {
+      name: "Wise USD Vault",
+      type: language === "id" ? "Valas USD" : "USD Vault",
+      balance: "$1,250.00",
+      icon: DollarSign,
+      color: "#10B981",
+    },
+    {
+      name: "DBS Singapore",
+      type: language === "id" ? "Valas SGD" : "SGD Account",
+      balance: "S$ 1,450.00",
+      icon: Coins,
+      color: "#F59E0B",
+    },
+    {
+      name: "RDN Mandiri",
+      type: language === "id" ? "Investasi Saham" : "Stock Brokerage",
+      balance: "Rp 15.600.000",
+      icon: TrendingUp,
+      color: "#8B5CF6",
+    },
+  ];
 
   // Totals dynamically converted by selected base currency
   const mockTotals = {
     IDR: { total: 54300000, income: 15000000, expense: 6200000, approx: null },
-    USD: { total: 3351.85, income: 925.92, expense: 382.71, approx: '≈ Rp 54.300.000' },
-    SGD: { total: 4583.42, income: 1266.12, expense: 523.33, approx: '≈ Rp 54.300.000' },
-  }
+    USD: {
+      total: 3351.85,
+      income: 925.92,
+      expense: 382.71,
+      approx: "≈ Rp 54.300.000",
+    },
+    SGD: {
+      total: 4583.42,
+      income: 1266.12,
+      expense: 523.33,
+      approx: "≈ Rp 54.300.000",
+    },
+  };
 
-  const currentTotal = mockTotals[demoCurrency]
+  const currentTotal = mockTotals[demoCurrency];
 
-  const formatMask = (val: string) => (isDemoPrivate ? '••••••••' : val)
+  const formatMask = (val: string) => (isDemoPrivate ? "••••••••" : val);
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] dark:bg-[#09090B] text-[#0F172A] dark:text-[#F8FAFC] flex flex-col selection:bg-[#0F172A] selection:text-white dark:selection:bg-white dark:selection:text-[#0F172A] overflow-x-hidden">
@@ -89,11 +125,11 @@ export default function LandingPage() {
           <div className="hidden sm:flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setLanguage(language === 'id' ? 'en' : 'id')}
+              onClick={() => setLanguage(language === "id" ? "en" : "id")}
               className="px-2.5 py-1.5 text-xs font-mono font-bold rounded-lg border border-[#E5E7EB] dark:border-[#27272A] bg-white dark:bg-[#1A1A20] text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] transition-colors cursor-pointer"
               title="Ganti Bahasa / Switch Language"
             >
-              {language === 'id' ? 'ID' : 'EN'}
+              {language === "id" ? "ID" : "EN"}
             </button>
             <ThemeToggle />
           </div>
@@ -107,7 +143,9 @@ export default function LandingPage() {
               aria-label="Pengaturan Tampilan & Bahasa"
             >
               <SlidersHorizontal className="w-3.5 h-3.5" />
-              <span className="font-mono text-[11px]">{language.toUpperCase()}</span>
+              <span className="font-mono text-[11px]">
+                {language.toUpperCase()}
+              </span>
             </button>
 
             {/* Mobile Dropdown Menu */}
@@ -120,7 +158,7 @@ export default function LandingPage() {
                 <div className="absolute right-0 mt-2 w-56 p-3 rounded-2xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] shadow-2xl z-50 flex flex-col gap-3 animate-in fade-in zoom-in-95 duration-150">
                   <div className="flex items-center justify-between pb-2 border-b border-[#E5E7EB] dark:border-[#27272A]">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
-                      {language === 'id' ? 'Preferensi' : 'Preferences'}
+                      {language === "id" ? "Preferensi" : "Preferences"}
                     </span>
                     <button
                       type="button"
@@ -134,19 +172,19 @@ export default function LandingPage() {
                   {/* Language Section */}
                   <div className="flex flex-col gap-1.5">
                     <span className="text-[10px] font-semibold text-[#64748B] dark:text-[#94A3B8]">
-                      {language === 'id' ? 'Bahasa' : 'Language'}
+                      {language === "id" ? "Bahasa" : "Language"}
                     </span>
                     <div className="grid grid-cols-2 gap-1 p-1 bg-[#F1F3F5] dark:bg-[#1A1A20] rounded-xl border border-[#E5E7EB] dark:border-[#27272A]">
                       <button
                         type="button"
                         onClick={() => {
-                          setLanguage('id')
-                          setIsMobileMenuOpen(false)
+                          setLanguage("id");
+                          setIsMobileMenuOpen(false);
                         }}
                         className={`py-1 rounded-lg text-xs font-bold transition-all ${
-                          language === 'id'
-                            ? 'bg-white dark:bg-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] shadow-xs'
-                            : 'text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
+                          language === "id"
+                            ? "bg-white dark:bg-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] shadow-xs"
+                            : "text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]"
                         }`}
                       >
                         Bahasa (ID)
@@ -154,13 +192,13 @@ export default function LandingPage() {
                       <button
                         type="button"
                         onClick={() => {
-                          setLanguage('en')
-                          setIsMobileMenuOpen(false)
+                          setLanguage("en");
+                          setIsMobileMenuOpen(false);
                         }}
                         className={`py-1 rounded-lg text-xs font-bold transition-all ${
-                          language === 'en'
-                            ? 'bg-white dark:bg-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] shadow-xs'
-                            : 'text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
+                          language === "en"
+                            ? "bg-white dark:bg-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] shadow-xs"
+                            : "text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]"
                         }`}
                       >
                         English (EN)
@@ -171,19 +209,19 @@ export default function LandingPage() {
                   {/* Theme Section */}
                   <div className="flex flex-col gap-1.5">
                     <span className="text-[10px] font-semibold text-[#64748B] dark:text-[#94A3B8]">
-                      {language === 'id' ? 'Tema Tampilan' : 'Appearance'}
+                      {language === "id" ? "Tema Tampilan" : "Appearance"}
                     </span>
                     <div className="grid grid-cols-3 gap-1 p-1 bg-[#F1F3F5] dark:bg-[#1A1A20] rounded-xl border border-[#E5E7EB] dark:border-[#27272A]">
                       <button
                         type="button"
                         onClick={() => {
-                          setTheme('light')
-                          setIsMobileMenuOpen(false)
+                          setTheme("light");
+                          setIsMobileMenuOpen(false);
                         }}
                         className={`py-1 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1 transition-all ${
-                          theme === 'light'
-                            ? 'bg-white dark:bg-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] shadow-xs'
-                            : 'text-[#64748B]'
+                          theme === "light"
+                            ? "bg-white dark:bg-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] shadow-xs"
+                            : "text-[#64748B]"
                         }`}
                       >
                         <Sun className="w-3 h-3" />
@@ -192,13 +230,13 @@ export default function LandingPage() {
                       <button
                         type="button"
                         onClick={() => {
-                          setTheme('dark')
-                          setIsMobileMenuOpen(false)
+                          setTheme("dark");
+                          setIsMobileMenuOpen(false);
                         }}
                         className={`py-1 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1 transition-all ${
-                          theme === 'dark'
-                            ? 'bg-white dark:bg-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] shadow-xs'
-                            : 'text-[#64748B]'
+                          theme === "dark"
+                            ? "bg-white dark:bg-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] shadow-xs"
+                            : "text-[#64748B]"
                         }`}
                       >
                         <Moon className="w-3 h-3" />
@@ -207,13 +245,13 @@ export default function LandingPage() {
                       <button
                         type="button"
                         onClick={() => {
-                          setTheme('system')
-                          setIsMobileMenuOpen(false)
+                          setTheme("system");
+                          setIsMobileMenuOpen(false);
                         }}
                         className={`py-1 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1 transition-all ${
-                          theme === 'system'
-                            ? 'bg-white dark:bg-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] shadow-xs'
-                            : 'text-[#64748B]'
+                          theme === "system"
+                            ? "bg-white dark:bg-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] shadow-xs"
+                            : "text-[#64748B]"
                         }`}
                       >
                         <Monitor className="w-3 h-3" />
@@ -230,7 +268,7 @@ export default function LandingPage() {
             href="/login"
             className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A] hover:opacity-90 active:scale-95 transition-all shadow-xs shrink-0"
           >
-            <span>{language === 'id' ? 'Coba Demo' : 'Try Demo'}</span>
+            <span>{language === "id" ? "Coba Demo" : "Try Demo"}</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
@@ -241,26 +279,18 @@ export default function LandingPage() {
         {/* Ambient Subtle Glow */}
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] sm:w-[650px] h-[300px] bg-linear-to-tr from-teal-500/10 via-indigo-500/10 to-rose-500/10 rounded-full blur-3xl -z-10 pointer-events-none" />
 
-        {/* Compact PWA Badge */}
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-200/70 dark:bg-[#1E1E24] border border-slate-300/70 dark:border-[#2E2E36] text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-4 shadow-2xs">
-          <Smartphone className="w-3.5 h-3.5 text-blue-500" />
-          <span>
-            {language === 'id' ? 'Aplikasi PWA • Pasang di Layar Utama HP' : 'Installable PWA • Add to Home Screen'}
-          </span>
-        </div>
-
         {/* Headline */}
         <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-[#0F172A] dark:text-[#F8FAFC] max-w-4xl leading-[1.15]">
-          {language === 'id'
-            ? 'Kendali Penuh Atas Seluruh Akun Bank, Valuta Asing & Investasi Anda'
-            : 'Take Complete Control of Your Multi-Currency Cash Flow & Wealth'}
+          {language === "id"
+            ? "Kendali Penuh Atas Seluruh Akun Bank, Valuta Asing & Investasi Anda"
+            : "Take Complete Control of Your Multi-Currency Cash Flow & Wealth"}
         </h1>
 
         {/* Subtitle */}
         <p className="mt-4 sm:mt-6 text-sm sm:text-base md:text-lg text-[#64748B] dark:text-[#94A3B8] max-w-2xl leading-relaxed">
-          {language === 'id'
-            ? 'Buku kas personal cerdas dengan agregasi saldo otomatis, live kurs valas, pelacak portofolio saham, cicilan hutang/piutang, dan scan struk pintar.'
-            : 'Precision personal finance ledger with automated balance calculation, multi-currency live conversions, stock holdings, debt schedules, and receipt scanning.'}
+          {language === "id"
+            ? "Buku kas personal cerdas dengan agregasi saldo otomatis, live kurs valas, pelacak portofolio saham, cicilan hutang/piutang, dan scan struk pintar."
+            : "Precision personal finance ledger with automated balance calculation, multi-currency live conversions, stock holdings, debt schedules, and receipt scanning."}
         </p>
 
         {/* Proportional CTA Buttons (Side by Side on Desktop, Compact on Mobile) */}
@@ -269,7 +299,7 @@ export default function LandingPage() {
             href="/login"
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A] hover:scale-[1.02] active:scale-[0.98] transition-all shadow-md"
           >
-            <span>{language === 'id' ? 'Coba Demo' : 'Try Live Demo'}</span>
+            <span>{language === "id" ? "Coba Demo" : "Try Live Demo"}</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
 
@@ -277,7 +307,7 @@ export default function LandingPage() {
             href="/login"
             className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 rounded-xl text-sm font-semibold bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] transition-colors shadow-xs"
           >
-            {language === 'id' ? 'Masuk' : 'Sign In'}
+            {language === "id" ? "Masuk" : "Sign In"}
           </Link>
         </div>
 
@@ -294,18 +324,18 @@ export default function LandingPage() {
             {/* Currency Pill Switcher */}
             <div className="flex items-center gap-2">
               <span className="text-[10px] uppercase font-bold tracking-wider text-[#64748B] dark:text-[#94A3B8] hidden xs:inline">
-                {language === 'id' ? 'Pilih Valas:' : 'Currency:'}
+                {language === "id" ? "Pilih Valas:" : "Currency:"}
               </span>
               <div className="flex items-center p-0.5 bg-[#E5E7EB] dark:bg-[#27272A] rounded-lg">
-                {(['IDR', 'USD', 'SGD'] as const).map((curr) => (
+                {(["IDR", "USD", "SGD"] as const).map((curr) => (
                   <button
                     key={curr}
                     type="button"
                     onClick={() => setDemoCurrency(curr)}
                     className={`px-3 py-1 rounded-md text-xs font-mono font-bold transition-all cursor-pointer ${
                       demoCurrency === curr
-                        ? 'bg-white dark:bg-[#121215] text-[#0F172A] dark:text-[#FAFAFA] shadow-xs'
-                        : 'text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
+                        ? "bg-white dark:bg-[#121215] text-[#0F172A] dark:text-[#FAFAFA] shadow-xs"
+                        : "text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]"
                     }`}
                   >
                     {curr}
@@ -323,13 +353,18 @@ export default function LandingPage() {
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
-                    {language === 'id' ? 'Total Saldo Kas' : 'Net Cash Balance'} ({demoCurrency})
+                    {language === "id" ? "Total Saldo Kas" : "Net Cash Balance"}{" "}
+                    ({demoCurrency})
                   </span>
                   <button
                     type="button"
                     onClick={() => setIsDemoPrivate(!isDemoPrivate)}
                     className="p-1 rounded-md text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8] dark:hover:text-[#FAFAFA] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] transition-colors cursor-pointer"
-                    title={isDemoPrivate ? 'Tampilkan Saldo' : 'Sensor Saldo (Privasi)'}
+                    title={
+                      isDemoPrivate
+                        ? "Tampilkan Saldo"
+                        : "Sensor Saldo (Privasi)"
+                    }
                   >
                     {isDemoPrivate ? (
                       <EyeOff className="w-3.5 h-3.5 text-amber-500" />
@@ -339,7 +374,9 @@ export default function LandingPage() {
                   </button>
                 </div>
                 <div className="inline-flex items-center gap-1 text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA]">
-                  <span>{language === 'id' ? 'Semua Transaksi' : 'All Transactions'}</span>
+                  <span>
+                    {language === "id" ? "Semua Transaksi" : "All Transactions"}
+                  </span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </div>
               </div>
@@ -363,10 +400,17 @@ export default function LandingPage() {
                     <div className="w-4 h-4 rounded-full bg-[#ECFDF5] dark:bg-[#064E3B]/30 flex items-center justify-center text-[#0D9488]">
                       <ArrowUpRight className="w-3.5 h-3.5" />
                     </div>
-                    <span>{language === 'id' ? 'Pemasukan Bulan Ini' : 'Monthly Income'}</span>
+                    <span>
+                      {language === "id"
+                        ? "Pemasukan Bulan Ini"
+                        : "Monthly Income"}
+                    </span>
                   </div>
                   <span className="font-bold font-mono text-sm sm:text-base text-[#0D9488] tracking-tight tnum">
-                    +{formatMask(formatCurrency(currentTotal.income, demoCurrency))}
+                    +
+                    {formatMask(
+                      formatCurrency(currentTotal.income, demoCurrency),
+                    )}
                   </span>
                 </div>
 
@@ -375,10 +419,17 @@ export default function LandingPage() {
                     <div className="w-4 h-4 rounded-full bg-[#FFF1F2] dark:bg-[#881337]/30 flex items-center justify-center text-[#E11D48]">
                       <ArrowDownRight className="w-3.5 h-3.5" />
                     </div>
-                    <span>{language === 'id' ? 'Pengeluaran Bulan Ini' : 'Monthly Expense'}</span>
+                    <span>
+                      {language === "id"
+                        ? "Pengeluaran Bulan Ini"
+                        : "Monthly Expense"}
+                    </span>
                   </div>
                   <span className="font-bold font-mono text-sm sm:text-base text-[#E11D48] tracking-tight tnum">
-                    -{formatMask(formatCurrency(currentTotal.expense, demoCurrency))}
+                    -
+                    {formatMask(
+                      formatCurrency(currentTotal.expense, demoCurrency),
+                    )}
                   </span>
                 </div>
               </div>
@@ -388,15 +439,17 @@ export default function LandingPage() {
             <div className="flex flex-col gap-2.5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
-                  {language === 'id' ? 'Daftar Akun & Dompet' : 'Accounts & Wallets'}
+                  {language === "id"
+                    ? "Daftar Akun & Dompet"
+                    : "Accounts & Wallets"}
                 </span>
                 <span className="text-xs font-semibold text-[#64748B] dark:text-[#94A3B8]">
-                  4 {language === 'id' ? 'Akun Aktif' : 'Active'}
+                  4 {language === "id" ? "Akun Aktif" : "Active"}
                 </span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {nativeWallets.map((w, idx) => {
-                  const Icon = w.icon
+                  const Icon = w.icon;
                   return (
                     <div
                       key={idx}
@@ -421,7 +474,7 @@ export default function LandingPage() {
                         </span>
                       </div>
                     </div>
-                  )
+                  );
                 })}
               </div>
             </div>
@@ -429,13 +482,33 @@ export default function LandingPage() {
             {/* 3. Recent Transactions Stream */}
             <div className="flex flex-col gap-2.5">
               <span className="text-xs font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
-                {language === 'id' ? 'Transaksi Terbaru' : 'Recent Transactions'}
+                {language === "id"
+                  ? "Transaksi Terbaru"
+                  : "Recent Transactions"}
               </span>
               <div className="flex flex-col gap-2">
                 {[
-                  { title: 'Gaji Bulanan & Bonus', category: 'Gaji Pokok', account: 'BCA Utama', amount: '+Rp 15.000.000', isIncome: true },
-                  { title: 'Developer SaaS Tools', category: 'Langganan & Digital', account: 'Wise USD Vault', amount: '-$40.00', isIncome: false },
-                  { title: 'Belanja Supermarket', category: 'Belanja & Kebutuhan', account: 'BCA Utama', amount: '-Rp 322.000', isIncome: false },
+                  {
+                    title: "Gaji Bulanan & Bonus",
+                    category: "Gaji Pokok",
+                    account: "BCA Utama",
+                    amount: "+Rp 15.000.000",
+                    isIncome: true,
+                  },
+                  {
+                    title: "Developer SaaS Tools",
+                    category: "Langganan & Digital",
+                    account: "Wise USD Vault",
+                    amount: "-$40.00",
+                    isIncome: false,
+                  },
+                  {
+                    title: "Belanja Supermarket",
+                    category: "Belanja & Kebutuhan",
+                    account: "BCA Utama",
+                    amount: "-Rp 322.000",
+                    isIncome: false,
+                  },
                 ].map((tx, idx) => (
                   <div
                     key={idx}
@@ -445,8 +518,8 @@ export default function LandingPage() {
                       <div
                         className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
                           tx.isIncome
-                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                            : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                            : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
                         }`}
                       >
                         {tx.isIncome ? (
@@ -467,8 +540,8 @@ export default function LandingPage() {
                     <span
                       className={`text-xs sm:text-sm font-mono font-bold shrink-0 tnum ${
                         tx.isIncome
-                          ? 'text-emerald-600 dark:text-emerald-400'
-                          : 'text-rose-600 dark:text-rose-400'
+                          ? "text-emerald-600 dark:text-emerald-400"
+                          : "text-rose-600 dark:text-rose-400"
                       }`}
                     >
                       {formatMask(tx.amount)}
@@ -486,14 +559,14 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto flex flex-col gap-12 sm:gap-16">
           <div className="text-center flex flex-col gap-2.5 max-w-2xl mx-auto">
             <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-[#0F172A] dark:text-[#F8FAFC]">
-              {language === 'id'
-                ? 'Semua yang Anda Butuhkan untuk Mengelola Keuangan'
-                : 'Everything You Need to Master Your Finances'}
+              {language === "id"
+                ? "Semua yang Anda Butuhkan untuk Mengelola Keuangan"
+                : "Everything You Need to Master Your Finances"}
             </h2>
             <p className="text-xs sm:text-sm text-[#64748B] dark:text-[#94A3B8] leading-relaxed">
-              {language === 'id'
-                ? 'Platform pembukuan modern untuk likuiditas multi-valas, investasi saham, cicilan, dan otomasi kas terpadu.'
-                : 'Modern financial ledger for multi-currency liquidity, stock portfolios, debt schedules, and automated cash flows.'}
+              {language === "id"
+                ? "Platform pembukuan modern untuk likuiditas multi-valas, investasi saham, cicilan, dan otomasi kas terpadu."
+                : "Modern financial ledger for multi-currency liquidity, stock portfolios, debt schedules, and automated cash flows."}
             </p>
           </div>
 
@@ -504,12 +577,14 @@ export default function LandingPage() {
                 <Globe2 className="w-4.5 h-4.5" />
               </div>
               <h3 className="text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-                {language === 'id' ? 'Multi-Valas & Kurs Realtime' : 'Multi-Currency & Live FX'}
+                {language === "id"
+                  ? "Multi-Valas & Kurs Realtime"
+                  : "Multi-Currency & Live FX"}
               </h3>
               <p className="text-xs text-[#64748B] dark:text-[#94A3B8] leading-relaxed">
-                {language === 'id'
-                  ? 'Catat IDR, USD, SGD dengan kurs pasar live dan konversi total aset otomatis.'
-                  : 'Track IDR, USD, SGD with live exchange rates and automatic net worth consolidation.'}
+                {language === "id"
+                  ? "Catat IDR, USD, SGD dengan kurs pasar live dan konversi total aset otomatis."
+                  : "Track IDR, USD, SGD with live exchange rates and automatic net worth consolidation."}
               </p>
             </div>
 
@@ -519,12 +594,14 @@ export default function LandingPage() {
                 <TrendingUp className="w-4.5 h-4.5" />
               </div>
               <h3 className="text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-                {language === 'id' ? 'Portofolio Saham & Deposito' : 'Stock Portfolio & Deposits'}
+                {language === "id"
+                  ? "Portofolio Saham & Deposito"
+                  : "Stock Portfolio & Deposits"}
               </h3>
               <p className="text-xs text-[#64748B] dark:text-[#94A3B8] leading-relaxed">
-                {language === 'id'
-                  ? 'Pantau saham IDX, harga beli rata-rata, cuan realized P&L, dan kas RDN terpadu.'
-                  : 'Track IDX equities, average cost base, realized P&L gains, and integrated brokerage cash.'}
+                {language === "id"
+                  ? "Pantau saham IDX, harga beli rata-rata, cuan realized P&L, dan kas RDN terpadu."
+                  : "Track IDX equities, average cost base, realized P&L gains, and integrated brokerage cash."}
               </p>
             </div>
 
@@ -534,12 +611,14 @@ export default function LandingPage() {
                 <Target className="w-4.5 h-4.5" />
               </div>
               <h3 className="text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-                {language === 'id' ? 'Target Tabungan (Goals)' : 'Milestone Savings Goals'}
+                {language === "id"
+                  ? "Target Tabungan (Goals)"
+                  : "Milestone Savings Goals"}
               </h3>
               <p className="text-xs text-[#64748B] dark:text-[#94A3B8] leading-relaxed">
-                {language === 'id'
-                  ? 'Celengan impian terukur dengan kalkulator target bulanan dan alokasi dompet sumber.'
-                  : 'Visual milestone targets with monthly contribution calculators and wallet allocations.'}
+                {language === "id"
+                  ? "Celengan impian terukur dengan kalkulator target bulanan dan alokasi dompet sumber."
+                  : "Visual milestone targets with monthly contribution calculators and wallet allocations."}
               </p>
             </div>
 
@@ -549,12 +628,14 @@ export default function LandingPage() {
                 <CalendarCheck className="w-4.5 h-4.5" />
               </div>
               <h3 className="text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-                {language === 'id' ? 'Tagihan Rutin & Due Center' : 'Recurring Bills & Due Center'}
+                {language === "id"
+                  ? "Tagihan Rutin & Due Center"
+                  : "Recurring Bills & Due Center"}
               </h3>
               <p className="text-xs text-[#64748B] dark:text-[#94A3B8] leading-relaxed">
-                {language === 'id'
-                  ? 'Pusat jadwal jatuh tempo tagihan langganan, sewa, dan tombol bayar 1-klik.'
-                  : 'Unified obligations calendar for utilities, subscriptions, and 1-click settlement.'}
+                {language === "id"
+                  ? "Pusat jadwal jatuh tempo tagihan langganan, sewa, dan tombol bayar 1-klik."
+                  : "Unified obligations calendar for utilities, subscriptions, and 1-click settlement."}
               </p>
             </div>
 
@@ -564,12 +645,14 @@ export default function LandingPage() {
                 <Scale className="w-4.5 h-4.5" />
               </div>
               <h3 className="text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-                {language === 'id' ? 'Buku Hutang & Piutang' : 'Debts & Receivables'}
+                {language === "id"
+                  ? "Buku Hutang & Piutang"
+                  : "Debts & Receivables"}
               </h3>
               <p className="text-xs text-[#64748B] dark:text-[#94A3B8] leading-relaxed">
-                {language === 'id'
-                  ? 'Catat pinjaman, tanggal jatuh tempo, dan riwayat cicilan pelunasan bertahap.'
-                  : 'Manage borrow and lend records with partial installment logs and due dates.'}
+                {language === "id"
+                  ? "Catat pinjaman, tanggal jatuh tempo, dan riwayat cicilan pelunasan bertahap."
+                  : "Manage borrow and lend records with partial installment logs and due dates."}
               </p>
             </div>
 
@@ -579,12 +662,14 @@ export default function LandingPage() {
                 <ScanLine className="w-4.5 h-4.5" />
               </div>
               <h3 className="text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-                {language === 'id' ? 'Preset 1-Klik & Scan Struk AI' : '1-Tap Presets & AI Receipt OCR'}
+                {language === "id"
+                  ? "Preset 1-Klik & Scan Struk AI"
+                  : "1-Tap Presets & AI Receipt OCR"}
               </h3>
               <p className="text-xs text-[#64748B] dark:text-[#94A3B8] leading-relaxed">
-                {language === 'id'
-                  ? 'Catat cepat transaksi harian dari pinned preset dan scan struk otomatis tanpa ribet.'
-                  : '1-tap frequent logging presets plus instant camera receipt scanning with itemized breakdown.'}
+                {language === "id"
+                  ? "Catat cepat transaksi harian dari pinned preset dan scan struk otomatis tanpa ribet."
+                  : "1-tap frequent logging presets plus instant camera receipt scanning with itemized breakdown."}
               </p>
             </div>
 
@@ -594,12 +679,14 @@ export default function LandingPage() {
                 <History className="w-4.5 h-4.5" />
               </div>
               <h3 className="text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-                {language === 'id' ? 'Universal Audit Trail' : 'Immutable Audit Trail'}
+                {language === "id"
+                  ? "Universal Audit Trail"
+                  : "Immutable Audit Trail"}
               </h3>
               <p className="text-xs text-[#64748B] dark:text-[#94A3B8] leading-relaxed">
-                {language === 'id'
-                  ? 'Seluruh mutasi, edit, dan hapus data tercatat permanen di riwayat aktivitas.'
-                  : 'Every single balance mutation, update, and deletion is immutably logged in database.'}
+                {language === "id"
+                  ? "Seluruh mutasi, edit, dan hapus data tercatat permanen di riwayat aktivitas."
+                  : "Every single balance mutation, update, and deletion is immutably logged in database."}
               </p>
             </div>
 
@@ -609,12 +696,14 @@ export default function LandingPage() {
                 <EyeOff className="w-4.5 h-4.5" />
               </div>
               <h3 className="text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-                {language === 'id' ? 'Mode Privasi Sensor Saldo' : 'Masking Privacy Mode'}
+                {language === "id"
+                  ? "Mode Privasi Sensor Saldo"
+                  : "Masking Privacy Mode"}
               </h3>
               <p className="text-xs text-[#64748B] dark:text-[#94A3B8] leading-relaxed">
-                {language === 'id'
-                  ? 'Satu klik cepat untuk menyamarkan seluruh angka saldo saat di tempat umum.'
-                  : 'Instantly blur all sensitive balance numbers with a single click in public spaces.'}
+                {language === "id"
+                  ? "Satu klik cepat untuk menyamarkan seluruh angka saldo saat di tempat umum."
+                  : "Instantly blur all sensitive balance numbers with a single click in public spaces."}
               </p>
             </div>
 
@@ -624,12 +713,14 @@ export default function LandingPage() {
                 <FileSpreadsheet className="w-4.5 h-4.5" />
               </div>
               <h3 className="text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-                {language === 'id' ? 'Laporan & Ekspor CSV' : 'Financial Reports & CSV'}
+                {language === "id"
+                  ? "Laporan & Ekspor CSV"
+                  : "Financial Reports & CSV"}
               </h3>
               <p className="text-xs text-[#64748B] dark:text-[#94A3B8] leading-relaxed">
-                {language === 'id'
-                  ? 'Analisis rasio tabungan, grafik arus kas, dan unduh data ke format spreadsheet.'
-                  : 'Savings rate analysis, cash flow trends, and one-click spreadsheet data exports.'}
+                {language === "id"
+                  ? "Analisis rasio tabungan, grafik arus kas, dan unduh data ke format spreadsheet."
+                  : "Savings rate analysis, cash flow trends, and one-click spreadsheet data exports."}
               </p>
             </div>
           </div>
@@ -641,12 +732,14 @@ export default function LandingPage() {
         <div className="p-8 sm:p-14 rounded-3xl bg-[#0F172A] text-white dark:bg-[#121215] border border-[#334155] dark:border-[#27272A] flex flex-col items-center gap-6 shadow-2xl relative overflow-hidden">
           <div className="flex flex-col gap-2.5 max-w-md mx-auto">
             <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight">
-              {language === 'id' ? 'Jelajahi Pocketly Sekarang' : 'Experience Pocketly Today'}
+              {language === "id"
+                ? "Jelajahi Pocketly Sekarang"
+                : "Experience Pocketly Today"}
             </h2>
             <p className="text-xs sm:text-sm text-[#94A3B8] leading-relaxed">
-              {language === 'id'
-                ? 'Gunakan akun demo publik untuk mencoba seluruh fitur secara langsung tanpa perlu mendaftar.'
-                : 'Explore all modules instantly with the public pre-seeded demo account.'}
+              {language === "id"
+                ? "Gunakan akun demo publik untuk mencoba seluruh fitur secara langsung tanpa perlu mendaftar."
+                : "Explore all modules instantly with the public pre-seeded demo account."}
             </p>
           </div>
 
@@ -654,7 +747,7 @@ export default function LandingPage() {
             href="/login"
             className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl text-sm font-bold bg-white text-[#0F172A] hover:bg-[#F1F3F5] transition-all active:scale-95 shadow-lg"
           >
-            <span>{language === 'id' ? 'Coba Demo' : 'Try Live Demo'}</span>
+            <span>{language === "id" ? "Coba Demo" : "Try Live Demo"}</span>
             <ChevronRight className="w-4 h-4" />
           </Link>
         </div>
@@ -677,10 +770,11 @@ export default function LandingPage() {
           </div>
 
           <div className="text-[11px] text-[#94A3B8]">
-            Pocketly &copy; {new Date().getFullYear()} — Multi-Currency Financial Ledger
+            Pocketly &copy; {new Date().getFullYear()} — Multi-Currency
+            Financial Ledger
           </div>
         </div>
       </footer>
     </div>
-  )
+  );
 }
