@@ -89,10 +89,10 @@ export function BottomNav({
       icon: Plus,
     },
     {
-      label: t.nav.budget,
-      href: "/budget",
-      icon: PieChart,
-      isActive: pathname.startsWith("/budget"),
+      label: language === "en" ? "Analytics" : "Analitik",
+      href: "/reports",
+      icon: BarChart3,
+      isActive: pathname.startsWith("/reports"),
     },
     {
       label: t.nav.more,
@@ -100,7 +100,7 @@ export function BottomNav({
       onClick: () => setIsMoreMenuOpen(true),
       icon: Menu,
       isActive:
-        pathname.startsWith("/reports") ||
+        pathname.startsWith("/budget") ||
         pathname.startsWith("/goals") ||
         pathname.startsWith("/due-center") ||
         pathname.startsWith("/investments") ||
@@ -239,10 +239,13 @@ export function BottomNav({
       desc: language === "en" ? "Track upcoming bills, dues, and milestones" : "Pantau tagihan jatuh tempo & komitmen keuangan",
     },
     {
-      label: t.nav.reports,
-      href: "/reports",
-      icon: BarChart3,
-      desc: t.nav.reportsDesc,
+      label: t.nav.budget,
+      href: "/budget",
+      icon: PieChart,
+      desc:
+        language === "en"
+          ? "Set monthly category limits and budget caps"
+          : "Batas pengeluaran per kategori & pagu bulanan",
     },
     { label: t.nav.goals, href: "/goals", icon: Target, desc: t.nav.goalsDesc },
     {

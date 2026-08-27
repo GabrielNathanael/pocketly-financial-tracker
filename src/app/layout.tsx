@@ -6,6 +6,7 @@ import { UndoProvider } from "@/lib/context/undo-context";
 import { UndoSnackbar } from "@/components/ui/undo-snackbar";
 import { Toaster } from "sonner";
 import { Analytics } from "@vercel/analytics/next";
+import { PwaRegister } from "@/components/pwa/pwa-register";
 import "./globals.css";
 
 const jakartaSans = Plus_Jakarta_Sans({
@@ -27,11 +28,14 @@ export const metadata: Metadata = {
   description: "Precision personal finance and liquidity management platform.",
   icons: {
     icon: [
-      { url: "/logo.png", sizes: "any" },
-      { url: "/logo.png", type: "image/png" },
+      { url: "/favicon/favicon.ico" },
+      { url: "/favicon/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon/favicon-96x96.png", sizes: "96x96", type: "image/png" },
     ],
-    shortcut: "/logo.png",
-    apple: "/logo.png",
+    shortcut: "/favicon/favicon.ico",
+    apple: [
+      { url: "/favicon/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
   },
   manifest: "/manifest.webmanifest",
   appleWebApp: {
@@ -78,6 +82,7 @@ export default function RootLayout({
           </LanguageProvider>
         </ThemeProvider>
         <Analytics />
+        <PwaRegister />
       </body>
     </html>
   );
