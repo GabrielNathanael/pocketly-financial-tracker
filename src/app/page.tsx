@@ -241,6 +241,14 @@ export default function LandingPage() {
         {/* Ambient Subtle Glow */}
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] sm:w-[650px] h-[300px] bg-linear-to-tr from-teal-500/10 via-indigo-500/10 to-rose-500/10 rounded-full blur-3xl -z-10 pointer-events-none" />
 
+        {/* Compact PWA Badge */}
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-200/70 dark:bg-[#1E1E24] border border-slate-300/70 dark:border-[#2E2E36] text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-4 shadow-2xs">
+          <Smartphone className="w-3.5 h-3.5 text-blue-500" />
+          <span>
+            {language === 'id' ? 'Aplikasi PWA • Pasang di Layar Utama HP' : 'Installable PWA • Add to Home Screen'}
+          </span>
+        </div>
+
         {/* Headline */}
         <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-[#0F172A] dark:text-[#F8FAFC] max-w-4xl leading-[1.15]">
           {language === 'id'
@@ -476,7 +484,7 @@ export default function LandingPage() {
       {/* 4. Complete Features Grid */}
       <section className="py-16 sm:py-24 px-4 sm:px-6 bg-white dark:bg-[#121215] border-t border-b border-[#E5E7EB] dark:border-[#27272A]">
         <div className="max-w-5xl mx-auto flex flex-col gap-12 sm:gap-16">
-          <div className="text-center flex flex-col gap-3 max-w-2xl mx-auto">
+          <div className="text-center flex flex-col gap-2.5 max-w-2xl mx-auto">
             <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-[#0F172A] dark:text-[#F8FAFC]">
               {language === 'id'
                 ? 'Semua yang Anda Butuhkan untuk Mengelola Keuangan'
@@ -484,144 +492,144 @@ export default function LandingPage() {
             </h2>
             <p className="text-xs sm:text-sm text-[#64748B] dark:text-[#94A3B8] leading-relaxed">
               {language === 'id'
-                ? 'Semua alat yang Anda butuhkan untuk mengelola likuiditas multi-valas, investasi, cicilan, dan otomasi kas dalam satu platform terpadu.'
-                : 'Everything you need to manage global cash flows, stock holdings, recurring bills, and savings milestones in one unified ledger.'}
+                ? 'Platform pembukuan modern untuk likuiditas multi-valas, investasi saham, cicilan, dan otomasi kas terpadu.'
+                : 'Modern financial ledger for multi-currency liquidity, stock portfolios, debt schedules, and automated cash flows.'}
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {/* 1. Multi-Valas & Live Forex */}
-            <div className="p-5 rounded-2xl bg-[#F8F9FA] dark:bg-[#18181B] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-3 hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors">
-              <div className="w-10 h-10 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-center text-[#0D9488] shadow-xs">
-                <Globe2 className="w-5 h-5" />
+            <div className="p-5 rounded-2xl bg-[#F8F9FA] dark:bg-[#18181B] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-2.5 hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors">
+              <div className="w-9 h-9 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-center text-[#0D9488] shadow-xs">
+                <Globe2 className="w-4.5 h-4.5" />
               </div>
-              <h3 className="text-base font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-                {language === 'id' ? 'Multi-Valas & Live Kurs' : 'Multi-Currency Live FX'}
+              <h3 className="text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                {language === 'id' ? 'Multi-Valas & Kurs Realtime' : 'Multi-Currency & Live FX'}
               </h3>
               <p className="text-xs text-[#64748B] dark:text-[#94A3B8] leading-relaxed">
                 {language === 'id'
-                  ? 'Catat transaksi dalam IDR, USD, SGD, EUR, JPY dengan update kurs realtime dan konsolidasi aset instan.'
-                  : 'Track balances across global currencies with live exchange rates and automatic net worth consolidation.'}
+                  ? 'Catat IDR, USD, SGD dengan kurs pasar live dan konversi total aset otomatis.'
+                  : 'Track IDR, USD, SGD with live exchange rates and automatic net worth consolidation.'}
               </p>
             </div>
 
-            {/* 2. Investasi & Portofolio Aset */}
-            <div className="p-5 rounded-2xl bg-[#F8F9FA] dark:bg-[#18181B] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-3 hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors">
-              <div className="w-10 h-10 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-center text-emerald-600 shadow-xs">
-                <TrendingUp className="w-5 h-5" />
+            {/* 2. Investasi & Portofolio Saham */}
+            <div className="p-5 rounded-2xl bg-[#F8F9FA] dark:bg-[#18181B] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-2.5 hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors">
+              <div className="w-9 h-9 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-center text-emerald-600 shadow-xs">
+                <TrendingUp className="w-4.5 h-4.5" />
               </div>
-              <h3 className="text-base font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-                {language === 'id' ? 'Portofolio Investasi & Aset' : 'Investment & Asset Portfolio'}
+              <h3 className="text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                {language === 'id' ? 'Portofolio Saham & Deposito' : 'Stock Portfolio & Deposits'}
               </h3>
               <p className="text-xs text-[#64748B] dark:text-[#94A3B8] leading-relaxed">
                 {language === 'id'
-                  ? 'Pantau kepemilikan saham IDX, reksa dana, deposito, modal beli rata-rata, dan akun kas RDN terintegrasi.'
-                  : 'Track equities, mutual funds, deposits, average buy prices, and integrated brokerage cash accounts.'}
+                  ? 'Pantau saham IDX, harga beli rata-rata, cuan realized P&L, dan kas RDN terpadu.'
+                  : 'Track IDX equities, average cost base, realized P&L gains, and integrated brokerage cash.'}
               </p>
             </div>
 
             {/* 3. Savings Goals */}
-            <div className="p-5 rounded-2xl bg-[#F8F9FA] dark:bg-[#18181B] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-3 hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors">
-              <div className="w-10 h-10 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-center text-blue-500 shadow-xs">
-                <Target className="w-5 h-5" />
+            <div className="p-5 rounded-2xl bg-[#F8F9FA] dark:bg-[#18181B] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-2.5 hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors">
+              <div className="w-9 h-9 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-center text-blue-500 shadow-xs">
+                <Target className="w-4.5 h-4.5" />
               </div>
-              <h3 className="text-base font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-                {language === 'id' ? 'Target Tabungan (Goals)' : 'Savings Goals & Targets'}
+              <h3 className="text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                {language === 'id' ? 'Target Tabungan (Goals)' : 'Milestone Savings Goals'}
               </h3>
               <p className="text-xs text-[#64748B] dark:text-[#94A3B8] leading-relaxed">
                 {language === 'id'
-                  ? 'Tetapkan target dana darurat atau impian belanja dengan alokasi setoran langsung dari dompet sumber.'
-                  : 'Set milestone savings targets with progress tracking and direct wallet deposit allocations.'}
+                  ? 'Celengan impian terukur dengan kalkulator target bulanan dan alokasi dompet sumber.'
+                  : 'Visual milestone targets with monthly contribution calculators and wallet allocations.'}
               </p>
             </div>
 
             {/* 4. Tagihan Rutin & Due Center */}
-            <div className="p-5 rounded-2xl bg-[#F8F9FA] dark:bg-[#18181B] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-3 hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors">
-              <div className="w-10 h-10 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-center text-purple-500 shadow-xs">
-                <CalendarCheck className="w-5 h-5" />
+            <div className="p-5 rounded-2xl bg-[#F8F9FA] dark:bg-[#18181B] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-2.5 hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors">
+              <div className="w-9 h-9 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-center text-purple-500 shadow-xs">
+                <CalendarCheck className="w-4.5 h-4.5" />
               </div>
-              <h3 className="text-base font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+              <h3 className="text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC]">
                 {language === 'id' ? 'Tagihan Rutin & Due Center' : 'Recurring Bills & Due Center'}
               </h3>
               <p className="text-xs text-[#64748B] dark:text-[#94A3B8] leading-relaxed">
                 {language === 'id'
-                  ? 'Otomasi pengingat langganan Netflix, internet, dan tagihan bulanan dalam satu pusat jatuh tempo.'
-                  : 'Automate subscription schedules, utilities, and upcoming bill reminders in a unified due center.'}
+                  ? 'Pusat jadwal jatuh tempo tagihan langganan, sewa, dan tombol bayar 1-klik.'
+                  : 'Unified obligations calendar for utilities, subscriptions, and 1-click settlement.'}
               </p>
             </div>
 
             {/* 5. Hutang & Piutang */}
-            <div className="p-5 rounded-2xl bg-[#F8F9FA] dark:bg-[#18181B] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-3 hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors">
-              <div className="w-10 h-10 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-center text-indigo-500 shadow-xs">
-                <Scale className="w-5 h-5" />
+            <div className="p-5 rounded-2xl bg-[#F8F9FA] dark:bg-[#18181B] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-2.5 hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors">
+              <div className="w-9 h-9 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-center text-indigo-500 shadow-xs">
+                <Scale className="w-4.5 h-4.5" />
               </div>
-              <h3 className="text-base font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-                {language === 'id' ? 'Hutang & Piutang' : 'Debts & Receivables'}
+              <h3 className="text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                {language === 'id' ? 'Buku Hutang & Piutang' : 'Debts & Receivables'}
               </h3>
               <p className="text-xs text-[#64748B] dark:text-[#94A3B8] leading-relaxed">
                 {language === 'id'
-                  ? 'Catat siapa yang meminjam uang dan cicilan pinjaman dengan pemotongan saldo dompet otomatis.'
-                  : 'Manage borrow and lend records with partial installment logs and direct wallet balance updates.'}
+                  ? 'Catat pinjaman, tanggal jatuh tempo, dan riwayat cicilan pelunasan bertahap.'
+                  : 'Manage borrow and lend records with partial installment logs and due dates.'}
               </p>
             </div>
 
-            {/* 6. AI OCR Receipt Scanner */}
-            <div className="p-5 rounded-2xl bg-[#F8F9FA] dark:bg-[#18181B] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-3 hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors">
-              <div className="w-10 h-10 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-center text-amber-500 shadow-xs">
-                <ScanLine className="w-5 h-5" />
+            {/* 6. AI OCR & Pinned Fast Presets */}
+            <div className="p-5 rounded-2xl bg-[#F8F9FA] dark:bg-[#18181B] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-2.5 hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors">
+              <div className="w-9 h-9 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-center text-amber-500 shadow-xs">
+                <ScanLine className="w-4.5 h-4.5" />
               </div>
-              <h3 className="text-base font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-                {language === 'id' ? 'OCR Scan Struk Belanja' : 'AI Receipt OCR Scanner'}
+              <h3 className="text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                {language === 'id' ? 'Preset 1-Klik & Scan Struk AI' : '1-Tap Presets & AI Receipt OCR'}
               </h3>
               <p className="text-xs text-[#64748B] dark:text-[#94A3B8] leading-relaxed">
                 {language === 'id'
-                  ? 'Foto struk belanja Anda untuk ekstraksi otomatis nama toko, rincian barang belanjaan, dan total harga.'
-                  : 'Snap a receipt photo to auto-extract merchant name, itemized sub-items, and total expense.'}
+                  ? 'Catat cepat transaksi harian dari pinned preset dan scan struk otomatis tanpa ribet.'
+                  : '1-tap frequent logging presets plus instant camera receipt scanning with itemized breakdown.'}
               </p>
             </div>
 
             {/* 7. Universal Audit Trail */}
-            <div className="p-5 rounded-2xl bg-[#F8F9FA] dark:bg-[#18181B] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-3 hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors">
-              <div className="w-10 h-10 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-center text-teal-600 shadow-xs">
-                <History className="w-5 h-5" />
+            <div className="p-5 rounded-2xl bg-[#F8F9FA] dark:bg-[#18181B] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-2.5 hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors">
+              <div className="w-9 h-9 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-center text-teal-600 shadow-xs">
+                <History className="w-4.5 h-4.5" />
               </div>
-              <h3 className="text-base font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+              <h3 className="text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC]">
                 {language === 'id' ? 'Universal Audit Trail' : 'Immutable Audit Trail'}
               </h3>
               <p className="text-xs text-[#64748B] dark:text-[#94A3B8] leading-relaxed">
                 {language === 'id'
-                  ? 'Setiap penambahan, edit saldo, dan penghapusan tercatat secara permanen di trigger database.'
-                  : 'Every single insert, update, and balance mutation is immutably logged via PostgreSQL triggers.'}
+                  ? 'Seluruh mutasi, edit, dan hapus data tercatat permanen di riwayat aktivitas.'
+                  : 'Every single balance mutation, update, and deletion is immutably logged in database.'}
               </p>
             </div>
 
             {/* 8. Mode Privasi Sensor Saldo */}
-            <div className="p-5 rounded-2xl bg-[#F8F9FA] dark:bg-[#18181B] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-3 hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors">
-              <div className="w-10 h-10 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-center text-rose-500 shadow-xs">
-                <EyeOff className="w-5 h-5" />
+            <div className="p-5 rounded-2xl bg-[#F8F9FA] dark:bg-[#18181B] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-2.5 hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors">
+              <div className="w-9 h-9 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-center text-rose-500 shadow-xs">
+                <EyeOff className="w-4.5 h-4.5" />
               </div>
-              <h3 className="text-base font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+              <h3 className="text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC]">
                 {language === 'id' ? 'Mode Privasi Sensor Saldo' : 'Masking Privacy Mode'}
               </h3>
               <p className="text-xs text-[#64748B] dark:text-[#94A3B8] leading-relaxed">
                 {language === 'id'
-                  ? 'Satu klik tombol cepat untuk memburamkan semua angka saldo saat membuka aplikasi di ruang publik.'
-                  : 'Instantly blur all sensitive balance numbers with a single click in public environments.'}
+                  ? 'Satu klik cepat untuk menyamarkan seluruh angka saldo saat di tempat umum.'
+                  : 'Instantly blur all sensitive balance numbers with a single click in public spaces.'}
               </p>
             </div>
 
             {/* 9. Laporan Keuangan & CSV */}
-            <div className="p-5 rounded-2xl bg-[#F8F9FA] dark:bg-[#18181B] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-3 hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors">
-              <div className="w-10 h-10 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-center text-cyan-500 shadow-xs">
-                <FileSpreadsheet className="w-5 h-5" />
+            <div className="p-5 rounded-2xl bg-[#F8F9FA] dark:bg-[#18181B] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-2.5 hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors">
+              <div className="w-9 h-9 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-center text-cyan-500 shadow-xs">
+                <FileSpreadsheet className="w-4.5 h-4.5" />
               </div>
-              <h3 className="text-base font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-                {language === 'id' ? 'Laporan & Export CSV' : 'Financial Reports & CSV'}
+              <h3 className="text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                {language === 'id' ? 'Laporan & Ekspor CSV' : 'Financial Reports & CSV'}
               </h3>
               <p className="text-xs text-[#64748B] dark:text-[#94A3B8] leading-relaxed">
                 {language === 'id'
-                  ? 'Filter laporan keuangan kustom dan unduh seluruh transaksi ke format CSV untuk analisis spreadsheet.'
-                  : 'Filter financial summaries and export structured transaction spreadsheets on demand.'}
+                  ? 'Analisis rasio tabungan, grafik arus kas, dan unduh data ke format spreadsheet.'
+                  : 'Savings rate analysis, cash flow trends, and one-click spreadsheet data exports.'}
               </p>
             </div>
           </div>

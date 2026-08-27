@@ -93,6 +93,7 @@ export interface NetWorthSummary {
   totalAccountsIdr: number
   totalStockHoldingsIdr: number
   totalReceivablesIdr: number
+  totalSavingsGoalsIdr: number
   totalDebtsIdr: number
   netWorthIdr: number
   exchangeRate: number
@@ -153,12 +154,28 @@ export async function getNetWorthData(displayCurrency: CurrencyCode = 'IDR'): Pr
     }
   }
 
-  const netWorthIdr = totalAccountsIdr + totalStockHoldingsIdr + totalReceivablesIdr - totalDebtsIdr
+  // 4. Savings Goals (Disimpan / Terkumpul)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: goals } = await (supabase.from('savings_goals') as any)
+    .select('current_amount, currency')
+    .gt('current_amount', 0)
+
+  let totalSavingsGoalsIdr = 0
+  if (goals) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const g of goals as any[]) {
+      totalSavingsGoalsIdr += convertAmount(Number(g.current_amount), g.currency || 'IDR', displayCurrency, rates)
+    }
+  }
+
+  const totalAssets = totalAccountsIdr + totalStockHoldingsIdr + totalReceivablesIdr + totalSavingsGoalsIdr
+  const netWorthIdr = totalAssets - totalDebtsIdr
 
   return {
     totalAccountsIdr,
     totalStockHoldingsIdr,
     totalReceivablesIdr,
+    totalSavingsGoalsIdr,
     totalDebtsIdr,
     netWorthIdr,
     exchangeRate: rates.IDR || 16200,

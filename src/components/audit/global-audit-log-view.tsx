@@ -48,7 +48,7 @@ export function GlobalAuditLogView({ initialLogs }: GlobalAuditLogViewProps) {
     { label: isId ? 'Transaksi' : 'Transactions', value: 'transactions' },
     { label: isId ? 'Transfer' : 'Transfers', value: 'transfers' },
     { label: isId ? 'Investasi Saham' : 'Stock Trades', value: 'stock_trades' },
-    { label: isId ? 'Tagihan Rutin' : 'Recurring Bills', value: 'recurring_transactions' },
+    { label: isId ? 'Transaksi Rutin' : 'Recurring Transactions', value: 'recurring_transactions' },
     { label: isId ? 'Target Tabungan' : 'Savings Goals', value: 'savings_goals' },
     { label: isId ? 'Setoran Tabungan' : 'Goal Deposits', value: 'savings_goal_deposits' },
     { label: isId ? 'Hutang & Piutang' : 'Debts & Loans', value: 'debts' },

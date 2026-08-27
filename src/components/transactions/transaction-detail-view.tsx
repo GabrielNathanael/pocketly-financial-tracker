@@ -200,8 +200,8 @@ export function TransactionDetailView({
           </h1>
         </div>
 
-        {/* Info Grid (Account, Category, Date) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-[#E5E7EB] dark:border-[#27272A]">
+        {/* Info Items Stack (Account, Category, Date) */}
+        <div className="flex flex-col gap-2.5 pt-2 border-t border-[#E5E7EB] dark:border-[#27272A]">
           {/* Account */}
           <div className="p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex items-center gap-3">
             <div className="w-8 h-8 rounded bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] flex items-center justify-center shrink-0">

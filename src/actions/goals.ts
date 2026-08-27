@@ -239,19 +239,42 @@ export async function recordGoalDeposit(input: GoalDepositInput) {
     })
     .eq('id', goalId)
 
-  // 5. Always record transaction mutation and adjust account balance
+  // 5. Always record transaction mutation linked to Savings system category
   const isDeposit = type === 'deposit'
   const txType = isDeposit ? 'expense' : 'income'
   const desc = isDeposit
     ? `Alokasi Tabungan: ${goal.name}`
     : `Penarikan Tabungan: ${goal.name}`
 
+  // Look up dedicated Savings system category matching txType
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let { data: savingsCat } = await (supabase.from('categories') as any)
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('name', 'Savings')
+    .eq('type', txType)
+    .limit(1)
+    .maybeSingle()
+
+  if (!savingsCat) {
+    // Fallback: look for Tabungan
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: fallbackCat } = await (supabase.from('categories') as any)
+      .select('id')
+      .eq('user_id', user.id)
+      .in('name', ['Savings', 'Tabungan', 'Alokasi Tabungan'])
+      .eq('type', txType)
+      .limit(1)
+      .maybeSingle()
+    savingsCat = fallbackCat
+  }
+
   // Insert transaction
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await (supabase.from('transactions') as any).insert({
     user_id: user.id,
     account_id: accountId,
-    category_id: goal.category_id || '',
+    category_id: savingsCat?.id || null,
     type: txType,
     amount,
     currency,

@@ -11,7 +11,7 @@ import { DynamicIcon } from '@/components/ui/dynamic-icon'
 import { useLanguage } from '@/lib/i18n/language-context'
 import { toast } from 'sonner'
 import { Trash2, AlertCircle, ShieldCheck } from 'lucide-react'
-import { formatCategoryName } from '@/lib/utils/category-i18n'
+import { formatCategoryName, getCanonicalCategoryName } from '@/lib/utils/category-i18n'
 import { cn } from '@/lib/utils/cn'
 
 interface CategoryFormProps {
@@ -41,6 +41,7 @@ const AVAILABLE_ICONS = [
   'Shield',
   'Tags',
   'Scale',
+  'HandCoins',
 ]
 
 export function CategoryForm({ initialData, onSuccess, onClose }: CategoryFormProps) {
@@ -57,9 +58,12 @@ export function CategoryForm({ initialData, onSuccess, onClose }: CategoryFormPr
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const canonicalName = getCanonicalCategoryName(initialData?.name || '')
   const isSystemProtected =
-    initialData?.name?.toLowerCase() === 'discrepancy' ||
-    initialData?.name?.toLowerCase() === 'selisih saldo'
+    canonicalName === 'Discrepancy' ||
+    canonicalName === 'Loan & Debt' ||
+    canonicalName === 'Transfer Fee' ||
+    canonicalName === 'Savings'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -74,7 +78,7 @@ export function CategoryForm({ initialData, onSuccess, onClose }: CategoryFormPr
     try {
       if (isEditing && initialData) {
         const res = await updateCategory(initialData.id, {
-          name: isSystemProtected ? 'Discrepancy' : name,
+          name: isSystemProtected ? canonicalName : name,
           type,
           icon,
         })

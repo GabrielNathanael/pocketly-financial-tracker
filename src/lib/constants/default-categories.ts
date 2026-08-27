@@ -19,9 +19,11 @@ export const DEFAULT_EXPENSE_CATEGORIES: DefaultCategory[] = [
   { name: 'Education', type: 'expense', icon: 'GraduationCap', color: '#3B82F6' },
   { name: 'Personal Care', type: 'expense', icon: 'Sparkles', color: '#F43F5E' },
   { name: 'Giving', type: 'expense', icon: 'Heart', color: '#E11D48' },
-  { name: 'Transfer', type: 'expense', icon: 'Send', color: '#6366F1' },
+  { name: 'Transfer Fee', type: 'expense', icon: 'Send', color: '#6366F1' },
   { name: 'Investment', type: 'expense', icon: 'TrendingUp', color: '#0284C7' },
   { name: 'Discrepancy', type: 'expense', icon: 'Scale', color: '#64748B' },
+  { name: 'Loan & Debt', type: 'expense', icon: 'HandCoins', color: '#F97316' },
+  { name: 'Savings', type: 'expense', icon: 'PiggyBank', color: '#0D9488' },
   { name: 'Family & Kids', type: 'expense', icon: 'Users', color: '#6366F1' },
   { name: 'Other Expense', type: 'expense', icon: 'MoreHorizontal', color: '#64748B' },
 ]
@@ -35,6 +37,9 @@ export const DEFAULT_INCOME_CATEGORIES: DefaultCategory[] = [
   { name: 'Business & Sales', type: 'income', icon: 'TrendingUp', color: '#0D9488' },
   { name: 'Investments & Dividends', type: 'income', icon: 'PieChart', color: '#0284C7' },
   { name: 'Gifts & Grants', type: 'income', icon: 'Gift', color: '#EC4899' },
+  { name: 'Discrepancy', type: 'income', icon: 'Scale', color: '#64748B' },
+  { name: 'Loan & Debt', type: 'income', icon: 'HandCoins', color: '#F97316' },
+  { name: 'Savings', type: 'income', icon: 'PiggyBank', color: '#0D9488' },
   { name: 'Other Income', type: 'income', icon: 'PlusCircle', color: '#64748B' },
 ]
 

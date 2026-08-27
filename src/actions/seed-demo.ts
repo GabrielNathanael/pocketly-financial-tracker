@@ -36,16 +36,78 @@ export async function seedDemoData(): Promise<{ success: boolean; error?: string
       .select('*')
       .eq('user_id', user.id)
 
-    const catMap = new Map<string, string>()
-    for (const c of categories || []) {
-      catMap.set(c.name, c.id)
-      catMap.set(getCanonicalCategoryName(c.name).toLowerCase(), c.id)
+    // Build category map supporting English, Indonesian, and aliases
+    const categoryLookup: Record<string, string> = {
+      // Income
+      'Salary': 'Salary',
+      'Gaji': 'Salary',
+      'Gaji Pokok': 'Salary',
+      'Freelance & Side Gig': 'Freelance & Side Gig',
+      'Freelance & Proyek': 'Freelance & Side Gig',
+      'Freelance': 'Freelance & Side Gig',
+      'Business & Sales': 'Business & Sales',
+      'Bisnis': 'Business & Sales',
+      'Investments & Dividends': 'Investments & Dividends',
+      'Investasi & Dividen': 'Investments & Dividends',
+      'Bunga Bank': 'Bunga Bank',
+      'Reimbursement': 'Reimbursement',
+      'Gifts & Grants': 'Gifts & Grants',
+      'Hadiah': 'Gifts & Grants',
+      'Other Income': 'Other Income',
+      'Pemasukan Lainnya': 'Other Income',
+
+      // Expense
+      'Food & Drinks': 'Food & Drinks',
+      'Makanan & Minuman': 'Food & Drinks',
+      'Makanan': 'Food & Drinks',
+      'Groceries': 'Groceries',
+      'Belanja & Kebutuhan': 'Groceries',
+      'Belanja Bulanan': 'Groceries',
+      'Transportation': 'Transportation',
+      'Transportasi & Bensin': 'Transportation',
+      'Transportasi': 'Transportation',
+      'Shopping': 'Shopping',
+      'Belanja': 'Shopping',
+      'Bills & Utilities': 'Bills & Utilities',
+      'Tagihan & Utilitas': 'Bills & Utilities',
+      'Tagihan': 'Bills & Utilities',
+      'Housing': 'Housing',
+      'Tempat Tinggal': 'Housing',
+      'Entertainment': 'Entertainment',
+      'Hiburan & Rekreasi': 'Entertainment',
+      'Hiburan': 'Entertainment',
+      'Langganan & Digital': 'Entertainment',
+      'Game': 'Game',
+      'Travel': 'Travel',
+      'Liburan': 'Travel',
+      'Health & Medical': 'Health & Medical',
+      'Kesehatan & Medis': 'Health & Medical',
+      'Education': 'Education',
+      'Pendidikan': 'Education',
+      'Personal Care': 'Personal Care',
+      'Perawatan Diri': 'Personal Care',
+      'Giving': 'Giving',
+      'Donasi & Amal': 'Giving',
+      'Transfer Fee': 'Transfer Fee',
+      'Investment': 'Investment',
+      'Investasi': 'Investment',
+      'Loan & Debt': 'Loan & Debt',
+      'Pinjaman & Utang': 'Loan & Debt',
+      'Savings': 'Savings',
+      'Tabungan': 'Savings',
+      'Family & Kids': 'Family & Kids',
+      'Other Expense': 'Other Expense',
+      'Pengeluaran Lainnya': 'Other Expense',
     }
 
-    const getCat = (name: string) =>
-      catMap.get(name) ||
-      catMap.get(getCanonicalCategoryName(name).toLowerCase()) ||
-      categories?.[0]?.id || ''
+    const getCat = (name: string, type: 'income' | 'expense' = 'expense') => {
+      const canonical = categoryLookup[name] || name
+      const found = (categories || []).find((c: any) => c.name.toLowerCase() === canonical.toLowerCase() && c.type === type)
+        || (categories || []).find((c: any) => c.name.toLowerCase() === canonical.toLowerCase())
+        || (categories || []).find((c: any) => c.type === type && c.name !== 'Discrepancy')
+        || categories?.[0]
+      return found?.id || ''
+    }
 
     // 2. Create Realistic Multi-Currency Accounts (IDR, USD, SGD)
     const demoAccounts = [
@@ -593,7 +655,7 @@ export async function seedDemoData(): Promise<{ success: boolean; error?: string
         current_amount: 18500000,
         currency: 'IDR',
         target_date: futureDate(120),
-        category_id: getCat('Investasi & Dividen'),
+        category_id: null,
         icon: 'ShieldCheck',
         color: '#0D9488',
         status: 'in_progress',
@@ -606,7 +668,7 @@ export async function seedDemoData(): Promise<{ success: boolean; error?: string
         current_amount: 24000000,
         currency: 'IDR',
         target_date: futureDate(45),
-        category_id: getCat('Belanja & Kebutuhan'),
+        category_id: null,
         icon: 'Laptop',
         color: '#3B82F6',
         status: 'in_progress',
@@ -619,7 +681,7 @@ export async function seedDemoData(): Promise<{ success: boolean; error?: string
         current_amount: 22000000,
         currency: 'IDR',
         target_date: futureDate(15),
-        category_id: getCat('Hiburan & Rekreasi'),
+        category_id: null,
         icon: 'Plane',
         color: '#E11D48',
         status: 'completed',
@@ -632,7 +694,7 @@ export async function seedDemoData(): Promise<{ success: boolean; error?: string
         current_amount: 7000000,
         currency: 'IDR',
         target_date: futureDate(210),
-        category_id: getCat('Belanja & Kebutuhan'),
+        category_id: null,
         icon: 'Camera',
         color: '#F59E0B',
         status: 'paused',
@@ -643,13 +705,16 @@ export async function seedDemoData(): Promise<{ success: boolean; error?: string
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: createdGoals } = await (supabase.from('savings_goals') as any).insert(demoGoals).select()
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let demoDeposits: any[] = []
+
     if (createdGoals && createdGoals.length > 0) {
       const emergencyGoal = createdGoals.find((g: { name: string }) => g.name === 'Dana Darurat 6 Bulan') || createdGoals[0]
       const macbookGoal = createdGoals.find((g: { name: string }) => g.name === 'MacBook Pro M3 Max Workstation') || createdGoals[1]
       const japanGoal = createdGoals.find((g: { name: string }) => g.name === 'Liburan Musim Semi Jepang') || createdGoals[2]
       const cameraGoal = createdGoals.find((g: { name: string }) => g.name === 'Upgrade Kamera Sony A7 IV') || createdGoals[3]
 
-      const demoDeposits = [
+      demoDeposits = [
         // Emergency fund deposits
         {
           user_id: user.id,
@@ -820,6 +885,48 @@ export async function seedDemoData(): Promise<{ success: boolean; error?: string
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (supabase.from('stock_trades') as any).insert(demoTrades)
+    }
+
+    // 9. Reconcile and calculate exact mathematically accurate account balances
+    for (const acc of createdAccounts) {
+      let balance = Number(acc.initial_balance) || 0
+
+      // Transactions
+      demoTransactions.forEach((tx) => {
+        if (tx.account_id === acc.id) {
+          if (tx.type === 'income') balance += Number(tx.amount)
+          else balance -= Number(tx.amount)
+        }
+      })
+
+      // Transfers
+      demoTransfers.forEach((tr) => {
+        if (tr.from_account_id === acc.id) {
+          balance -= Number(tr.amount)
+        }
+        if (tr.to_account_id === acc.id) {
+          if (tr.from_currency !== tr.to_currency && tr.exchange_rate_used) {
+            balance += Number(tr.amount) * Number(tr.exchange_rate_used)
+          } else {
+            balance += Number(tr.amount)
+          }
+        }
+      })
+
+      // Goal Deposits
+      if (createdGoals && createdGoals.length > 0) {
+        demoDeposits.forEach((dep) => {
+          if (dep.account_id === acc.id) {
+            if (dep.type === 'deposit') balance -= Number(dep.amount)
+            else balance += Number(dep.amount)
+          }
+        })
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase.from('accounts') as any)
+        .update({ current_balance: balance })
+        .eq('id', acc.id)
     }
 
     // Revalidate all pages across the app

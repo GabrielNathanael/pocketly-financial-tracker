@@ -168,7 +168,7 @@ export function BottomNav({
           isActive: pathname.startsWith("/goals"),
         },
         {
-          label: language === "en" ? "Recurring Bills" : "Tagihan Rutin",
+          label: language === "en" ? "Recurring" : "Transaksi Rutin",
           href: "/recurring",
           icon: RefreshCw,
           isActive: pathname.startsWith("/recurring"),

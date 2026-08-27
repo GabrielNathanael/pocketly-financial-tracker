@@ -16,13 +16,15 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   TrendingUp,
+  Target,
 } from "lucide-react";
 
 interface NetWorthData {
   totalAccountsIdr: number;
   totalStockHoldingsIdr?: number;
-  totalDebtsIdr: number;
   totalReceivablesIdr: number;
+  totalSavingsGoalsIdr?: number;
+  totalDebtsIdr: number;
   netWorthIdr: number;
   exchangeRate: number;
   rates?: ForexRatesMap;
@@ -55,18 +57,29 @@ export function NetWorthView({ data }: NetWorthViewProps) {
     displayCurrency,
     data.rates,
   );
+  const convertedSavingsGoals = convertAmount(
+    data.totalSavingsGoalsIdr || 0,
+    "IDR",
+    displayCurrency,
+    data.rates,
+  );
   const convertedDebts = convertAmount(
     data.totalDebtsIdr,
     "IDR",
     displayCurrency,
     data.rates,
   );
-  const totalAssets = convertedTotalAccounts + convertedStockHoldings + convertedReceivables;
+  const totalAssets =
+    convertedTotalAccounts +
+    convertedStockHoldings +
+    convertedReceivables +
+    convertedSavingsGoals;
   const totalLiabilities = convertedDebts;
   const convertedNetWorth = totalAssets - totalLiabilities;
   const accountsPct = totalAssets > 0 ? (convertedTotalAccounts / totalAssets) * 100 : 100;
   const stocksPct = totalAssets > 0 ? (convertedStockHoldings / totalAssets) * 100 : 0;
   const receivablesPct = totalAssets > 0 ? (convertedReceivables / totalAssets) * 100 : 0;
+  const goalsPct = totalAssets > 0 ? (convertedSavingsGoals / totalAssets) * 100 : 0;
 
   const [selectedSlice, setSelectedSlice] = React.useState<string | null>(null);
 
@@ -90,6 +103,17 @@ export function NetWorthView({ data }: NetWorthViewProps) {
             },
           ]
         : []),
+      ...(convertedSavingsGoals > 0
+        ? [
+            {
+              id: "goals",
+              name: language === "en" ? "Savings Goals" : "Target Tabungan",
+              total: convertedSavingsGoals,
+              percentage: goalsPct,
+              color: "#0D9488", // Teal
+            },
+          ]
+        : []),
       ...(convertedReceivables > 0
         ? [
             {
@@ -105,9 +129,11 @@ export function NetWorthView({ data }: NetWorthViewProps) {
   }, [
     convertedTotalAccounts,
     convertedStockHoldings,
+    convertedSavingsGoals,
     convertedReceivables,
     accountsPct,
     stocksPct,
+    goalsPct,
     receivablesPct,
     language,
   ]);
@@ -214,12 +240,14 @@ export function NetWorthView({ data }: NetWorthViewProps) {
 
         {/* Interactive Half-Donut Wealth Allocation Chart */}
         <div className="flex flex-col items-center pt-4 border-t border-[#E5E7EB] dark:border-[#27272A] gap-1">
-          <div className="flex items-center justify-between w-full">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
-              {language === "en" ? "Asset Allocation Breakdown" : "Rincian Alokasi Aset"}
+          <div className="flex items-center justify-between w-full gap-2 pb-1">
+            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+              {language === "en" ? "Asset Allocation" : "Alokasi Aset"}
             </span>
-            <span className="text-[11px] font-mono font-medium text-[#64748B] dark:text-[#94A3B8]">
-              {selectedSlice ? (language === "en" ? "Click to reset" : "Klik untuk reset") : (language === "en" ? "Click segment" : "Klik segmen")}
+            <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-[#F1F3F5] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-[#64748B] dark:text-[#94A3B8] shrink-0">
+              {selectedSlice
+                ? language === "en" ? "Tap to reset" : "Ketuk untuk reset"
+                : language === "en" ? "Tap segment" : "Ketuk segmen"}
             </span>
           </div>
 
@@ -335,6 +363,30 @@ export function NetWorthView({ data }: NetWorthViewProps) {
                 )}
               </span>
             </div>
+          )}
+
+          {/* Savings Goals Capital */}
+          {convertedSavingsGoals > 0 && (
+            <Link
+              href="/goals"
+              className="flex items-center justify-between p-3 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] hover:border-[#0D9488]/40 transition-colors group"
+            >
+              <div className="flex items-center gap-2.5 font-sans">
+                <div className="w-7 h-7 rounded-lg bg-[#0D9488]/10 border border-[#0D9488]/20 text-[#0D9488] flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <Target className="w-3.5 h-3.5 stroke-[2.5]" />
+                </div>
+                <span className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC] group-hover:text-[#0D9488] transition-colors">
+                  {language === 'en' ? 'Savings Goals Capital' : 'Target Tabungan Terkumpul'}
+                </span>
+              </div>
+              <span className="text-xs sm:text-sm font-bold text-[#0D9488]">
+                +
+                {maskCurrency(
+                  formatCurrency(convertedSavingsGoals, displayCurrency),
+                  isPrivate,
+                )}
+              </span>
+            </Link>
           )}
 
           {/* Receivables */}

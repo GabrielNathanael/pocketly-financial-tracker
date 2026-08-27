@@ -134,15 +134,27 @@ export async function createDebt(input: {
   // Create linked initial disbursement/receipt transaction
   if (input.accountId && input.recordTransaction !== false) {
     const txType = input.type === 'receivable' ? 'expense' : 'income'
-    const defaultCatName = input.type === 'receivable' ? 'Transfer' : 'Other Income'
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let { data: cat } = await (supabase.from('categories') as any)
       .select('id')
       .eq('user_id', user.id)
-      .eq('name', defaultCatName)
+      .eq('name', 'Loan & Debt')
+      .eq('type', txType)
       .limit(1)
       .maybeSingle()
+
+    if (!cat) {
+      const fallbackName = txType === 'expense' ? 'Other Expense' : 'Other Income'
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: fallbackCat } = await (supabase.from('categories') as any)
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('name', fallbackName)
+        .limit(1)
+        .maybeSingle()
+      cat = fallbackCat
+    }
 
     if (!cat) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -157,8 +169,8 @@ export async function createDebt(input: {
 
     const txDesc =
       input.type === 'receivable'
-        ? `Pinjaman ke ${input.counterpartyName.trim()}${input.notes ? ` (${input.notes.trim()})` : ''}`
-        : `Pinjaman dari ${input.counterpartyName.trim()}${input.notes ? ` (${input.notes.trim()})` : ''}`
+        ? `Pemberian Pinjaman ke ${input.counterpartyName.trim()}${input.notes ? ` (${input.notes.trim()})` : ''}`
+        : `Pencairan Utang dari ${input.counterpartyName.trim()}${input.notes ? ` (${input.notes.trim()})` : ''}`
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase.from('transactions') as any).insert({
@@ -287,18 +299,43 @@ export async function addDebtPayment(input: {
 
     const txType = debt.type === 'debt' ? 'expense' : 'income'
     
+    // Find Loan & Debt system category matching transaction type
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: category } = await (supabase.from('categories') as any)
+    let { data: category } = await (supabase.from('categories') as any)
       .select('id')
       .eq('user_id', user.id)
+      .eq('name', 'Loan & Debt')
       .eq('type', txType)
       .limit(1)
-      .single()
+      .maybeSingle()
+
+    if (!category) {
+      const fallbackName = txType === 'expense' ? 'Other Expense' : 'Other Income'
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: fallbackCat } = await (supabase.from('categories') as any)
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('name', fallbackName)
+        .limit(1)
+        .maybeSingle()
+      category = fallbackCat
+    }
+
+    if (!category) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: anyCat } = await (supabase.from('categories') as any)
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('type', txType)
+        .limit(1)
+        .maybeSingle()
+      category = anyCat
+    }
 
     if (category) {
       const desc = debt.type === 'debt'
         ? `Pembayaran Cicilan Utang ke ${debt.counterparty_name}`
-        : `Penerimaan Pelunasan Piutang dari ${debt.counterparty_name}`
+        : `Penerimaan Pembayaran Piutang dari ${debt.counterparty_name}`
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: tx, error: txError } = await (supabase.from('transactions') as any)

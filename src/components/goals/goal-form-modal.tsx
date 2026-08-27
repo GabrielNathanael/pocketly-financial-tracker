@@ -24,7 +24,7 @@ import { AlertCircle, AlignLeft } from 'lucide-react'
 interface GoalFormModalProps {
   isOpen: boolean
   onClose: () => void
-  categories: Category[]
+  categories?: Category[]
   editItem?: EnrichedSavingsGoal | null
   onSuccess?: () => void
 }
@@ -49,7 +49,6 @@ const GOAL_COLORS = [
 export function GoalFormModal({
   isOpen,
   onClose,
-  categories,
   editItem,
   onSuccess,
 }: GoalFormModalProps) {
@@ -60,7 +59,6 @@ export function GoalFormModal({
   const [initialSaved, setInitialSaved] = useState('')
   const [currency, setCurrency] = useState<CurrencyCode>('IDR')
   const [targetDate, setTargetDate] = useState(format(addMonths(new Date(), 6), 'yyyy-MM-dd'))
-  const [categoryId, setCategoryId] = useState<string>('none')
   const [icon, setIcon] = useState('Target')
   const [color, setColor] = useState('#0D9488')
   const [status, setStatus] = useState<GoalStatus>('in_progress')
@@ -70,9 +68,6 @@ export function GoalFormModal({
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
-  // Filter only expense categories
-  const expenseCategories = categories.filter((c) => c.type === 'expense')
-
   useEffect(() => {
     if (editItem) {
       setName(editItem.name)
@@ -80,7 +75,6 @@ export function GoalFormModal({
       setInitialSaved(String(editItem.current_amount))
       setCurrency(editItem.currency)
       setTargetDate(editItem.target_date.split('T')[0])
-      setCategoryId(editItem.category_id || 'none')
       setIcon(editItem.icon || 'Target')
       setColor(editItem.color || '#0D9488')
       setStatus(editItem.status)
@@ -92,7 +86,6 @@ export function GoalFormModal({
       setInitialSaved('')
       setCurrency('IDR')
       setTargetDate(format(addMonths(new Date(), 6), 'yyyy-MM-dd'))
-      setCategoryId('none')
       setIcon('Target')
       setColor('#0D9488')
       setStatus('in_progress')
@@ -120,15 +113,12 @@ export function GoalFormModal({
 
     setLoading(true)
     try {
-      const finalCatId = categoryId && categoryId !== 'none' ? categoryId : null
-
       if (editItem) {
         const res = await updateSavingsGoal(editItem.id, {
           name: name.trim(),
           targetAmount: numTarget,
           currency,
           targetDate,
-          categoryId: finalCatId,
           icon,
           color,
           status,
@@ -145,7 +135,6 @@ export function GoalFormModal({
           initialSaved: numInitial,
           currency,
           targetDate,
-          categoryId: finalCatId,
           icon,
           color,
           status,
@@ -225,40 +214,39 @@ export function GoalFormModal({
           </div>
         )}
 
-        {/* Target Amount & Currency Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="sm:col-span-2 flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA]">
-              {t.goals.targetAmountLabel} <span className="text-rose-500">*</span>
-            </label>
-            <Input
-              type="number"
-              step="any"
-              value={targetAmount}
-              onChange={(e) => setTargetAmount(e.target.value)}
-              placeholder="0"
-              required
-              className="text-xs font-mono font-bold"
-            />
-          </div>
+        {/* Target Amount */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA]">
+            {t.goals.targetAmountLabel} <span className="text-rose-500">*</span>
+          </label>
+          <Input
+            type="number"
+            step="any"
+            value={targetAmount}
+            onChange={(e) => setTargetAmount(e.target.value)}
+            placeholder="0"
+            required
+            className="text-xs font-mono font-bold"
+          />
+        </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA]">
-              {t.common.currency}
-            </label>
-            <Select value={currency} onValueChange={(val) => setCurrency(val as CurrencyCode)}>
-              <SelectTrigger className="w-full text-xs font-bold">
-                <SelectValue>{currency}</SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {CURRENCY_LIST.map((c) => (
-                  <SelectItem key={c.code} value={c.code}>
-                    {c.code} - {c.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        {/* Currency Selector */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA]">
+            {t.common.currency}
+          </label>
+          <Select value={currency} onValueChange={(val) => setCurrency(val as CurrencyCode)}>
+            <SelectTrigger className="w-full text-xs font-bold">
+              <SelectValue>{currency}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {CURRENCY_LIST.map((c) => (
+                <SelectItem key={c.code} value={c.code}>
+                  {c.code} - {c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Initial Saved Amount (Only for new goals) */}
@@ -278,7 +266,7 @@ export function GoalFormModal({
           </div>
         )}
 
-        {/* Stacked Target Date & Expense Category */}
+        {/* Target Date */}
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA]">
             {t.goals.targetDateLabel} <span className="text-rose-500">*</span>
@@ -288,35 +276,6 @@ export function GoalFormModal({
             onChange={setTargetDate}
             placeholder={t.goals.targetDateLabel}
           />
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA]">
-            {t.common.category}
-          </label>
-          <Select value={categoryId} onValueChange={setCategoryId}>
-            <SelectTrigger className="w-full min-w-0 text-xs">
-              <SelectValue placeholder={t.common.category}>
-                {(() => {
-                  const cat = expenseCategories.find((c) => c.id === categoryId)
-                  return cat ? cat.name : t.common.custom
-                })()}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">
-                <span className="text-[#64748B]">{t.common.custom}</span>
-              </SelectItem>
-              {expenseCategories.map((cat) => (
-                <SelectItem key={cat.id} value={cat.id}>
-                  <div className="flex items-center gap-2">
-                    <DynamicIcon name={cat.icon || 'Tag'} className="w-3.5 h-3.5 text-[#64748B]" />
-                    <span>{cat.name}</span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
 
         {/* Icon Picker Grid & Color Theme (Matching Category Form Style) */}

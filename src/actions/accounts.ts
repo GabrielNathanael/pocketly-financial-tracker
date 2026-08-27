@@ -181,7 +181,7 @@ export async function adjustAccountBalance(input: {
     return { error: 'Saldo riil sama dengan saldo tercatat (tidak ada selisih).' }
   }
 
-  // 2. Find or create Discrepancy category
+  // 2. Find or create Discrepancy category matching the transaction type
   const txType = diff > 0 ? 'income' : 'expense'
   const absAmount = Math.abs(diff)
 
@@ -190,8 +190,22 @@ export async function adjustAccountBalance(input: {
     .select('id')
     .eq('user_id', user.id)
     .eq('name', 'Discrepancy')
+    .eq('type', txType)
     .limit(1)
     .maybeSingle()
+
+  if (!cat) {
+    // Fallback: look for generic Discrepancy regardless of type
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: genericCat } = await (supabase.from('categories') as any)
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('name', 'Discrepancy')
+      .limit(1)
+      .maybeSingle()
+
+    cat = genericCat
+  }
 
   if (!cat) {
     // Fallback: look for Other Income / Other Expense

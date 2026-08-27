@@ -351,10 +351,10 @@ export function humanizeAuditLog(log: AuditLog, lang: 'id' | 'en' = 'id'): Human
   }
 
   // ==========================================
-  // 7. RECURRING TRANSACTIONS (Tagihan Rutin)
+  // 7. RECURRING TRANSACTIONS (Transaksi Rutin)
   // ==========================================
   if (table === 'recurring_transactions') {
-    const name = newVal.name || oldVal.name || (isId ? 'Tagihan Rutin' : 'Recurring Bill')
+    const name = newVal.name || oldVal.name || (isId ? 'Transaksi Rutin' : 'Recurring Transaction')
     const cur = newVal.currency || oldVal.currency || 'IDR'
     const amt = formatCurrency(Number(newVal.amount || oldVal.amount || 0), cur)
     const freq = newVal.frequency || oldVal.frequency || 'monthly'
@@ -377,13 +377,13 @@ export function humanizeAuditLog(log: AuditLog, lang: 'id' | 'en' = 'id'): Human
 
     if (log.action === 'INSERT') {
       return {
-        moduleName: isId ? 'Tagihan Rutin' : 'Recurring',
+        moduleName: isId ? 'Transaksi Rutin' : 'Recurring',
         title: `${name} • ${amt} (${freqLabel})`,
         summary: isId
-          ? `Mendaftarkan tagihan rutin "${name}" senilai ${amt} (${freqLabel})`
-          : `Created recurring bill "${name}" for ${amt} (${freqLabel})`,
+          ? `Mendaftarkan transaksi rutin "${name}" senilai ${amt} (${freqLabel})`
+          : `Created recurring transaction "${name}" for ${amt} (${freqLabel})`,
         changes: [
-          { field: isId ? 'Nama Tagihan' : 'Name', to: name },
+          { field: isId ? 'Nama Transaksi' : 'Name', to: name },
           { field: isId ? 'Nominal' : 'Amount', to: amt },
           { field: isId ? 'Frekuensi' : 'Frequency', to: freqLabel },
           ...(newVal.next_due_date ? [{ field: isId ? 'Jatuh Tempo Pertama' : 'First Due Date', to: formatDate(newVal.next_due_date, 'd MMM yyyy', lang) }] : []),
@@ -395,13 +395,13 @@ export function humanizeAuditLog(log: AuditLog, lang: 'id' | 'en' = 'id'): Human
 
     if (log.action === 'DELETE') {
       return {
-        moduleName: isId ? 'Tagihan Rutin' : 'Recurring',
+        moduleName: isId ? 'Transaksi Rutin' : 'Recurring',
         title: `${name} • ${amt}`,
         summary: isId
-          ? `Menghapus jadwal tagihan rutin "${name}" (${amt})`
-          : `Deleted recurring bill schedule "${name}" (${amt})`,
+          ? `Menghapus jadwal transaksi rutin "${name}" (${amt})`
+          : `Deleted recurring transaction schedule "${name}" (${amt})`,
         changes: [
-          { field: isId ? 'Nama Tagihan' : 'Name', from: name },
+          { field: isId ? 'Nama Transaksi' : 'Name', from: name },
           { field: isId ? 'Nominal' : 'Amount', from: amt },
         ],
         badgeType: 'delete',
@@ -413,14 +413,14 @@ export function humanizeAuditLog(log: AuditLog, lang: 'id' | 'en' = 'id'): Human
     const recChanges: Array<{ field: string; from?: string; to?: string }> = []
     if (oldVal.amount !== newVal.amount && (oldVal.amount || newVal.amount)) {
       recChanges.push({
-        field: isId ? 'Nominal Tagihan' : 'Amount',
+        field: isId ? 'Nominal' : 'Amount',
         from: oldVal.amount ? formatCurrency(Number(oldVal.amount), cur) : '-',
         to: newVal.amount ? formatCurrency(Number(newVal.amount), cur) : '-',
       })
     }
     if (oldVal.is_active !== newVal.is_active && (oldVal.is_active !== undefined || newVal.is_active !== undefined)) {
       recChanges.push({
-        field: isId ? 'Status Tagihan' : 'Status',
+        field: isId ? 'Status' : 'Status',
         from: oldVal.is_active ? (isId ? 'Aktif' : 'Active') : (isId ? 'Dijeda' : 'Paused'),
         to: newVal.is_active ? (isId ? 'Aktif' : 'Active') : (isId ? 'Dijeda' : 'Paused'),
       })
@@ -434,11 +434,11 @@ export function humanizeAuditLog(log: AuditLog, lang: 'id' | 'en' = 'id'): Human
     }
 
     return {
-      moduleName: isId ? 'Tagihan Rutin' : 'Recurring',
+      moduleName: isId ? 'Transaksi Rutin' : 'Recurring',
       title: `${name}`,
       summary: isId
-        ? `Memperbarui konfigurasi tagihan rutin "${name}"`
-        : `Updated recurring bill details for "${name}"`,
+        ? `Memperbarui konfigurasi transaksi rutin "${name}"`
+        : `Updated recurring transaction details for "${name}"`,
       changes: recChanges,
       badgeType: 'update',
       badgeLabel: isId ? 'Diubah' : 'Updated',

@@ -1,89 +1,48 @@
 import { Language } from '@/lib/i18n/translations'
 
 /**
- * Standard bilingual mapping for default categories.
- * Maps both Indonesian and English names to the active interface language.
+ * Standard bilingual mapping strictly for system-reserved / protected categories.
+ * User-created and regular expense/income categories are preserved as-is.
  */
-export const CATEGORY_TRANSLATIONS: Record<string, { id: string; en: string }> = {
-  // Expense Categories
-  'Food & Drinks': { id: 'Makanan & Minuman', en: 'Food & Drinks' },
-  'Makanan & Minuman': { id: 'Makanan & Minuman', en: 'Food & Drinks' },
-  'Food & Beverage': { id: 'Makanan & Minuman', en: 'Food & Drinks' },
-  'Groceries': { id: 'Bahan Makanan & Dapur', en: 'Groceries' },
-  'Bahan Makanan & Dapur': { id: 'Bahan Makanan & Dapur', en: 'Groceries' },
-  'Transportation': { id: 'Transportasi', en: 'Transportation' },
-  'Transport': { id: 'Transportasi', en: 'Transportation' },
-  'Transportasi': { id: 'Transportasi', en: 'Transportation' },
-  'Transportasi & Bensin': { id: 'Transportasi', en: 'Transportation' },
-  'Shopping': { id: 'Belanja & Kebutuhan', en: 'Shopping' },
-  'Belanja': { id: 'Belanja & Kebutuhan', en: 'Shopping' },
-  'Belanja & Kebutuhan': { id: 'Belanja & Kebutuhan', en: 'Shopping' },
-  'Bills & Utilities': { id: 'Tagihan & Utilitas', en: 'Bills & Utilities' },
-  'Tagihan & Utilitas': { id: 'Tagihan & Utilitas', en: 'Bills & Utilities' },
-  'Housing': { id: 'Tempat Tinggal', en: 'Housing' },
-  'Tempat Tinggal': { id: 'Tempat Tinggal', en: 'Housing' },
-  'Entertainment': { id: 'Hiburan & Hobi', en: 'Entertainment' },
-  'Hiburan': { id: 'Hiburan & Hobi', en: 'Entertainment' },
-  'Hiburan & Hobi': { id: 'Hiburan & Hobi', en: 'Entertainment' },
-  'Game': { id: 'Game & Gaming', en: 'Game' },
-  'Travel': { id: 'Perjalanan & Wisata', en: 'Travel' },
-  'Health & Medical': { id: 'Kesehatan & Medis', en: 'Health & Medical' },
-  'Health & Fitness': { id: 'Kesehatan & Medis', en: 'Health & Medical' },
-  'Kesehatan': { id: 'Kesehatan & Medis', en: 'Health & Medical' },
-  'Kesehatan & Medis': { id: 'Kesehatan & Medis', en: 'Health & Medical' },
-  'Education': { id: 'Pendidikan', en: 'Education' },
-  'Pendidikan': { id: 'Pendidikan', en: 'Education' },
-  'Personal Care': { id: 'Perawatan Pribadi', en: 'Personal Care' },
-  'Personal care': { id: 'Perawatan Pribadi', en: 'Personal Care' },
-  'Perawatan Pribadi': { id: 'Perawatan Pribadi', en: 'Personal Care' },
-  'Giving': { id: 'Persembahan & Sosial', en: 'Giving' },
-  'Transfer': { id: 'Transfer', en: 'Transfer' },
-  'Investment': { id: 'Investasi', en: 'Investment' },
+export const SYSTEM_CATEGORY_TRANSLATIONS: Record<string, { id: string; en: string }> = {
   'Discrepancy': { id: 'Koreksi Saldo Kas', en: 'Discrepancy' },
-  'Family & Kids': { id: 'Keluarga & Anak', en: 'Family & Kids' },
-  'Keluarga & Anak': { id: 'Keluarga & Anak', en: 'Family & Kids' },
-  'Other Expense': { id: 'Pengeluaran Lainnya', en: 'Other Expense' },
-  'Pengeluaran Lain': { id: 'Pengeluaran Lainnya', en: 'Other Expense' },
-  'Pengeluaran Lainnya': { id: 'Pengeluaran Lainnya', en: 'Other Expense' },
+  'Koreksi Saldo Kas': { id: 'Koreksi Saldo Kas', en: 'Discrepancy' },
+  'Selisih Saldo': { id: 'Koreksi Saldo Kas', en: 'Discrepancy' },
+  'Selisih Kas': { id: 'Koreksi Saldo Kas', en: 'Discrepancy' },
 
-  // Income Categories
-  'Salary': { id: 'Gaji Pokok', en: 'Salary' },
-  'Gaji': { id: 'Gaji Pokok', en: 'Salary' },
-  'Gaji Pokok': { id: 'Gaji Pokok', en: 'Salary' },
-  'Bunga Bank': { id: 'Bunga Bank', en: 'Bunga Bank' },
-  'Bunga Seabank': { id: 'Bunga Bank', en: 'Bunga Bank' },
-  'Reimbursement': { id: 'Reimbursement / Talangan', en: 'Reimbursement' },
-  'Freelance & Side Gig': { id: 'Freelance & Proyek', en: 'Freelance & Side Gig' },
-  'Freelance': { id: 'Freelance & Proyek', en: 'Freelance & Side Gig' },
-  'Freelance & Proyek': { id: 'Freelance & Proyek', en: 'Freelance & Side Gig' },
-  'Business & Sales': { id: 'Bisnis & Penjualan', en: 'Business & Sales' },
-  'Bisnis & Penjualan': { id: 'Bisnis & Penjualan', en: 'Business & Sales' },
-  'Investments & Dividends': { id: 'Investasi & Dividen', en: 'Investments & Dividends' },
-  'Investasi & Dividen': { id: 'Investasi & Dividen', en: 'Investments & Dividends' },
-  'Gifts & Grants': { id: 'Hadiah & Hibah', en: 'Gifts & Grants' },
-  'Hadiah & Hibah': { id: 'Hadiah & Hibah', en: 'Gifts & Grants' },
-  'Other Income': { id: 'Pemasukan Lainnya', en: 'Other Income' },
-  'Pemasukan Lain': { id: 'Pemasukan Lainnya', en: 'Other Income' },
-  'Pemasukan Lainnya': { id: 'Pemasukan Lainnya', en: 'Other Income' },
+  'Loan & Debt': { id: 'Pinjaman & Utang', en: 'Loan & Debt' },
+  'Pinjaman & Utang': { id: 'Pinjaman & Utang', en: 'Loan & Debt' },
+  'Hutang & Piutang': { id: 'Pinjaman & Utang', en: 'Loan & Debt' },
+
+  'Transfer Fee': { id: 'Biaya Admin & Transfer', en: 'Transfer Fee' },
+  'Biaya Admin & Transfer': { id: 'Biaya Admin & Transfer', en: 'Transfer Fee' },
+  'Biaya Transfer': { id: 'Biaya Admin & Transfer', en: 'Transfer Fee' },
+  'Bank Fee': { id: 'Biaya Admin & Transfer', en: 'Transfer Fee' },
+
+  'Savings': { id: 'Tabungan', en: 'Savings' },
+  'Tabungan': { id: 'Tabungan', en: 'Savings' },
+  'Alokasi Tabungan': { id: 'Tabungan', en: 'Savings' },
 }
 
 /**
- * Returns canonical English name for deduplication
+ * Returns canonical English name for system-reserved categories, or original name for regular categories.
  */
 export function getCanonicalCategoryName(name: string): string {
   if (!name) return ''
-  const item = CATEGORY_TRANSLATIONS[name.trim()]
+  const item = SYSTEM_CATEGORY_TRANSLATIONS[name.trim()]
   return item ? item.en : name.trim()
 }
 
 /**
- * Formats category name - returns standard English name for default categories, or custom name.
+ * Formats category name:
+ * - If it is a system-reserved category (Discrepancy, Loan & Debt, Transfer Fee), returns its localized bilingual label.
+ * - For all user/regular categories, returns the stored name as-is without forced translations.
  */
-export function formatCategoryName(name: string, _language?: Language): string {
+export function formatCategoryName(name: string, language?: Language): string {
   if (!name) return ''
-  const item = CATEGORY_TRANSLATIONS[name.trim()]
+  const item = SYSTEM_CATEGORY_TRANSLATIONS[name.trim()]
   if (item) {
-    return item.en
+    return language === 'id' ? item.id : item.en
   }
   return name.trim()
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useTransition } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Account, Category, TransactionType } from "@/types/database";
 import { useLanguage } from "@/lib/i18n/language-context";
@@ -13,26 +13,36 @@ import {
 } from "@/components/ui/select";
 import { DynamicIcon } from "@/components/ui/dynamic-icon";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
-import { Search, Filter, X, ArrowDownRight, ArrowUpRight, Wallet, Hash } from "lucide-react";
+import { formatCategoryName } from "@/lib/utils/category-i18n";
+import { Search, Filter, X, ArrowDownRight, ArrowUpRight, Wallet, Hash, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 interface TransactionFiltersProps {
   accounts: Account[];
   categories: Category[];
   availableTags?: string[];
+  isPending?: boolean;
+  onFilterChange?: (updates: Record<string, string | null>) => void;
+  onReset?: () => void;
 }
 
 export function TransactionFilters({
   accounts,
   categories,
   availableTags = [],
+  isPending: externalIsPending,
+  onFilterChange,
+  onReset,
 }: TransactionFiltersProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   const [isOpen, setIsOpen] = useState(false);
+  const [internalIsPending, startTransition] = useTransition();
+
+  const isPending = externalIsPending !== undefined ? externalIsPending : internalIsPending;
 
   // Current values
   const currentSearch = searchParams.get("search") || "";
@@ -61,6 +71,10 @@ export function TransactionFilters({
     : "all";
 
   const updateFilters = (updates: Record<string, string | null>) => {
+    if (onFilterChange) {
+      onFilterChange(updates);
+      return;
+    }
     const params = new URLSearchParams(searchParams.toString());
     for (const [key, value] of Object.entries(updates)) {
       if (value === null || value === "" || value === "all") {
@@ -69,7 +83,9 @@ export function TransactionFilters({
         params.set(key, value);
       }
     }
-    router.replace(`${pathname}?${params.toString()}`);
+    startTransition(() => {
+      router.replace(`${pathname}?${params.toString()}`);
+    });
   };
 
   const handleTypeChange = (newType: "all" | "expense" | "income") => {
@@ -91,7 +107,13 @@ export function TransactionFilters({
     currentEndDate !== "";
 
   const handleReset = () => {
-    router.replace(pathname);
+    if (onReset) {
+      onReset();
+      return;
+    }
+    startTransition(() => {
+      router.replace(pathname);
+    });
   };
 
   return (
@@ -99,7 +121,11 @@ export function TransactionFilters({
       {/* Row 1: Search Bar & Advanced Filter Toggle */}
       <div className="flex items-center gap-2">
         <div className="relative flex-1 min-w-0">
-          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none" />
+          {isPending ? (
+            <Loader2 className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-blue-500 animate-spin pointer-events-none" />
+          ) : (
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none" />
+          )}
           <input
             type="text"
             placeholder={t.common.search}
@@ -111,7 +137,10 @@ export function TransactionFilters({
               }, 300);
               return () => clearTimeout(timer);
             }}
-            className="w-full pl-8.5 pr-3 py-1.5 sm:py-2 text-xs bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] rounded-lg text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#0F172A] dark:focus:border-white transition-colors"
+            className={cn(
+              "w-full pl-8.5 pr-3 py-1.5 sm:py-2 text-xs bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] rounded-lg text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#0F172A] dark:focus:border-white transition-all",
+              isPending && "bg-blue-50/20 dark:bg-blue-950/10 border-blue-200 dark:border-blue-900/40"
+            )}
           />
         </div>
 
@@ -205,9 +234,9 @@ export function TransactionFilters({
         </Select>
       </div>
 
-      {/* Row 3: Collapsible Advanced Filters */}
+      {/* Row 3: Collapsible Advanced Filters (2 Separate Category Selectors) */}
       {isOpen && (
-        <div className="pt-2.5 border-t border-[#E5E7EB] dark:border-[#27272A] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+        <div className="pt-2.5 border-t border-[#E5E7EB] dark:border-[#27272A] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2.5">
           {/* 1. Account Filter */}
           <div className="flex flex-col gap-1">
             <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
@@ -236,31 +265,36 @@ export function TransactionFilters({
             </Select>
           </div>
 
-          {/* 2. Category Filter */}
+          {/* 2. Expense Category Filter */}
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
-              {t.common.category}
+            <label className="text-[10px] font-bold uppercase tracking-wider text-[#E11D48] flex items-center gap-1">
+              <ArrowDownRight className="w-3 h-3" />
+              <span>{t.transactions.expenseCategoryFilter}</span>
             </label>
             <Select
-              value={currentCategoryId}
-              onValueChange={(val) => updateFilters({ categoryId: val })}
+              value={currentExpenseCategoryVal}
+              onValueChange={(val) =>
+                updateFilters({
+                  categoryId: val === "all" ? null : val,
+                  type: currentType === "income" ? "all" : currentType,
+                })
+              }
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder={t.common.all} />
+                <SelectValue placeholder={t.transactions.allExpenseCategories} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">{t.common.all}</SelectItem>
-                {categories.map((c) => (
+                <SelectItem value="all">
+                  {t.transactions.allExpenseCategories}
+                </SelectItem>
+                {expenseCategories.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
                     <div className="flex items-center gap-2">
                       <DynamicIcon
                         name={c.icon || "Tag"}
-                        className={cn(
-                          "w-3.5 h-3.5",
-                          c.type === "expense" ? "text-[#E11D48]" : "text-[#0D9488]"
-                        )}
+                        className="w-3.5 h-3.5 text-[#E11D48]"
                       />
-                      <span>{c.name}</span>
+                      <span>{formatCategoryName(c.name, language)}</span>
                     </div>
                   </SelectItem>
                 ))}
@@ -268,7 +302,44 @@ export function TransactionFilters({
             </Select>
           </div>
 
-          {/* 3. Tagar (#tags) Filter */}
+          {/* 3. Income Category Filter */}
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-[#0D9488] flex items-center gap-1">
+              <ArrowUpRight className="w-3 h-3" />
+              <span>{t.transactions.incomeCategoryFilter}</span>
+            </label>
+            <Select
+              value={currentIncomeCategoryVal}
+              onValueChange={(val) =>
+                updateFilters({
+                  categoryId: val === "all" ? null : val,
+                  type: currentType === "expense" ? "all" : currentType,
+                })
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={t.transactions.allIncomeCategories} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">
+                  {t.transactions.allIncomeCategories}
+                </SelectItem>
+                {incomeCategories.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    <div className="flex items-center gap-2">
+                      <DynamicIcon
+                        name={c.icon || "Tag"}
+                        className="w-3.5 h-3.5 text-[#0D9488]"
+                      />
+                      <span>{formatCategoryName(c.name, language)}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* 4. Tagar (#tags) Filter */}
           <div className="flex flex-col gap-1">
             <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] flex items-center gap-1">
               <Hash className="w-3 h-3 text-[#64748B]" />
@@ -285,7 +356,7 @@ export function TransactionFilters({
                 <SelectItem value="all">{t.transactions.allTags}</SelectItem>
                 {availableTags.length === 0 ? (
                   <SelectItem value="none" disabled>
-                    <span className="text-[#94A3B8] italic">Belum ada tagar transaksi</span>
+                    <span className="text-[#94A3B8] italic">Belum ada tagar</span>
                   </SelectItem>
                 ) : (
                   availableTags.map((tag) => (
@@ -298,7 +369,7 @@ export function TransactionFilters({
             </Select>
           </div>
 
-          {/* 4. Unified Date Range Filter */}
+          {/* 5. Unified Date Range Filter */}
           <div className="flex flex-col gap-1">
             <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
               {t.transactions.dateRange}
@@ -314,7 +385,7 @@ export function TransactionFilters({
           </div>
 
           {hasAdvancedFilters && (
-            <div className="sm:col-span-2 lg:col-span-4 flex justify-end pt-1">
+            <div className="sm:col-span-2 lg:col-span-3 xl:col-span-5 flex justify-end pt-1">
               <button
                 type="button"
                 onClick={handleReset}

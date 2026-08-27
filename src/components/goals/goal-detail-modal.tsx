@@ -169,31 +169,31 @@ export function GoalDetailModal({
           </div>
         </div>
 
-        {/* Financial Metrics Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-          <div className="p-3 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col">
+        {/* Financial Metrics Stack (Vertical) */}
+        <div className="flex flex-col gap-2.5">
+          <div className="p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-between">
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
               {language === 'en' ? 'Remaining Needed' : 'Sisa Kekurangan'}
             </span>
-            <span className="text-xs sm:text-sm font-bold font-mono text-[#0F172A] dark:text-[#FAFAFA] mt-1">
+            <span className="text-xs sm:text-sm font-bold font-mono text-[#0F172A] dark:text-[#FAFAFA]">
               {formatCurrency(remainingAmt, goal.currency)}
             </span>
           </div>
 
-          <div className="p-3 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col">
+          <div className="p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-between">
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
               {language === 'en' ? 'Target Date' : 'Tenggat Waktu'}
             </span>
-            <span className="text-xs sm:text-sm font-bold font-mono text-[#0F172A] dark:text-[#FAFAFA] mt-1">
+            <span className="text-xs sm:text-sm font-bold font-mono text-[#0F172A] dark:text-[#FAFAFA]">
               {goal.target_date ? formatDate(goal.target_date, 'd MMM yyyy', language) : '-'}
             </span>
           </div>
 
-          <div className="p-3 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col col-span-2 sm:col-span-1">
+          <div className="p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-between">
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
               {language === 'en' ? 'Est. Monthly Saving' : 'Estimasi / Bulan'}
             </span>
-            <span className="text-xs sm:text-sm font-bold font-mono text-[#0D9488] mt-1">
+            <span className="text-xs sm:text-sm font-bold font-mono text-[#0D9488]">
               {monthlyNeeded > 0 ? formatCurrency(monthlyNeeded, goal.currency) : (language === 'en' ? 'Target Reached' : 'Tercapai')}
             </span>
           </div>
@@ -224,41 +224,41 @@ export function GoalDetailModal({
                     <div
                       key={dep.id}
                       onClick={() => setSelectedDeposit(dep)}
-                      className="p-3 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] flex items-center justify-between gap-3 shadow-2xs group transition-all cursor-pointer"
+                      className="p-3 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] flex items-center gap-3 shadow-2xs group transition-all cursor-pointer"
                     >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div
-                          className={cn(
-                            'w-7 h-7 rounded-lg flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform',
-                            isDeposit
-                              ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400'
-                              : 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400'
-                          )}
-                        >
-                          {isDeposit ? <ArrowDownLeft className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
-                        </div>
-                        <div className="flex flex-col min-w-0">
+                      <div
+                        className={cn(
+                          'w-7 h-7 rounded-lg flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform',
+                          isDeposit
+                            ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400'
+                            : 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400'
+                        )}
+                      >
+                        {isDeposit ? <ArrowDownLeft className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
+                      </div>
+
+                      <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+                        <div className="flex items-center justify-between gap-2">
                           <span className="text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA] truncate group-hover:text-[#0D9488] transition-colors">
                             {isDeposit ? (language === 'en' ? 'Deposit' : 'Setoran') : (language === 'en' ? 'Withdrawal' : 'Penarikan')}
                             {dep.account && ` • ${dep.account.name}`}
                           </span>
-                          <div className="flex items-center gap-2 text-[10px] text-[#64748B] dark:text-[#94A3B8]">
-                            <span>{formatDate(dep.deposit_date, 'd MMM yyyy', language)}</span>
-                            {dep.notes && <span className="truncate max-w-[150px]">({dep.notes})</span>}
-                            <span className="text-[9px] text-[#0D9488] underline hidden sm:inline">Rincian</span>
-                          </div>
+                          <span
+                            className={cn(
+                              'text-xs font-mono font-bold shrink-0',
+                              isDeposit ? 'text-[#0D9488]' : 'text-[#E11D48]'
+                            )}
+                          >
+                            {isDeposit ? '+' : '-'}
+                            {formatCurrency(Number(dep.amount), dep.currency)}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2 text-[10px] text-[#64748B] dark:text-[#94A3B8]">
+                          <span className="whitespace-nowrap shrink-0">{formatDate(dep.deposit_date, 'd MMM yyyy', language)}</span>
+                          {dep.notes && <span className="truncate">({dep.notes})</span>}
                         </div>
                       </div>
-
-                      <span
-                        className={cn(
-                          'text-xs font-mono font-bold shrink-0',
-                          isDeposit ? 'text-[#0D9488]' : 'text-[#E11D48]'
-                        )}
-                      >
-                        {isDeposit ? '+' : '-'}
-                        {formatCurrency(Number(dep.amount), dep.currency)}
-                      </span>
                     </div>
                   )
                 })}
@@ -295,8 +295,20 @@ export function GoalDetailModal({
         </div>
 
         {/* Modal Action Footer */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-[#E5E7EB] dark:border-[#27272A]">
-          <div className="flex items-center gap-1.5">
+        <div className="flex flex-col gap-2 pt-3 border-t border-[#E5E7EB] dark:border-[#27272A] w-full">
+          <Button
+            size="sm"
+            onClick={() => {
+              onClose()
+              onDeposit(goal)
+            }}
+            className="w-full py-2.5 h-auto cursor-pointer text-xs font-bold bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] rounded-xl flex items-center justify-center gap-1.5 shadow-sm"
+          >
+            <Plus className="w-4 h-4" />
+            <span>{language === 'en' ? 'Deposit / Withdraw' : 'Setor / Tarik Dana'}</span>
+          </Button>
+
+          <div className="grid grid-cols-3 gap-2 w-full">
             <Button
               variant="outline"
               size="sm"
@@ -304,7 +316,7 @@ export function GoalDetailModal({
                 onClose()
                 onEdit(goal)
               }}
-              className="gap-1.5 cursor-pointer text-xs"
+              className="gap-1.5 cursor-pointer text-xs justify-center py-2 h-auto rounded-xl w-full"
             >
               <Edit2 className="w-3.5 h-3.5" />
               <span>{t.common.edit}</span>
@@ -316,7 +328,7 @@ export function GoalDetailModal({
               onClick={() => {
                 onTogglePause(goal)
               }}
-              className="gap-1.5 cursor-pointer text-xs"
+              className="gap-1.5 cursor-pointer text-xs justify-center py-2 h-auto rounded-xl w-full"
             >
               {isPaused ? <PlayCircle className="w-3.5 h-3.5" /> : <PauseCircle className="w-3.5 h-3.5" />}
               <span>{isPaused ? (language === 'en' ? 'Resume' : 'Lanjutkan') : (language === 'en' ? 'Pause' : 'Jeda')}</span>
@@ -329,24 +341,12 @@ export function GoalDetailModal({
                 onClose()
                 onDelete(goal.id)
               }}
-              className="gap-1.5 cursor-pointer text-xs"
+              className="gap-1.5 cursor-pointer text-xs justify-center py-2 h-auto rounded-xl w-full"
             >
               <Trash2 className="w-3.5 h-3.5" />
               <span>{t.common.delete}</span>
             </Button>
           </div>
-
-          <Button
-            size="sm"
-            onClick={() => {
-              onClose()
-              onDeposit(goal)
-            }}
-            className="gap-1.5 cursor-pointer text-xs font-bold bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A]"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>{language === 'en' ? 'Deposit / Withdraw' : 'Setor / Tarik Dana'}</span>
-          </Button>
         </div>
       </div>
 

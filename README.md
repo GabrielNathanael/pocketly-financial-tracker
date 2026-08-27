@@ -41,6 +41,7 @@ Built with **Next.js 16 App Router**, **Supabase (PostgreSQL with Row Level Secu
 
 ### 1. Account & Multi-Wallet Liquidity
 * **Unlimited Wallets**: Manage Bank Accounts, Cash Wallets, E-Wallets, Credit Cards, and Investment RDNs.
+* **1-Tap Pinned Presets (Fast Logging)**: Pin frequent transactions (coffee, fuel, daily commute) to the dashboard for 1-second 1-tap recording.
 * **Auto-Balance Calculation & Physical Reconciliation**: Database triggers compute realtime current balances. Use the 1-click **Adjust Balance (Sesuaikan Saldo)** feature to seamlessly reconcile Pocketly with physical bank balances via the Discrepancy category.
 * **Inter-Account Transfers & Smart Natural Forex**: Move funds between wallets with pre-filled source accounts, natural human-friendly forex rates (`1 SGD = Rp 12,000` / `1 USD = Rp 16,200`), two-way real-time calculations, optional admin fees, and interactive mutation details.
 
@@ -132,7 +133,7 @@ pocketly/
 ├── public/                     # Static assets, logos, and report templates
 ├── src/
 │   ├── actions/                # Next.js Server Actions (Transactions, Accounts, Goals, etc.)
-│   ├── app/                    # Next.js 15 App Router pages & layouts
+│   ├── app/                    # Next.js 16 App Router pages & layouts
 │   │   ├── (auth)/             # Authentication routes (Login, Signup, Reset Password)
 │   │   └── (main)/             # Main application views (Dashboard, Accounts, Analytics, etc.)
 │   ├── components/             # Reusable UI components & feature modules

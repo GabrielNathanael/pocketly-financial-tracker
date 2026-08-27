@@ -312,56 +312,56 @@ function TransferForm({ accounts, defaultFromAccountId, onClose, onSuccess }: Tr
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-        <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
-            {t.transfer.sourceLabel}
-          </label>
-          <Select value={fromAccountId} onValueChange={handleFromChange}>
-            <SelectTrigger className="w-full text-xs">
-              <SelectValue placeholder={t.transfer.sourceLabel} />
-            </SelectTrigger>
-            <SelectContent>
-              {accounts.map((a) => (
-                <SelectItem key={a.id} value={a.id} className="text-xs">
-                  <div className="flex items-center justify-between gap-2 w-full">
-                    <span className="truncate">
-                      {a.name} ({a.currency})
-                    </span>
-                    <span className="text-[10px] font-mono text-[#94A3B8] shrink-0 font-bold">
-                      ({formatCurrency(a.current_balance, a.currency)})
-                    </span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+      {/* Source Account */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+          {t.transfer.sourceLabel}
+        </label>
+        <Select value={fromAccountId} onValueChange={handleFromChange}>
+          <SelectTrigger className="w-full text-xs">
+            <SelectValue placeholder={t.transfer.sourceLabel} />
+          </SelectTrigger>
+          <SelectContent>
+            {accounts.map((a) => (
+              <SelectItem key={a.id} value={a.id} className="text-xs">
+                <div className="flex items-center justify-between gap-2 w-full">
+                  <span className="truncate">
+                    {a.name} ({a.currency})
+                  </span>
+                  <span className="text-[10px] font-mono text-[#94A3B8] shrink-0 font-bold">
+                    ({formatCurrency(a.current_balance, a.currency)})
+                  </span>
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
-        <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
-            {t.transfer.destLabel}
-          </label>
-          <Select value={toAccountId} onValueChange={handleToChange}>
-            <SelectTrigger className="w-full text-xs">
-              <SelectValue placeholder={t.transfer.destLabel} />
-            </SelectTrigger>
-            <SelectContent>
-              {accounts.map((a) => (
-                <SelectItem key={a.id} value={a.id} className="text-xs">
-                  <div className="flex items-center justify-between gap-2 w-full">
-                    <span className="truncate">
-                      {a.name} ({a.currency})
-                    </span>
-                    <span className="text-[10px] font-mono text-[#94A3B8] shrink-0 font-bold">
-                      ({formatCurrency(a.current_balance, a.currency)})
-                    </span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+      {/* Destination Account */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+          {t.transfer.destLabel}
+        </label>
+        <Select value={toAccountId} onValueChange={handleToChange}>
+          <SelectTrigger className="w-full text-xs">
+            <SelectValue placeholder={t.transfer.destLabel} />
+          </SelectTrigger>
+          <SelectContent>
+            {accounts.map((a) => (
+              <SelectItem key={a.id} value={a.id} className="text-xs">
+                <div className="flex items-center justify-between gap-2 w-full">
+                  <span className="truncate">
+                    {a.name} ({a.currency})
+                  </span>
+                  <span className="text-[10px] font-mono text-[#94A3B8] shrink-0 font-bold">
+                    ({formatCurrency(a.current_balance, a.currency)})
+                  </span>
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="flex flex-col gap-2.5">

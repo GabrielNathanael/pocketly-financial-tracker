@@ -244,7 +244,7 @@ export function DueCenterView({
                   {language === 'en' ? `All Sources (${items.length})` : `Semua Sumber (${items.length})`}
                 </SelectItem>
                 <SelectItem value="recurring">
-                  {language === 'en' ? `Recurring Bills (${items.filter((i) => i.source === 'recurring').length})` : `Tagihan Rutin (${items.filter((i) => i.source === 'recurring').length})`}
+                  {language === 'en' ? `Recurring (${items.filter((i) => i.source === 'recurring').length})` : `Transaksi Rutin (${items.filter((i) => i.source === 'recurring').length})`}
                 </SelectItem>
                 <SelectItem value="debt">
                   {language === 'en' ? `Debts & Loans (${items.filter((i) => i.source === 'debt').length})` : `${t.debts.title} (${items.filter((i) => i.source === 'debt').length})`}

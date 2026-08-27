@@ -168,18 +168,19 @@ export async function seedUserDefaultCategories(userId?: string) {
     return
   }
 
-  // Ensure essential system category 'Discrepancy' exists for existing / demo accounts
-  const hasDiscrepancy = existingCategories.some(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (c: any) =>
-      c.name?.toLowerCase() === 'discrepancy' ||
-      c.name?.toLowerCase() === 'selisih saldo' ||
-      c.name?.toLowerCase() === 'selisih kas'
-  )
+  // Ensure essential system categories 'Discrepancy' & 'Loan & Debt' exist for both expense and income
+  const checkHasCategory = (name: string, type: 'expense' | 'income') =>
+    existingCategories.some(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (c: any) =>
+        c.type === type &&
+        (c.name?.toLowerCase() === name.toLowerCase() ||
+          getCanonicalCategoryName(c.name).toLowerCase() === name.toLowerCase())
+    )
 
-  if (!hasDiscrepancy) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from('categories') as any).insert({
+  const missingCategories = []
+  if (!checkHasCategory('Discrepancy', 'expense')) {
+    missingCategories.push({
       user_id: targetUserId,
       name: 'Discrepancy',
       type: 'expense',
@@ -187,6 +188,71 @@ export async function seedUserDefaultCategories(userId?: string) {
       color: '#64748B',
       is_default: true,
     })
+  }
+  if (!checkHasCategory('Discrepancy', 'income')) {
+    missingCategories.push({
+      user_id: targetUserId,
+      name: 'Discrepancy',
+      type: 'income',
+      icon: 'Scale',
+      color: '#64748B',
+      is_default: true,
+    })
+  }
+  if (!checkHasCategory('Loan & Debt', 'expense')) {
+    missingCategories.push({
+      user_id: targetUserId,
+      name: 'Loan & Debt',
+      type: 'expense',
+      icon: 'HandCoins',
+      color: '#F97316',
+      is_default: true,
+    })
+  }
+  if (!checkHasCategory('Loan & Debt', 'income')) {
+    missingCategories.push({
+      user_id: targetUserId,
+      name: 'Loan & Debt',
+      type: 'income',
+      icon: 'HandCoins',
+      color: '#F97316',
+      is_default: true,
+    })
+  }
+  if (!checkHasCategory('Transfer Fee', 'expense')) {
+    missingCategories.push({
+      user_id: targetUserId,
+      name: 'Transfer Fee',
+      type: 'expense',
+      icon: 'Send',
+      color: '#6366F1',
+      is_default: true,
+    })
+  }
+  if (!checkHasCategory('Savings', 'expense')) {
+    missingCategories.push({
+      user_id: targetUserId,
+      name: 'Savings',
+      type: 'expense',
+      icon: 'PiggyBank',
+      color: '#0D9488',
+      is_default: true,
+    })
+  }
+  if (!checkHasCategory('Savings', 'income')) {
+    missingCategories.push({
+      user_id: targetUserId,
+      name: 'Savings',
+      type: 'income',
+      icon: 'PiggyBank',
+      color: '#0D9488',
+      is_default: true,
+    })
+  }
+
+  if (missingCategories.length > 0) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.from('categories') as any).insert(missingCategories)
   }
 
   // Run deduplication in case duplicate defaults existed
@@ -242,12 +308,15 @@ export async function updateCategory(
     .eq('id', id)
     .single()
 
-  const isSystemDiscrepancy =
-    existing?.name?.toLowerCase() === 'discrepancy' ||
-    existing?.name?.toLowerCase() === 'selisih saldo'
+  const canonicalName = getCanonicalCategoryName(existing?.name || '')
+  const isProtectedSystem =
+    canonicalName === 'Discrepancy' ||
+    canonicalName === 'Loan & Debt' ||
+    canonicalName === 'Transfer Fee' ||
+    canonicalName === 'Savings'
 
-  // If system discrepancy category, preserve its canonical name
-  const finalName = isSystemDiscrepancy ? 'Discrepancy' : formData.name.trim()
+  // If system category, preserve its canonical name
+  const finalName = isProtectedSystem ? canonicalName : formData.name.trim()
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabase.from('categories') as any)
@@ -278,12 +347,15 @@ export async function deleteCategory(id: string) {
     .eq('id', id)
     .single()
 
+  const canonicalName = getCanonicalCategoryName(existing?.name || '')
   if (
-    existing?.name?.toLowerCase() === 'discrepancy' ||
-    existing?.name?.toLowerCase() === 'selisih saldo'
+    canonicalName === 'Discrepancy' ||
+    canonicalName === 'Loan & Debt' ||
+    canonicalName === 'Transfer Fee' ||
+    canonicalName === 'Savings'
   ) {
     return {
-      error: 'Kategori sistem (Discrepancy / Selisih Saldo) diperlukan untuk penyesuaian saldo dan tidak dapat dihapus.',
+      error: `Kategori sistem (${canonicalName || existing?.name}) diperlukan untuk operasional otomatis modul dan tidak dapat dihapus.`,
     }
   }
 

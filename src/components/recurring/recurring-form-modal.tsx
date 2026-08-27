@@ -349,94 +349,90 @@ export function RecurringFormModal({
           </div>
         </div>
 
-        {/* Account Selection (Like Debt Payment Form) & Category Selector */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {/* Account */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA]">
-              {t.common.account} <span className="text-rose-500">*</span>
-            </label>
-            <Select value={accountId} onValueChange={handleAccountChange}>
-              <SelectTrigger className="w-full min-w-0 text-xs">
-                <SelectValue placeholder={t.common.account}>
-                  {(() => {
-                    const acc = accounts.find((a) => a.id === accountId)
-                    return acc ? `${acc.name} (${formatCurrency(acc.current_balance, acc.currency)})` : t.common.account
-                  })()}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {accounts.map((a) => (
-                  <SelectItem key={a.id} value={a.id}>
-                    <div className="flex items-center justify-between gap-3 w-full">
-                      <div className="flex items-center gap-2">
-                        <Wallet className="w-3.5 h-3.5 text-[#94A3B8]" />
-                        <span>{a.name}</span>
-                      </div>
-                      <span className="text-[10px] font-mono font-bold text-[#64748B] dark:text-[#94A3B8] tnum">
-                        {formatCurrency(a.current_balance, a.currency)}
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Category */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA]">
-              {t.common.category}
-            </label>
-            <Select value={categoryId} onValueChange={setCategoryId}>
-              <SelectTrigger className="w-full min-w-0 text-xs">
-                <SelectValue placeholder={t.common.category}>
-                  {(() => {
-                    const cat = filteredCategories.find((c) => c.id === categoryId)
-                    return cat ? cat.name : t.common.custom
-                  })()}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">
-                  <span className="text-[#64748B]">{t.common.custom}</span>
-                </SelectItem>
-                {filteredCategories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id}>
+        {/* Account Selection */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA]">
+            {t.common.account} <span className="text-rose-500">*</span>
+          </label>
+          <Select value={accountId} onValueChange={handleAccountChange}>
+            <SelectTrigger className="w-full min-w-0 text-xs">
+              <SelectValue placeholder={t.common.account}>
+                {(() => {
+                  const acc = accounts.find((a) => a.id === accountId)
+                  return acc ? `${acc.name} (${formatCurrency(acc.current_balance, acc.currency)})` : t.common.account
+                })()}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {accounts.map((a) => (
+                <SelectItem key={a.id} value={a.id}>
+                  <div className="flex items-center justify-between gap-3 w-full">
                     <div className="flex items-center gap-2">
-                      <DynamicIcon name={cat.icon || 'Tag'} className="w-3.5 h-3.5 text-[#64748B]" />
-                      <span>{cat.name}</span>
+                      <Wallet className="w-3.5 h-3.5 text-[#94A3B8]" />
+                      <span>{a.name}</span>
                     </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+                    <span className="text-[10px] font-mono font-bold text-[#64748B] dark:text-[#94A3B8] tnum">
+                      {formatCurrency(a.current_balance, a.currency)}
+                    </span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        {/* Date Pickers using DatePicker UI component */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA]">
-              {t.recurring.nextDueLabel} <span className="text-rose-500">*</span>
-            </label>
-            <DatePicker
-              value={nextDueDate}
-              onChange={setNextDueDate}
-              placeholder={t.recurring.nextDueLabel}
-            />
-          </div>
+        {/* Category Selector */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA]">
+            {t.common.category}
+          </label>
+          <Select value={categoryId} onValueChange={setCategoryId}>
+            <SelectTrigger className="w-full min-w-0 text-xs">
+              <SelectValue placeholder={t.common.category}>
+                {(() => {
+                  const cat = filteredCategories.find((c) => c.id === categoryId)
+                  return cat ? cat.name : t.common.custom
+                })()}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">
+                <span className="text-[#64748B]">{t.common.custom}</span>
+              </SelectItem>
+              {filteredCategories.map((cat) => (
+                <SelectItem key={cat.id} value={cat.id}>
+                  <div className="flex items-center gap-2">
+                    <DynamicIcon name={cat.icon || 'Tag'} className="w-3.5 h-3.5 text-[#64748B]" />
+                    <span>{cat.name}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA]">
-              {t.recurring.endDateLabel}
-            </label>
-            <DatePicker
-              value={endDate}
-              onChange={setEndDate}
-              placeholder={t.recurring.endDateLabel}
-            />
-          </div>
+        {/* Next Due Date Picker */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA]">
+            {t.recurring.nextDueLabel} <span className="text-rose-500">*</span>
+          </label>
+          <DatePicker
+            value={nextDueDate}
+            onChange={setNextDueDate}
+            placeholder={t.recurring.nextDueLabel}
+          />
+        </div>
+
+        {/* End Date Picker */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA]">
+            {t.recurring.endDateLabel}
+          </label>
+          <DatePicker
+            value={endDate}
+            onChange={setEndDate}
+            placeholder={t.recurring.endDateLabel}
+          />
         </div>
 
         {/* Footer Actions */}

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { EnrichedBudget, Category } from '@/types/database'
 import { BudgetCard } from '@/components/budget/budget-card'
@@ -11,7 +11,8 @@ import { usePrivacyMode, maskCurrency } from '@/lib/storage/privacy-mode'
 import { usePreferredCurrency } from '@/lib/storage/preferred-currency'
 import { getNextMonth, getPrevMonth, formatDate } from '@/lib/utils/date'
 import { useLanguage } from '@/lib/i18n/language-context'
-import { ChevronLeft, ChevronRight, Plus, Search, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus, Search, X, Loader2 } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils/cn'
 
 interface BudgetManagerProps {
@@ -36,6 +37,7 @@ export function BudgetManager({
   const isPrivate = usePrivacyMode()
   const displayCurrency = usePreferredCurrency()
 
+  const [isPending, startTransition] = useTransition()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedBudget, setSelectedBudget] = useState<EnrichedBudget | null>(null)
   const [statusFilter, setStatusFilter] = useState<BudgetStatusFilter>('all')
@@ -44,12 +46,16 @@ export function BudgetManager({
 
   const handlePrevMonth = () => {
     const prev = getPrevMonth(currentPeriod)
-    router.push(`/budget?period=${prev}`)
+    startTransition(() => {
+      router.push(`/budget?period=${prev}`)
+    })
   }
 
   const handleNextMonth = () => {
     const next = getNextMonth(currentPeriod)
-    router.push(`/budget?period=${next}`)
+    startTransition(() => {
+      router.push(`/budget?period=${next}`)
+    })
   }
 
   const handleEdit = (b: EnrichedBudget) => {
@@ -144,16 +150,20 @@ export function BudgetManager({
         <div className="flex items-center justify-between p-2 sm:p-2.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex-1">
           <button
             onClick={handlePrevMonth}
-            className="p-1.5 rounded-md text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] transition-colors cursor-pointer"
+            disabled={isPending}
+            className="p-1.5 rounded-md text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] transition-colors cursor-pointer disabled:opacity-50"
             title="Bulan Sebelumnya"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
 
           <div className="flex flex-col items-center">
-            <span className="text-xs sm:text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-              {formatDate(currentPeriod, 'MMMM yyyy')}
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs sm:text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                {formatDate(currentPeriod, 'MMMM yyyy')}
+              </span>
+              {isPending && <Loader2 className="w-3.5 h-3.5 text-blue-500 animate-spin" />}
+            </div>
             <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-[#94A3B8] font-bold">
               {t.budgets.periodLabel}
             </span>
@@ -161,7 +171,8 @@ export function BudgetManager({
 
           <button
             onClick={handleNextMonth}
-            className="p-1.5 rounded-md text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] transition-colors cursor-pointer"
+            disabled={isPending}
+            className="p-1.5 rounded-md text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] transition-colors cursor-pointer disabled:opacity-50"
             title="Bulan Berikutnya"
           >
             <ChevronRight className="w-4 h-4" />
@@ -297,8 +308,33 @@ export function BudgetManager({
         </div>
       </div>
 
-      {/* Grid of category cards */}
-      {filteredBudgets.length === 0 ? (
+      {/* Grid of category cards or Skeleton Loader during isPending */}
+      {isPending ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 animate-in fade-in-50 duration-200">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className="p-3.5 sm:p-4 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] shadow-2xs flex flex-col gap-3"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <Skeleton className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-[#1A1A20]" />
+                  <div className="flex flex-col gap-1.5">
+                    <Skeleton className="h-3.5 w-24 rounded-md bg-slate-200 dark:bg-[#27272A]" />
+                    <Skeleton className="h-2.5 w-16 rounded-md bg-slate-100 dark:bg-[#1E1E24]" />
+                  </div>
+                </div>
+                <Skeleton className="h-5 w-16 rounded-md bg-slate-200 dark:bg-[#27272A]" />
+              </div>
+              <Skeleton className="h-2 w-full rounded-full bg-slate-100 dark:bg-[#1E1E24]" />
+              <div className="flex items-center justify-between pt-0.5">
+                <Skeleton className="h-3 w-20 rounded-md bg-slate-200 dark:bg-[#27272A]" />
+                <Skeleton className="h-3 w-24 rounded-md bg-slate-200 dark:bg-[#27272A]" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : filteredBudgets.length === 0 ? (
         <EmptyState
           icon="PieChart"
           title={isId ? 'Tidak ada anggaran yang cocok' : 'No matching budgets found'}

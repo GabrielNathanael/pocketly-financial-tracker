@@ -153,8 +153,8 @@ export function DebtDetailView({ debt, accounts }: DebtDetailViewProps) {
           </div>
         </div>
 
-        {/* Amount Grid */}
-        <div className="grid grid-cols-2 gap-2.5 pt-2 sm:pt-3 border-t border-[#E5E7EB] dark:border-[#27272A] font-mono tnum text-xs">
+        {/* Amount Stack */}
+        <div className="flex flex-col gap-2.5 pt-2 sm:pt-3 border-t border-[#E5E7EB] dark:border-[#27272A] font-mono tnum text-xs">
           <div className="p-3 sm:p-3.5 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A]">
             <span className="text-[10px] font-sans text-[#94A3B8] uppercase tracking-wider block">
               {t.debts.remainingTagihan}

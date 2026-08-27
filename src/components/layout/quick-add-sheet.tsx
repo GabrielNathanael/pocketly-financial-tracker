@@ -30,6 +30,7 @@ import {
   AlertCircle,
   Camera,
   Loader2,
+  Calculator,
 } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import { toast } from 'sonner'
@@ -88,6 +89,7 @@ function QuickAddSheetContent({
   const { language, t } = useLanguage()
   const [type, setType] = useState<TransactionType>('expense')
   const [amountStr, setAmountStr] = useState<string>('0')
+  const [isNumpadOpen, setIsNumpadOpen] = useState(false)
   const [selectedAccountId, setSelectedAccountId] = useState<string>('')
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('')
   const [description, setDescription] = useState<string>('')
@@ -416,490 +418,560 @@ function QuickAddSheetContent({
         </button>
       </div>
 
-      {/* 2. Amount Display with Toggleable Pin Button on Top-Right */}
-      <div className="flex flex-col items-center justify-center py-2 px-3 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] relative">
-        <span className="text-[10px] uppercase font-bold tracking-wider text-[#64748B] dark:text-[#94A3B8]">
-          {t.quickAdd.nominal} ({currentCurrency})
-        </span>
-        <div className="flex items-baseline gap-1 mt-0.5">
-          <span className="text-2xl sm:text-3xl font-extrabold font-mono tracking-tight text-[#0F172A] dark:text-[#F8FAFC] tnum">
-            {formatCurrency(numericAmount, currentCurrency)}
-          </span>
-        </div>
-
-        {/* Pin Toggle Button located in the top-right corner of Amount display */}
+      {/* 2. Interactive Amount Card (Click to Open Numpad) */}
+      <div
+        className={cn(
+          'relative rounded-xl bg-white dark:bg-[#121215] border shadow-2xs overflow-hidden transition-all group',
+          isNumpadOpen
+            ? 'border-[#0F172A] dark:border-[#FAFAFA] ring-2 ring-[#0F172A]/10 dark:ring-[#FAFAFA]/10'
+            : 'border-[#E5E7EB] dark:border-[#27272A]'
+        )}
+      >
         <button
           type="button"
-          onClick={() => setIsPinned(!isPinned)}
-          title={isPinned ? 'Sematkan aktif (akan tersimpan ke transaksi cepat saat disimpan)' : 'Sematkan transaksi ini saat disimpan'}
-          className={cn(
-            'absolute right-2.5 top-2.5 px-2 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer flex items-center gap-1',
-            isPinned
-              ? 'bg-[#FEF3C7] dark:bg-[#78350F]/50 text-[#D97706] border border-[#FDE68A] dark:border-[#92400E] shadow-2xs'
-              : 'text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20]'
-          )}
+          onClick={() => setIsNumpadOpen(!isNumpadOpen)}
+          className="w-full p-3 flex flex-col gap-1 text-left cursor-pointer hover:bg-[#F8F9FA] dark:hover:bg-[#16161A] transition-colors"
         >
-          <Pin className={cn('w-3.5 h-3.5', isPinned && 'fill-current')} />
-          {isPinned && <span>Sematkan</span>}
-        </button>
-      </div>
-
-      {/* 3. Date Picker (Placed above Account & Category) */}
-      <DatePicker value={txDate} onChange={setTxDate} />
-
-      {/* 4. Account Popover */}
-      <PopoverPrimitive.Root open={isAccountPopoverOpen} onOpenChange={setIsAccountPopoverOpen}>
-        <PopoverPrimitive.Trigger asChild>
-          <button
-            type="button"
-            className="flex items-center justify-between p-2.5 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors text-left cursor-pointer w-full"
-          >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <DynamicIcon name={activeAccount?.icon || 'Wallet'} className="w-4 h-4 text-[#0F172A] dark:text-[#FAFAFA] shrink-0" />
-              <div className="flex flex-col min-w-0">
-                <span className="text-[9px] uppercase font-bold text-[#64748B] dark:text-[#94A3B8] leading-none">
-                  {t.quickAdd.account}
-                </span>
-                <span className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate mt-0.5">
-                  {activeAccount?.name || t.quickAdd.selectAccount}
-                </span>
-              </div>
-            </div>
-            <div className="flex items-center gap-1.5 shrink-0">
-              <span className="text-[11px] font-mono text-[#94A3B8]">({currentCurrency})</span>
-              <ChevronDown className="w-3.5 h-3.5 text-[#94A3B8]" />
-            </div>
-          </button>
-        </PopoverPrimitive.Trigger>
-        <PopoverPrimitive.Portal>
-          <PopoverPrimitive.Content
-            align="start"
-            className="z-50 w-64 p-1 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] shadow-xl animate-in fade-in-0 zoom-in-95"
-          >
-            <div className="flex flex-col gap-0.5 max-h-48 overflow-y-auto">
-              {accounts.map((a) => (
-                <button
-                  key={a.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedAccountId(a.id)
-                    setIsAccountPopoverOpen(false)
-                  }}
-                  className={cn(
-                    'flex items-center justify-between p-2 rounded-lg text-xs font-medium transition-colors text-left cursor-pointer',
-                    a.id === selectedAccountId
-                      ? 'bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A]'
-                      : 'hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] text-[#0F172A] dark:text-[#F8FAFC]'
-                  )}
-                >
-                  <div className="flex items-center gap-2 truncate">
-                    <DynamicIcon name={a.icon || 'Wallet'} className="w-3.5 h-3.5 shrink-0" />
-                    <span className="truncate">{a.name}</span>
-                  </div>
-                  <span className="text-[10px] font-mono opacity-80 shrink-0 ml-1">
-                    {a.currency}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </PopoverPrimitive.Content>
-        </PopoverPrimitive.Portal>
-      </PopoverPrimitive.Root>
-
-      {/* 5. Category Popover */}
-      <PopoverPrimitive.Root open={isCategoryPopoverOpen} onOpenChange={setIsCategoryPopoverOpen}>
-        <PopoverPrimitive.Trigger asChild>
-          <button
-            type="button"
-            className="flex items-center justify-between p-2.5 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors text-left cursor-pointer w-full"
-          >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <DynamicIcon name={activeCategory?.icon || 'Tag'} className="w-4 h-4 text-[#0F172A] dark:text-[#FAFAFA] shrink-0" />
-              <div className="flex flex-col min-w-0">
-                <span className="text-[9px] uppercase font-bold text-[#64748B] dark:text-[#94A3B8] leading-none">
-                  {t.quickAdd.category}
-                </span>
-                <span className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate mt-0.5">
-                  {activeCategory?.name || t.quickAdd.selectCategory}
-                </span>
-              </div>
-            </div>
-            <ChevronDown className="w-3.5 h-3.5 text-[#94A3B8]" />
-          </button>
-        </PopoverPrimitive.Trigger>
-        <PopoverPrimitive.Portal>
-          <PopoverPrimitive.Content
-            align="start"
-            className="z-50 w-64 p-1 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] shadow-xl animate-in fade-in-0 zoom-in-95"
-          >
-            <div className="flex flex-col gap-0.5 max-h-48 overflow-y-auto">
-              {filteredCategories.map((c) => (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedCategoryId(c.id)
-                    setIsCategoryPopoverOpen(false)
-                  }}
-                  className={cn(
-                    'flex items-center gap-2 p-2 rounded-lg text-xs font-medium transition-colors text-left cursor-pointer',
-                    c.id === selectedCategoryId
-                      ? 'bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A]'
-                      : 'hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] text-[#0F172A] dark:text-[#F8FAFC]'
-                  )}
-                >
-                  <DynamicIcon name={c.icon || 'Tag'} className="w-3.5 h-3.5 shrink-0" />
-                  <span className="truncate">{c.name}</span>
-                </button>
-              ))}
-            </div>
-          </PopoverPrimitive.Content>
-        </PopoverPrimitive.Portal>
-      </PopoverPrimitive.Root>
-
-      {/* 6. Base Description Input (Full Width) */}
-      <div className="flex flex-col gap-2">
-        <input
-          type="text"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder={t.quickAdd.notePlaceholder}
-          className="w-full px-3.5 py-2.5 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-xs text-[#0F172A] dark:text-[#F8FAFC] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#0F172A] dark:focus:border-[#FAFAFA]"
-        />
-
-        {/* Hidden File Input for Receipt Photo */}
-        <input
-          type="file"
-          ref={fileInputRef}
-          accept="image/*"
-          className="hidden"
-          onChange={handleReceiptUpload}
-        />
-
-        {/* OCR Scanning Status Banner */}
-        {isScanning && (
-          <div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 flex items-center justify-between gap-2 animate-pulse">
-            <div className="flex items-center gap-2 min-w-0">
-              <Loader2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400 animate-spin shrink-0" />
-              <span className="text-xs font-medium text-indigo-900 dark:text-indigo-200 truncate">
-                {ocrStatus || t.quickAdd.scanningReceipt}
-              </span>
-            </div>
-            <span className="text-xs font-mono font-bold text-indigo-600 dark:text-indigo-400 shrink-0">
-              {ocrProgress}%
+          <div className="flex items-center justify-between pr-8">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+              {t.quickAdd.nominal}
             </span>
-          </div>
-        )}
 
-        {/* Action Toolbar Grid (4 Columns: Scan, Items, Memo, Tags) */}
-        <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
-          {/* OCR Scan Button */}
-          <button
-            type="button"
-            disabled={isScanning}
-            onClick={() => fileInputRef.current?.click()}
-            className={cn(
-              'py-2 px-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none',
-              isScanning
-                ? 'opacity-60 cursor-not-allowed bg-indigo-50 text-indigo-600 border-indigo-200 dark:bg-indigo-950/40 dark:border-indigo-800'
-                : 'bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#0F172A] dark:text-[#F8FAFC] hover:border-indigo-400 dark:hover:border-indigo-600 border-[#E5E7EB] dark:border-[#27272A]'
-            )}
-            title={t.quickAdd.scanReceiptBtn}
-          >
-            {isScanning ? (
-              <Loader2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 animate-spin shrink-0" />
-            ) : (
-              <Camera className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
-            )}
-            <span className="truncate">{language === 'en' ? 'Scan' : 'Pindai'}</span>
-          </button>
-
-          {/* Sub-items Button */}
-          <button
-            type="button"
-            onClick={() => setShowItemsBreakdown(!showItemsBreakdown)}
-            className={cn(
-              'py-2 px-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none',
-              showItemsBreakdown
-                ? 'bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A] shadow-xs'
-                : 'bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]'
-            )}
-          >
-            <ListPlus className="w-3.5 h-3.5 shrink-0" />
-            <span className="truncate">{language === 'en' ? 'Items' : 'Rincian'}</span>
-            {items.length > 0 && (
-              <span className="px-1 py-0.2 rounded-full bg-white/20 text-[9px] font-bold">
-                {items.length}
-              </span>
-            )}
-          </button>
-
-          {/* Memo Button */}
-          <button
-            type="button"
-            onClick={() => setShowFreeMemo(!showFreeMemo)}
-            className={cn(
-              'py-2 px-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none',
-              showFreeMemo
-                ? 'bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A] shadow-xs'
-                : 'bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]'
-            )}
-          >
-            <AlignLeft className="w-3.5 h-3.5 shrink-0" />
-            <span className="truncate">{language === 'en' ? 'Memo' : 'Memo'}</span>
-          </button>
-
-          {/* Tags Button */}
-          <button
-            type="button"
-            onClick={() => setShowTags(!showTags)}
-            className={cn(
-              'py-2 px-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none',
-              showTags
-                ? 'bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A] shadow-xs'
-                : 'bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]'
-            )}
-          >
-            <Hash className="w-3.5 h-3.5 shrink-0" />
-            <span className="truncate">{language === 'en' ? 'Tags' : 'Tagar'}</span>
-            {tags.length > 0 && (
-              <span className="px-1 py-0.2 rounded-full bg-white/20 text-[9px] font-bold">
-                {tags.length}
-              </span>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* 6.5 Expandable Tags (#tags) Drawer */}
-      {showTags && (
-        <div className="p-3 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-2 animate-in fade-in duration-150">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
-            {t.transactions.tagLabel}
-          </span>
-          <div className="flex flex-wrap items-center gap-1.5 min-h-[28px]">
-            {tags.map((tag) => (
-              <span
-                key={tag}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs font-bold text-[#0F172A] dark:text-[#FAFAFA] shadow-2xs"
-              >
-                <span>#{tag}</span>
-                <button
-                  type="button"
-                  onClick={() => setTags(tags.filter((t) => t !== tag))}
-                  className="text-[#94A3B8] hover:text-rose-500 cursor-pointer"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            ))}
-            <input
-              type="text"
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ',') {
-                  e.preventDefault()
-                  const clean = tagInput.replace(/^#/, '').toLowerCase().trim()
-                  if (clean && !tags.includes(clean)) {
-                    setTags([...tags, clean])
-                    setTagInput('')
-                  }
-                }
-              }}
-              placeholder={tags.length === 0 ? t.transactions.tagPlaceholder : '+ tag...'}
-              className="flex-1 min-w-[120px] px-2 py-1 bg-transparent text-xs text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8] focus:outline-none"
+            <Calculator
+              className={cn(
+                'w-4 h-4 transition-colors',
+                isNumpadOpen
+                  ? 'text-[#0F172A] dark:text-[#FAFAFA]'
+                  : 'text-[#94A3B8] group-hover:text-blue-500'
+              )}
             />
           </div>
-        </div>
-      )}
 
-      {/* 7. Expandable Sub-items Breakdown Drawer */}
-      {showItemsBreakdown && (
-        <div className="p-3 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-2">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] truncate">
-              {t.quickAdd.itemizedBreakdownTitle}
+          <div className="flex items-baseline gap-2 pt-0.5">
+            <span className="text-xl font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+              {currentCurrency}
             </span>
+            <span
+              className={cn(
+                'flex-1 min-w-0 text-2xl sm:text-3xl font-mono font-bold tracking-tight truncate',
+                numericAmount > 0 ? 'text-[#0F172A] dark:text-[#F8FAFC]' : 'text-[#94A3B8]'
+              )}
+            >
+              {formatCurrency(numericAmount, currentCurrency)}
+            </span>
+          </div>
+        </button>
+
+        {/* Pin Toggle Button */}
+        <div className="absolute right-2 top-2 z-10">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              setIsPinned(!isPinned)
+            }}
+            title={isPinned ? 'Sematkan aktif' : 'Sematkan transaksi ini'}
+            className={cn(
+              'p-1.5 rounded-lg transition-colors cursor-pointer',
+              isPinned
+                ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-500'
+                : 'text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
+            )}
+          >
+            <Pin className={cn('w-3.5 h-3.5', isPinned && 'fill-current')} />
+          </button>
+        </div>
+      </div>
+
+      {/* Conditionally render: If Numpad Open -> In-Place Keypad Grid; Else -> Form Fields */}
+      {isNumpadOpen ? (
+        <div className="flex flex-col gap-2 pt-1 animate-in fade-in-50 zoom-in-98 duration-150">
+          <div className="grid grid-cols-4 gap-1.5">
+            {['1', '2', '3'].map((n) => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => handleKeypadPress(n)}
+                className="py-3.5 sm:py-4 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-base sm:text-lg hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none"
+              >
+                {n}
+              </button>
+            ))}
             <button
               type="button"
-              onClick={handleAddItem}
-              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-[11px] font-bold text-[#0F172A] dark:text-[#FAFAFA] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] active:scale-95 transition-all cursor-pointer shrink-0"
+              onClick={handleKeypadBackspace}
+              className="py-3.5 sm:py-4 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] flex items-center justify-center text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none"
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{t.quickAdd.addItem}</span>
+              <Delete className="w-5 h-5" />
+            </button>
+
+            {['4', '5', '6'].map((n) => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => handleKeypadPress(n)}
+                className="py-3.5 sm:py-4 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-base sm:text-lg hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none"
+              >
+                {n}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => handleKeypadPress('000')}
+              className="py-3.5 sm:py-4 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-xs sm:text-sm hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none"
+            >
+              .000
+            </button>
+
+            {['7', '8', '9'].map((n) => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => handleKeypadPress(n)}
+                className="py-3.5 sm:py-4 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-base sm:text-lg hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none"
+              >
+                {n}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => setAmountStr('0')}
+              className="py-3.5 sm:py-4 rounded-xl bg-[#FFF1F2] dark:bg-[#881337]/20 text-[#E11D48] font-mono font-bold text-sm hover:bg-[#FFE4E6] dark:hover:bg-[#881337]/40 border border-[#FECDD3] dark:border-[#9F1239]/40 active:scale-95 transition-all cursor-pointer select-none"
+            >
+              C
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleKeypadPress('00')}
+              className="py-3.5 sm:py-4 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-sm hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none"
+            >
+              00
+            </button>
+            <button
+              type="button"
+              onClick={() => handleKeypadPress('0')}
+              className="py-3.5 sm:py-4 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-base sm:text-lg hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none"
+            >
+              0
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsNumpadOpen(false)}
+              className="col-span-2 py-3.5 sm:py-4 rounded-xl bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] font-bold text-xs flex items-center justify-center gap-1.5 hover:opacity-90 active:scale-95 shadow-md transition-all cursor-pointer select-none"
+            >
+              <Check className="w-4 h-4 stroke-[3]" />
+              <span>{language === 'en' ? 'Done' : 'Selesai'}</span>
             </button>
           </div>
+        </div>
+      ) : (
+        <>
+          {/* 3. Date Picker (Placed above Account & Category) */}
+          <DatePicker value={txDate} onChange={setTxDate} />
 
-          {items.length === 0 ? (
-            <div className="text-center py-3 text-xs text-[#94A3B8]">
-              {t.quickAdd.emptyItems}
-            </div>
-          ) : (
-            <div className="flex flex-col gap-1.5 max-h-36 overflow-y-auto pr-0.5">
-              {items.map((item, idx) => (
-                <div key={idx} className="flex items-center gap-1.5">
-                  <input
-                    type="text"
-                    placeholder={`Item ${idx + 1}`}
-                    value={item.name}
-                    onChange={(e) => handleUpdateItem(idx, 'name', e.target.value)}
-                    className="flex-1 min-w-0 px-2 py-1.5 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs text-[#0F172A] dark:text-[#F8FAFC] placeholder:text-[#94A3B8]"
-                  />
-                  <input
-                    type="number"
-                    placeholder="0"
-                    value={item.price}
-                    onChange={(e) => handleUpdateItem(idx, 'price', e.target.value)}
-                    className="w-20 sm:w-24 px-2 py-1.5 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs font-mono font-bold text-[#0F172A] dark:text-[#F8FAFC] placeholder:text-[#94A3B8]"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveItem(idx)}
-                    className="p-1.5 text-[#94A3B8] hover:text-[#E11D48] active:scale-90 transition-all cursor-pointer shrink-0"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+          {/* 4. Account Popover */}
+          <PopoverPrimitive.Root open={isAccountPopoverOpen} onOpenChange={setIsAccountPopoverOpen}>
+            <PopoverPrimitive.Trigger asChild>
+              <button
+                type="button"
+                className="flex items-center justify-between p-2.5 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors text-left cursor-pointer w-full"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <DynamicIcon name={activeAccount?.icon || 'Wallet'} className="w-4 h-4 text-[#0F172A] dark:text-[#FAFAFA] shrink-0" />
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[9px] uppercase font-bold text-[#64748B] dark:text-[#94A3B8] leading-none">
+                      {t.quickAdd.account}
+                    </span>
+                    <span className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate mt-0.5">
+                      {activeAccount?.name || t.quickAdd.selectAccount}
+                    </span>
+                  </div>
                 </div>
-              ))}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="text-[11px] font-mono text-[#94A3B8]">({currentCurrency})</span>
+                  <ChevronDown className="w-3.5 h-3.5 text-[#94A3B8]" />
+                </div>
+              </button>
+            </PopoverPrimitive.Trigger>
+            <PopoverPrimitive.Portal>
+              <PopoverPrimitive.Content
+                align="start"
+                className="z-50 w-64 p-1 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] shadow-xl animate-in fade-in-0 zoom-in-95"
+              >
+                <div className="flex flex-col gap-0.5 max-h-48 overflow-y-auto">
+                  {accounts.map((a) => (
+                    <button
+                      key={a.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedAccountId(a.id)
+                        setIsAccountPopoverOpen(false)
+                      }}
+                      className={cn(
+                        'flex items-center justify-between p-2 rounded-lg text-xs font-medium transition-colors text-left cursor-pointer',
+                        a.id === selectedAccountId
+                          ? 'bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A]'
+                          : 'hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] text-[#0F172A] dark:text-[#F8FAFC]'
+                      )}
+                    >
+                      <div className="flex items-center gap-2 truncate">
+                        <DynamicIcon name={a.icon || 'Wallet'} className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate">{a.name}</span>
+                      </div>
+                      <span className="text-[10px] font-mono opacity-80 shrink-0 ml-1">
+                        {a.currency}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </PopoverPrimitive.Content>
+            </PopoverPrimitive.Portal>
+          </PopoverPrimitive.Root>
+
+          {/* 5. Category Popover */}
+          <PopoverPrimitive.Root open={isCategoryPopoverOpen} onOpenChange={setIsCategoryPopoverOpen}>
+            <PopoverPrimitive.Trigger asChild>
+              <button
+                type="button"
+                className="flex items-center justify-between p-2.5 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors text-left cursor-pointer w-full"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <DynamicIcon name={activeCategory?.icon || 'Tag'} className="w-4 h-4 text-[#0F172A] dark:text-[#FAFAFA] shrink-0" />
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[9px] uppercase font-bold text-[#64748B] dark:text-[#94A3B8] leading-none">
+                      {t.quickAdd.category}
+                    </span>
+                    <span className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate mt-0.5">
+                      {activeCategory?.name || t.quickAdd.selectCategory}
+                    </span>
+                  </div>
+                </div>
+                <ChevronDown className="w-3.5 h-3.5 text-[#94A3B8] shrink-0" />
+              </button>
+            </PopoverPrimitive.Trigger>
+            <PopoverPrimitive.Portal>
+              <PopoverPrimitive.Content
+                align="start"
+                className="z-50 w-64 p-1 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] shadow-xl animate-in fade-in-0 zoom-in-95"
+              >
+                <div className="flex flex-col gap-0.5 max-h-48 overflow-y-auto">
+                  {filteredCategories.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedCategoryId(c.id)
+                        setIsCategoryPopoverOpen(false)
+                      }}
+                      className={cn(
+                        'flex items-center gap-2 p-2 rounded-lg text-xs font-medium transition-colors text-left cursor-pointer',
+                        c.id === selectedCategoryId
+                          ? 'bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A]'
+                          : 'hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] text-[#0F172A] dark:text-[#F8FAFC]'
+                      )}
+                    >
+                      <DynamicIcon name={c.icon || 'Tag'} className="w-3.5 h-3.5 shrink-0" />
+                      <span className="truncate">{c.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </PopoverPrimitive.Content>
+            </PopoverPrimitive.Portal>
+          </PopoverPrimitive.Root>
+
+          {/* 6. Base Description Input (Full Width) */}
+          <div className="flex flex-col gap-2">
+            <input
+              type="text"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder={t.quickAdd.notePlaceholder}
+              className="w-full px-3 py-2 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs font-medium text-[#0F172A] dark:text-[#F8FAFC] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#0F172A] dark:focus:border-[#FAFAFA]"
+            />
+
+            {/* Hidden File Input for Receipt Photo */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept="image/*"
+              className="hidden"
+              onChange={handleReceiptUpload}
+            />
+
+            {/* OCR Scanning Status Banner */}
+            {isScanning && (
+              <div className="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 flex items-center justify-between gap-2 animate-pulse">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Loader2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 animate-spin shrink-0" />
+                  <span className="text-xs font-medium text-indigo-900 dark:text-indigo-200 truncate">
+                    {ocrStatus || t.quickAdd.scanningReceipt}
+                  </span>
+                </div>
+                <span className="text-xs font-mono font-bold text-indigo-600 dark:text-indigo-400 shrink-0">
+                  {ocrProgress}%
+                </span>
+              </div>
+            )}
+
+            {/* Action Toolbar Grid (4 Columns: Scan, Items, Memo, Tags) */}
+            <div className="grid grid-cols-4 gap-1.5">
+              {/* OCR Scan Button */}
+              <button
+                type="button"
+                disabled={isScanning}
+                onClick={() => fileInputRef.current?.click()}
+                className={cn(
+                  'py-1.5 px-1 rounded-lg border text-[11px] font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none',
+                  isScanning
+                    ? 'opacity-60 cursor-not-allowed bg-indigo-50 text-indigo-600 border-indigo-200 dark:bg-indigo-950/40 dark:border-indigo-800'
+                    : 'bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#0F172A] dark:text-[#F8FAFC] hover:border-indigo-400 dark:hover:border-indigo-600 border-[#E5E7EB] dark:border-[#27272A]'
+                )}
+                title={t.quickAdd.scanReceiptBtn}
+              >
+                {isScanning ? (
+                  <Loader2 className="w-3 h-3 text-indigo-600 dark:text-indigo-400 animate-spin shrink-0" />
+                ) : (
+                  <Camera className="w-3 h-3 text-indigo-500 shrink-0" />
+                )}
+                <span className="truncate">{language === 'en' ? 'Scan' : 'Pindai'}</span>
+              </button>
+
+              {/* Breakdown Items Button */}
+              <button
+                type="button"
+                onClick={() => setShowItemsBreakdown(!showItemsBreakdown)}
+                className={cn(
+                  'py-1.5 px-1 rounded-lg border text-[11px] font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none',
+                  showItemsBreakdown
+                    ? 'bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A] shadow-xs'
+                    : 'bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]'
+                )}
+              >
+                <ListPlus className="w-3 h-3 shrink-0" />
+                <span className="truncate">{language === 'en' ? 'Items' : 'Rincian'}</span>
+                {items.length > 0 && (
+                  <span className="px-1 py-0.2 rounded-full bg-white/20 text-[9px] font-bold">
+                    {items.length}
+                  </span>
+                )}
+              </button>
+
+              {/* Free Text Memo Button */}
+              <button
+                type="button"
+                onClick={() => setShowFreeMemo(!showFreeMemo)}
+                className={cn(
+                  'py-1.5 px-1 rounded-lg border text-[11px] font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none',
+                  showFreeMemo
+                    ? 'bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A] shadow-xs'
+                    : 'bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]'
+                )}
+              >
+                <AlignLeft className="w-3 h-3 shrink-0" />
+                <span className="truncate">{language === 'en' ? 'Memo' : 'Memo'}</span>
+              </button>
+
+              {/* Tags (#tags) Button */}
+              <button
+                type="button"
+                onClick={() => setShowTags(!showTags)}
+                className={cn(
+                  'py-1.5 px-1 rounded-lg border text-[11px] font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none',
+                  showTags
+                    ? 'bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A] shadow-xs'
+                    : 'bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]'
+                )}
+              >
+                <Hash className="w-3 h-3 shrink-0" />
+                <span className="truncate">Tags</span>
+                {tags.length > 0 && (
+                  <span className="px-1 py-0.2 rounded-full bg-white/20 text-[9px] font-bold">
+                    {tags.length}
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* 6.5 Expandable Tags (#tags) Drawer */}
+          {showTags && (
+            <div className="p-3 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-2 animate-in fade-in duration-150">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+                {t.transactions.tagLabel}
+              </span>
+              <div className="flex flex-wrap items-center gap-1.5 min-h-[28px]">
+                {tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs font-bold text-[#0F172A] dark:text-[#FAFAFA] shadow-2xs"
+                  >
+                    <span>#{tag}</span>
+                    <button
+                      type="button"
+                      onClick={() => setTags(tags.filter((t) => t !== tag))}
+                      className="text-[#94A3B8] hover:text-rose-500 cursor-pointer"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+                <input
+                  type="text"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ',') {
+                      e.preventDefault()
+                      const clean = tagInput.replace(/^#/, '').toLowerCase().trim()
+                      if (clean && !tags.includes(clean)) {
+                        setTags([...tags, clean])
+                        setTagInput('')
+                      }
+                    }
+                  }}
+                  placeholder={tags.length === 0 ? t.transactions.tagPlaceholder : '+ tag...'}
+                  className="flex-1 min-w-[120px] px-2 py-1 bg-transparent text-xs text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8] focus:outline-none"
+                />
+              </div>
             </div>
           )}
 
-          {/* Smart Allocation Summary Bar */}
-          {items.length > 0 && (
-            <div className="pt-2 border-t border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-2">
-              <div className="flex items-center justify-between text-[11px] font-mono">
-                <span className="text-[#64748B] dark:text-[#94A3B8]">
-                  {t.quickAdd.itemizedTotal}: <strong className="text-[#0F172A] dark:text-[#FAFAFA]">{formatCurrency(itemsTotal, currentCurrency)}</strong>
+          {/* 7. Expandable Sub-items Breakdown Drawer */}
+          {showItemsBreakdown && (
+            <div className="p-3 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] truncate">
+                  {t.quickAdd.itemizedBreakdownTitle}
                 </span>
-
-                {isItemsMatching ? (
-                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                    <Check className="w-3 h-3" />
-                    <span>{language === 'en' ? 'Matched 100%' : 'Cocok 100%'}</span>
-                  </span>
-                ) : hasRemainingUnitemized ? (
-                  <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400">
-                    {t.quickAdd.unitemizedRemaining}: +{formatCurrency(remainingAmount, currentCurrency)}
-                  </span>
-                ) : isItemsExceeding ? (
-                  <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3" />
-                    <span>+{formatCurrency(itemsTotal - numericAmount, currentCurrency)} ({language === 'en' ? 'Exceeds' : 'Melebihi'})</span>
-                  </span>
-                ) : null}
-              </div>
-
-              {/* Sync Button when total does not match */}
-              {itemsTotal > 0 && itemsTotal !== numericAmount && (
                 <button
                   type="button"
-                  onClick={() => {
-                    setAmountStr(String(Math.round(itemsTotal)))
-                    setError(null)
-                  }}
-                  className="w-full py-1.5 px-2 rounded-lg bg-white dark:bg-[#121215] border border-dashed border-[#CBD5E1] dark:border-[#334155] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] text-[11px] font-medium text-[#475569] dark:text-[#CBD5E1] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                  onClick={handleAddItem}
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-[11px] font-bold text-[#0F172A] dark:text-[#FAFAFA] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] active:scale-95 transition-all cursor-pointer shrink-0"
                 >
-                  <Check className="w-3 h-3 text-[#0D9488]" />
-                  <span>{t.quickAdd.syncTotalWithItems}: <strong>{formatCurrency(itemsTotal, currentCurrency)}</strong></span>
+                  <Plus className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">{t.quickAdd.addItem}</span>
                 </button>
+              </div>
+
+              {items.length === 0 ? (
+                <div className="text-center py-3 text-xs text-[#94A3B8]">
+                  {t.quickAdd.emptyItems}
+                </div>
+              ) : (
+                <div className="flex flex-col gap-1.5 max-h-36 overflow-y-auto pr-0.5">
+                  {items.map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-1.5">
+                      <input
+                        type="text"
+                        placeholder={`Item ${idx + 1}`}
+                        value={item.name}
+                        onChange={(e) => handleUpdateItem(idx, 'name', e.target.value)}
+                        className="flex-1 min-w-0 px-2 py-1.5 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8]"
+                      />
+                      <input
+                        type="number"
+                        placeholder="0"
+                        value={item.price}
+                        onChange={(e) => handleUpdateItem(idx, 'price', e.target.value)}
+                        className="w-20 sm:w-24 px-2 py-1.5 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs font-mono font-bold text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveItem(idx)}
+                        className="p-1.5 text-[#94A3B8] hover:text-[#E11D48] active:scale-90 transition-all cursor-pointer shrink-0"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Smart Allocation Summary Bar */}
+              {items.length > 0 && (
+                <div className="pt-2 border-t border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-2">
+                  <div className="flex items-center justify-between text-[11px] font-mono">
+                    <span className="text-[#64748B] dark:text-[#94A3B8]">
+                      {t.quickAdd.itemizedTotal}: <strong className="text-[#0F172A] dark:text-[#FAFAFA]">{formatCurrency(itemsTotal, currentCurrency)}</strong>
+                    </span>
+
+                    {isItemsMatching ? (
+                      <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                        <Check className="w-3 h-3" />
+                        <span>{language === 'en' ? 'Matched 100%' : 'Cocok 100%'}</span>
+                      </span>
+                    ) : hasRemainingUnitemized ? (
+                      <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400">
+                        {t.quickAdd.unitemizedRemaining}: +{formatCurrency(remainingAmount, currentCurrency)}
+                      </span>
+                    ) : isItemsExceeding ? (
+                      <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        <span>+{formatCurrency(itemsTotal - numericAmount, currentCurrency)} ({language === 'en' ? 'Exceeds' : 'Melebihi'})</span>
+                      </span>
+                    ) : null}
+                  </div>
+
+                  {/* Sync Button when total does not match */}
+                  {itemsTotal > 0 && itemsTotal !== numericAmount && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAmountStr(String(Math.round(itemsTotal)))
+                        setError(null)
+                      }}
+                      className="w-full py-1.5 px-2 rounded-lg bg-white dark:bg-[#121215] border border-dashed border-[#CBD5E1] dark:border-[#334155] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] text-[11px] font-medium text-[#475569] dark:text-[#CBD5E1] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <Check className="w-3 h-3 text-[#0D9488]" />
+                      <span>{t.quickAdd.syncTotalWithItems}: <strong>{formatCurrency(itemsTotal, currentCurrency)}</strong></span>
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           )}
-        </div>
-      )}
 
-      {/* 8. Expandable Free Text Memo Drawer */}
-      {showFreeMemo && (
-        <div className="p-3 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A]">
-          <textarea
-            rows={2}
-            value={freeTextMemo}
-            onChange={(e) => setFreeTextMemo(e.target.value)}
-            placeholder={t.quickAdd.memoPlaceholder}
-            className="w-full p-2 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs text-[#0F172A] dark:text-[#F8FAFC] placeholder:text-[#94A3B8] focus:outline-none"
-          />
-        </div>
-      )}
+          {/* 8. Expandable Free Text Memo Drawer */}
+          {showFreeMemo && (
+            <div className="p-3 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A]">
+              <textarea
+                rows={2}
+                value={freeTextMemo}
+                onChange={(e) => setFreeTextMemo(e.target.value)}
+                placeholder={t.quickAdd.memoPlaceholder}
+                className="w-full p-2 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs text-[#0F172A] dark:text-[#F8FAFC] placeholder:text-[#94A3B8] focus:outline-none"
+              />
+            </div>
+          )}
 
-      {/* 9. Precision 4-Column Tactical Keypad */}
-      <div className="grid grid-cols-4 gap-1.5 pt-1">
-        {['1', '2', '3'].map((n) => (
-          <button
-            key={n}
-            type="button"
-            onClick={() => handleKeypadPress(n)}
-            className="py-2.5 rounded-lg bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-sm sm:text-base hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] cursor-pointer"
-          >
-            {n}
-          </button>
-        ))}
-        <button
-          type="button"
-          onClick={handleKeypadBackspace}
-          className="py-2.5 rounded-lg bg-[#E2E8F0] dark:bg-[#27272A] flex items-center justify-center hover:bg-[#CBD5E1] dark:hover:bg-[#334155] text-[#0F172A] dark:text-[#F8FAFC] border border-[#CBD5E1] dark:border-[#334155] cursor-pointer"
-        >
-          <Delete className="w-4 h-4" />
-        </button>
+          {error && (
+            <p className="text-xs font-semibold text-[#E11D48] text-center pt-1">{error}</p>
+          )}
 
-        {['4', '5', '6'].map((n) => (
-          <button
-            key={n}
-            type="button"
-            onClick={() => handleKeypadPress(n)}
-            className="py-2.5 rounded-lg bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-sm sm:text-base hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] cursor-pointer"
-          >
-            {n}
-          </button>
-        ))}
-        <button
-          type="button"
-          onClick={() => handleKeypadPress('000')}
-          className="py-2.5 rounded-lg bg-[#E2E8F0] dark:bg-[#27272A] font-mono font-bold text-xs sm:text-sm hover:bg-[#CBD5E1] dark:hover:bg-[#334155] text-[#0F172A] dark:text-[#F8FAFC] border border-[#CBD5E1] dark:border-[#334155] cursor-pointer"
-        >
-          +000
-        </button>
+          {/* Action Footer Bar */}
+          <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#E5E7EB] dark:border-[#27272A]">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isLoading}
+              className="px-4 py-2 rounded-xl text-xs font-bold text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] bg-[#F1F3F5] dark:bg-[#1A1A20] hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer"
+            >
+              {t.common.cancel}
+            </button>
 
-        {['7', '8', '9'].map((n) => (
-          <button
-            key={n}
-            type="button"
-            onClick={() => handleKeypadPress(n)}
-            className="py-2.5 rounded-lg bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-sm sm:text-base hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] cursor-pointer"
-          >
-            {n}
-          </button>
-        ))}
-        <button
-          type="button"
-          onClick={() => setAmountStr('0')}
-          className="py-2.5 rounded-lg bg-[#E2E8F0] dark:bg-[#27272A] font-mono font-bold text-xs hover:bg-[#CBD5E1] dark:hover:bg-[#334155] text-[#0F172A] dark:text-[#F8FAFC] border border-[#CBD5E1] dark:border-[#334155] cursor-pointer"
-        >
-          C
-        </button>
-
-        <button
-          type="button"
-          onClick={() => handleKeypadPress('0')}
-          className="col-span-2 py-2.5 rounded-lg bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-sm sm:text-base hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] cursor-pointer"
-        >
-          0
-        </button>
-
-        <Button
-          type="button"
-          onClick={handleSave}
-          isLoading={isLoading}
-          disabled={numericAmount <= 0}
-          className="col-span-2 py-2.5 h-auto font-bold text-xs rounded-lg"
-        >
-          <Check className="w-3.5 h-3.5 mr-1" />
-          {t.quickAdd.recordBtn}
-        </Button>
-      </div>
-
-      {error && (
-        <p className="text-xs font-semibold text-[#E11D48] text-center">{error}</p>
+            <Button
+              type="button"
+              onClick={handleSave}
+              isLoading={isLoading}
+              disabled={numericAmount <= 0}
+              className="flex-1 py-2.5 h-auto font-bold text-xs rounded-xl bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] hover:opacity-90 active:scale-95 shadow-sm"
+            >
+              <Check className="w-3.5 h-3.5 mr-1 stroke-[3]" />
+              <span>{t.quickAdd.recordBtn}</span>
+            </Button>
+          </div>
+        </>
       )}
     </div>
   )

@@ -107,13 +107,28 @@ export async function createTransfer(input: {
 
   // 4. Record Admin/Transfer Fee as Expense Transaction if fee > 0
   if (fee > 0) {
+    // Find Transfer Fee system category
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: expCat } = await (supabase.from('categories') as any)
+    let { data: expCat } = await (supabase.from('categories') as any)
       .select('id')
       .eq('user_id', user.id)
+      .eq('name', 'Transfer Fee')
       .eq('type', 'expense')
       .limit(1)
       .maybeSingle()
+
+    if (!expCat) {
+      // Fallback: look for Transfer or Other Expense
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: fallbackCat } = await (supabase.from('categories') as any)
+        .select('id')
+        .eq('user_id', user.id)
+        .in('name', ['Transfer', 'Other Expense'])
+        .eq('type', 'expense')
+        .limit(1)
+        .maybeSingle()
+      expCat = fallbackCat
+    }
 
     if (expCat) {
       const feeTxDate = input.transferDate ? `${input.transferDate.split('T')[0]}T12:00:00.000Z` : new Date().toISOString()
@@ -125,7 +140,7 @@ export async function createTransfer(input: {
         type: 'expense',
         amount: fee,
         currency: fromCurrency,
-        description: `Biaya Transfer ke ${toAcc.name}${input.description ? ` (${input.description})` : ''}`,
+        description: `Biaya Admin Transfer ke ${toAcc.name}${input.description ? ` (${input.description})` : ''}`,
         transaction_date: feeTxDate,
       })
     }
