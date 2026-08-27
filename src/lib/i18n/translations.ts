@@ -527,7 +527,7 @@ export const translations = {
       createRecord: "Catat ke Buku Utang",
       deleteConfirmTitle: "Hapus Catatan Utang/Piutang",
       deleteConfirmMsg:
-        "Apakah Anda yakin ingin menghapus catatan utang/piutang ini secara permanen?",
+        "Apakah Anda yakin ingin menghapus catatan ini? Seluruh transaksi kas terkait (transaksi awal & riwayat pembayaran cicilan) juga akan dihapus otomatis dari buku kas, dan saldo rekening Anda akan dipulihkan.",
       recordPayment: "Catat Cicilan",
       paymentModalTitle: "Catat Pembayaran",
       editPaymentModalTitle: "Ubah Cicilan",
@@ -1353,7 +1353,7 @@ export const translations = {
       createRecord: "Add to Ledger",
       deleteConfirmTitle: "Delete Record",
       deleteConfirmMsg:
-        "Are you sure you want to permanently delete this debt/receivable record?",
+        "Are you sure you want to delete this record? All linked cash transactions (initial disbursement & installment payments) will also be deleted from the ledger, and your account balances will be restored.",
       recordPayment: "Record Payment",
       paymentModalTitle: "Record Installment",
       editPaymentModalTitle: "Edit Installment",

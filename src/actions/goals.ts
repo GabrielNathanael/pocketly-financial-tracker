@@ -145,6 +145,31 @@ export async function deleteSavingsGoal(id: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Unauthorized' }
 
+  // 1. Fetch goal before delete
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: goal } = await (supabase.from('savings_goals') as any)
+    .select('*')
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .single()
+
+  // 2. Delete linked transactions by Ref tag
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase.from('transactions') as any)
+    .delete()
+    .eq('user_id', user.id)
+    .ilike('description', `%[Ref:goal-${id}]%`)
+
+  // Fallback: search by goal name pattern
+  if (goal) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.from('transactions') as any)
+      .delete()
+      .eq('user_id', user.id)
+      .or(`description.ilike.%Alokasi Tabungan: ${goal.name}%,description.ilike.%Penarikan Tabungan: ${goal.name}%`)
+  }
+
+  // 3. Delete the savings goal (savings_goal_deposits cascade-deleted)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabase.from('savings_goals') as any)
     .delete()
@@ -158,6 +183,10 @@ export async function deleteSavingsGoal(id: string) {
 
   revalidatePath('/goals')
   revalidatePath('/dashboard')
+  revalidatePath('/transactions')
+  revalidatePath('/accounts')
+  revalidatePath('/net-worth')
+  revalidatePath('/reports')
   return { success: true }
 }
 
@@ -185,48 +214,75 @@ export async function recordGoalDeposit(input: GoalDepositInput) {
     .single()
 
   if (goalErr || !goal) {
-    return { error: 'Goal not found' }
+    return { error: 'Target tabungan tidak ditemukan' }
   }
 
-  const currentAmt = Number(goal.current_amount || 0)
-  const targetAmt = Number(goal.target_amount)
-
-  if (type === 'withdraw' && amount > currentAmt) {
-    return { error: 'Withdrawal amount exceeds current saved amount' }
-  }
-
-  // 2. Fetch Account & Verify
+  // 2. Fetch Account
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: account, error: accErr } = await (supabase.from('accounts') as any)
-    .select('id, current_balance, currency')
+    .select('*')
     .eq('id', accountId)
     .eq('user_id', user.id)
     .single()
 
   if (accErr || !account) {
-    return { error: 'Source account not found' }
+    return { error: 'Akun sumber/tujuan tidak ditemukan' }
   }
 
-  const newGoalAmount = type === 'deposit' ? currentAmt + amount : Math.max(0, currentAmt - amount)
-  const newStatus: GoalStatus = newGoalAmount >= targetAmt ? 'completed' : goal.status === 'completed' ? 'in_progress' : goal.status
+  // Currency matching check
+  if (account.currency !== currency) {
+    return {
+      error: `Mata uang akun (${account.currency}) tidak sesuai dengan setoran (${currency})`,
+    }
+  }
 
-  // 3. Insert into savings_goal_deposits
+  // If deposit, check account balance sufficiency
+  if (type === 'deposit') {
+    const currentBalance = Number(account.current_balance)
+    if (currentBalance < amount) {
+      return {
+        error: `Saldo akun ${account.name} tidak mencukupi (${account.currency} ${currentBalance.toLocaleString()})`,
+      }
+    }
+  }
+
+  // If withdraw, check goal current amount sufficiency
+  const currentGoalAmount = Number(goal.current_amount)
+  if (type === 'withdraw') {
+    if (currentGoalAmount < amount) {
+      return {
+        error: `Saldo tabungan saat ini (${goal.currency} ${currentGoalAmount.toLocaleString()}) tidak mencukupi untuk penarikan sebesar ${currency} ${amount.toLocaleString()}`,
+      }
+    }
+  }
+
+  const newGoalAmount =
+    type === 'deposit' ? currentGoalAmount + amount : currentGoalAmount - amount
+  const targetAmount = Number(goal.target_amount)
+
+  let newStatus: GoalStatus = goal.status
+  if (type === 'deposit' && newGoalAmount >= targetAmount) {
+    newStatus = 'completed'
+  } else if (type === 'withdraw' && newGoalAmount < targetAmount && goal.status === 'completed') {
+    newStatus = 'in_progress'
+  }
+
+  // 3. Insert record into savings_goal_deposits
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error: depErr } = await (supabase.from('savings_goal_deposits') as any)
-    .insert({
-      user_id: user.id,
-      goal_id: goalId,
-      account_id: accountId,
-      type,
-      amount,
-      currency,
-      deposit_date: depositDate,
-      notes: notes || null,
-    })
+  const { error: depositErr } = await (supabase.from('savings_goal_deposits') as any).insert({
+    user_id: user.id,
+    goal_id: goalId,
+    account_id: accountId,
+    type,
+    amount,
+    currency,
+    deposit_date: depositDate,
+    notes: notes || null,
+  })
 
-  if (depErr) {
-    console.error('Error inserting goal deposit:', depErr)
-    return { error: depErr.message }
+  if (depositErr) {
+    console.error('Error inserting savings goal deposit:', depositErr)
+    return { error: depositErr.message }
   }
 
   // 4. Update savings_goals current_amount and status
@@ -269,7 +325,9 @@ export async function recordGoalDeposit(input: GoalDepositInput) {
     savingsCat = fallbackCat
   }
 
-  // Insert transaction
+  const fullDesc = `${notes ? `${desc} • ${notes}` : desc} [Ref:goal-${goal.id}]`
+
+  // Insert transaction (database trigger automatically handles balance update)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await (supabase.from('transactions') as any).insert({
     user_id: user.id,
@@ -278,7 +336,7 @@ export async function recordGoalDeposit(input: GoalDepositInput) {
     type: txType,
     amount,
     currency,
-    description: notes ? `${desc} • ${notes}` : desc,
+    description: fullDesc,
     transaction_date: `${depositDate}T12:00:00.000Z`,
   })
 

@@ -70,8 +70,9 @@ export function humanizeAuditLog(log: AuditLog, lang: 'id' | 'en' = 'id'): Human
     const cur = newVal.currency || oldVal.currency || 'IDR'
     const debtType = newVal.type || oldVal.type
     const person = newVal.counterparty_name || oldVal.counterparty_name || (isId ? 'Pihak Lain' : 'Counterparty')
-    const typeText = debtType === 'payable'
-      ? (isId ? 'Hutang' : 'Payable')
+    const isDebt = debtType === 'debt' || debtType === 'payable'
+    const typeText = isDebt
+      ? (isId ? 'Hutang' : 'Debt')
       : (isId ? 'Piutang' : 'Receivable')
     const initAmt = formatCurrency(Number(newVal.initial_amount || oldVal.initial_amount || 0), cur)
 
@@ -110,6 +111,13 @@ export function humanizeAuditLog(log: AuditLog, lang: 'id' | 'en' = 'id'): Human
 
     // UPDATE debt
     const debtChanges: Array<{ field: string; from?: string; to?: string }> = []
+    if (oldVal.counterparty_name !== newVal.counterparty_name && (oldVal.counterparty_name || newVal.counterparty_name)) {
+      debtChanges.push({
+        field: isId ? 'Pihak Terkait' : 'Person',
+        from: oldVal.counterparty_name || '-',
+        to: newVal.counterparty_name || '-',
+      })
+    }
     if (oldVal.status !== newVal.status && (oldVal.status || newVal.status)) {
       debtChanges.push({
         field: isId ? 'Status Pelunasan' : 'Status',
@@ -119,9 +127,23 @@ export function humanizeAuditLog(log: AuditLog, lang: 'id' | 'en' = 'id'): Human
     }
     if (oldVal.remaining_amount !== newVal.remaining_amount) {
       debtChanges.push({
-        field: isId ? 'Sisa Hutang' : 'Remaining Balance',
+        field: isId ? 'Sisa Tagihan' : 'Remaining Balance',
         from: formatCurrency(Number(oldVal.remaining_amount || 0), cur),
         to: formatCurrency(Number(newVal.remaining_amount || 0), cur),
+      })
+    }
+    if (oldVal.due_date !== newVal.due_date && (oldVal.due_date || newVal.due_date)) {
+      debtChanges.push({
+        field: isId ? 'Tenggat Waktu' : 'Due Date',
+        from: oldVal.due_date ? formatDate(oldVal.due_date, 'd MMM yyyy', lang) : (isId ? '(Tanpa Tenggat)' : '(No Due Date)'),
+        to: newVal.due_date ? formatDate(newVal.due_date, 'd MMM yyyy', lang) : (isId ? '(Tanpa Tenggat)' : '(No Due Date)'),
+      })
+    }
+    if (oldVal.notes !== newVal.notes && (oldVal.notes || newVal.notes)) {
+      debtChanges.push({
+        field: isId ? 'Catatan' : 'Notes',
+        from: oldVal.notes || (isId ? '(Kosong)' : '(Empty)'),
+        to: newVal.notes || (isId ? '(Kosong)' : '(Empty)'),
       })
     }
 
@@ -129,8 +151,8 @@ export function humanizeAuditLog(log: AuditLog, lang: 'id' | 'en' = 'id'): Human
       moduleName: isId ? 'Hutang Piutang' : 'Debts & Loans',
       title: `${person} • ${typeText}`,
       summary: isId
-        ? `Memperbarui status / sisa hutang dengan ${person}`
-        : `Updated debt balance / status with ${person}`,
+        ? `Memperbarui status / rincian ${typeText.toLowerCase()} ${person}`
+        : `Updated ${typeText.toLowerCase()} details with ${person}`,
       changes: debtChanges,
       badgeType: 'update',
       badgeLabel: isId ? 'Diubah' : 'Updated',
@@ -489,11 +511,32 @@ export function humanizeAuditLog(log: AuditLog, lang: 'id' | 'en' = 'id'): Human
 
     // UPDATE goal
     const goalChanges: Array<{ field: string; from?: string; to?: string }> = []
+    if (oldVal.name !== newVal.name && (oldVal.name || newVal.name)) {
+      goalChanges.push({
+        field: isId ? 'Nama Target' : 'Goal Name',
+        from: oldVal.name || '-',
+        to: newVal.name || '-',
+      })
+    }
+    if (oldVal.target_amount !== newVal.target_amount && (oldVal.target_amount || newVal.target_amount)) {
+      goalChanges.push({
+        field: isId ? 'Target Sasaran' : 'Target Amount',
+        from: oldVal.target_amount ? formatCurrency(Number(oldVal.target_amount), cur) : '-',
+        to: newVal.target_amount ? formatCurrency(Number(newVal.target_amount), cur) : '-',
+      })
+    }
     if (oldVal.current_amount !== newVal.current_amount && (oldVal.current_amount !== undefined || newVal.current_amount !== undefined)) {
       goalChanges.push({
         field: isId ? 'Terkumpul Saat Ini' : 'Current Progress',
         from: oldVal.current_amount ? formatCurrency(Number(oldVal.current_amount), cur) : '-',
         to: newVal.current_amount ? formatCurrency(Number(newVal.current_amount), cur) : '-',
+      })
+    }
+    if (oldVal.target_date !== newVal.target_date && (oldVal.target_date || newVal.target_date)) {
+      goalChanges.push({
+        field: isId ? 'Tenggat Target' : 'Target Date',
+        from: oldVal.target_date ? formatDate(oldVal.target_date, 'd MMM yyyy', lang) : (isId ? '(Tanpa Tenggat)' : '(No Deadline)'),
+        to: newVal.target_date ? formatDate(newVal.target_date, 'd MMM yyyy', lang) : (isId ? '(Tanpa Tenggat)' : '(No Deadline)'),
       })
     }
     if (oldVal.status !== newVal.status && (oldVal.status || newVal.status)) {
@@ -510,8 +553,8 @@ export function humanizeAuditLog(log: AuditLog, lang: 'id' | 'en' = 'id'): Human
       moduleName: isId ? 'Tabungan' : 'Savings Goals',
       title: `${name}`,
       summary: isId
-        ? `Memperbarui progres tabungan "${name}" (Terkumpul: ${currentAmt} / ${targetAmt})`
-        : `Updated progress for "${name}" (Accumulated: ${currentAmt} / ${targetAmt})`,
+        ? `Memperbarui konfigurasi / progres tabungan "${name}"`
+        : `Updated progress or configuration for "${name}"`,
       changes: goalChanges,
       badgeType: 'update',
       badgeLabel: isId ? 'Diubah' : 'Updated',
@@ -625,15 +668,44 @@ export function humanizeAuditLog(log: AuditLog, lang: 'id' | 'en' = 'id'): Human
       }
     }
 
+    // UPDATE stock trade
+    const tradeChanges: Array<{ field: string; from?: string; to?: string }> = []
+    if (oldVal.ticker !== newVal.ticker && (oldVal.ticker || newVal.ticker)) {
+      tradeChanges.push({
+        field: isId ? 'Kode Saham' : 'Ticker',
+        from: oldVal.ticker || '-',
+        to: newVal.ticker || '-',
+      })
+    }
+    if (oldVal.net_amount !== newVal.net_amount && (oldVal.net_amount || newVal.net_amount)) {
+      tradeChanges.push({
+        field: isId ? 'Nominal Bersih' : 'Net Amount',
+        from: oldVal.net_amount ? formatCurrency(Number(oldVal.net_amount), 'IDR') : '-',
+        to: newVal.net_amount ? formatCurrency(Number(newVal.net_amount), 'IDR') : '-',
+      })
+    }
+    if (oldVal.trade_date !== newVal.trade_date && (oldVal.trade_date || newVal.trade_date)) {
+      tradeChanges.push({
+        field: isId ? 'Tanggal Transaksi' : 'Trade Date',
+        from: oldVal.trade_date ? formatDate(oldVal.trade_date, 'd MMM yyyy', lang) : '-',
+        to: newVal.trade_date ? formatDate(newVal.trade_date, 'd MMM yyyy', lang) : '-',
+      })
+    }
+    if (oldVal.notes !== newVal.notes && (oldVal.notes || newVal.notes)) {
+      tradeChanges.push({
+        field: isId ? 'Catatan' : 'Notes',
+        from: oldVal.notes || (isId ? '(Kosong)' : '(Empty)'),
+        to: newVal.notes || (isId ? '(Kosong)' : '(Empty)'),
+      })
+    }
+
     return {
       moduleName: isId ? 'Investasi Saham' : 'Stock Trades',
       title: `${ticker} • ${amt}`,
       summary: isId
         ? `Memperbarui rincian transaksi saham ${ticker}`
         : `Updated trade details for ${ticker}`,
-      changes: [
-        { field: isId ? 'Nominal Bersih' : 'Net Amount', from: oldVal.net_amount ? formatCurrency(Number(oldVal.net_amount), 'IDR') : '-', to: newVal.net_amount ? formatCurrency(Number(newVal.net_amount), 'IDR') : '-' },
-      ],
+      changes: tradeChanges,
       badgeType: 'update',
       badgeLabel: isId ? 'Diubah' : 'Updated',
     }
@@ -756,6 +828,14 @@ export function humanizeAuditLog(log: AuditLog, lang: 'id' | 'en' = 'id'): Human
       field: isId ? 'Tipe Transaksi' : 'Transaction Type',
       from: oldVal.type === 'income' ? (isId ? 'Pemasukan' : 'Income') : (isId ? 'Pengeluaran' : 'Expense'),
       to: newVal.type === 'income' ? (isId ? 'Pemasukan' : 'Income') : (isId ? 'Pengeluaran' : 'Expense'),
+    })
+  }
+
+  if (oldVal.transaction_date !== newVal.transaction_date && (oldVal.transaction_date || newVal.transaction_date)) {
+    changes.push({
+      field: isId ? 'Tanggal Transaksi' : 'Transaction Date',
+      from: oldVal.transaction_date ? formatDate(oldVal.transaction_date, 'd MMM yyyy', lang) : '-',
+      to: newVal.transaction_date ? formatDate(newVal.transaction_date, 'd MMM yyyy', lang) : '-',
     })
   }
 

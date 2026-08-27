@@ -169,8 +169,8 @@ export async function createDebt(input: {
 
     const txDesc =
       input.type === 'receivable'
-        ? `Pemberian Pinjaman ke ${input.counterpartyName.trim()}${input.notes ? ` (${input.notes.trim()})` : ''}`
-        : `Pencairan Utang dari ${input.counterpartyName.trim()}${input.notes ? ` (${input.notes.trim()})` : ''}`
+        ? `Pemberian Pinjaman ke ${input.counterpartyName.trim()}${input.notes ? ` (${input.notes.trim()})` : ''} [Ref:debt-${debt.id}]`
+        : `Pencairan Utang dari ${input.counterpartyName.trim()}${input.notes ? ` (${input.notes.trim()})` : ''} [Ref:debt-${debt.id}]`
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase.from('transactions') as any).insert({
@@ -229,13 +229,68 @@ export async function updateDebt(
 
 export async function deleteDebt(id: string) {
   const supabase = await createServerSupabaseClient()
-  const { error } = await supabase.from('debts').delete().eq('id', id)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized' }
+
+  // 1. Fetch debt details before delete
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: debt } = await (supabase.from('debts') as any)
+    .select('*')
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .single()
+
+  // 2. Fetch all linked installment payment transactions
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: payments } = await (supabase.from('debt_payments') as any)
+    .select('id, linked_transaction_id')
+    .eq('debt_id', id)
+
+  const linkedTxIds = (payments || [])
+    .map((p: { linked_transaction_id?: string | null }) => p.linked_transaction_id)
+    .filter(Boolean)
+
+  if (linkedTxIds.length > 0) {
+    // Delete payment transactions (which also restores account balances via triggers)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.from('transactions') as any)
+      .delete()
+      .in('id', linkedTxIds)
+      .eq('user_id', user.id)
+  }
+
+  // 3. Delete initial disbursement transaction linked by Ref tag
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase.from('transactions') as any)
+    .delete()
+    .eq('user_id', user.id)
+    .ilike('description', `%[Ref:debt-${id}]%`)
+
+  // Fallback: If created before Ref tags, search by standard initial description
+  if (debt) {
+    const fallbackDesc =
+      debt.type === 'receivable'
+        ? `Pemberian Pinjaman ke ${debt.counterparty_name}%`
+        : `Pencairan Utang dari ${debt.counterparty_name}%`
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.from('transactions') as any)
+      .delete()
+      .eq('user_id', user.id)
+      .eq('amount', debt.initial_amount)
+      .ilike('description', fallbackDesc)
+  }
+
+  // 4. Delete the debt record (debt_payments cascade-deleted automatically)
+  const { error } = await supabase.from('debts').delete().eq('id', id).eq('user_id', user.id)
 
   if (error) {
     return { error: error.message }
   }
 
   revalidatePath('/debts')
+  revalidatePath('/transactions')
+  revalidatePath('/accounts')
   revalidatePath('/net-worth')
   revalidatePath('/dashboard')
   revalidatePath('/')
