@@ -147,6 +147,106 @@ export interface AccountMutation {
   counterpartyOrCategory?: string
   color?: string | null
   icon?: string | null
+  isCross?: boolean
+  exchangeRateUsed?: number
+  counterpartyCurrency?: string
+  receivedAmount?: number
+}
+
+export async function adjustAccountBalance(input: {
+  accountId: string
+  newRealBalance: number
+  notes?: string | null
+}) {
+  const supabase = await createServerSupabaseClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized' }
+
+  // 1. Fetch current account
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: account, error: accErr } = await (supabase.from('accounts') as any)
+    .select('id, name, currency, current_balance')
+    .eq('id', input.accountId)
+    .single()
+
+  if (accErr || !account) {
+    return { error: 'Account not found' }
+  }
+
+  const currentBal = Number(account.current_balance) || 0
+  const targetBal = Number(input.newRealBalance)
+  const diff = targetBal - currentBal
+
+  if (Math.abs(diff) < 0.0001) {
+    return { error: 'Saldo riil sama dengan saldo tercatat (tidak ada selisih).' }
+  }
+
+  // 2. Find or create Discrepancy category
+  const txType = diff > 0 ? 'income' : 'expense'
+  const absAmount = Math.abs(diff)
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let { data: cat } = await (supabase.from('categories') as any)
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('name', 'Discrepancy')
+    .limit(1)
+    .maybeSingle()
+
+  if (!cat) {
+    // Fallback: look for Other Income / Other Expense
+    const fallbackName = txType === 'income' ? 'Other Income' : 'Other Expense'
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: fallbackCat } = await (supabase.from('categories') as any)
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('name', fallbackName)
+      .limit(1)
+      .maybeSingle()
+
+    cat = fallbackCat
+  }
+
+  if (!cat) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: anyCat } = await (supabase.from('categories') as any)
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('type', txType)
+      .limit(1)
+      .maybeSingle()
+    cat = anyCat
+  }
+
+  // 3. Create adjustment transaction
+  const noteSuffix = input.notes?.trim() ? ` - ${input.notes.trim()}` : ''
+  const desc = `Koreksi Saldo Fisik (${account.name})${noteSuffix}`
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error: txErr } = await (supabase.from('transactions') as any).insert({
+    user_id: user.id,
+    account_id: account.id,
+    category_id: cat?.id || null,
+    type: txType,
+    amount: absAmount,
+    currency: account.currency,
+    description: desc,
+    transaction_date: new Date().toISOString(),
+  })
+
+  if (txErr) {
+    return { error: txErr.message }
+  }
+
+  revalidatePath('/accounts')
+  revalidatePath(`/accounts/${input.accountId}`)
+  revalidatePath('/dashboard')
+  revalidatePath('/transactions')
+  revalidatePath('/reports')
+  revalidatePath('/net-worth')
+  revalidatePath('/')
+
+  return { success: true, diff }
 }
 
 export async function getAccountMutations(accountId: string): Promise<AccountMutation[]> {
@@ -160,12 +260,12 @@ export async function getAccountMutations(accountId: string): Promise<AccountMut
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: transfersOut } = await (supabase.from('transfers') as any)
-    .select('id, amount, from_currency, description, transfer_date, to_account:accounts!transfers_to_account_id_fkey(name)')
+    .select('id, amount, from_currency, to_currency, exchange_rate_used, description, transfer_date, to_account:accounts!transfers_to_account_id_fkey(name)')
     .eq('from_account_id', accountId)
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: transfersIn } = await (supabase.from('transfers') as any)
-    .select('id, amount, to_currency, exchange_rate_used, description, transfer_date, from_account:accounts!transfers_from_account_id_fkey(name)')
+    .select('id, amount, from_currency, to_currency, exchange_rate_used, description, transfer_date, from_account:accounts!transfers_from_account_id_fkey(name)')
     .eq('to_account_id', accountId)
 
   const mutations: AccountMutation[] = []
@@ -194,6 +294,8 @@ export async function getAccountMutations(accountId: string): Promise<AccountMut
     for (const t of transfersOut as any[]) {
       const toAcc = t.to_account
       const isCross = t.from_currency !== t.to_currency
+      const rate = Number(t.exchange_rate_used) || 1
+      const receivedAmt = Number(t.amount) * rate
       mutations.push({
         id: t.id,
         date: t.transfer_date,
@@ -202,9 +304,13 @@ export async function getAccountMutations(accountId: string): Promise<AccountMut
         currency: t.from_currency,
         title: isCross ? `Tukar Valas ke ${toAcc?.name || 'Akun'}` : `Transfer ke ${toAcc?.name || 'Akun'}`,
         description: getCleanTransferDescription(t.description),
-        counterpartyOrCategory: toAcc?.name,
+        counterpartyOrCategory: toAcc?.name || 'Akun',
         color: '#6366F1',
         icon: 'ArrowUpRight',
+        isCross,
+        exchangeRateUsed: rate,
+        counterpartyCurrency: t.to_currency,
+        receivedAmount: receivedAmt,
       })
     }
   }
@@ -213,8 +319,9 @@ export async function getAccountMutations(accountId: string): Promise<AccountMut
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     for (const t of transfersIn as any[]) {
       const fromAcc = t.from_account
-      const inAmount = Number(t.amount) * (Number(t.exchange_rate_used) || 1)
       const isCross = t.from_currency !== t.to_currency
+      const rate = Number(t.exchange_rate_used) || 1
+      const inAmount = Number(t.amount) * rate
       mutations.push({
         id: t.id,
         date: t.transfer_date,
@@ -223,9 +330,13 @@ export async function getAccountMutations(accountId: string): Promise<AccountMut
         currency: t.to_currency,
         title: isCross ? `Tukar Valas dari ${fromAcc?.name || 'Akun'}` : `Transfer dari ${fromAcc?.name || 'Akun'}`,
         description: getCleanTransferDescription(t.description),
-        counterpartyOrCategory: fromAcc?.name,
+        counterpartyOrCategory: fromAcc?.name || 'Akun',
         color: '#10B981',
         icon: 'ArrowDownLeft',
+        isCross,
+        exchangeRateUsed: rate,
+        counterpartyCurrency: t.from_currency,
+        receivedAmount: inAmount,
       })
     }
   }

@@ -7,6 +7,8 @@ export const debtSchema = z.object({
   currency: z.enum(['IDR', 'USD']).default('IDR'),
   dueDate: z.string().optional().nullable(),
   notes: z.string().max(255).optional().nullable(),
+  accountId: z.string().uuid().optional().nullable(),
+  recordTransaction: z.boolean().optional(),
 })
 
 export const debtPaymentSchema = z.object({

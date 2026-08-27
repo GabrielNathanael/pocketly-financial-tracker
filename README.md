@@ -41,11 +41,11 @@ Built with **Next.js 16 App Router**, **Supabase (PostgreSQL with Row Level Secu
 
 ### 1. Account & Multi-Wallet Liquidity
 * **Unlimited Wallets**: Manage Bank Accounts, Cash Wallets, E-Wallets, Credit Cards, and Investment RDNs.
-* **Auto-Balance Calculation**: Database triggers compute realtime current balances based on initial deposits and immutable transactional history.
-* **Inter-Account Transfers**: Move funds seamlessly between wallets with automatic conversion and transaction history.
+* **Auto-Balance Calculation & Physical Reconciliation**: Database triggers compute realtime current balances. Use the 1-click **Adjust Balance (Sesuaikan Saldo)** feature to seamlessly reconcile Pocketly with physical bank balances via the Discrepancy category.
+* **Inter-Account Transfers & Smart Natural Forex**: Move funds between wallets with pre-filled source accounts, natural human-friendly forex rates (`1 SGD = Rp 12,000` / `1 USD = Rp 16,200`), two-way real-time calculations, optional admin fees, and interactive mutation details.
 
 ### 2. Real-Time Multi-Currency Engine
-* **Native & Global Currencies**: Transact in IDR, USD, EUR, SGD, GBP, JPY, AUD, CNY, and more.
+* **Native & Global Currencies**: Transact in IDR, USD, and SGD with precision floating-point conversions.
 * **Live Exchange Rates**: Automated currency conversions for global net-worth computation and consolidated reporting.
 * **Dynamic Display Switcher**: Toggle preferred base currency on the fly across the entire dashboard.
 
@@ -69,7 +69,8 @@ Built with **Next.js 16 App Router**, **Supabase (PostgreSQL with Row Level Secu
 
 ### 7. Debt & Receivable Management (Hutang & Piutang)
 * **Borrow & Lend Tracking**: Track who owes you money and who you owe with full installment logs.
-* **Direct Wallet Settlements**: Payments directly update linked account balances and debt status.
+* **Currency-Matched Account Filter & Balance Sync**: Disbursement/receipt accounts automatically match the selected currency with optional immediate cash balance debiting/crediting.
+* **Compact & Flexible Interface**: Streamlined type switchers (`Payables` / `Receivables`) and versatile free-text notes.
 
 ### 8. Intelligent Receipt OCR Scanner
 * **Camera / Upload Scanning**: Upload photos or PDFs of physical receipts.

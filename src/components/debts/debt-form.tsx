@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Debt, DebtType, CurrencyCode } from '@/types/database'
+import { Account, Debt, DebtType, CurrencyCode } from '@/types/database'
 import { createDebt, updateDebt, deleteDebt } from '@/actions/debts'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,6 +10,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { DatePicker } from '@/components/ui/date-picker'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { CURRENCY_LIST } from '@/lib/constants/currencies'
+import { formatCurrency } from '@/lib/utils/currency'
 import { useLanguage } from '@/lib/i18n/language-context'
 import { toast } from 'sonner'
 import { Trash2, AlertCircle } from 'lucide-react'
@@ -17,10 +18,11 @@ import { cn } from '@/lib/utils/cn'
 
 interface DebtFormProps {
   initialData?: Debt | null
+  accounts?: Account[]
   onSuccess?: () => void
 }
 
-export function DebtForm({ initialData, onSuccess }: DebtFormProps) {
+export function DebtForm({ initialData, accounts = [], onSuccess }: DebtFormProps) {
   const router = useRouter()
   const { t, language } = useLanguage()
   const isEditing = !!initialData
@@ -33,6 +35,8 @@ export function DebtForm({ initialData, onSuccess }: DebtFormProps) {
   const [currency, setCurrency] = useState<CurrencyCode>(initialData?.currency || 'IDR')
   const [dueDate, setDueDate] = useState<string>(initialData?.due_date || '')
   const [notes, setNotes] = useState<string>(initialData?.notes || '')
+  const [accountId, setAccountId] = useState<string>(accounts[0]?.id || '')
+  const [recordTransaction, setRecordTransaction] = useState<boolean>(true)
 
   const [isLoading, setIsLoading] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -74,6 +78,8 @@ export function DebtForm({ initialData, onSuccess }: DebtFormProps) {
           currency,
           dueDate: dueDate || null,
           notes: notes || null,
+          accountId: recordTransaction ? accountId : null,
+          recordTransaction,
         })
         if (res.error) {
           setError(res.error)
@@ -118,6 +124,18 @@ export function DebtForm({ initialData, onSuccess }: DebtFormProps) {
       setError(msg)
     } finally {
       setIsDeleting(false)
+    }
+  }
+
+  const matchingAccounts = accounts.filter((a) => a.currency === currency)
+
+  const handleCurrencyChange = (newCurrency: CurrencyCode) => {
+    setCurrency(newCurrency)
+    const validAccs = accounts.filter((a) => a.currency === newCurrency)
+    if (validAccs.length > 0) {
+      setAccountId(validAccs[0].id)
+    } else {
+      setAccountId('')
     }
   }
 
@@ -169,36 +187,89 @@ export function DebtForm({ initialData, onSuccess }: DebtFormProps) {
       />
 
       {!isEditing && (
-        <div className="grid grid-cols-3 gap-2.5">
-          <div className="col-span-2">
-            <Input
-              label={t.debts.principalLabel}
-              type="number"
-              step="any"
-              placeholder="0"
-              value={initialAmount}
-              onChange={(e) => setInitialAmount(e.target.value)}
-              required
-              className="font-mono font-bold text-sm tnum"
-            />
-          </div>
+        <div className="flex flex-col gap-3">
+          {/* Currency Selector */}
           <div className="flex flex-col gap-1.5">
             <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
               {t.common.currency}
             </label>
-            <Select value={currency} onValueChange={(val) => setCurrency(val as CurrencyCode)}>
+            <Select value={currency} onValueChange={(val) => handleCurrencyChange(val as CurrencyCode)}>
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {CURRENCY_LIST.map((c) => (
                   <SelectItem key={c.code} value={c.code}>
-                    {c.code}
+                    {c.code} ({c.name})
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
+
+          {/* Principal Amount */}
+          <Input
+            label={`${t.debts.principalLabel} (${currency})`}
+            type="number"
+            step="any"
+            placeholder="0"
+            value={initialAmount}
+            onChange={(e) => setInitialAmount(e.target.value)}
+            required
+            className="font-mono font-bold text-base tnum"
+          />
+        </div>
+      )}
+
+      {/* Linked Account Selection & Sync Option */}
+      {!isEditing && accounts && accounts.length > 0 && (
+        <div className="flex flex-col gap-2.5 p-3.5 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A]">
+          <label className="flex items-start gap-2.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={recordTransaction}
+              onChange={(e) => setRecordTransaction(e.target.checked)}
+              className="mt-0.5 w-4 h-4 rounded border-gray-300 text-[#0F172A] focus:ring-[#0F172A] cursor-pointer"
+            />
+            <div className="flex flex-col gap-0.5">
+              <span className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                {t.debts.recordDisbursementCheck}
+              </span>
+              <span className="text-[11px] text-[#64748B] dark:text-[#94A3B8]">
+                {recordTransaction
+                  ? type === 'receivable'
+                    ? t.debts.disbursementDeductDesc
+                    : t.debts.disbursementCreditDesc
+                  : t.debts.skipDisbursementDesc}
+              </span>
+            </div>
+          </label>
+
+          {recordTransaction && (
+            <div className="flex flex-col gap-1.5 pt-2 border-t border-[#E5E7EB] dark:border-[#27272A]">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+                {t.debts.disbursementAccountLabel} ({currency})
+              </label>
+              {matchingAccounts.length > 0 ? (
+                <Select value={accountId} onValueChange={setAccountId}>
+                  <SelectTrigger className="w-full text-xs">
+                    <SelectValue placeholder={t.quickAdd.selectAccount} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {matchingAccounts.map((acc) => (
+                      <SelectItem key={acc.id} value={acc.id} className="text-xs">
+                        {acc.name} ({formatCurrency(acc.current_balance, acc.currency)})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-[11px]">
+                  {t.debts.noMatchingAccountShort}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -210,14 +281,14 @@ export function DebtForm({ initialData, onSuccess }: DebtFormProps) {
         <DatePicker value={dueDate} onChange={setDueDate} placeholder={t.debts.dueDatePlaceholder} />
       </div>
 
-      {/* Expandable Free-Text Notes */}
+      {/* Free-Text Notes */}
       <div className="flex flex-col gap-1.5">
         <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
-          {t.debts.termsLabel}
+          {t.debts.notesLabel}
         </label>
         <textarea
           rows={3}
-          placeholder={t.debts.termsPlaceholder}
+          placeholder={t.debts.notesPlaceholder}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           className="w-full px-3.5 py-2.5 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-xs text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0F172A] dark:focus:ring-[#FAFAFA] transition-all resize-y min-h-[70px] leading-relaxed"

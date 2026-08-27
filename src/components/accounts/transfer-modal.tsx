@@ -17,6 +17,8 @@ import { createTransfer } from "@/actions/transfers";
 import { getLatestForexRates } from "@/actions/exchange-rate";
 import {
   formatCurrency,
+  formatNaturalForexRate,
+  getNaturalPairInfo,
   getCrossRate,
   ForexRatesMap,
   DEFAULT_FALLBACK_RATES,
@@ -29,6 +31,7 @@ interface TransferModalProps {
   isOpen: boolean;
   onClose: () => void;
   accounts: Account[];
+  defaultFromAccountId?: string;
   defaultExchangeRate?: number;
   onSuccess?: () => void;
 }
@@ -37,6 +40,7 @@ export function TransferModal({
   isOpen,
   onClose,
   accounts,
+  defaultFromAccountId,
   onSuccess,
 }: TransferModalProps) {
   const { t } = useLanguage();
@@ -52,6 +56,7 @@ export function TransferModal({
     >
       <TransferForm
         accounts={accounts}
+        defaultFromAccountId={defaultFromAccountId}
         onClose={onClose}
         onSuccess={onSuccess}
       />
@@ -61,22 +66,21 @@ export function TransferModal({
 
 interface TransferFormProps {
   accounts: Account[];
+  defaultFromAccountId?: string;
   onClose: () => void;
   onSuccess?: () => void;
 }
 
-function TransferForm({ accounts, onClose, onSuccess }: TransferFormProps) {
+function TransferForm({ accounts, defaultFromAccountId, onClose, onSuccess }: TransferFormProps) {
   const { language, t } = useLanguage();
-  const [fromAccountId, setFromAccountId] = useState<string>(
-    accounts[0]?.id || "",
-  );
-  const [toAccountId, setToAccountId] = useState<string>(
-    accounts[1]?.id || accounts[0]?.id || "",
-  );
+  const initialFrom = defaultFromAccountId || accounts[0]?.id || "";
+  const initialTo = accounts.find((a) => a.id !== initialFrom)?.id || accounts[1]?.id || accounts[0]?.id || "";
+  const [fromAccountId, setFromAccountId] = useState<string>(initialFrom);
+  const [toAccountId, setToAccountId] = useState<string>(initialTo);
   const [amount, setAmount] = useState<string>("");
   const [transferFee, setTransferFee] = useState<string>("");
   const [receivedAmount, setReceivedAmount] = useState<string>("");
-  const [exchangeRate, setExchangeRate] = useState<string>("1");
+  const [naturalRate, setNaturalRate] = useState<string>("1");
   const [description, setDescription] = useState<string>("");
   const [transferDate, setTransferDate] = useState<string>(
     new Date().toISOString().split("T")[0],
@@ -92,21 +96,11 @@ function TransferForm({ accounts, onClose, onSuccess }: TransferFormProps) {
   const isCrossCurrency =
     fromAccount && toAccount && fromAccount.currency !== toAccount.currency;
 
-  // Fetch forex rates on mount
-  useEffect(() => {
-    let isMounted = true;
-    setIsFetchingRates(true);
-    getLatestForexRates()
-      .then((live) => {
-        if (isMounted) setRates(live);
-      })
-      .finally(() => {
-        if (isMounted) setIsFetchingRates(false);
-      });
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const pairInfo = getNaturalPairInfo(
+    fromAccount?.currency || "IDR",
+    toAccount?.currency || "IDR",
+    rates
+  );
 
   const recalculateAmounts = useCallback(
     (
@@ -114,30 +108,49 @@ function TransferForm({ accounts, onClose, onSuccess }: TransferFormProps) {
       toId: string,
       sentVal: string,
       curRates: ForexRatesMap,
+      customNatRate?: string
     ) => {
       const fromA = accounts.find((a) => a.id === fromId);
       const toA = accounts.find((a) => a.id === toId);
       if (fromA && toA && fromA.currency !== toA.currency) {
-        const calculatedRate = getCrossRate(
-          fromA.currency,
-          toA.currency,
-          curRates,
-        );
+        const info = getNaturalPairInfo(fromA.currency, toA.currency, curRates);
+        const rateToUse = customNatRate !== undefined ? (parseFloat(customNatRate) || info.defaultRate) : info.defaultRate;
         const numericAmount = parseFloat(sentVal);
         if (!isNaN(numericAmount) && numericAmount > 0) {
-          const converted = numericAmount * calculatedRate;
+          const converted = info.calculateReceived(numericAmount, rateToUse);
           setReceivedAmount(converted.toFixed(2));
         } else {
           setReceivedAmount("");
         }
-        setExchangeRate(calculatedRate.toFixed(4));
+        if (customNatRate === undefined) {
+          setNaturalRate(rateToUse.toFixed(2));
+        }
       } else {
         setReceivedAmount(sentVal);
-        setExchangeRate("1");
+        setNaturalRate("1");
       }
     },
     [accounts],
   );
+
+  // Fetch forex rates on mount
+  useEffect(() => {
+    let isMounted = true;
+    setIsFetchingRates(true);
+    getLatestForexRates()
+      .then((live) => {
+        if (isMounted) {
+          setRates(live);
+          recalculateAmounts(fromAccountId, toAccountId, amount, live);
+        }
+      })
+      .finally(() => {
+        if (isMounted) setIsFetchingRates(false);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [fromAccountId, toAccountId, recalculateAmounts, amount]);
 
   const handleFromChange = (id: string) => {
     setFromAccountId(id);
@@ -151,7 +164,14 @@ function TransferForm({ accounts, onClose, onSuccess }: TransferFormProps) {
 
   const handleAmountChange = (val: string) => {
     setAmount(val);
-    recalculateAmounts(fromAccountId, toAccountId, val, rates);
+    const sent = parseFloat(val);
+    const nat = parseFloat(naturalRate) || pairInfo.defaultRate;
+    if (!isNaN(sent) && sent > 0) {
+      const recv = pairInfo.calculateReceived(sent, nat);
+      setReceivedAmount(recv.toFixed(2));
+    } else {
+      setReceivedAmount("");
+    }
   };
 
   const handleReceivedAmountChange = (val: string) => {
@@ -159,16 +179,20 @@ function TransferForm({ accounts, onClose, onSuccess }: TransferFormProps) {
     const sent = parseFloat(amount);
     const recv = parseFloat(val);
     if (!isNaN(sent) && sent > 0 && !isNaN(recv) && recv > 0) {
-      setExchangeRate((recv / sent).toFixed(6));
+      const nat = pairInfo.calculateNaturalRate(sent, recv);
+      if (nat > 0) {
+        setNaturalRate(nat.toFixed(2));
+      }
     }
   };
 
-  const handleExchangeRateChange = (val: string) => {
-    setExchangeRate(val);
+  const handleNaturalRateChange = (val: string) => {
+    setNaturalRate(val);
     const sent = parseFloat(amount);
-    const rate = parseFloat(val);
-    if (!isNaN(sent) && sent > 0 && !isNaN(rate) && rate > 0) {
-      setReceivedAmount((sent * rate).toFixed(2));
+    const nat = parseFloat(val);
+    if (!isNaN(sent) && sent > 0 && !isNaN(nat) && nat > 0) {
+      const recv = pairInfo.calculateReceived(sent, nat);
+      setReceivedAmount(recv.toFixed(2));
     }
   };
 
@@ -236,7 +260,12 @@ function TransferForm({ accounts, onClose, onSuccess }: TransferFormProps) {
       return;
     }
 
-    const numRate = isCrossCurrency ? parseFloat(exchangeRate) || 1 : 1;
+    let rawMultiplier = 1;
+    if (isCrossCurrency) {
+      const recv = parseFloat(receivedAmount) || pairInfo.calculateReceived(numAmount, parseFloat(naturalRate) || pairInfo.defaultRate);
+      rawMultiplier = numAmount > 0 ? (recv / numAmount) : 1;
+    }
+
     setIsLoading(true);
 
     try {
@@ -245,7 +274,7 @@ function TransferForm({ accounts, onClose, onSuccess }: TransferFormProps) {
         toAccountId,
         amount: numAmount,
         transferFee: numFee,
-        exchangeRateUsed: numRate,
+        exchangeRateUsed: rawMultiplier,
         description: description.trim() || null,
         transferDate: `${transferDate}T${new Date().toTimeString().split(" ")[0]}.000Z`,
       });
@@ -416,13 +445,29 @@ function TransferForm({ accounts, onClose, onSuccess }: TransferFormProps) {
             />
 
             <Input
-              label={`${language === "en" ? "Exchange Rate" : "Kurs"} (1 ${fromAccount?.currency} = ... ${toAccount?.currency})`}
+              label={`${language === "en" ? "Exchange Rate" : "Kurs Transaksi"} (1 ${pairInfo.baseCurrency} = ... ${pairInfo.quoteCurrency})`}
               type="number"
               step="any"
-              value={exchangeRate}
-              onChange={(e) => handleExchangeRateChange(e.target.value)}
-              className="text-xs font-mono"
+              placeholder={pairInfo.defaultRate.toString()}
+              value={naturalRate}
+              onChange={(e) => handleNaturalRateChange(e.target.value)}
+              className="text-xs font-mono font-bold"
+              rightIcon={
+                <span className="text-[11px] font-mono font-bold text-[#64748B] dark:text-[#94A3B8]">
+                  {pairInfo.quoteCurrency}
+                </span>
+              }
             />
+
+            {/* Natural Human-Readable Effective Forex Indicator */}
+            <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs font-mono flex items-center justify-between">
+              <span className="text-[#64748B] dark:text-[#94A3B8] font-sans text-[11px]">
+                {language === "en" ? "Effective Rate:" : "Kurs Berlaku:"}
+              </span>
+              <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                1 {pairInfo.baseCurrency} = {formatCurrency(parseFloat(naturalRate) || pairInfo.defaultRate, pairInfo.quoteCurrency)}
+              </span>
+            </div>
           </div>
         </div>
       )}

@@ -138,38 +138,59 @@ export async function seedUserDefaultCategories(userId?: string) {
 
   if (!targetUserId) return
 
-  const { count } = await supabase
-    .from('categories')
-    .select('*', { count: 'exact', head: true })
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: existingCategories } = await (supabase.from('categories') as any)
+    .select('id, name, type')
     .eq('user_id', targetUserId)
 
-  if (count && count > 0) {
-    // Run deduplication in case duplicate defaults existed
-    await deduplicateUserCategories(targetUserId)
+  if (!existingCategories || existingCategories.length === 0) {
+    const toInsert = [
+      ...DEFAULT_EXPENSE_CATEGORIES.map(c => ({
+        user_id: targetUserId!,
+        name: c.name,
+        type: c.type,
+        icon: c.icon,
+        color: c.color,
+        is_default: true,
+      })),
+      ...DEFAULT_INCOME_CATEGORIES.map(c => ({
+        user_id: targetUserId!,
+        name: c.name,
+        type: c.type,
+        icon: c.icon,
+        color: c.color,
+        is_default: true,
+      })),
+    ]
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.from('categories') as any).insert(toInsert)
     return
   }
 
-  const toInsert = [
-    ...DEFAULT_EXPENSE_CATEGORIES.map(c => ({
-      user_id: targetUserId!,
-      name: c.name,
-      type: c.type,
-      icon: c.icon,
-      color: c.color,
-      is_default: true,
-    })),
-    ...DEFAULT_INCOME_CATEGORIES.map(c => ({
-      user_id: targetUserId!,
-      name: c.name,
-      type: c.type,
-      icon: c.icon,
-      color: c.color,
-      is_default: true,
-    })),
-  ]
+  // Ensure essential system category 'Discrepancy' exists for existing / demo accounts
+  const hasDiscrepancy = existingCategories.some(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (c: any) =>
+      c.name?.toLowerCase() === 'discrepancy' ||
+      c.name?.toLowerCase() === 'selisih saldo' ||
+      c.name?.toLowerCase() === 'selisih kas'
+  )
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (supabase.from('categories') as any).insert(toInsert)
+  if (!hasDiscrepancy) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.from('categories') as any).insert({
+      user_id: targetUserId,
+      name: 'Discrepancy',
+      type: 'expense',
+      icon: 'Scale',
+      color: '#64748B',
+      is_default: true,
+    })
+  }
+
+  // Run deduplication in case duplicate defaults existed
+  await deduplicateUserCategories(targetUserId)
 }
 
 export async function createCategory(formData: {
@@ -214,10 +235,24 @@ export async function updateCategory(
   }
 ) {
   const supabase = await createServerSupabaseClient()
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: existing } = await (supabase.from('categories') as any)
+    .select('id, name')
+    .eq('id', id)
+    .single()
+
+  const isSystemDiscrepancy =
+    existing?.name?.toLowerCase() === 'discrepancy' ||
+    existing?.name?.toLowerCase() === 'selisih saldo'
+
+  // If system discrepancy category, preserve its canonical name
+  const finalName = isSystemDiscrepancy ? 'Discrepancy' : formData.name.trim()
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabase.from('categories') as any)
     .update({
-      name: formData.name.trim(),
+      name: finalName,
       type: formData.type,
       icon: formData.icon,
       color: formData.color,
@@ -235,6 +270,22 @@ export async function updateCategory(
 
 export async function deleteCategory(id: string) {
   const supabase = await createServerSupabaseClient()
+
+  // Check if system category
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: existing } = await (supabase.from('categories') as any)
+    .select('id, name')
+    .eq('id', id)
+    .single()
+
+  if (
+    existing?.name?.toLowerCase() === 'discrepancy' ||
+    existing?.name?.toLowerCase() === 'selisih saldo'
+  ) {
+    return {
+      error: 'Kategori sistem (Discrepancy / Selisih Saldo) diperlukan untuk penyesuaian saldo dan tidak dapat dihapus.',
+    }
+  }
 
   const { count } = await supabase
     .from('transactions')

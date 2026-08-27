@@ -91,14 +91,16 @@ export const translations = {
       withdrawBtn: "Tarik Dana",
       historyBtn: "Riwayat Alokasi",
       targetDateLabel: "Tenggat Target",
-      monthlyNeeded: "Perlu menabung {amount} / bulan untuk capai target tepat waktu (dalam {months} bulan)",
+      monthlyNeeded:
+        "Perlu menabung {amount} / bulan untuk capai target tepat waktu (dalam {months} bulan)",
       goalReached: "Target impian ini telah 100% tercapai!",
       daysRemaining: "Sisa {days} hari lagi",
       overdueTarget: "Tenggat terlewat {days} hari",
       modalAddTitle: "Buat Target Tabungan Baru",
       modalEditTitle: "Ubah Target Tabungan",
       nameLabel: "Nama Target / Impian",
-      namePlaceholder: "misal: Dana Darurat 6 Bulan, Liburan ke Jepang, Beli Laptop",
+      namePlaceholder:
+        "misal: Dana Darurat 6 Bulan, Liburan ke Jepang, Beli Laptop",
       targetAmountLabel: "Nominal Target",
       initialSavedLabel: "Dana Terkumpul Awal (Opsional)",
       depositModalTitle: "Setor / Tarik Dana Celengan",
@@ -111,14 +113,17 @@ export const translations = {
       depositSuccess: "Alokasi dana berhasil dicatat!",
       withdrawSuccess: "Penarikan dana berhasil dicatat!",
       deleteSuccess: "Target tabungan berhasil dihapus!",
-      deleteConfirm: "Apakah Anda yakin ingin menghapus target tabungan ini? Riwayat setoran juga akan dihapus.",
+      deleteConfirm:
+        "Apakah Anda yakin ingin menghapus target tabungan ini? Riwayat setoran juga akan dihapus.",
       emptyTitle: "Belum Ada Target Tabungan",
-      emptyDesc: "Mulai buat celengan impian pertamamu, pantau progresnya, dan capai target tepat waktu.",
+      emptyDesc:
+        "Mulai buat celengan impian pertamamu, pantau progresnya, dan capai target tepat waktu.",
     },
     // Recurring & Subscriptions
     recurring: {
       title: "Tagihan & Transaksi Berulang",
-      subtitle: "Kelola langganan rutin, tagihan bulanan, dan jadwal pemasukan tetap Anda",
+      subtitle:
+        "Kelola langganan rutin, tagihan bulanan, dan jadwal pemasukan tetap Anda",
       addBtn: "Tambah Jadwal",
       monthlyCommitment: "Komitmen Belanja Bulanan",
       monthlyIncome: "Pemasukan Tetap Bulanan",
@@ -142,7 +147,8 @@ export const translations = {
       statusActive: "Aktif",
       statusPaused: "Dijeda",
       emptyTitle: "Belum Ada Transaksi Berulang",
-      emptyDesc: "Atur tagihan rutin seperti Netflix, Wi-Fi, Listrik, Kost, atau Gaji agar terpantau otomatis.",
+      emptyDesc:
+        "Atur tagihan rutin seperti Netflix, Wi-Fi, Listrik, Kost, atau Gaji agar terpantau otomatis.",
       modalAddTitle: "Tambah Tagihan / Transaksi Rutin",
       modalEditTitle: "Ubah Tagihan / Transaksi Rutin",
       nameLabel: "Nama Tagihan / Langganan",
@@ -153,13 +159,16 @@ export const translations = {
       endDateLabel: "Tanggal Berakhir (Opsional)",
       notesLabel: "Catatan Tambahan (Opsional)",
       autoProcessLabel: "Eksekusi Otomatis",
-      autoProcessDesc: "Otomatis catat transaksi saat jatuh tempo tanpa perlu konfirmasi manual",
+      autoProcessDesc:
+        "Otomatis catat transaksi saat jatuh tempo tanpa perlu konfirmasi manual",
       deleteConfirm: "Apakah Anda yakin ingin menghapus jadwal berulang ini?",
-      processSuccess: "Transaksi berhasil dieksekusi dan saldo akun telah terpotong!",
+      processSuccess:
+        "Transaksi berhasil dieksekusi dan saldo akun telah terpotong!",
       saveSuccess: "Jadwal berulang berhasil disimpan!",
       deleteSuccess: "Jadwal berulang berhasil dihapus!",
       dueBannerTitle: "Pengingat Tagihan Jatuh Tempo",
-      dueBannerDesc: "Ada {count} tagihan rutin yang perlu diselesaikan dalam waktu dekat.",
+      dueBannerDesc:
+        "Ada {count} tagihan rutin yang perlu diselesaikan dalam waktu dekat.",
       viewAllBtn: "Lihat Semua",
     },
     // Dashboard
@@ -287,7 +296,8 @@ export const translations = {
       createFailed: "Gagal Mencatat Transaksi",
       deleteFailed: "Gagal Menghapus Transaksi",
       tagLabel: "Tagar",
-      tagPlaceholder: "Ketik tagar lalu tekan enter (misal: #liburan, #proyek)...",
+      tagPlaceholder:
+        "Ketik tagar lalu tekan enter (misal: #liburan, #proyek)...",
       filterByTag: "Semua Tagar",
       allTags: "Semua Tagar",
       tagSummary: "Total Pengeluaran untuk #{tag}",
@@ -295,7 +305,8 @@ export const translations = {
     // Due Date & Bill Center
     dueCenter: {
       title: "Jatuh Tempo & Tagihan",
-      subtitle: "Pantau seluruh tagihan rutin, cicilan utang, dan tenggat tabungan dalam satu tempat",
+      subtitle:
+        "Pantau seluruh tagihan rutin, cicilan utang, dan tenggat tabungan dalam satu tempat",
       dueToday: "Jatuh Tempo Hari Ini",
       dueSoon: "Segera Jatuh Tempo (7 Hari)",
       upcomingGoals: "Tenggat Target Mendekati (30 Hari)",
@@ -363,10 +374,20 @@ export const translations = {
         "Apakah Anda yakin ingin menghapus akun ini? Hanya akun yang belum memiliki transaksi yang dapat dihapus.",
       settledBalance: "Saldo Riil Saat Ini",
       historyTitle: "Buku Kas & Mutasi Akun",
-      historyEmpty:
-        "Belum ada catatan mutasi atau transaksi pada akun ini.",
+      historyEmpty: "Belum ada catatan mutasi atau transaksi pada akun ini.",
       backToAccounts: "Kembali ke Akun",
       defaultAccountCheck: "Jadikan Akun Utama (Default)",
+      adjustBalanceBtn: "Sesuaikan Saldo",
+      adjustBalanceModalTitle: "Sesuaikan Saldo Fisik",
+      adjustBalanceDesc:
+        "Sinkronkan saldo tercatat di Pocketly dengan saldo riil fisik di rekening/dompet Anda.",
+      recordedBalanceLabel: "Saldo Tercatat Saat Ini",
+      actualBalanceLabel: "Saldo Riil / Fisik Nyata",
+      discrepancyDeltaLabel: "Selisih Penyesuaian (Koreksi)",
+      adjustNotesPlaceholder:
+        "Contoh: Koreksi selisih uang kas fisik / rekonsiliasi",
+      adjustSuccess: "Saldo akun berhasil disesuaikan!",
+      adjustFailed: "Gagal menyesuaikan saldo",
       types: {
         bank: "Rekening Bank",
         cash: "Dompet Tunai (Cash)",
@@ -378,7 +399,8 @@ export const translations = {
     // Investments & Stocks
     investments: {
       title: "Investasi & Saham",
-      subtitle: "Kelola portofolio saham IDX, mutasi RDN, dan riwayat cuan/cut loss",
+      subtitle:
+        "Kelola portofolio saham IDX, mutasi RDN, dan riwayat cuan/cut loss",
       addTradeBtn: "Catat Transaksi",
       buyBtn: "Beli Saham",
       sellBtn: "Jual Saham",
@@ -391,9 +413,11 @@ export const translations = {
       holdingsTitle: "Kepemilikan Saham Aktif",
       tradesTitle: "Riwayat Transaksi Jual Beli",
       emptyHoldingsTitle: "Belum Ada Saham yang Dimiliki",
-      emptyHoldingsDesc: "Catat transaksi pembelian saham pertamamu untuk mulai memantau kepemilikan aset.",
+      emptyHoldingsDesc:
+        "Catat transaksi pembelian saham pertamamu untuk mulai memantau kepemilikan aset.",
       emptyTradesTitle: "Belum Ada Riwayat Transaksi",
-      emptyTradesDesc: "Riwayat transaksi beli dan jual saham akan tercatat di sini.",
+      emptyTradesDesc:
+        "Riwayat transaksi beli dan jual saham akan tercatat di sini.",
       modalBuyTitle: "Catat Pembelian Saham",
       modalSellTitle: "Catat Penjualan Saham (TP / Cut Loss)",
       tickerLabel: "Kode Saham / Emiten",
@@ -411,7 +435,8 @@ export const translations = {
       sellSuccess: "Penjualan saham berhasil dicatat!",
       editTradeSuccess: "Transaksi saham berhasil diperbarui!",
       deleteSuccess: "Data saham berhasil dihapus!",
-      deleteConfirm: "Apakah Anda yakin ingin menghapus data transaksi saham ini?",
+      deleteConfirm:
+        "Apakah Anda yakin ingin menghapus data transaksi saham ini?",
       modalEditTradeTitle: "Edit Riwayat Transaksi Saham",
       tradeDetailTitle: "Detail Transaksi Saham",
       updateTradeBtn: "Simpan Perubahan",
@@ -436,17 +461,21 @@ export const translations = {
       sameAccountError: "Rekening sumber dan tujuan tidak boleh sama",
       transferFailed: "Transfer Gagal",
       executeBtn: "Kirim Transfer",
+      transferTo: "Transfer ke {name}",
+      transferFrom: "Transfer dari {name}",
+      exchangeTo: "Tukar Valas ke {name}",
+      exchangeFrom: "Tukar Valas dari {name}",
     },
     // Debts
     debts: {
       title: "Utang & Piutang",
       subtitle:
         "Catatan kewajiban bayar, tagihan piutang, dan pelunasan cicilan",
-      totalDebts: "Total Utang Aktif (Kewajiban)",
-      totalReceivables: "Total Piutang Aktif (Hak Tagih)",
+      totalDebts: "Total Utang Aktif",
+      totalReceivables: "Total Piutang Aktif",
       allTypes: "Semua",
-      debtType: "Utang (Payable)",
-      receivableType: "Piutang (Receivable)",
+      debtType: "Utang",
+      receivableType: "Piutang",
       allStatus: "Semua Status",
       activeStatus: "Aktif",
       paidStatus: "Lunas",
@@ -454,16 +483,16 @@ export const translations = {
       newDebt: "Catat Utang / Piutang",
       emptyTitle: "Belum ada catatan utang piutang",
       emptyDesc: "Catat pinjaman atau piutang baru untuk memantau jatuh tempo.",
-      payableTab: "Utang Saya (Kewajiban)",
-      receivableTab: "Piutang Saya (Dipinjamkan)",
+      payableTab: "Utang Saya",
+      receivableTab: "Piutang Saya",
       allTab: "Semua",
       modalTitle: "Catat Utang / Piutang Baru",
       modalEditTitle: "Ubah Catatan Utang / Piutang",
       editModalTitle: "Ubah Catatan",
       typeLabel: "Jenis Catatan",
       types: {
-        payable: "Saya Berutang (Payable)",
-        receivable: "Orang Lain Berutang ke Saya (Receivable)",
+        payable: "Saya Berutang",
+        receivable: "Orang Lain Berutang ke Saya",
       },
       personLabel: "Nama Pihak Terkait (Peminjam / Pemberi Pinjaman)",
       personPlaceholder: "Contoh: Budi Santoso, Bank BCA, Kawan Kantor",
@@ -473,12 +502,22 @@ export const translations = {
       principalLabel: "Pokok Pinjaman",
       amountLabel: "Nominal Pokok Utang / Piutang",
       currencyLabel: "Mata Uang",
+      disbursementAccountLabel: "Rekening Sumber / Penerima Dana",
+      recordDisbursementCheck: "Sinkronkan saldo rekening langsung sekarang",
+      disbursementDeductDesc:
+        "Saldo rekening akan otomatis terpotong (Pengeluaran) saat pinjaman dibuat.",
+      disbursementCreditDesc:
+        "Saldo rekening akan otomatis bertambah (Pemasukan) saat dana pinjaman diterima.",
+      skipDisbursementDesc:
+        "Hanya mencatat kontrak perjanjian utang/piutang tanpa memotong saldo akun saat ini.",
       dueDateLabel: "Tenggat Waktu / Jatuh Tempo (Opsional)",
       dueDatePlaceholder: "Pilih tanggal jatuh tempo (opsional)",
-      termsLabel: "Catatan & Ketentuan",
-      termsPlaceholder: "Contoh: Cicil 3x per bulan, Tempo akhir bulan",
-      notesLabel: "Catatan Keterangan",
-      notesPlaceholder: "Contoh: Pinjaman modal usaha, talangan tiket",
+      termsLabel: "Catatan Keterangan (Free Text)",
+      termsPlaceholder:
+        "Tulis catatan keterangan bebas di sini (misal: talangan tiket, pinjaman usaha, dll.)",
+      notesLabel: "Catatan Keterangan (Free Text)",
+      notesPlaceholder:
+        "Tulis catatan keterangan bebas di sini (misal: talangan tiket, pinjaman usaha, dll.)",
       saveBtn: "Simpan Catatan",
       saveRecord: "Simpan Perubahan",
       createRecord: "Catat ke Buku Utang",
@@ -617,7 +656,8 @@ export const translations = {
       sections: {
         quickStart: {
           title: "1. Pengenalan, Pencatatan Kilat & Tagar (#tags)",
-          subtitle: "Pencatatan keuangan cepat, ergonomis, dan pengelompokan tagar",
+          subtitle:
+            "Pencatatan keuangan cepat, ergonomis, dan pengelompokan tagar",
           content:
             "Pocketly dirancang sebagai buku kas keuangan pribadi yang mengutamakan kecepatan input dan akurasi tanpa jeda waktu.",
           steps: [
@@ -631,7 +671,8 @@ export const translations = {
         },
         ocrReceiptScanner: {
           title: "2. Scan Struk Belanja Otomatis (OCR Cepat & Gratis)",
-          subtitle: "Ekstraksi otomatis struk belanja fisik langsung ke buku kas tanpa biaya penyimpanan",
+          subtitle:
+            "Ekstraksi otomatis struk belanja fisik langsung ke buku kas tanpa biaya penyimpanan",
           content:
             "Fitur OCR cerdas membaca dan merinci struk belanja secara otomatis dengan pemrosesan in-memory tanpa membebani penyimpanan database:",
           steps: [
@@ -643,8 +684,10 @@ export const translations = {
           ],
         },
         dueCenter: {
-          title: "3. Pusat Tagihan & Jadwal Jatuh Tempo (Due Dates & Bills Hub)",
-          subtitle: "Satu pusat kendali untuk seluruh tagihan rutin, cicilan utang, dan target tabungan",
+          title:
+            "3. Pusat Tagihan & Jadwal Jatuh Tempo (Due Dates & Bills Hub)",
+          subtitle:
+            "Satu pusat kendali untuk seluruh tagihan rutin, cicilan utang, dan target tabungan",
           content:
             "Fitur Pusat Tagihan menyatukan seluruh komitmen dan kewajiban finansial Anda dalam satu pusat kendali terpadu:",
           steps: [
@@ -656,7 +699,8 @@ export const translations = {
         },
         investments: {
           title: "4. Portofolio Saham, Deposito & Reksa Dana",
-          subtitle: "Kelola aset saham BEI (IDX), tabungan deposito berjangka, dan reksa dana terintegrasi",
+          subtitle:
+            "Kelola aset saham BEI (IDX), tabungan deposito berjangka, dan reksa dana terintegrasi",
           content:
             "Pocketly mendukung pencatatan seluruh instrumen investasi Anda secara terstruktur tanpa mengganggu anggaran belanja harian:",
           steps: [
@@ -669,7 +713,8 @@ export const translations = {
         },
         savingsGoals: {
           title: "5. Target Tabungan & Celengan Impian (Savings Goals)",
-          subtitle: "Pantau progres pencapaian dana darurat, liburan, dan impian finansial",
+          subtitle:
+            "Pantau progres pencapaian dana darurat, liburan, dan impian finansial",
           content:
             "Rencanakan dan wujudkan berbagai target tabungan dengan kalkulasi yang terukur:",
           steps: [
@@ -681,7 +726,8 @@ export const translations = {
         },
         recurring: {
           title: "6. Tagihan Rutin & Pemasukan Tetap (Subscriptions & Inflow)",
-          subtitle: "Jadwal otomatis untuk langganan bulanan dan arus kas masuk berkala",
+          subtitle:
+            "Jadwal otomatis untuk langganan bulanan dan arus kas masuk berkala",
           content:
             "Otomatisasi pengingat tagihan berkala agar tidak ada kewajiban yang terlewat:",
           steps: [
@@ -692,32 +738,39 @@ export const translations = {
           ],
         },
         accounts: {
-          title: "7. Rekening Likuid, Multi-Mata Uang & Biaya Transfer",
-          subtitle: "Pengelolaan dompet multi-valas dan transfer antar-akun dengan biaya admin",
+          title: "7. Rekening Likuid, Transfer Valas Alami & Koreksi Saldo",
+          subtitle:
+            "Pengelolaan dompet multi-valas, transfer valas alami, dan rekonsiliasi saldo riil",
           content:
-            "Pocketly mendukung berbagai tipe rekening dan mata uang (IDR, USD, SGD) dengan kurs langsung:",
+            "Pocketly mendukung berbagai tipe rekening dan mata uang (IDR, USD, SGD) dengan kurs langsung dan rekonsiliasi fisik:",
           steps: [
             "5 Tipe Akun: Rekening Bank, Dompet Digital (E-Wallet), Kas Tunai, Kartu Kredit, dan Investasi / RDN.",
-            "Transfer Antar Rekening: Pindahkan saldo antar rekening dengan konversi kurs otomatis jika berbeda mata uang.",
-            "Biaya Transfer / Admin (Opsional): Masukkan biaya transfer (misal Rp 2.500 BI-FAST) saat transfer; sistem akan otomatis mencatat biaya tersebut sebagai pengeluaran terpisah.",
-            "Akun Utama (Default): Tentukan dompet favorit agar otomatis terpilih saat mencatat pengeluaran harian.",
+            "Tombol Transfer Cepat: Di halaman rincian akun (/accounts/[id]), klik tombol Transfer untuk langsung mengisi rekening asal secara otomatis (Auto-Prefill).",
+            "Tukar Valas Alami (Smart Natural Forex): Input kurs langsung dalam angka wajar manusia (misal: 1 SGD = Rp 12.000 atau 1 USD = Rp 16.200) dengan kalkulasi otomatis 2 arah dan tombol sinkronisasi kurs pasar live.",
+            "Rincian Mutasi Transfer: Klik baris riwayat transfer kapan saja untuk melihat modal rincian lengkap (nominal kirim, nominal terima, nilai kurs transaksi, dan catatan).",
+            "Koreksi Saldo (Sesuaikan Saldo): Samakan saldo catatan Pocketly dengan saldo fisik dompet/bank secara instan lewat kategori Selisih Kas (Discrepancy).",
+            "Biaya Admin / Transfer (Opsional): Masukkan biaya transfer (misal Rp 2.500 BI-FAST); sistem otomatis mencatatnya sebagai pengeluaran terpisah.",
           ],
         },
         debts: {
           title: "8. Buku Catatan Utang & Piutang Multi-Valas",
-          subtitle: "Pencatatan pinjaman, piutang uang, dan cicilan pelunasan",
+          subtitle:
+            "Pencatatan pinjaman, piutang uang, filter mata uang, dan cicilan pelunasan",
           content:
-            "Pisahkan catatan utang dan piutang dari transaksi belanja harian agar neraca keuangan tetap seimbang:",
+            "Pisahkan catatan utang dan piutang dari transaksi belanja harian dengan pencatatan rekening yang sinkron:",
           steps: [
             "Utang (Saya Berutang): Catat pinjaman bank atau uang yang Anda pinjam dari pihak lain.",
-            "Piutang (Orang Berutang): Catat uang yang Anda pinjamkan ke pihak lain.",
-            "Aturan Mata Uang Pembayaran: Rekening akun yang digunakan untuk membayar cicilan harus memiliki mata uang yang sama dengan utang tersebut (jika berbeda, lakukan transfer tukar valas terlebih dahulu).",
-            "Pencatatan Cicilan: Catat pembayaran sebagian atau pelunasan penuh dengan opsi pembuatan mutasi akun kas.",
+            "Piutang (Orang Lain Berutang): Catat dana yang Anda pinjamkan ke teman, keluarga, atau rekan bisnis.",
+            "Filter Rekening Sesuai Mata Uang: Saat memilih mata uang (IDR, USD, SGD), opsi rekening pencairan/penerima saldo otomatis hanya menampilkan akun yang bermata uang sama.",
+            "Sinkronisasi Saldo Kas Langsung: Centang opsi sinkronisasi agar saldo rekening otomatis terpotong saat memberi pinjaman atau bertambah saat meminjam dana.",
+            "Catatan Bebas (Free-Text Notes): Tuliskan keterangan perjanjian, referensi, atau termin pinjaman secara leluasa.",
+            "Pencatatan Cicilan: Catat pembayaran sebagian atau pelunasan penuh dengan riwayat mutasi yang transparan.",
           ],
         },
         budgets: {
           title: "9. Alokasi Anggaran Bulanan & Pagu Otomatis",
-          subtitle: "Kendalikan batas pengeluaran per kategori agar disiplin finansial",
+          subtitle:
+            "Kendalikan batas pengeluaran per kategori agar disiplin finansial",
           content:
             "Pantau pemakaian anggaran belanja secara terpisah untuk setiap mata uang dengan perhitungan yang rapi:",
           steps: [
@@ -729,7 +782,8 @@ export const translations = {
         },
         netWorth: {
           title: "10. Laporan Kekayaan Bersih & Rasio Solvabilitas (Net Worth)",
-          subtitle: "Ketahui posisi riil seluruh aset, portofolio investasi, dan liabilitas Anda",
+          subtitle:
+            "Ketahui posisi riil seluruh aset, portofolio investasi, dan liabilitas Anda",
           content:
             "Laporan Neraca menghitung total nilai kekayaan bersih dan tingkat kesehatan solvabilitas Anda secara akurat:",
           steps: [
@@ -741,7 +795,8 @@ export const translations = {
         },
         cashflowAnalytics: {
           title: "11. Laporan & Analitik Keuangan Mendalam",
-          subtitle: "Wawasan komprehensif atas arus kas, rasio tabungan, dan distribusi belanja",
+          subtitle:
+            "Wawasan komprehensif atas arus kas, rasio tabungan, dan distribusi belanja",
           content:
             "Fitur Laporan menyajikan metrik kesehatan keuangan mendalam:",
           steps: [
@@ -752,7 +807,8 @@ export const translations = {
         },
         auditTrail: {
           title: "12. Riwayat Aktivitas Universal (Audit Trail)",
-          subtitle: "Pantau seluruh kronologi perubahan data di semua modul aplikasi",
+          subtitle:
+            "Pantau seluruh kronologi perubahan data di semua modul aplikasi",
           content:
             "Seluruh aktivitas keuangan di akun Anda tercatat secara transparan dan aman:",
           steps: [
@@ -763,8 +819,10 @@ export const translations = {
         },
         search: {
           title: "13. Pencarian Cepat Global (Ctrl + K / Cmd + K)",
-          subtitle: "Temukan transaksi, akun, atau menu secara instan dari papan ketik",
-          content: "Tekan tombol Ctrl+K (Windows) atau Cmd+K (Mac) dari halaman mana saja:",
+          subtitle:
+            "Temukan transaksi, akun, atau menu secara instan dari papan ketik",
+          content:
+            "Tekan tombol Ctrl+K (Windows) atau Cmd+K (Mac) dari halaman mana saja:",
           steps: [
             "Ketik nama toko, catatan memo, tagar (#tags), nominal angka, atau kategori untuk mencari transaksi.",
             "Ketik nama rekening untuk langsung membuka riwayat mutasi dompet tersebut.",
@@ -773,7 +831,8 @@ export const translations = {
         },
         backup: {
           title: "14. Mode Privasi, Tema Tampilan & Ekspor Data",
-          subtitle: "Kustomisasi preferensi tampilan, privasi saldo, dan pencadangan data",
+          subtitle:
+            "Kustomisasi preferensi tampilan, privasi saldo, dan pencadangan data",
           content: "Fitur pengaturan lengkap pada menu Pengaturan:",
           steps: [
             "Mode Privasi (Sensor Saldo): Tekan ikon mata di navigasi atas untuk menyamarkan seluruh angka nominal saat berada di tempat umum.",
@@ -787,7 +846,8 @@ export const translations = {
     // Reports & Analytics
     reports: {
       title: "Laporan & Analitik",
-      subtitle: "Wawasan mendalam atas arus kas, rasio tabungan, dan distribusi pengeluaran",
+      subtitle:
+        "Wawasan mendalam atas arus kas, rasio tabungan, dan distribusi pengeluaran",
       periodThisMonth: "Bulan Ini",
       periodLastMonth: "Bulan Lalu",
       periodThisYear: "Tahun Ini",
@@ -810,7 +870,8 @@ export const translations = {
       accountBreakdownTitle: "Penggunaan Akun & Rekening",
       topExpensesTitle: "5 Transaksi Pengeluaran Terbesar",
       noDataTitle: "Belum Ada Data Transaksi",
-      noDataDesc: "Tidak ada transaksi yang tercatat pada rentang periode yang dipilih.",
+      noDataDesc:
+        "Tidak ada transaksi yang tercatat pada rentang periode yang dipilih.",
       printBtn: "Cetak Laporan",
       exportPdf: "Simpan PDF",
       statementHeader: "Laporan Keuangan Pribadi",
@@ -912,14 +973,16 @@ export const translations = {
       accountsDesc: "Manage bank accounts, cards & digital wallets",
       debts: "Debts & Receivables",
       debtsDesc: "Track loans, receivables, and installment settlements",
-      categories: "Category Master",
+      categories: "Manage Categories",
       categoriesDesc: "Customize income and expense tags",
       netWorth: "Net Worth Statement",
       netWorthDesc: "Balance sheet position of assets and liabilities",
       reports: "Reports & Analytics",
-      reportsDesc: "Cashflow trajectory, savings rates, and expense distribution",
+      reportsDesc:
+        "Cashflow trajectory, savings rates, and expense distribution",
       recurring: "Recurring & Bills",
-      recurringDesc: "Automate recurring salaries, subscriptions & monthly bills",
+      recurringDesc:
+        "Automate recurring salaries, subscriptions & monthly bills",
       goals: "Savings Goals",
       goalsDesc: "Track wishlist milestones, emergency funds & dreams",
       settings: "System Settings",
@@ -1012,7 +1075,8 @@ export const translations = {
       scanReceiptBtn: "Scan Receipt",
       scanningReceipt: "Scanning receipt...",
       scanSuccess: "Receipt scanned & details populated!",
-      scanFailed: "Failed to scan receipt. Please ensure the receipt photo is clear.",
+      scanFailed:
+        "Failed to scan receipt. Please ensure the receipt photo is clear.",
     },
     // Transactions
     transactions: {
@@ -1063,7 +1127,8 @@ export const translations = {
     // Due Date & Bill Center
     dueCenter: {
       title: "Due Dates & Bills",
-      subtitle: "Consolidated tracker for upcoming recurring bills, loan dues, and savings deadlines",
+      subtitle:
+        "Consolidated tracker for upcoming recurring bills, loan dues, and savings deadlines",
       dueToday: "Due Today",
       dueSoon: "Due Soon (Next 7 Days)",
       upcomingGoals: "Approaching Goal Deadlines (30 Days)",
@@ -1095,7 +1160,7 @@ export const translations = {
       totalLimit: "Total Limit",
       emptyTitle: "No expense categories",
       emptyDesc:
-        "Create expense categories in Category Master to configure budget limits.",
+        "Create expense categories in Manage Categories to configure budget limits.",
       modalTitle: "Monthly Budget Limit",
       modalCapLabel: "Monthly Budget Limit",
       saveLimit: "Save Limit",
@@ -1135,6 +1200,17 @@ export const translations = {
         "No transaction or transfer entries recorded for this account.",
       backToAccounts: "Back to Accounts",
       defaultAccountCheck: "Set as Primary Account",
+      adjustBalanceBtn: "Adjust Balance",
+      adjustBalanceModalTitle: "Adjust Physical Balance",
+      adjustBalanceDesc:
+        "Synchronize recorded balance with your actual physical cash or bank balance.",
+      recordedBalanceLabel: "Current Recorded Balance",
+      actualBalanceLabel: "Actual / Physical Balance",
+      discrepancyDeltaLabel: "Adjustment Delta (Discrepancy)",
+      adjustNotesPlaceholder:
+        "e.g. Physical cash reconciliation / month-end adjustment",
+      adjustSuccess: "Account balance adjusted successfully!",
+      adjustFailed: "Failed to adjust balance",
       types: {
         bank: "Bank Account",
         cash: "Cash Wallet",
@@ -1146,7 +1222,8 @@ export const translations = {
     // Investments & Stocks
     investments: {
       title: "Investments & Stocks",
-      subtitle: "Track IDX stock portfolios, RDN balance, and realized profits & cut losses",
+      subtitle:
+        "Track IDX stock portfolios, RDN balance, and realized profits & cut losses",
       addTradeBtn: "Record Trade",
       buyBtn: "Buy Stock",
       sellBtn: "Sell Stock",
@@ -1159,7 +1236,8 @@ export const translations = {
       holdingsTitle: "Active Stock Holdings",
       tradesTitle: "Trade Execution History",
       emptyHoldingsTitle: "No Stock Holdings Yet",
-      emptyHoldingsDesc: "Record your first stock purchase to start tracking your equity investments.",
+      emptyHoldingsDesc:
+        "Record your first stock purchase to start tracking your equity investments.",
       emptyTradesTitle: "No Trade History",
       emptyTradesDesc: "Your executed buy and sell trades will appear here.",
       modalBuyTitle: "Record Stock Purchase",
@@ -1204,17 +1282,21 @@ export const translations = {
       sameAccountError: "Source and destination accounts cannot be the same",
       transferFailed: "Transfer Failed",
       executeBtn: "Transfer",
+      transferTo: "Transfer to {name}",
+      transferFrom: "Transfer from {name}",
+      exchangeTo: "Exchange to {name}",
+      exchangeFrom: "Exchange from {name}",
     },
     // Debts
     debts: {
       title: "Debts & Receivables",
       subtitle:
         "Track outstanding payables, receivables, and installment settlements",
-      totalDebts: "Total Active Payables (I Owe)",
-      totalReceivables: "Total Active Receivables (Owed to Me)",
+      totalDebts: "Total Active Payables",
+      totalReceivables: "Total Active Receivables",
       allTypes: "All",
-      debtType: "Payables (I Owe)",
-      receivableType: "Receivables (Owed to Me)",
+      debtType: "Payables",
+      receivableType: "Receivables",
       allStatus: "All Statuses",
       activeStatus: "Active",
       paidStatus: "Settled",
@@ -1223,8 +1305,8 @@ export const translations = {
       emptyTitle: "No debt records found",
       emptyDesc:
         "Keep track of money borrowed or lent with structured installment logs.",
-      payableTab: "Payables (I Owe)",
-      receivableTab: "Receivables (Owed to Me)",
+      payableTab: "Payables",
+      receivableTab: "Receivables",
       allTab: "All",
       modalTitle: "Add Debt / Receivable Entry",
       modalEditTitle: "Edit Record",
@@ -1241,12 +1323,22 @@ export const translations = {
       principalLabel: "Principal Amount",
       amountLabel: "Principal Nominal",
       currencyLabel: "Currency",
+      disbursementAccountLabel: "Disbursement / Receipt Account",
+      recordDisbursementCheck: "Synchronize account balance immediately",
+      disbursementDeductDesc:
+        "Account balance will be automatically debited (Expense) upon creation.",
+      disbursementCreditDesc:
+        "Account balance will be automatically credited (Income) upon creation.",
+      skipDisbursementDesc:
+        "Record debt/receivable contract only without adjusting current account balance.",
       dueDateLabel: "Due Date (Optional)",
       dueDatePlaceholder: "Select due date (optional)",
-      termsLabel: "Notes & Terms",
-      termsPlaceholder: "e.g. 3 monthly installments, End of month",
-      notesLabel: "Notes & Terms",
-      notesPlaceholder: "e.g. Business loan, Dinner settlement",
+      termsLabel: "Notes (Free Text)",
+      termsPlaceholder:
+        "Write free-form notes here (e.g. concert ticket settlement, business capital, etc.)",
+      notesLabel: "Notes (Free Text)",
+      notesPlaceholder:
+        "Write free-form notes here (e.g. concert ticket settlement, business capital, etc.)",
       saveBtn: "Save Record",
       saveRecord: "Save Changes",
       createRecord: "Add to Ledger",
@@ -1285,7 +1377,7 @@ export const translations = {
     },
     // Categories
     categories: {
-      title: "Category Master",
+      title: "Manage Categories",
       subtitle: "Custom income and expense tags for transaction categorization",
       expenseTab: "Expense",
       incomeTab: "Income",
@@ -1383,7 +1475,8 @@ export const translations = {
       sections: {
         quickStart: {
           title: "1. Overview, Rapid Logging & Tags (#tags)",
-          subtitle: "Fast, ergonomic, and frictionless daily expense logging with tags",
+          subtitle:
+            "Fast, ergonomic, and frictionless daily expense logging with tags",
           content:
             "Pocketly is designed as a high-precision personal financial ledger optimized for rapid recordkeeping without lag or unnecessary steps.",
           steps: [
@@ -1397,7 +1490,8 @@ export const translations = {
         },
         ocrReceiptScanner: {
           title: "2. Automated Receipt Scanner (Fast & Free In-Memory OCR)",
-          subtitle: "Instantly scan paper receipts directly into your ledger with zero cloud storage costs",
+          subtitle:
+            "Instantly scan paper receipts directly into your ledger with zero cloud storage costs",
           content:
             "Smart OCR extracts receipt data on-the-fly directly in device memory without bloating database storage:",
           steps: [
@@ -1410,7 +1504,8 @@ export const translations = {
         },
         dueCenter: {
           title: "3. Due Dates & Bills Center (Obligation Hub)",
-          subtitle: "Unified command center for recurring bills, debt installments, and goal milestones",
+          subtitle:
+            "Unified command center for recurring bills, debt installments, and goal milestones",
           content:
             "The Due Dates & Bills Center consolidates all your upcoming financial deadlines in one unified command center:",
           steps: [
@@ -1422,7 +1517,8 @@ export const translations = {
         },
         investments: {
           title: "4. Stock Portfolio, Deposits & Mutual Funds",
-          subtitle: "Track Indonesian stock trades (IDX), bank time deposits, and mutual funds seamlessly",
+          subtitle:
+            "Track Indonesian stock trades (IDX), bank time deposits, and mutual funds seamlessly",
           content:
             "Pocketly supports all of your investment vehicles in one unified ledger without contaminating daily budgets:",
           steps: [
@@ -1435,7 +1531,8 @@ export const translations = {
         },
         savingsGoals: {
           title: "5. Savings Goals & Dream Piggybanks",
-          subtitle: "Track progress towards emergency funds, vacations, and financial milestones",
+          subtitle:
+            "Track progress towards emergency funds, vacations, and financial milestones",
           content:
             "Plan and achieve your savings targets with clear, milestone-driven tracking:",
           steps: [
@@ -1447,7 +1544,8 @@ export const translations = {
         },
         recurring: {
           title: "6. Recurring Bills & Inflow Schedules",
-          subtitle: "Automated schedules for subscriptions and predictable cash inflows",
+          subtitle:
+            "Automated schedules for subscriptions and predictable cash inflows",
           content:
             "Stay ahead of recurring obligations with automated frequency tracking:",
           steps: [
@@ -1458,32 +1556,40 @@ export const translations = {
           ],
         },
         accounts: {
-          title: "7. Liquid Accounts, Multi-Currency & Transfer Fees",
-          subtitle: "Multi-currency wallet management and inter-account transfers with admin fees",
+          title:
+            "7. Liquid Accounts, Natural Forex Transfer & Balance Adjustment",
+          subtitle:
+            "Multi-currency wallet management, smart forex quoting, and physical cash reconciliation",
           content:
-            "Pocketly supports multiple account types and currencies (IDR, USD, SGD) with live exchange rates:",
+            "Pocketly supports multiple account types and currencies (IDR, USD, SGD) with live exchange rates and physical balance calibration:",
           steps: [
             "5 Account Types: Bank Account, Digital Wallet (E-Wallet), Cash, Credit Card, and Investment / RDN.",
-            "Inter-Account Transfers: Move funds between accounts with automatic two-way currency conversion.",
+            "Quick Transfer Button: On the account detail page (/accounts/[id]), click the Transfer button to automatically prefill the source account.",
+            "Smart Natural Forex Transfer: Input rates naturally (e.g. 1 SGD = Rp 12,000 or 1 USD = Rp 16,200) with automatic two-way calculations and live market rate syncing.",
+            "Interactive Transfer History: Click any transfer mutation row to inspect full route details, nominal sent/received, effective exchange rates, and notes.",
+            "Adjust Balance (Reconciliation): Instantly synchronize Pocketly's ledger balance with your real-world bank/wallet balance via the Discrepancy category.",
             "Optional Transfer / Admin Fee: Enter bank transfer fees (e.g. Rp 2,500 BI-FAST); the fee is automatically logged as a separate expense entry.",
-            "Primary / Default Wallet: Mark your favorite account to be selected by default during daily entries.",
           ],
         },
         debts: {
-          title: "8. Debts & Receivables Ledger",
-          subtitle: "Track borrowed loans, lent funds, and installment payment histories",
+          title: "8. Multi-Currency Debts & Receivables Ledger",
+          subtitle:
+            "Track borrowed loans, lent funds, currency filtering, and installment settlements",
           content:
-            "Keep liabilities and receivables cleanly separated from daily cashflow:",
+            "Keep liabilities and receivables cleanly separated from daily cashflow with synchronized account ledger tracking:",
           steps: [
             "Payables (I Owe): Record loans or money you owe to banks or third parties.",
             "Receivables (Owed to Me): Record money lent to friends, family, or clients.",
-            "Multi-Currency Rule: Payment accounts must match the debt currency (or perform a currency transfer conversion first).",
-            "Installment Payments: Record partial or lump-sum settlements with automatic account balance updating.",
+            "Currency-Matched Account Filter: Selecting a currency (IDR, USD, SGD) automatically filters the disbursement/receipt dropdown to show only accounts matching that currency.",
+            "Direct Account Balance Sync: Check the synchronization option to immediately debit cash when lending or credit cash when borrowing.",
+            "Free-Text Notes: Freely document loan terms, reference agreements, or notes without rigid formatting constraints.",
+            "Installment Payments: Record partial or lump-sum settlements with transparent mutation histories.",
           ],
         },
         budgets: {
           title: "9. Monthly Budget Allocations & Automated Limits",
-          subtitle: "Keep category spending disciplined with automated month-to-month limits",
+          subtitle:
+            "Keep category spending disciplined with automated month-to-month limits",
           content:
             "Monitor category spending independently per currency with clear tracking:",
           steps: [
@@ -1495,7 +1601,8 @@ export const translations = {
         },
         netWorth: {
           title: "10. Net Worth Balance Sheet & Solvency Ratio",
-          subtitle: "Understand your real net wealth, portfolio assets, and debt solvency",
+          subtitle:
+            "Understand your real net wealth, portfolio assets, and debt solvency",
           content:
             "The Balance Sheet calculates your real net financial health and debt coverage accurately:",
           steps: [
@@ -1507,7 +1614,8 @@ export const translations = {
         },
         cashflowAnalytics: {
           title: "11. Comprehensive Reports & Cashflow Analytics",
-          subtitle: "Deep insights into cashflow, savings rates, and expense distribution",
+          subtitle:
+            "Deep insights into cashflow, savings rates, and expense distribution",
           content:
             "The Reports page provides essential personal finance health metrics:",
           steps: [
@@ -1518,7 +1626,8 @@ export const translations = {
         },
         auditTrail: {
           title: "12. Universal Activity History & Audit Trail",
-          subtitle: "Review your complete financial timeline and data modifications across all modules",
+          subtitle:
+            "Review your complete financial timeline and data modifications across all modules",
           content:
             "All financial activities across your account are recorded safely and transparently:",
           steps: [
@@ -1529,7 +1638,8 @@ export const translations = {
         },
         search: {
           title: "13. Quick Global Search (Ctrl + K / Cmd + K)",
-          subtitle: "Quickly find any transaction, account, or page directly from your keyboard",
+          subtitle:
+            "Quickly find any transaction, account, or page directly from your keyboard",
           content: "Press Ctrl+K (Windows) or Cmd+K (Mac) from any screen:",
           steps: [
             "Type a vendor name, memo note, tag (#tags), amount, or category to find transactions.",
@@ -1539,7 +1649,8 @@ export const translations = {
         },
         backup: {
           title: "14. Privacy Mode, Display Themes & Data Backups",
-          subtitle: "Display preferences, balance privacy, and data export features",
+          subtitle:
+            "Display preferences, balance privacy, and data export features",
           content: "Manage your system settings in the Settings menu:",
           steps: [
             "Privacy Mode (Hide Balances): Tap the eye icon in the header to blur all sensitive figures in public spaces.",
@@ -1553,7 +1664,8 @@ export const translations = {
     // Reports & Analytics
     reports: {
       title: "Reports & Analytics",
-      subtitle: "In-depth insights into cashflow rhythms, savings rates, and expenditure distribution",
+      subtitle:
+        "In-depth insights into cashflow rhythms, savings rates, and expenditure distribution",
       periodThisMonth: "This Month",
       periodLastMonth: "Last Month",
       periodThisYear: "This Year",
@@ -1591,7 +1703,8 @@ export const translations = {
     // Goals & Wishlist
     goals: {
       title: "Savings Goals & Wishlist",
-      subtitle: "Plan, allocate funds, and track progress toward your dream milestones",
+      subtitle:
+        "Plan, allocate funds, and track progress toward your dream milestones",
       addBtn: "New Goal",
       totalTarget: "Total Target Capital",
       totalSaved: "Total Saved so Far",
@@ -1605,7 +1718,8 @@ export const translations = {
       withdrawBtn: "Withdraw Funds",
       historyBtn: "Deposit History",
       targetDateLabel: "Target Deadline",
-      monthlyNeeded: "Save {amount} / month to reach this goal on time (in {months} months)",
+      monthlyNeeded:
+        "Save {amount} / month to reach this goal on time (in {months} months)",
       goalReached: "Congratulations! You have reached 100% of this goal!",
       daysRemaining: "{days} days remaining",
       overdueTarget: "Target overdue by {days} days",
@@ -1617,7 +1731,8 @@ export const translations = {
       initialSavedLabel: "Current Saved Amount (Optional)",
       depositModalTitle: "Deposit / Withdraw Goal Funds",
       sourceAccountLabel: "Source / Destination Account",
-      recordTransactionCheck: "Log automatic mutation transaction on this account",
+      recordTransactionCheck:
+        "Log automatic mutation transaction on this account",
       statusActive: "In Progress",
       statusCompleted: "Completed",
       statusPaused: "Paused",
@@ -1625,14 +1740,17 @@ export const translations = {
       depositSuccess: "Funds allocated successfully!",
       withdrawSuccess: "Funds withdrawn successfully!",
       deleteSuccess: "Savings goal deleted successfully!",
-      deleteConfirm: "Are you sure you want to delete this savings goal? All deposit history will also be removed.",
+      deleteConfirm:
+        "Are you sure you want to delete this savings goal? All deposit history will also be removed.",
       emptyTitle: "No Savings Goals Yet",
-      emptyDesc: "Start creating your first savings milestone, track its pace, and achieve your financial dreams.",
+      emptyDesc:
+        "Start creating your first savings milestone, track its pace, and achieve your financial dreams.",
     },
     // Recurring & Subscriptions
     recurring: {
       title: "Recurring & Subscriptions",
-      subtitle: "Automate recurring salaries, subscriptions, and regular monthly bill payments",
+      subtitle:
+        "Automate recurring salaries, subscriptions, and regular monthly bill payments",
       addBtn: "New Schedule",
       monthlyCommitment: "Monthly Recurring Expense",
       monthlyIncome: "Monthly Recurring Income",
@@ -1656,7 +1774,8 @@ export const translations = {
       statusActive: "Active",
       statusPaused: "Paused",
       emptyTitle: "No Recurring Schedules Yet",
-      emptyDesc: "Set up regular subscriptions like Netflix, Spotify, Rent, or Salary for automated tracking.",
+      emptyDesc:
+        "Set up regular subscriptions like Netflix, Spotify, Rent, or Salary for automated tracking.",
       modalAddTitle: "New Recurring Transaction",
       modalEditTitle: "Edit Recurring Transaction",
       nameLabel: "Transaction / Subscription Name",
@@ -1667,9 +1786,11 @@ export const translations = {
       endDateLabel: "End Date (Optional)",
       notesLabel: "Additional Notes (Optional)",
       autoProcessLabel: "Auto-process",
-      autoProcessDesc: "Automatically log transaction on due date without manual confirmation",
+      autoProcessDesc:
+        "Automatically log transaction on due date without manual confirmation",
       deleteConfirm: "Are you sure you want to delete this recurring schedule?",
-      processSuccess: "Transaction executed and account balance updated successfully!",
+      processSuccess:
+        "Transaction executed and account balance updated successfully!",
       saveSuccess: "Recurring schedule saved successfully!",
       deleteSuccess: "Recurring schedule deleted successfully!",
       dueBannerTitle: "Upcoming Bills Due Soon",

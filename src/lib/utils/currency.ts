@@ -123,6 +123,148 @@ export function getCrossRate(
   return convertAmount(1, fromCurrency, toCurrency, rates)
 }
 
+/**
+ * Formats a currency pair exchange rate in a human-friendly natural convention.
+ * The stronger currency (or foreign currency relative to IDR) is placed on the left as 1 unit.
+ * Example:
+ * - from IDR to SGD => "1 SGD = Rp 11.850"
+ * - from USD to IDR => "1 USD = Rp 16.200"
+ * - from USD to SGD => "1 USD = S$ 1.34"
+ */
+export function formatNaturalForexRate(
+  fromCurrency: string,
+  toCurrency: string,
+  exchangeRateUsed: number
+): {
+  baseCurrency: string
+  quoteCurrency: string
+  rateValue: number
+  formattedText: string
+} {
+  const from = (fromCurrency || 'IDR').toUpperCase()
+  const to = (toCurrency || 'IDR').toUpperCase()
+  const rawRate = Number(exchangeRateUsed) || 1
+
+  if (from === to) {
+    return {
+      baseCurrency: from,
+      quoteCurrency: to,
+      rateValue: 1,
+      formattedText: `1 ${from} = 1 ${to}`,
+    }
+  }
+
+  // If one of the currencies is IDR:
+  if (from === 'IDR' || to === 'IDR') {
+    const foreign = from === 'IDR' ? to : from
+    // Calculate how many IDR is 1 Foreign currency
+    const idrPerForeign = from === 'IDR' ? (rawRate !== 0 ? 1 / rawRate : 16200) : rawRate
+    const formattedIdr = formatCurrency(idrPerForeign, 'IDR')
+    return {
+      baseCurrency: foreign,
+      quoteCurrency: 'IDR',
+      rateValue: idrPerForeign,
+      formattedText: `1 ${foreign} = ${formattedIdr}`,
+    }
+  }
+
+  // For other foreign pairs (e.g. USD vs SGD):
+  if (rawRate < 1 && rawRate > 0) {
+    const invRate = 1 / rawRate
+    return {
+      baseCurrency: to,
+      quoteCurrency: from,
+      rateValue: invRate,
+      formattedText: `1 ${to} = ${formatCurrency(invRate, from)}`,
+    }
+  }
+
+  return {
+    baseCurrency: from,
+    quoteCurrency: to,
+    rateValue: rawRate,
+    formattedText: `1 ${from} = ${formatCurrency(rawRate, to)}`,
+  }
+}
+
+/**
+ * Get natural currency pair metadata and helper calculation functions.
+ * E.g., for IDR <-> SGD, base is SGD and quote is IDR (1 SGD = X IDR).
+ */
+export function getNaturalPairInfo(
+  fromCurrency: string,
+  toCurrency: string,
+  rates: ForexRatesMap = DEFAULT_FALLBACK_RATES
+) {
+  const from = (fromCurrency || 'IDR').toUpperCase()
+  const to = (toCurrency || 'IDR').toUpperCase()
+
+  if (from === to) {
+    return {
+      baseCurrency: from,
+      quoteCurrency: to,
+      isFromBase: true,
+      defaultRate: 1,
+      calculateReceived: (sent: number) => sent,
+      calculateSent: (recv: number) => recv,
+      calculateNaturalRate: () => 1,
+    }
+  }
+
+  // If one of the currencies is IDR
+  if (from === 'IDR' || to === 'IDR') {
+    const foreign = from === 'IDR' ? to : from
+    const idrPerForeign = getCrossRate(foreign, 'IDR', rates)
+    const isFromIdr = from === 'IDR'
+
+    return {
+      baseCurrency: foreign,
+      quoteCurrency: 'IDR',
+      isFromBase: !isFromIdr,
+      defaultRate: idrPerForeign > 0 ? idrPerForeign : (foreign === 'USD' ? 16200 : 12000),
+      calculateReceived: (sent: number, naturalRate: number) => {
+        if (!naturalRate || naturalRate <= 0) return 0
+        return isFromIdr ? sent / naturalRate : sent * naturalRate
+      },
+      calculateSent: (recv: number, naturalRate: number) => {
+        if (!naturalRate || naturalRate <= 0) return 0
+        return isFromIdr ? recv * naturalRate : recv / naturalRate
+      },
+      calculateNaturalRate: (sent: number, recv: number) => {
+        if (!sent || !recv || recv <= 0 || sent <= 0) return 0
+        return isFromIdr ? sent / recv : recv / sent
+      },
+    }
+  }
+
+  // For other foreign pairs (e.g. USD vs SGD)
+  const usdRateFrom = getCrossRate('USD', from, rates)
+  const usdRateTo = getCrossRate('USD', to, rates)
+  const base = from === 'USD' || to === 'USD' ? 'USD' : usdRateFrom <= usdRateTo ? from : to
+  const quote = base === from ? to : from
+  const defaultRate = getCrossRate(base, quote, rates)
+  const isFromBase = from === base
+
+  return {
+    baseCurrency: base,
+    quoteCurrency: quote,
+    isFromBase,
+    defaultRate: defaultRate > 0 ? defaultRate : 1.34,
+    calculateReceived: (sent: number, naturalRate: number) => {
+      if (!naturalRate || naturalRate <= 0) return 0
+      return isFromBase ? sent * naturalRate : sent / naturalRate
+    },
+    calculateSent: (recv: number, naturalRate: number) => {
+      if (!naturalRate || naturalRate <= 0) return 0
+      return isFromBase ? recv / naturalRate : recv * naturalRate
+    },
+    calculateNaturalRate: (sent: number, recv: number) => {
+      if (!sent || !recv || recv <= 0 || sent <= 0) return 0
+      return isFromBase ? recv / sent : sent / recv
+    },
+  }
+}
+
 export function parseFormattedNumber(input: string): number {
   const cleaned = input.replace(/[^0-9.-]+/g, '')
   const num = parseFloat(cleaned)

@@ -169,6 +169,7 @@ export function DebtsManager({ debts, accounts }: DebtsManagerProps) {
         maxWidth="md"
       >
         <DebtForm
+          accounts={accounts}
           onSuccess={() => {
             setIsAddModalOpen(false);
             router.refresh();

@@ -73,6 +73,8 @@ export async function createDebt(input: {
   currency?: CurrencyCode
   dueDate?: string | null
   notes?: string | null
+  accountId?: string | null
+  recordTransaction?: boolean
 }) {
   const validation = debtSchema.safeParse(input)
   if (!validation.success) {
@@ -87,8 +89,30 @@ export async function createDebt(input: {
     return { error: 'Unauthorized' }
   }
 
+  // If linking an account transaction on initial debt/receivable creation
+  if (input.accountId && input.recordTransaction !== false) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: acc, error: accErr } = await (supabase.from('accounts') as any)
+      .select('id, name, currency, current_balance')
+      .eq('id', input.accountId)
+      .single()
+
+    if (accErr || !acc) {
+      return { error: 'Akun terpilih tidak ditemukan' }
+    }
+
+    if (input.type === 'receivable') {
+      const currentBal = Number(acc.current_balance) || 0
+      if (currentBal - input.initialAmount < 0) {
+        return {
+          error: `Saldo akun (${acc.name}) tidak mencukupi untuk meminjamkan dana sebesar ${formatCurrency(input.initialAmount, acc.currency)}.`,
+        }
+      }
+    }
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase.from('debts') as any)
+  const { data: debt, error } = await (supabase.from('debts') as any)
     .insert({
       user_id: user.id,
       type: input.type,
@@ -107,11 +131,56 @@ export async function createDebt(input: {
     return { error: error.message }
   }
 
+  // Create linked initial disbursement/receipt transaction
+  if (input.accountId && input.recordTransaction !== false) {
+    const txType = input.type === 'receivable' ? 'expense' : 'income'
+    const defaultCatName = input.type === 'receivable' ? 'Transfer' : 'Other Income'
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let { data: cat } = await (supabase.from('categories') as any)
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('name', defaultCatName)
+      .limit(1)
+      .maybeSingle()
+
+    if (!cat) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: anyCat } = await (supabase.from('categories') as any)
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('type', txType)
+        .limit(1)
+        .maybeSingle()
+      cat = anyCat
+    }
+
+    const txDesc =
+      input.type === 'receivable'
+        ? `Pinjaman ke ${input.counterpartyName.trim()}${input.notes ? ` (${input.notes.trim()})` : ''}`
+        : `Pinjaman dari ${input.counterpartyName.trim()}${input.notes ? ` (${input.notes.trim()})` : ''}`
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.from('transactions') as any).insert({
+      user_id: user.id,
+      account_id: input.accountId,
+      category_id: cat?.id || null,
+      type: txType,
+      amount: input.initialAmount,
+      currency: input.currency || 'IDR',
+      description: txDesc,
+      transaction_date: new Date().toISOString(),
+    })
+  }
+
   revalidatePath('/debts')
+  revalidatePath('/accounts')
   revalidatePath('/net-worth')
   revalidatePath('/dashboard')
+  revalidatePath('/transactions')
+  revalidatePath('/reports')
   revalidatePath('/')
-  return { data }
+  return { data: debt }
 }
 
 export async function updateDebt(

@@ -2,29 +2,57 @@
 
 import React, { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Account } from '@/types/database'
 import { AccountMutation } from '@/actions/accounts'
 import { DynamicIcon } from '@/components/ui/dynamic-icon'
 import { Button } from '@/components/ui/button'
-import { formatCurrency } from '@/lib/utils/currency'
+import { formatCurrency, formatNaturalForexRate } from '@/lib/utils/currency'
+import { formatCategoryName } from '@/lib/utils/category-i18n'
 import { usePrivacyMode, maskCurrency } from '@/lib/storage/privacy-mode'
 import { formatDate } from '@/lib/utils/date'
 import { useLanguage } from '@/lib/i18n/language-context'
-import { ArrowLeft, ArrowDownRight, ArrowUpRight } from 'lucide-react'
+import { ArrowLeft, ArrowDownRight, ArrowUpRight, ArrowRightLeft, Scale } from 'lucide-react'
 import { AccountEditTrigger } from '@/components/accounts/account-edit-trigger'
+import { AdjustBalanceModal } from '@/components/accounts/adjust-balance-modal'
+import { TransferModal } from '@/components/accounts/transfer-modal'
+import { TransferDetailModal } from '@/components/accounts/transfer-detail-modal'
 import { cn } from '@/lib/utils/cn'
 
 interface AccountDetailViewProps {
   account: Account
   mutations: AccountMutation[]
+  accounts?: Account[]
 }
 
 const BATCH_SIZE = 50
 
-export function AccountDetailView({ account, mutations }: AccountDetailViewProps) {
+export function AccountDetailView({ account, mutations, accounts = [] }: AccountDetailViewProps) {
+  const router = useRouter()
   const { t, language } = useLanguage()
   const isPrivate = usePrivacyMode()
   const [displayLimit, setDisplayLimit] = useState(BATCH_SIZE)
+  const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false)
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false)
+  const [selectedTransfer, setSelectedTransfer] = useState<AccountMutation | null>(null)
+
+  const getMutationTitle = (m: AccountMutation) => {
+    if (m.type === 'transfer_out') {
+      const targetName = m.counterpartyOrCategory || (language === 'en' ? 'Account' : 'Akun')
+      if (m.isCross) {
+        return (t.transfer.exchangeTo || 'Exchange to {name}').replace('{name}', targetName)
+      }
+      return (t.transfer.transferTo || 'Transfer to {name}').replace('{name}', targetName)
+    }
+    if (m.type === 'transfer_in') {
+      const sourceName = m.counterpartyOrCategory || (language === 'en' ? 'Account' : 'Akun')
+      if (m.isCross) {
+        return (t.transfer.exchangeFrom || 'Exchange from {name}').replace('{name}', sourceName)
+      }
+      return (t.transfer.transferFrom || 'Transfer from {name}').replace('{name}', sourceName)
+    }
+    return formatCategoryName(m.title, language)
+  }
 
   return (
     <div className="flex flex-col gap-5 max-w-xl mx-auto">
@@ -38,23 +66,45 @@ export function AccountDetailView({ account, mutations }: AccountDetailViewProps
       </Link>
 
       {/* Account Info Card */}
-      <div className="p-5 sm:p-6 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-4">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] flex items-center justify-center shrink-0">
-              <DynamicIcon name={account.icon || 'Wallet'} className="w-6 h-6" />
+      <div className="p-4 sm:p-6 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-4 shadow-2xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] flex items-center justify-center shrink-0">
+              <DynamicIcon name={account.icon || 'Wallet'} className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
-            <div className="flex flex-col">
-              <h1 className="text-lg font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+            <div className="flex flex-col min-w-0">
+              <h1 className="text-base sm:text-lg font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate">
                 {account.name}
               </h1>
-              <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">
+              <span className="text-xs text-[#64748B] dark:text-[#94A3B8] truncate">
                 {t.accounts.types[account.type] || account.type} • {account.currency}
               </span>
             </div>
           </div>
 
-          <AccountEditTrigger account={account} />
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap sm:flex-nowrap pt-1 sm:pt-0">
+            {accounts.length > 1 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsTransferModalOpen(true)}
+                className="flex-1 sm:flex-initial gap-1.5 text-xs font-bold cursor-pointer h-8 sm:h-9 px-2.5 sm:px-3 border-[#E5E7EB] dark:border-[#27272A] hover:bg-[#F8F9FA] dark:hover:bg-[#1A1A20]"
+              >
+                <ArrowRightLeft className="w-3.5 h-3.5 text-[#6366F1]" />
+                <span>Transfer</span>
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsAdjustModalOpen(true)}
+              className="flex-1 sm:flex-initial gap-1.5 text-xs font-bold cursor-pointer h-8 sm:h-9 px-2.5 sm:px-3 border-[#E5E7EB] dark:border-[#27272A] hover:bg-[#F8F9FA] dark:hover:bg-[#1A1A20]"
+            >
+              <Scale className="w-3.5 h-3.5 text-amber-500" />
+              <span>{t.accounts.adjustBalanceBtn}</span>
+            </Button>
+            <AccountEditTrigger account={account} />
+          </div>
         </div>
 
         <div className="pt-3 border-t border-[#E5E7EB] dark:border-[#27272A]">
@@ -85,6 +135,7 @@ export function AccountDetailView({ account, mutations }: AccountDetailViewProps
               const isPlus = m.type === 'income' || m.type === 'transfer_in'
               const isRegularTx = m.type === 'income' || m.type === 'expense'
               const formattedMutation = `${isPlus ? '+' : '-'}${formatCurrency(m.amount, m.currency)}`
+              const displayTitle = getMutationTitle(m)
               
               const content = (
                 <div
@@ -103,17 +154,28 @@ export function AccountDetailView({ account, mutations }: AccountDetailViewProps
 
                     <div className="flex flex-col min-w-0">
                       <span className="text-xs sm:text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate group-hover:text-[#0D9488] transition-colors">
-                        {m.title}
+                        {displayTitle}
                       </span>
                       <div className="flex items-center gap-1.5 text-[11px] text-[#64748B] dark:text-[#94A3B8] truncate">
-                        {m.description && (
+                        {m.isCross && m.exchangeRateUsed && m.counterpartyCurrency ? (
+                          <>
+                            <span className="font-mono text-[#475569] dark:text-[#CBD5E1]">
+                              {formatNaturalForexRate(
+                                m.type === 'transfer_out' ? m.currency : m.counterpartyCurrency,
+                                m.type === 'transfer_out' ? m.counterpartyCurrency : m.currency,
+                                m.exchangeRateUsed
+                              ).formattedText}
+                            </span>
+                            <span>•</span>
+                          </>
+                        ) : m.description ? (
                           <>
                             <span className="truncate max-w-40 sm:max-w-60 text-[#475569] dark:text-[#CBD5E1]">
                               {m.description}
                             </span>
                             <span>•</span>
                           </>
-                        )}
+                        ) : null}
                         <span>{formatDate(m.date, 'dd MMM yyyy, HH:mm')}</span>
                       </div>
                     </div>
@@ -138,7 +200,11 @@ export function AccountDetailView({ account, mutations }: AccountDetailViewProps
                 )
               }
 
-              return <div key={m.id}>{content}</div>
+              return (
+                <div key={m.id} onClick={() => setSelectedTransfer(m)} className="block">
+                  {content}
+                </div>
+              )
             })}
 
             {/* Pagination Load More Controls */}
@@ -170,6 +236,32 @@ export function AccountDetailView({ account, mutations }: AccountDetailViewProps
           </div>
         )}
       </div>
+
+      <AdjustBalanceModal
+        isOpen={isAdjustModalOpen}
+        onClose={() => setIsAdjustModalOpen(false)}
+        account={account}
+        onSuccess={() => {
+          router.refresh()
+        }}
+      />
+
+      <TransferModal
+        isOpen={isTransferModalOpen}
+        onClose={() => setIsTransferModalOpen(false)}
+        accounts={accounts}
+        defaultFromAccountId={account.id}
+        onSuccess={() => {
+          router.refresh()
+        }}
+      />
+
+      <TransferDetailModal
+        isOpen={!!selectedTransfer}
+        onClose={() => setSelectedTransfer(null)}
+        mutation={selectedTransfer}
+        currentAccountName={account.name}
+      />
     </div>
   )
 }
