@@ -709,10 +709,9 @@ export const translations = {
           content:
             "Pocketly mendukung pencatatan seluruh instrumen investasi Anda secara terstruktur tanpa mengganggu anggaran belanja harian:",
           steps: [
-            "Saham IDX & Akun RDN: Buat akun bertipe Investasi / RDN di menu Akun. Catat pembelian saham (misal: BBCA) dengan nominal bersih dari sekuritas. Saldo kas RDN terpotong dan aset saham tercatat otomatis.",
-            "Pencatatan Deposito: Buat akun bertipe Investasi (misal: 'Deposito BCA 5% p.a'). Lakukan Transfer Antar Akun dari rekening utama ke akun Deposito. Saat menerima bunga bulanan, catat sebagai Pemasukan kategori Bunga/Investasi.",
-            "Reksa Dana & Obligasi (Bibit/Bareksa): Buat akun bertipe Investasi (misal: 'Bibit - Portofolio'). Catat transfer saat top up atau pencairan reksa dana.",
-            "Averaging Beli & Realized P&L: Sistem otomatis menghitung modal beli rata-rata saham serta keuntungan (+Cuan) atau kerugian (-Cut Loss) saat melakukan penjualan saham.",
+            "Saham IDX & Akun RDN: Beli/jual saham BEI langsung di menu Investasi menggunakan akun RDN. Sistem otomatis menghitung harga modal rata-rata dan keuntungan (Realized P&L).",
+            "Pencatatan Deposito: Buat akun terpisah (misal: 'Deposito BCA'). Pindahkan dana pokok via Transfer. Catat bunga bulanan/jatuh tempo sebagai Pemasukan kategori 'Investasi & Dividen'.",
+            "Reksa Dana (Bibit/Bareksa): Buat akun platform (misal: 'Bibit'). Catat top-up atau tarik modal via Transfer, lalu catat keuntungan (Capital Gain) saat pencairan sebagai Pemasukan.",
             "Sinkronisasi Total Kekayaan (Net Worth): Seluruh saldo kas RDN, modal saham aktif, deposito, dan reksa dana otomatis tercermin di Neraca Kekayaan Bersih Anda.",
           ],
         },
@@ -1533,11 +1532,10 @@ export const translations = {
           content:
             "Pocketly supports all of your investment vehicles in one unified ledger without contaminating daily budgets:",
           steps: [
-            "IDX Stocks & RDN Account: Create an account typed as 'Investment / RDN'. Log stock purchases (e.g. BBCA) with net amounts from your broker. Cash is deducted and stock holding is automatically recorded.",
-            "Time Deposits (Deposito): Create an account typed as Investment (e.g. 'BCA Deposit 5% p.a'). Use Inter-Account Transfer to move funds from your primary bank. Log monthly interest yields as Income under Interest/Dividends.",
-            "Mutual Funds & Bonds (Bibit/Bareksa): Create an account typed as Investment (e.g. 'Bibit Portfolio'). Log inter-account transfers whenever topping up or redeeming funds.",
-            "Automated Buy Averaging & Realized P&L: Automatically computes your average cost basis and tracks Realized Gain (+Profit) or Realized Loss (-Cut Loss) on sale.",
-            "Net Worth Synchronization: All RDN cash, active stock cost basis, deposits, and mutual funds automatically reflect in your Net Worth Balance Sheet.",
+            "IDX Stocks & RDN Account: Buy/sell equities directly in the Investments menu linked to your RDN wallet. Average cost and realized P&L gains are calculated automatically.",
+            "Time Deposits (Deposito): Create a dedicated account (e.g. 'BCA Deposit'). Move principal via Transfer. Log monthly/maturity interest yields as Income under 'Investments & Dividends'.",
+            "Mutual Funds (Bibit/Bareksa): Create a platform account (e.g. 'Bibit'). Log top-ups and principal withdrawals via Transfer, and record profits (Capital Gains) on redemption as Income.",
+            "Net Worth Synchronization: All RDN cash, active stock holdings, time deposits, and mutual funds automatically reflect in your Net Worth Balance Sheet.",
           ],
         },
         savingsGoals: {
