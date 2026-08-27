@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils/cn'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
 import { AlertCircle, Wallet, ArrowDownRight, ArrowUpRight } from 'lucide-react'
+import { getDefaultAccountId } from '@/lib/storage/default-account'
 
 interface GoalDepositModalProps {
   isOpen: boolean
@@ -51,8 +52,10 @@ export function GoalDepositModal({
     if (isOpen && goal) {
       setType('deposit')
       setAmount('')
-      // Find matching currency account or fallback to first account (e.g. Cash / Bank)
-      const matching = accounts.find((a) => a.currency === goal.currency)
+      // Prioritize default account if currency matches, then first currency match, then accounts[0]
+      const defaultId = getDefaultAccountId()
+      const defaultMatch = accounts.find((a) => a.id === defaultId && a.currency === goal.currency)
+      const matching = defaultMatch || accounts.find((a) => a.currency === goal.currency)
       setAccountId(matching?.id || accounts[0]?.id || '')
       setDepositDate(format(new Date(), 'yyyy-MM-dd'))
       setNotes('')

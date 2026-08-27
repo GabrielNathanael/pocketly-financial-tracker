@@ -34,6 +34,7 @@ import { cn } from '@/lib/utils/cn'
 import { toast } from 'sonner'
 import { savePinnedTemplate } from '@/lib/storage/pinned-templates'
 import { scanReceipt } from '@/lib/ocr/receipt-scanner'
+import { getDefaultAccountId } from '@/lib/storage/default-account'
 
 interface ItemRow {
   name: string
@@ -118,7 +119,7 @@ export function TransactionForm({
   )
   const [isNumpadOpen, setIsNumpadOpen] = useState(false)
   const [selectedAccountId, setSelectedAccountId] = useState<string>(
-    initialData?.account_id || (accounts[0]?.id ?? '')
+    initialData?.account_id || (accounts.find((a) => a.id === getDefaultAccountId())?.id ?? accounts[0]?.id ?? '')
   )
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>(
     initialData?.category_id ||

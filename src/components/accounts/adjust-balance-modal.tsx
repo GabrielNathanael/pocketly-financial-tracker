@@ -58,6 +58,7 @@ export function AdjustBalanceModal({
         accountId: account.id,
         newRealBalance: targetAmount,
         notes: notes.trim() || null,
+        language,
       })
 
       if (res.error) {

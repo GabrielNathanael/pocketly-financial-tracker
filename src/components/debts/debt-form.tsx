@@ -15,6 +15,7 @@ import { useLanguage } from '@/lib/i18n/language-context'
 import { toast } from 'sonner'
 import { Trash2, AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
+import { getDefaultAccountId } from '@/lib/storage/default-account'
 
 interface DebtFormProps {
   initialData?: Debt | null
@@ -27,15 +28,25 @@ export function DebtForm({ initialData, accounts = [], onSuccess }: DebtFormProp
   const { t, language } = useLanguage()
   const isEditing = !!initialData
 
+  const initCurrency = (initialData?.currency || 'IDR') as CurrencyCode
+
+  const getBestAccountId = (accs: Account[], curr: CurrencyCode) => {
+    const defaultId = getDefaultAccountId()
+    const defaultMatch = accs.find((a) => a.id === defaultId && a.currency === curr)
+    if (defaultMatch) return defaultMatch.id
+    const firstMatch = accs.find((a) => a.currency === curr)
+    return firstMatch ? firstMatch.id : (accs[0]?.id || '')
+  }
+
   const [type, setType] = useState<DebtType>(initialData?.type || 'debt')
   const [counterpartyName, setCounterpartyName] = useState(initialData?.counterparty_name || '')
   const [initialAmount, setInitialAmount] = useState<string>(
     initialData?.initial_amount ? String(initialData.initial_amount) : ''
   )
-  const [currency, setCurrency] = useState<CurrencyCode>(initialData?.currency || 'IDR')
+  const [currency, setCurrency] = useState<CurrencyCode>(initCurrency)
   const [dueDate, setDueDate] = useState<string>(initialData?.due_date || '')
   const [notes, setNotes] = useState<string>(initialData?.notes || '')
-  const [accountId, setAccountId] = useState<string>(accounts[0]?.id || '')
+  const [accountId, setAccountId] = useState<string>(() => getBestAccountId(accounts, initCurrency))
   const [recordTransaction, setRecordTransaction] = useState<boolean>(true)
 
   const [isLoading, setIsLoading] = useState(false)
@@ -131,12 +142,7 @@ export function DebtForm({ initialData, accounts = [], onSuccess }: DebtFormProp
 
   const handleCurrencyChange = (newCurrency: CurrencyCode) => {
     setCurrency(newCurrency)
-    const validAccs = accounts.filter((a) => a.currency === newCurrency)
-    if (validAccs.length > 0) {
-      setAccountId(validAccs[0].id)
-    } else {
-      setAccountId('')
-    }
+    setAccountId(getBestAccountId(accounts, newCurrency))
   }
 
   return (

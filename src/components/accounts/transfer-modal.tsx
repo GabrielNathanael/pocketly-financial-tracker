@@ -24,6 +24,7 @@ import {
   DEFAULT_FALLBACK_RATES,
 } from "@/lib/utils/currency";
 import { useLanguage } from "@/lib/i18n/language-context";
+import { getDefaultAccountId } from "@/lib/storage/default-account";
 import { ArrowRightLeft, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
@@ -73,7 +74,7 @@ interface TransferFormProps {
 
 function TransferForm({ accounts, defaultFromAccountId, onClose, onSuccess }: TransferFormProps) {
   const { language, t } = useLanguage();
-  const initialFrom = defaultFromAccountId || accounts[0]?.id || "";
+  const initialFrom = defaultFromAccountId || (accounts.find((a) => a.id === getDefaultAccountId())?.id) || accounts[0]?.id || "";
   const initialTo = accounts.find((a) => a.id !== initialFrom)?.id || accounts[1]?.id || accounts[0]?.id || "";
   const [fromAccountId, setFromAccountId] = useState<string>(initialFrom);
   const [toAccountId, setToAccountId] = useState<string>(initialTo);

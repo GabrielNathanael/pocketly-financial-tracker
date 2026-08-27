@@ -20,6 +20,7 @@ import { formatCurrency } from '@/lib/utils/currency'
 import { cn } from '@/lib/utils/cn'
 import { format } from 'date-fns'
 import { AlertCircle, Wallet, AlignLeft } from 'lucide-react'
+import { getDefaultAccountId } from '@/lib/storage/default-account'
 
 interface RecurringFormModalProps {
   isOpen: boolean
@@ -85,8 +86,10 @@ export function RecurringFormModal({
       setName('')
       setType('expense')
       setAmount('')
-      setCurrency('IDR')
-      setAccountId(accounts[0]?.id || '')
+      const defaultId = getDefaultAccountId()
+      const defaultAcc = accounts.find((a) => a.id === defaultId) || accounts[0]
+      setCurrency(defaultAcc?.currency || 'IDR')
+      setAccountId(defaultAcc?.id || '')
       const defaultCat = categories.find((c) => c.type === 'expense')
       setCategoryId(defaultCat?.id || 'none')
       setFrequency('monthly')

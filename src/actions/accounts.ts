@@ -157,6 +157,7 @@ export async function adjustAccountBalance(input: {
   accountId: string
   newRealBalance: number
   notes?: string | null
+  language?: string
 }) {
   const supabase = await createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -234,7 +235,10 @@ export async function adjustAccountBalance(input: {
 
   // 3. Create adjustment transaction
   const noteSuffix = input.notes?.trim() ? ` - ${input.notes.trim()}` : ''
-  const desc = `Koreksi Saldo Fisik (${account.name})${noteSuffix}`
+  const isEn = input.language === 'en'
+  const desc = isEn
+    ? `Balance Correction (${account.name})${noteSuffix}`
+    : `Koreksi Saldo Fisik (${account.name})${noteSuffix}`
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error: txErr } = await (supabase.from('transactions') as any).insert({
