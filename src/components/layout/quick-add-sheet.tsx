@@ -1,18 +1,22 @@
-'use client'
+"use client";
 
-import React, { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import * as PopoverPrimitive from '@radix-ui/react-popover'
-import { BottomSheet } from '@/components/ui/bottom-sheet'
-import { Button } from '@/components/ui/button'
-import { DatePicker } from '@/components/ui/date-picker'
-import { DynamicIcon } from '@/components/ui/dynamic-icon'
-import { Account, Category, TransactionType } from '@/types/database'
-import { formatCurrency } from '@/lib/utils/currency'
-import { createTransaction } from '@/actions/transactions'
-import { useLanguage } from '@/lib/i18n/language-context'
-import { getPinnedTemplates, savePinnedTemplate, PinnedTemplate } from '@/lib/storage/pinned-templates'
-import { getDefaultAccountId } from '@/lib/storage/default-account'
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import * as PopoverPrimitive from "@radix-ui/react-popover";
+import { BottomSheet } from "@/components/ui/bottom-sheet";
+import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
+import { DynamicIcon } from "@/components/ui/dynamic-icon";
+import { Account, Category, TransactionType } from "@/types/database";
+import { formatCurrency } from "@/lib/utils/currency";
+import { createTransaction } from "@/actions/transactions";
+import { useLanguage } from "@/lib/i18n/language-context";
+import {
+  getPinnedTemplates,
+  savePinnedTemplate,
+  PinnedTemplate,
+} from "@/lib/storage/pinned-templates";
+import { getDefaultAccountId } from "@/lib/storage/default-account";
 import {
   Check,
   Delete,
@@ -31,29 +35,29 @@ import {
   Camera,
   Loader2,
   Calculator,
-} from 'lucide-react'
-import { cn } from '@/lib/utils/cn'
-import { toast } from 'sonner'
-import { scanReceipt } from '@/lib/ocr/receipt-scanner'
+} from "lucide-react";
+import { cn } from "@/lib/utils/cn";
+import { toast } from "sonner";
+import { scanReceipt } from "@/lib/ocr/receipt-scanner";
 
 interface QuickAddSheetProps {
-  isOpen: boolean
-  onClose: () => void
-  accounts: Account[]
-  categories: Category[]
-  onSuccess?: () => void
+  isOpen: boolean;
+  onClose: () => void;
+  accounts: Account[];
+  categories: Category[];
+  onSuccess?: () => void;
 }
 
 interface ItemRow {
-  name: string
-  price: string
+  name: string;
+  price: string;
 }
 
 interface QuickAddSheetContentProps {
-  accounts: Account[]
-  categories: Category[]
-  onClose: () => void
-  onSuccess?: () => void
+  accounts: Account[];
+  categories: Category[];
+  onClose: () => void;
+  onSuccess?: () => void;
 }
 
 export function QuickAddSheet({
@@ -63,9 +67,9 @@ export function QuickAddSheet({
   categories,
   onSuccess,
 }: QuickAddSheetProps) {
-  const { t } = useLanguage()
+  const { t } = useLanguage();
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose} title={t.quickAdd.title}>
@@ -76,7 +80,7 @@ export function QuickAddSheet({
         onSuccess={onSuccess}
       />
     </BottomSheet>
-  )
+  );
 }
 
 function QuickAddSheetContent({
@@ -85,237 +89,313 @@ function QuickAddSheetContent({
   categories,
   onSuccess,
 }: QuickAddSheetContentProps) {
-  const router = useRouter()
-  const { language, t } = useLanguage()
-  const [type, setType] = useState<TransactionType>('expense')
-  const [amountStr, setAmountStr] = useState<string>('0')
-  const [isNumpadOpen, setIsNumpadOpen] = useState(false)
-  const [selectedAccountId, setSelectedAccountId] = useState<string>('')
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('')
-  const [description, setDescription] = useState<string>('')
-  const [txDate, setTxDate] = useState<string>(new Date().toISOString().split('T')[0])
-  const [isPinned, setIsPinned] = useState<boolean>(false)
+  const router = useRouter();
+  const { language, t } = useLanguage();
+  const [type, setType] = useState<TransactionType>("expense");
+  const [amountStr, setAmountStr] = useState<string>("0");
+  const [isNumpadOpen, setIsNumpadOpen] = useState(false);
+  const [isAmountShaking, setIsAmountShaking] = useState(false);
+  const [selectedAccountId, setSelectedAccountId] = useState<string>("");
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
+  const [description, setDescription] = useState<string>("");
+  const [txDate, setTxDate] = useState<string>(
+    new Date().toISOString().split("T")[0],
+  );
+  const [isPinned, setIsPinned] = useState<boolean>(false);
 
   // Sub-items breakdown
-  const [items, setItems] = useState<ItemRow[]>([])
-  const [showItemsBreakdown, setShowItemsBreakdown] = useState<boolean>(false)
+  const [items, setItems] = useState<ItemRow[]>([]);
+  const [showItemsBreakdown, setShowItemsBreakdown] = useState<boolean>(false);
 
   // Free text memo
-  const [freeTextMemo, setFreeTextMemo] = useState<string>('')
-  const [showFreeMemo, setShowFreeMemo] = useState<boolean>(false)
+  const [freeTextMemo, setFreeTextMemo] = useState<string>("");
+  const [showFreeMemo, setShowFreeMemo] = useState<boolean>(false);
 
   // Tags (#tags)
-  const [tags, setTags] = useState<string[]>([])
-  const [showTags, setShowTags] = useState<boolean>(false)
-  const [tagInput, setTagInput] = useState<string>('')
+  const [tags, setTags] = useState<string[]>([]);
+  const [showTags, setShowTags] = useState<boolean>(false);
+  const [tagInput, setTagInput] = useState<string>("");
 
   // OCR Scan State
-  const [isScanning, setIsScanning] = useState(false)
-  const [ocrProgress, setOcrProgress] = useState<number>(0)
-  const [ocrStatus, setOcrStatus] = useState<string>('')
-  const fileInputRef = React.useRef<HTMLInputElement>(null)
+  const [isScanning, setIsScanning] = useState(false);
+  const [ocrProgress, setOcrProgress] = useState<number>(0);
+  const [ocrStatus, setOcrStatus] = useState<string>("");
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Popover controls
-  const [isAccountPopoverOpen, setIsAccountPopoverOpen] = useState(false)
-  const [isCategoryPopoverOpen, setIsCategoryPopoverOpen] = useState(false)
+  const [isAccountPopoverOpen, setIsAccountPopoverOpen] = useState(false);
+  const [isCategoryPopoverOpen, setIsCategoryPopoverOpen] = useState(false);
 
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [pinnedTemplates, setPinnedTemplates] = useState<PinnedTemplate[]>(getPinnedTemplates)
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pinnedTemplates, setPinnedTemplates] =
+    useState<PinnedTemplate[]>(getPinnedTemplates);
 
   // Receipt OCR File Handler
-  const handleReceiptUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  const handleReceiptUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    setIsScanning(true)
-    setOcrProgress(10)
-    setOcrStatus(t.quickAdd.scanningReceipt)
+    setIsScanning(true);
+    setOcrProgress(10);
+    setOcrStatus(t.quickAdd.scanningReceipt);
 
     try {
       const parsed = await scanReceipt(file, (pct, status) => {
-        setOcrProgress(pct)
-        setOcrStatus(status)
-      })
+        setOcrProgress(pct);
+        setOcrStatus(status);
+      });
 
       if (parsed.amount > 0) {
-        setAmountStr(String(Math.round(parsed.amount)))
+        setAmountStr(String(Math.round(parsed.amount)));
       }
       if (parsed.description) {
-        setDescription(parsed.description)
+        setDescription(parsed.description);
       }
       if (parsed.date) {
-        setTxDate(parsed.date)
+        setTxDate(parsed.date);
       }
       if (parsed.items && parsed.items.length > 0) {
-        setItems(parsed.items)
-        setShowItemsBreakdown(true)
+        setItems(parsed.items);
+        setShowItemsBreakdown(true);
       }
 
-      toast.success(t.quickAdd.scanSuccess)
+      toast.success(t.quickAdd.scanSuccess);
     } catch (err: any) {
-      console.error('OCR Error:', err)
-      toast.error(t.quickAdd.scanFailed)
+      console.error("OCR Error:", err);
+      toast.error(t.quickAdd.scanFailed);
     } finally {
-      setIsScanning(false)
-      setOcrProgress(0)
-      setOcrStatus('')
-      if (e.target) e.target.value = ''
+      setIsScanning(false);
+      setOcrProgress(0);
+      setOcrStatus("");
+      if (e.target) e.target.value = "";
     }
-  }
+  };
 
   // Initialize defaults
   React.useEffect(() => {
     if (true) {
-      const defaultId = getDefaultAccountId()
-      const primary = accounts.find((a) => a.id === defaultId) || accounts[0]
-      if (primary) setSelectedAccountId(primary.id)
+      const defaultId = getDefaultAccountId();
+      const primary = accounts.find((a) => a.id === defaultId) || accounts[0];
+      if (primary) setSelectedAccountId(primary.id);
 
-      const matchingCats = categories.filter((c) => c.type === 'expense')
-      if (matchingCats.length > 0) setSelectedCategoryId(matchingCats[0].id)
+      const matchingCats = categories.filter((c) => c.type === "expense");
+      if (matchingCats.length > 0) setSelectedCategoryId(matchingCats[0].id);
     }
-  }, [accounts, categories])
+  }, [accounts, categories]);
 
-  const activeAccount = accounts.find((a) => a.id === selectedAccountId) || accounts[0]
-  const activeCategory = categories.find((c) => c.id === selectedCategoryId) || categories[0]
-  const currentCurrency = activeAccount?.currency || 'IDR'
+  const activeAccount =
+    accounts.find((a) => a.id === selectedAccountId) || accounts[0];
+  const activeCategory =
+    categories.find((c) => c.id === selectedCategoryId) || categories[0];
+  const currentCurrency = activeAccount?.currency || "IDR";
 
-  const filteredCategories = categories.filter((c) => c.type === type)
+  const filteredCategories = categories.filter((c) => c.type === type);
 
   // Sub-items calculation
   const itemsTotal = items.reduce((sum, item) => {
-    const p = parseFloat(item.price) || 0
-    return sum + p
-  }, 0)
+    const p = parseFloat(item.price) || 0;
+    return sum + p;
+  }, 0);
 
   // Numeric amount is strictly driven by the main amountStr input/keypad
-  const numericAmount = parseFloat(amountStr) || 0
-  const remainingAmount = numericAmount - itemsTotal
-  const isItemsExceeding = showItemsBreakdown && items.length > 0 && itemsTotal > numericAmount && numericAmount > 0
-  const isItemsMatching = showItemsBreakdown && items.length > 0 && itemsTotal === numericAmount && numericAmount > 0
-  const hasRemainingUnitemized = showItemsBreakdown && items.length > 0 && remainingAmount > 0 && numericAmount > 0
+  const numericAmount = parseFloat(amountStr) || 0;
+  const remainingAmount = numericAmount - itemsTotal;
+  const isItemsExceeding =
+    showItemsBreakdown &&
+    items.length > 0 &&
+    itemsTotal > numericAmount &&
+    numericAmount > 0;
+  const isItemsMatching =
+    showItemsBreakdown &&
+    items.length > 0 &&
+    itemsTotal === numericAmount &&
+    numericAmount > 0;
+  const hasRemainingUnitemized =
+    showItemsBreakdown &&
+    items.length > 0 &&
+    remainingAmount > 0 &&
+    numericAmount > 0;
+
+  // Lightweight haptic tap for keypad presses (Android Chrome/Firefox only;
+  // iOS Safari silently ignores navigator.vibrate, so this is purely additive
+  // on top of the existing active:scale-95 visual feedback)
+  const triggerHaptic = (durationMs: number = 15) => {
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      try {
+        navigator.vibrate(durationMs);
+      } catch {
+        // Ignore - vibration is a non-critical enhancement
+      }
+    }
+  };
+
+  // Brief shake/flash on the amount card when the input is at its cap,
+  // so hitting the limit gives visible feedback instead of doing nothing
+  const triggerAmountLimitFeedback = () => {
+    setIsAmountShaking(true);
+    triggerHaptic(20);
+    setTimeout(() => setIsAmountShaking(false), 300);
+  };
 
   // Quick Calculator Keypad (Always enabled so user can type main amount freely)
   const handleKeypadPress = (val: string) => {
-    setError(null)
-    if (amountStr === '0') {
-      if (val === '000') return
-      setAmountStr(val)
+    setError(null);
+    if (amountStr === "0") {
+      if (val === "000") return;
+      triggerHaptic();
+      setAmountStr(val);
     } else {
-      if (amountStr.length >= 12) return
-      setAmountStr((prev) => prev + val)
+      if (amountStr.length >= 12) {
+        triggerAmountLimitFeedback();
+        return;
+      }
+      triggerHaptic();
+      setAmountStr((prev) => prev + val);
     }
-  }
+  };
 
   const handleKeypadBackspace = () => {
-    setError(null)
+    setError(null);
+    triggerHaptic();
     if (amountStr.length <= 1) {
-      setAmountStr('0')
+      setAmountStr("0");
     } else {
-      setAmountStr((prev) => prev.slice(0, -1))
+      setAmountStr((prev) => prev.slice(0, -1));
     }
-  }
+  };
 
   // Type change
   const handleTypeChange = (newType: TransactionType) => {
-    setType(newType)
-    const matchingCats = categories.filter((c) => c.type === newType)
+    setType(newType);
+    const matchingCats = categories.filter((c) => c.type === newType);
     if (matchingCats.length > 0) {
-      setSelectedCategoryId(matchingCats[0].id)
+      setSelectedCategoryId(matchingCats[0].id);
     }
-  }
+  };
 
   // Sub-items CRUD
   const handleAddItem = () => {
-    setItems((prev) => [...prev, { name: '', price: '' }])
-  }
+    setItems((prev) => [...prev, { name: "", price: "" }]);
+  };
 
-  const handleUpdateItem = (index: number, field: keyof ItemRow, value: string) => {
+  const handleUpdateItem = (
+    index: number,
+    field: keyof ItemRow,
+    value: string,
+  ) => {
     setItems((prev) => {
-      const updated = [...prev]
-      updated[index] = { ...updated[index], [field]: value }
-      return updated
-    })
-  }
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  };
 
   const handleRemoveItem = (index: number) => {
-    setItems((prev) => prev.filter((_, i) => i !== index))
-  }
+    setItems((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const handleApplyTemplate = (tpl: PinnedTemplate) => {
-    setType(tpl.type)
-    setSelectedAccountId(tpl.accountId)
-    setSelectedCategoryId(tpl.categoryId)
-    setAmountStr(String(tpl.amount))
-    setDescription(tpl.description || tpl.name)
-    setTxDate(new Date().toISOString().split('T')[0])
-    setIsPinned(true)
-  }
+    setType(tpl.type);
+    setSelectedAccountId(tpl.accountId);
+    setSelectedCategoryId(tpl.categoryId);
+    setAmountStr(String(tpl.amount));
+    setDescription(tpl.description || tpl.name);
+    setTxDate(new Date().toISOString().split("T")[0]);
+    setIsPinned(true);
+  };
 
   // Save Transaction
   const handleSave = async () => {
     if (numericAmount <= 0) {
-      setError(t.quickAdd.nominal + ' > 0')
-      return
+      setError(t.quickAdd.nominal + " > 0");
+      return;
     }
 
     if (!selectedAccountId) {
-      setError(t.quickAdd.selectAccount)
-      return
+      setError(t.quickAdd.selectAccount);
+      return;
     }
 
     if (!selectedCategoryId) {
-      setError(t.quickAdd.selectCategory)
-      return
+      setError(t.quickAdd.selectCategory);
+      return;
     }
 
-    if (showItemsBreakdown && items.length > 0 && itemsTotal > numericAmount && numericAmount > 0) {
-      setError(`${t.quickAdd.itemsExceedWarning} ${formatCurrency(itemsTotal - numericAmount, currentCurrency)}`)
-      return
+    if (
+      showItemsBreakdown &&
+      items.length > 0 &&
+      itemsTotal > numericAmount &&
+      numericAmount > 0
+    ) {
+      setError(
+        `${t.quickAdd.itemsExceedWarning} ${formatCurrency(itemsTotal - numericAmount, currentCurrency)}`,
+      );
+      return;
     }
 
     // Strict Non-Negative Balance Guard for Expense
-    if (type === 'expense' && activeAccount) {
-      const currentBal = Number(activeAccount.current_balance) || 0
+    if (type === "expense" && activeAccount) {
+      const currentBal = Number(activeAccount.current_balance) || 0;
       if (currentBal - numericAmount < 0) {
-        const err = language === 'en'
-          ? `Insufficient balance in ${activeAccount.name} (Available: ${formatCurrency(currentBal, activeAccount.currency)}, Required: ${formatCurrency(numericAmount, activeAccount.currency)})`
-          : `Saldo ${activeAccount.name} tidak mencukupi (Tersedia: ${formatCurrency(currentBal, activeAccount.currency)}, Dibutuhkan: ${formatCurrency(numericAmount, activeAccount.currency)})`
-        setError(err)
-        toast.error(t.transactions.insufficientBalance || (language === 'en' ? 'Insufficient Balance' : 'Saldo Tidak Mencukupi'), { description: err })
-        return
+        const err =
+          language === "en"
+            ? `Insufficient balance in ${activeAccount.name} (Available: ${formatCurrency(currentBal, activeAccount.currency)}, Required: ${formatCurrency(numericAmount, activeAccount.currency)})`
+            : `Saldo ${activeAccount.name} tidak mencukupi (Tersedia: ${formatCurrency(currentBal, activeAccount.currency)}, Dibutuhkan: ${formatCurrency(numericAmount, activeAccount.currency)})`;
+        setError(err);
+        toast.error(
+          t.transactions.insufficientBalance ||
+            (language === "en"
+              ? "Insufficient Balance"
+              : "Saldo Tidak Mencukupi"),
+          { description: err },
+        );
+        return;
       }
     }
 
-    setIsLoading(true)
-    setError(null)
+    setIsLoading(true);
+    setError(null);
 
     // Build compound description if items or memo exist
-    const defaultTypeLabel = type === 'expense'
-      ? (language === 'en' ? 'Expense' : 'Pengeluaran')
-      : (language === 'en' ? 'Income' : 'Pemasukan')
-    let finalDesc = description.trim() || activeCategory?.name || defaultTypeLabel
+    const defaultTypeLabel =
+      type === "expense"
+        ? language === "en"
+          ? "Expense"
+          : "Pengeluaran"
+        : language === "en"
+          ? "Income"
+          : "Pemasukan";
+    let finalDesc =
+      description.trim() || activeCategory?.name || defaultTypeLabel;
 
     if (showItemsBreakdown && items.length > 0) {
-      const validItems = items.filter((i) => i.name.trim() && parseFloat(i.price) > 0)
+      const validItems = items.filter(
+        (i) => i.name.trim() && parseFloat(i.price) > 0,
+      );
       if (validItems.length > 0) {
         const itemsSummary = validItems
-          .map((i) => `${i.name.trim()} (${formatCurrency(parseFloat(i.price), currentCurrency)})`)
-          .join(', ')
-        finalDesc += ` [Items: ${itemsSummary}]`
+          .map(
+            (i) =>
+              `${i.name.trim()} (${formatCurrency(parseFloat(i.price), currentCurrency)})`,
+          )
+          .join(", ");
+        finalDesc += ` [Items: ${itemsSummary}]`;
       }
     }
 
     if (showFreeMemo && freeTextMemo.trim()) {
-      finalDesc += ` [Memo: ${freeTextMemo.trim()}]`
+      finalDesc += ` [Memo: ${freeTextMemo.trim()}]`;
     }
 
     try {
-      const finalTags = [...tags]
+      const finalTags = [...tags];
       if (tagInput.trim()) {
-        const clean = tagInput.replace(/^#/, '').toLowerCase().trim()
+        const clean = tagInput.replace(/^#/, "").toLowerCase().trim();
         if (clean && !finalTags.includes(clean)) {
-          finalTags.push(clean)
+          finalTags.push(clean);
         }
       }
 
@@ -327,17 +407,28 @@ function QuickAddSheetContent({
         currency: currentCurrency,
         description: finalDesc,
         tags: finalTags.length > 0 ? finalTags : undefined,
-        transactionDate: `${txDate}T${new Date().toTimeString().split(' ')[0]}.000Z`,
-      })
+        transactionDate: `${txDate}T${new Date().toTimeString().split(" ")[0]}.000Z`,
+      });
 
       if (res.error) {
-        setError(res.error)
-        toast.error(t.transactions.createFailed || (language === 'en' ? 'Failed to Record Transaction' : 'Gagal Mencatat Transaksi'), { description: res.error })
+        setError(res.error);
+        toast.error(
+          t.transactions.createFailed ||
+            (language === "en"
+              ? "Failed to Record Transaction"
+              : "Gagal Mencatat Transaksi"),
+          { description: res.error },
+        );
       } else {
-        toast.success(language === 'en' ? 'Transaction recorded successfully' : 'Transaksi berhasil dicatat')
+        toast.success(
+          language === "en"
+            ? "Transaction recorded successfully"
+            : "Transaksi berhasil dicatat",
+        );
         // Save as pinned template if toggle is active
         if (isPinned) {
-          const name = description.trim() || activeCategory?.name || 'Quick Template'
+          const name =
+            description.trim() || activeCategory?.name || "Quick Template";
           savePinnedTemplate({
             name,
             accountId: selectedAccountId,
@@ -349,24 +440,40 @@ function QuickAddSheetContent({
             amount: numericAmount,
             currency: currentCurrency,
             description: description.trim() || null,
-          })
+          });
         }
 
-        onSuccess?.()
-        router.refresh()
-        onClose()
+        onSuccess?.();
+        router.refresh();
+        onClose();
       }
     } catch (err) {
-      const msg = (err as Error).message
-      setError(msg)
-      toast.error('Terjadi Kesalahan', { description: msg })
+      const msg = (err as Error).message;
+      setError(msg);
+      toast.error("Terjadi Kesalahan", { description: msg });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 pb-2">
+      <style jsx global>{`
+        @keyframes shake {
+          0%,
+          100% {
+            transform: translateX(0);
+          }
+          20%,
+          60% {
+            transform: translateX(-4px);
+          }
+          40%,
+          80% {
+            transform: translateX(4px);
+          }
+        }
+      `}</style>
       {/* Pinned Templates Shortcuts */}
       {pinnedTemplates.length > 0 && (
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-0.5 no-scrollbar scroll-smooth">
@@ -391,12 +498,12 @@ function QuickAddSheetContent({
       <div className="grid grid-cols-2 p-0.5 bg-[#F1F3F5] dark:bg-[#1A1A20] rounded-lg border border-[#E5E7EB] dark:border-[#27272A]">
         <button
           type="button"
-          onClick={() => handleTypeChange('expense')}
+          onClick={() => handleTypeChange("expense")}
           className={cn(
-            'flex items-center justify-center gap-1.5 py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer',
-            type === 'expense'
-              ? 'bg-[#E11D48] text-white shadow-2xs'
-              : 'text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
+            "flex items-center justify-center gap-1.5 py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer",
+            type === "expense"
+              ? "bg-[#E11D48] text-white shadow-2xs"
+              : "text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]",
           )}
         >
           <ArrowDownRight className="w-3.5 h-3.5" />
@@ -405,12 +512,12 @@ function QuickAddSheetContent({
 
         <button
           type="button"
-          onClick={() => handleTypeChange('income')}
+          onClick={() => handleTypeChange("income")}
           className={cn(
-            'flex items-center justify-center gap-1.5 py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer',
-            type === 'income'
-              ? 'bg-[#0D9488] text-white shadow-2xs'
-              : 'text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
+            "flex items-center justify-center gap-1.5 py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer",
+            type === "income"
+              ? "bg-[#0D9488] text-white shadow-2xs"
+              : "text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]",
           )}
         >
           <ArrowUpRight className="w-3.5 h-3.5" />
@@ -421,10 +528,12 @@ function QuickAddSheetContent({
       {/* 2. Interactive Amount Card (Click to Open Numpad) */}
       <div
         className={cn(
-          'relative rounded-xl bg-white dark:bg-[#121215] border shadow-2xs overflow-hidden transition-all group',
-          isNumpadOpen
-            ? 'border-[#0F172A] dark:border-[#FAFAFA] ring-2 ring-[#0F172A]/10 dark:ring-[#FAFAFA]/10'
-            : 'border-[#E5E7EB] dark:border-[#27272A]'
+          "relative rounded-xl bg-white dark:bg-[#121215] border shadow-2xs overflow-hidden transition-all group",
+          isAmountShaking
+            ? "border-[#E11D48] dark:border-[#E11D48] ring-2 ring-[#E11D48]/20 animate-[shake_0.3s_ease-in-out]"
+            : isNumpadOpen
+              ? "border-[#0F172A] dark:border-[#FAFAFA] ring-2 ring-[#0F172A]/10 dark:ring-[#FAFAFA]/10"
+              : "border-[#E5E7EB] dark:border-[#27272A]",
         )}
       >
         <button
@@ -439,10 +548,10 @@ function QuickAddSheetContent({
 
             <Calculator
               className={cn(
-                'w-4 h-4 transition-colors',
+                "w-4 h-4 transition-colors",
                 isNumpadOpen
-                  ? 'text-[#0F172A] dark:text-[#FAFAFA]'
-                  : 'text-[#94A3B8] group-hover:text-blue-500'
+                  ? "text-[#0F172A] dark:text-[#FAFAFA]"
+                  : "text-[#94A3B8] group-hover:text-blue-500",
               )}
             />
           </div>
@@ -453,8 +562,10 @@ function QuickAddSheetContent({
             </span>
             <span
               className={cn(
-                'flex-1 min-w-0 text-2xl sm:text-3xl font-mono font-bold tracking-tight truncate',
-                numericAmount > 0 ? 'text-[#0F172A] dark:text-[#F8FAFC]' : 'text-[#94A3B8]'
+                "flex-1 min-w-0 text-2xl sm:text-3xl font-mono font-bold tracking-tight truncate",
+                numericAmount > 0
+                  ? "text-[#0F172A] dark:text-[#F8FAFC]"
+                  : "text-[#94A3B8]",
               )}
             >
               {formatCurrency(numericAmount, currentCurrency)}
@@ -467,18 +578,18 @@ function QuickAddSheetContent({
           <button
             type="button"
             onClick={(e) => {
-              e.stopPropagation()
-              setIsPinned(!isPinned)
+              e.stopPropagation();
+              setIsPinned(!isPinned);
             }}
-            title={isPinned ? 'Sematkan aktif' : 'Sematkan transaksi ini'}
+            title={isPinned ? "Sematkan aktif" : "Sematkan transaksi ini"}
             className={cn(
-              'p-1.5 rounded-lg transition-colors cursor-pointer',
+              "p-1.5 rounded-lg transition-colors cursor-pointer",
               isPinned
-                ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-500'
-                : 'text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
+                ? "bg-amber-50 dark:bg-amber-950/40 text-amber-500"
+                : "text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]",
             )}
           >
-            <Pin className={cn('w-3.5 h-3.5', isPinned && 'fill-current')} />
+            <Pin className={cn("w-3.5 h-3.5", isPinned && "fill-current")} />
           </button>
         </div>
       </div>
@@ -487,12 +598,12 @@ function QuickAddSheetContent({
       {isNumpadOpen ? (
         <div className="flex flex-col gap-2 pt-1 animate-in fade-in-50 zoom-in-98 duration-150">
           <div className="grid grid-cols-4 gap-1.5">
-            {['1', '2', '3'].map((n) => (
+            {["1", "2", "3"].map((n) => (
               <button
                 key={n}
                 type="button"
                 onClick={() => handleKeypadPress(n)}
-                className="h-13 sm:h-16 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-xl sm:text-2xl hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
+                className="h-full min-h-14 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-xl sm:text-2xl hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
               >
                 {n}
               </button>
@@ -500,68 +611,74 @@ function QuickAddSheetContent({
             <button
               type="button"
               onClick={handleKeypadBackspace}
-              className="h-13 sm:h-16 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] flex items-center justify-center text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none"
+              className="h-full min-h-14 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] flex items-center justify-center text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none"
             >
               <Delete className="w-6 h-6" />
             </button>
 
-            {['4', '5', '6'].map((n) => (
+            {["4", "5", "6"].map((n) => (
               <button
                 key={n}
                 type="button"
                 onClick={() => handleKeypadPress(n)}
-                className="h-13 sm:h-16 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-xl sm:text-2xl hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
+                className="h-full min-h-14 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-xl sm:text-2xl hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
               >
                 {n}
               </button>
             ))}
             <button
               type="button"
-              onClick={() => handleKeypadPress('000')}
-              className="h-13 sm:h-16 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-sm sm:text-base hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
+              onClick={() => handleKeypadPress("000")}
+              className="h-full min-h-14 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-sm sm:text-base hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
             >
               .000
             </button>
 
-            {['7', '8', '9'].map((n) => (
+            {["7", "8", "9"].map((n) => (
               <button
                 key={n}
                 type="button"
                 onClick={() => handleKeypadPress(n)}
-                className="h-13 sm:h-16 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-xl sm:text-2xl hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
+                className="h-full min-h-14 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-xl sm:text-2xl hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
               >
                 {n}
               </button>
             ))}
             <button
               type="button"
-              onClick={() => setAmountStr('0')}
-              className="h-13 sm:h-16 rounded-xl bg-[#FFF1F2] dark:bg-[#881337]/20 text-[#E11D48] font-mono font-bold text-base sm:text-lg hover:bg-[#FFE4E6] dark:hover:bg-[#881337]/40 border border-[#FECDD3] dark:border-[#9F1239]/40 active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
+              onClick={() => {
+                triggerHaptic();
+                setAmountStr("0");
+              }}
+              className="h-full min-h-14 rounded-xl bg-[#FFF1F2] dark:bg-[#881337]/20 text-[#E11D48] font-mono font-bold text-base sm:text-lg hover:bg-[#FFE4E6] dark:hover:bg-[#881337]/40 border border-[#FECDD3] dark:border-[#9F1239]/40 active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
             >
               C
             </button>
 
             <button
               type="button"
-              onClick={() => handleKeypadPress('00')}
-              className="h-13 sm:h-16 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-base sm:text-lg hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
+              onClick={() => handleKeypadPress("00")}
+              className="h-full min-h-14 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-base sm:text-lg hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
             >
               00
             </button>
             <button
               type="button"
-              onClick={() => handleKeypadPress('0')}
-              className="h-13 sm:h-16 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-xl sm:text-2xl hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
+              onClick={() => handleKeypadPress("0")}
+              className="h-full min-h-14 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-xl sm:text-2xl hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
             >
               0
             </button>
             <button
               type="button"
-              onClick={() => setIsNumpadOpen(false)}
-              className="col-span-2 h-13 sm:h-16 rounded-xl bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] font-bold text-sm sm:text-base flex items-center justify-center gap-1.5 hover:opacity-90 active:scale-95 shadow-md transition-all cursor-pointer select-none"
+              onClick={() => {
+                triggerHaptic();
+                setIsNumpadOpen(false);
+              }}
+              className="col-span-2 h-full min-h-14 rounded-xl bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] font-bold text-sm sm:text-base flex items-center justify-center gap-1.5 hover:opacity-90 active:scale-95 shadow-md transition-all cursor-pointer select-none"
             >
               <Check className="w-5 h-5 stroke-[3]" />
-              <span>{language === 'en' ? 'Done' : 'Selesai'}</span>
+              <span>{language === "en" ? "Done" : "Selesai"}</span>
             </button>
           </div>
         </div>
@@ -571,14 +688,20 @@ function QuickAddSheetContent({
           <DatePicker value={txDate} onChange={setTxDate} />
 
           {/* 4. Account Popover */}
-          <PopoverPrimitive.Root open={isAccountPopoverOpen} onOpenChange={setIsAccountPopoverOpen}>
+          <PopoverPrimitive.Root
+            open={isAccountPopoverOpen}
+            onOpenChange={setIsAccountPopoverOpen}
+          >
             <PopoverPrimitive.Trigger asChild>
               <button
                 type="button"
                 className="flex items-center justify-between p-2.5 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors text-left cursor-pointer w-full"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <DynamicIcon name={activeAccount?.icon || 'Wallet'} className="w-4 h-4 text-[#0F172A] dark:text-[#FAFAFA] shrink-0" />
+                  <DynamicIcon
+                    name={activeAccount?.icon || "Wallet"}
+                    className="w-4 h-4 text-[#0F172A] dark:text-[#FAFAFA] shrink-0"
+                  />
                   <div className="flex flex-col min-w-0">
                     <span className="text-[9px] uppercase font-bold text-[#64748B] dark:text-[#94A3B8] leading-none">
                       {t.quickAdd.account}
@@ -589,7 +712,9 @@ function QuickAddSheetContent({
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
-                  <span className="text-[11px] font-mono text-[#94A3B8]">({currentCurrency})</span>
+                  <span className="text-[11px] font-mono text-[#94A3B8]">
+                    ({currentCurrency})
+                  </span>
                   <ChevronDown className="w-3.5 h-3.5 text-[#94A3B8]" />
                 </div>
               </button>
@@ -605,18 +730,21 @@ function QuickAddSheetContent({
                       key={a.id}
                       type="button"
                       onClick={() => {
-                        setSelectedAccountId(a.id)
-                        setIsAccountPopoverOpen(false)
+                        setSelectedAccountId(a.id);
+                        setIsAccountPopoverOpen(false);
                       }}
                       className={cn(
-                        'flex items-center justify-between p-2 rounded-lg text-xs font-medium transition-colors text-left cursor-pointer',
+                        "flex items-center justify-between p-2 rounded-lg text-xs font-medium transition-colors text-left cursor-pointer",
                         a.id === selectedAccountId
-                          ? 'bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A]'
-                          : 'hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] text-[#0F172A] dark:text-[#F8FAFC]'
+                          ? "bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A]"
+                          : "hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] text-[#0F172A] dark:text-[#F8FAFC]",
                       )}
                     >
                       <div className="flex items-center gap-2 truncate">
-                        <DynamicIcon name={a.icon || 'Wallet'} className="w-3.5 h-3.5 shrink-0" />
+                        <DynamicIcon
+                          name={a.icon || "Wallet"}
+                          className="w-3.5 h-3.5 shrink-0"
+                        />
                         <span className="truncate">{a.name}</span>
                       </div>
                       <span className="text-[10px] font-mono opacity-80 shrink-0 ml-1">
@@ -630,14 +758,20 @@ function QuickAddSheetContent({
           </PopoverPrimitive.Root>
 
           {/* 5. Category Popover */}
-          <PopoverPrimitive.Root open={isCategoryPopoverOpen} onOpenChange={setIsCategoryPopoverOpen}>
+          <PopoverPrimitive.Root
+            open={isCategoryPopoverOpen}
+            onOpenChange={setIsCategoryPopoverOpen}
+          >
             <PopoverPrimitive.Trigger asChild>
               <button
                 type="button"
                 className="flex items-center justify-between p-2.5 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors text-left cursor-pointer w-full"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <DynamicIcon name={activeCategory?.icon || 'Tag'} className="w-4 h-4 text-[#0F172A] dark:text-[#FAFAFA] shrink-0" />
+                  <DynamicIcon
+                    name={activeCategory?.icon || "Tag"}
+                    className="w-4 h-4 text-[#0F172A] dark:text-[#FAFAFA] shrink-0"
+                  />
                   <div className="flex flex-col min-w-0">
                     <span className="text-[9px] uppercase font-bold text-[#64748B] dark:text-[#94A3B8] leading-none">
                       {t.quickAdd.category}
@@ -661,17 +795,20 @@ function QuickAddSheetContent({
                       key={c.id}
                       type="button"
                       onClick={() => {
-                        setSelectedCategoryId(c.id)
-                        setIsCategoryPopoverOpen(false)
+                        setSelectedCategoryId(c.id);
+                        setIsCategoryPopoverOpen(false);
                       }}
                       className={cn(
-                        'flex items-center gap-2 p-2 rounded-lg text-xs font-medium transition-colors text-left cursor-pointer',
+                        "flex items-center gap-2 p-2 rounded-lg text-xs font-medium transition-colors text-left cursor-pointer",
                         c.id === selectedCategoryId
-                          ? 'bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A]'
-                          : 'hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] text-[#0F172A] dark:text-[#F8FAFC]'
+                          ? "bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A]"
+                          : "hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] text-[#0F172A] dark:text-[#F8FAFC]",
                       )}
                     >
-                      <DynamicIcon name={c.icon || 'Tag'} className="w-3.5 h-3.5 shrink-0" />
+                      <DynamicIcon
+                        name={c.icon || "Tag"}
+                        className="w-3.5 h-3.5 shrink-0"
+                      />
                       <span className="truncate">{c.name}</span>
                     </button>
                   ))}
@@ -722,10 +859,10 @@ function QuickAddSheetContent({
                 disabled={isScanning}
                 onClick={() => fileInputRef.current?.click()}
                 className={cn(
-                  'py-1.5 px-1 rounded-lg border text-[11px] font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none',
+                  "py-1.5 px-1 rounded-lg border text-[11px] font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none",
                   isScanning
-                    ? 'opacity-60 cursor-not-allowed bg-indigo-50 text-indigo-600 border-indigo-200 dark:bg-indigo-950/40 dark:border-indigo-800'
-                    : 'bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#0F172A] dark:text-[#F8FAFC] hover:border-indigo-400 dark:hover:border-indigo-600 border-[#E5E7EB] dark:border-[#27272A]'
+                    ? "opacity-60 cursor-not-allowed bg-indigo-50 text-indigo-600 border-indigo-200 dark:bg-indigo-950/40 dark:border-indigo-800"
+                    : "bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#0F172A] dark:text-[#F8FAFC] hover:border-indigo-400 dark:hover:border-indigo-600 border-[#E5E7EB] dark:border-[#27272A]",
                 )}
                 title={t.quickAdd.scanReceiptBtn}
               >
@@ -734,7 +871,9 @@ function QuickAddSheetContent({
                 ) : (
                   <Camera className="w-3 h-3 text-indigo-500 shrink-0" />
                 )}
-                <span className="truncate">{language === 'en' ? 'Scan' : 'Pindai'}</span>
+                <span className="truncate">
+                  {language === "en" ? "Scan" : "Pindai"}
+                </span>
               </button>
 
               {/* Breakdown Items Button */}
@@ -742,14 +881,16 @@ function QuickAddSheetContent({
                 type="button"
                 onClick={() => setShowItemsBreakdown(!showItemsBreakdown)}
                 className={cn(
-                  'py-1.5 px-1 rounded-lg border text-[11px] font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none',
+                  "py-1.5 px-1 rounded-lg border text-[11px] font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none",
                   showItemsBreakdown
-                    ? 'bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A] shadow-xs'
-                    : 'bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]'
+                    ? "bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A] shadow-xs"
+                    : "bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]",
                 )}
               >
                 <ListPlus className="w-3 h-3 shrink-0" />
-                <span className="truncate">{language === 'en' ? 'Items' : 'Rincian'}</span>
+                <span className="truncate">
+                  {language === "en" ? "Items" : "Rincian"}
+                </span>
                 {items.length > 0 && (
                   <span className="px-1 py-0.2 rounded-full bg-white/20 text-[9px] font-bold">
                     {items.length}
@@ -762,14 +903,16 @@ function QuickAddSheetContent({
                 type="button"
                 onClick={() => setShowFreeMemo(!showFreeMemo)}
                 className={cn(
-                  'py-1.5 px-1 rounded-lg border text-[11px] font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none',
+                  "py-1.5 px-1 rounded-lg border text-[11px] font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none",
                   showFreeMemo
-                    ? 'bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A] shadow-xs'
-                    : 'bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]'
+                    ? "bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A] shadow-xs"
+                    : "bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]",
                 )}
               >
                 <AlignLeft className="w-3 h-3 shrink-0" />
-                <span className="truncate">{language === 'en' ? 'Memo' : 'Memo'}</span>
+                <span className="truncate">
+                  {language === "en" ? "Memo" : "Memo"}
+                </span>
               </button>
 
               {/* Tags (#tags) Button */}
@@ -777,10 +920,10 @@ function QuickAddSheetContent({
                 type="button"
                 onClick={() => setShowTags(!showTags)}
                 className={cn(
-                  'py-1.5 px-1 rounded-lg border text-[11px] font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none',
+                  "py-1.5 px-1 rounded-lg border text-[11px] font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none",
                   showTags
-                    ? 'bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A] shadow-xs'
-                    : 'bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]'
+                    ? "bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A] shadow-xs"
+                    : "bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]",
                 )}
               >
                 <Hash className="w-3 h-3 shrink-0" />
@@ -821,16 +964,23 @@ function QuickAddSheetContent({
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ',') {
-                      e.preventDefault()
-                      const clean = tagInput.replace(/^#/, '').toLowerCase().trim()
+                    if (e.key === "Enter" || e.key === ",") {
+                      e.preventDefault();
+                      const clean = tagInput
+                        .replace(/^#/, "")
+                        .toLowerCase()
+                        .trim();
                       if (clean && !tags.includes(clean)) {
-                        setTags([...tags, clean])
-                        setTagInput('')
+                        setTags([...tags, clean]);
+                        setTagInput("");
                       }
                     }
                   }}
-                  placeholder={tags.length === 0 ? t.transactions.tagPlaceholder : '+ tag...'}
+                  placeholder={
+                    tags.length === 0
+                      ? t.transactions.tagPlaceholder
+                      : "+ tag..."
+                  }
                   className="flex-1 min-w-[120px] px-2 py-1 bg-transparent text-xs text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8] focus:outline-none"
                 />
               </div>
@@ -866,14 +1016,18 @@ function QuickAddSheetContent({
                         type="text"
                         placeholder={`Item ${idx + 1}`}
                         value={item.name}
-                        onChange={(e) => handleUpdateItem(idx, 'name', e.target.value)}
+                        onChange={(e) =>
+                          handleUpdateItem(idx, "name", e.target.value)
+                        }
                         className="flex-1 min-w-0 px-2 py-1.5 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8]"
                       />
                       <input
                         type="number"
                         placeholder="0"
                         value={item.price}
-                        onChange={(e) => handleUpdateItem(idx, 'price', e.target.value)}
+                        onChange={(e) =>
+                          handleUpdateItem(idx, "price", e.target.value)
+                        }
                         className="w-20 sm:w-24 px-2 py-1.5 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs font-mono font-bold text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8]"
                       />
                       <button
@@ -893,22 +1047,35 @@ function QuickAddSheetContent({
                 <div className="pt-2 border-t border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-2">
                   <div className="flex items-center justify-between text-[11px] font-mono">
                     <span className="text-[#64748B] dark:text-[#94A3B8]">
-                      {t.quickAdd.itemizedTotal}: <strong className="text-[#0F172A] dark:text-[#FAFAFA]">{formatCurrency(itemsTotal, currentCurrency)}</strong>
+                      {t.quickAdd.itemizedTotal}:{" "}
+                      <strong className="text-[#0F172A] dark:text-[#FAFAFA]">
+                        {formatCurrency(itemsTotal, currentCurrency)}
+                      </strong>
                     </span>
 
                     {isItemsMatching ? (
                       <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                         <Check className="w-3 h-3" />
-                        <span>{language === 'en' ? 'Matched 100%' : 'Cocok 100%'}</span>
+                        <span>
+                          {language === "en" ? "Matched 100%" : "Cocok 100%"}
+                        </span>
                       </span>
                     ) : hasRemainingUnitemized ? (
                       <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400">
-                        {t.quickAdd.unitemizedRemaining}: +{formatCurrency(remainingAmount, currentCurrency)}
+                        {t.quickAdd.unitemizedRemaining}: +
+                        {formatCurrency(remainingAmount, currentCurrency)}
                       </span>
                     ) : isItemsExceeding ? (
                       <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 flex items-center gap-1">
                         <AlertCircle className="w-3 h-3" />
-                        <span>+{formatCurrency(itemsTotal - numericAmount, currentCurrency)} ({language === 'en' ? 'Exceeds' : 'Melebihi'})</span>
+                        <span>
+                          +
+                          {formatCurrency(
+                            itemsTotal - numericAmount,
+                            currentCurrency,
+                          )}{" "}
+                          ({language === "en" ? "Exceeds" : "Melebihi"})
+                        </span>
                       </span>
                     ) : null}
                   </div>
@@ -918,13 +1085,18 @@ function QuickAddSheetContent({
                     <button
                       type="button"
                       onClick={() => {
-                        setAmountStr(String(Math.round(itemsTotal)))
-                        setError(null)
+                        setAmountStr(String(Math.round(itemsTotal)));
+                        setError(null);
                       }}
                       className="w-full py-1.5 px-2 rounded-lg bg-white dark:bg-[#121215] border border-dashed border-[#CBD5E1] dark:border-[#334155] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] text-[11px] font-medium text-[#475569] dark:text-[#CBD5E1] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                     >
                       <Check className="w-3 h-3 text-[#0D9488]" />
-                      <span>{t.quickAdd.syncTotalWithItems}: <strong>{formatCurrency(itemsTotal, currentCurrency)}</strong></span>
+                      <span>
+                        {t.quickAdd.syncTotalWithItems}:{" "}
+                        <strong>
+                          {formatCurrency(itemsTotal, currentCurrency)}
+                        </strong>
+                      </span>
                     </button>
                   )}
                 </div>
@@ -946,11 +1118,13 @@ function QuickAddSheetContent({
           )}
 
           {error && (
-            <p className="text-xs font-semibold text-[#E11D48] text-center pt-1">{error}</p>
+            <p className="text-xs font-semibold text-[#E11D48] text-center pt-1">
+              {error}
+            </p>
           )}
 
           {/* Action Footer Bar */}
-          <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#E5E7EB] dark:border-[#27272A]">
+          <div className="mt-auto flex items-center justify-between gap-2 pt-2 border-t border-[#E5E7EB] dark:border-[#27272A]">
             <button
               type="button"
               onClick={onClose}
@@ -974,5 +1148,5 @@ function QuickAddSheetContent({
         </>
       )}
     </div>
-  )
+  );
 }

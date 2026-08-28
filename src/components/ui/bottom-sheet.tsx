@@ -1,15 +1,15 @@
-'use client'
+"use client";
 
-import React, { useEffect, useState, useRef, useCallback } from 'react'
-import { X } from 'lucide-react'
-import { cn } from '@/lib/utils/cn'
+import React, { useEffect, useState, useRef, useCallback } from "react";
+import { X } from "lucide-react";
+import { cn } from "@/lib/utils/cn";
 
 interface BottomSheetProps {
-  isOpen: boolean
-  onClose: () => void
-  title?: string
-  children: React.ReactNode
-  className?: string
+  isOpen: boolean;
+  onClose: () => void;
+  title?: string;
+  children: React.ReactNode;
+  className?: string;
 }
 
 export function BottomSheet({
@@ -19,87 +19,87 @@ export function BottomSheet({
   children,
   className,
 }: BottomSheetProps) {
-  const [dragOffset, setDragOffset] = useState<number>(0)
-  const [isDragging, setIsDragging] = useState<boolean>(false)
-  const [isClosing, setIsClosing] = useState<boolean>(false)
+  const [dragOffset, setDragOffset] = useState<number>(0);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [isClosing, setIsClosing] = useState<boolean>(false);
 
-  const startYRef = useRef<number>(0)
-  const currentYRef = useRef<number>(0)
-  const startTimeRef = useRef<number>(0)
-  const isDraggingRef = useRef<boolean>(false)
+  const startYRef = useRef<number>(0);
+  const currentYRef = useRef<number>(0);
+  const startTimeRef = useRef<number>(0);
+  const isDraggingRef = useRef<boolean>(false);
 
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden'
-      setDragOffset(0)
-      setIsClosing(false)
+      document.body.style.overflow = "hidden";
+      setDragOffset(0);
+      setIsClosing(false);
     } else {
-      document.body.style.overflow = 'unset'
+      document.body.style.overflow = "unset";
     }
     return () => {
-      document.body.style.overflow = 'unset'
-    }
-  }, [isOpen])
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
 
   const handleDragStart = useCallback((clientY: number) => {
-    startYRef.current = clientY
-    currentYRef.current = clientY
-    startTimeRef.current = Date.now()
-    isDraggingRef.current = true
-    setIsDragging(true)
-  }, [])
+    startYRef.current = clientY;
+    currentYRef.current = clientY;
+    startTimeRef.current = Date.now();
+    isDraggingRef.current = true;
+    setIsDragging(true);
+  }, []);
 
   const handleDragMove = useCallback((clientY: number) => {
-    if (!isDraggingRef.current) return
-    const deltaY = clientY - startYRef.current
+    if (!isDraggingRef.current) return;
+    const deltaY = clientY - startYRef.current;
     if (deltaY > 0) {
       // Resistance factor when pulling down
-      setDragOffset(deltaY)
-      currentYRef.current = clientY
+      setDragOffset(deltaY);
+      currentYRef.current = clientY;
     } else {
-      setDragOffset(0)
+      setDragOffset(0);
     }
-  }, [])
+  }, []);
 
   const handleDragEnd = useCallback(() => {
-    if (!isDraggingRef.current) return
-    isDraggingRef.current = false
-    setIsDragging(false)
+    if (!isDraggingRef.current) return;
+    isDraggingRef.current = false;
+    setIsDragging(false);
 
-    const deltaY = currentYRef.current - startYRef.current
-    const deltaTime = Date.now() - startTimeRef.current
-    const velocity = deltaY / Math.max(deltaTime, 1)
+    const deltaY = currentYRef.current - startYRef.current;
+    const deltaTime = Date.now() - startTimeRef.current;
+    const velocity = deltaY / Math.max(deltaTime, 1);
 
     // If dragged down > 80px or swiped down quickly (velocity > 0.5)
     if (deltaY > 80 || (velocity > 0.5 && deltaY > 30)) {
-      setIsClosing(true)
+      setIsClosing(true);
       setTimeout(() => {
-        onClose()
-        setDragOffset(0)
-        setIsClosing(false)
-      }, 200)
+        onClose();
+        setDragOffset(0);
+        setIsClosing(false);
+      }, 200);
     } else {
-      setDragOffset(0)
+      setDragOffset(0);
     }
-  }, [onClose])
+  }, [onClose]);
 
   // Touch event handlers for mobile
   const onTouchStart = (e: React.TouchEvent) => {
-    handleDragStart(e.touches[0].clientY)
-  }
+    handleDragStart(e.touches[0].clientY);
+  };
 
   const onTouchMove = (e: React.TouchEvent) => {
-    handleDragMove(e.touches[0].clientY)
-  }
+    handleDragMove(e.touches[0].clientY);
+  };
 
   const onTouchEnd = () => {
-    handleDragEnd()
-  }
+    handleDragEnd();
+  };
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   // Backdrop opacity fades slightly as user pulls down
-  const backdropOpacity = Math.max(0.2, 1 - (dragOffset / 300) * 0.7)
+  const backdropOpacity = Math.max(0.2, 1 - (dragOffset / 300) * 0.7);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center p-0 md:p-4">
@@ -113,16 +113,16 @@ export function BottomSheet({
       {/* Sheet Container */}
       <div
         className={cn(
-          'relative w-full max-w-lg bg-white dark:bg-[#121215] border-t md:border border-[#E5E7EB] dark:border-[#27272A] rounded-t-2xl md:rounded-xl shadow-2xl z-10 h-[88vh] md:h-auto max-h-[94vh] flex flex-col overflow-hidden will-change-transform',
-          !isDragging && 'transition-transform duration-200 ease-out',
-          className
+          "relative w-full max-w-lg bg-white dark:bg-[#121215] border-t md:border border-[#E5E7EB] dark:border-[#27272A] rounded-t-2xl md:rounded-xl shadow-2xl z-10 max-h-[88dvh] md:h-auto flex flex-col overflow-hidden will-change-transform",
+          !isDragging && "transition-transform duration-200 ease-out",
+          className,
         )}
         style={{
           transform: isClosing
-            ? 'translateY(100%)'
+            ? "translateY(100%)"
             : dragOffset > 0
-            ? `translateY(${dragOffset}px)`
-            : undefined,
+              ? `translateY(${dragOffset}px)`
+              : undefined,
         }}
       >
         {/* Mobile handle indicator with generous touch target */}
@@ -155,8 +155,10 @@ export function BottomSheet({
         </div>
 
         {/* Scrollable Body */}
-        <div className="px-5 py-4 overflow-y-auto pb-8 md:pb-5">{children}</div>
+        <div className="flex-1 flex flex-col min-h-0 px-5 py-4 overflow-y-auto overscroll-contain pb-8 md:pb-5">
+          {children}
+        </div>
       </div>
     </div>
-  )
+  );
 }
