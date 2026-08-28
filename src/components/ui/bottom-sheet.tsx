@@ -113,7 +113,7 @@ export function BottomSheet({
       {/* Sheet Container */}
       <div
         className={cn(
-          'relative w-full max-w-lg bg-white dark:bg-[#121215] border-t md:border border-[#E5E7EB] dark:border-[#27272A] rounded-t-2xl md:rounded-xl shadow-2xl z-10 max-h-[94vh] flex flex-col overflow-hidden will-change-transform',
+          'relative w-full max-w-lg bg-white dark:bg-[#121215] border-t md:border border-[#E5E7EB] dark:border-[#27272A] rounded-t-2xl md:rounded-xl shadow-2xl z-10 h-[88vh] md:h-auto max-h-[94vh] flex flex-col overflow-hidden will-change-transform',
           !isDragging && 'transition-transform duration-200 ease-out',
           className
         )}

@@ -84,7 +84,45 @@ export async function getTransactions(params: TransactionFilterParams = {}): Pro
     return []
   }
 
-  return (data as unknown as EnrichedTransaction[]) || []
+  const rawTransactions = (data as unknown as EnrichedTransaction[]) || []
+
+  // Check and filter out orphan transactions linked to deleted debts or goals
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: activeDebts } = await (supabase.from('debts') as any).select('id')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: activeGoals } = await (supabase.from('savings_goals') as any).select('id')
+
+  const activeDebtIds = new Set((activeDebts || []).map((d: { id: string }) => d.id))
+  const activeGoalIds = new Set((activeGoals || []).map((g: { id: string }) => g.id))
+
+  const orphanIdsToDelete: string[] = []
+
+  const validTransactions = rawTransactions.filter((tx) => {
+    const desc = tx.description || ''
+    const debtRefMatch = desc.match(/\[Ref:debt-([^\]]+)\]/)
+    if (debtRefMatch && !activeDebtIds.has(debtRefMatch[1])) {
+      orphanIdsToDelete.push(tx.id)
+      return false
+    }
+    const goalRefMatch = desc.match(/\[Ref:goal-([^\]]+)\]/)
+    if (goalRefMatch && !activeGoalIds.has(goalRefMatch[1])) {
+      orphanIdsToDelete.push(tx.id)
+      return false
+    }
+    return true
+  })
+
+  // Asynchronously purge orphan transactions from DB
+  if (orphanIdsToDelete.length > 0) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(supabase.from('transactions') as any)
+      .delete()
+      .in('id', orphanIdsToDelete)
+      .then(() => {})
+      .catch(() => {})
+  }
+
+  return validTransactions
 }
 
 export async function getTransactionById(id: string): Promise<EnrichedTransaction | null> {

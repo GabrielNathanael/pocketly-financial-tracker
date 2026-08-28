@@ -227,6 +227,24 @@ export function ReportsView({
   ]);
 
   // Aggregate Current Period Totals Normalized to Display Currency
+  // Helper to identify savings allocation / withdrawal transfers (not operational consumption)
+  const isSavingsTransfer = (tx: {
+    category?: { name?: string } | null;
+    description?: string | null;
+  }) => {
+    const catName = (tx.category?.name || "").toLowerCase();
+    const desc = tx.description || "";
+    return (
+      catName === "savings" ||
+      catName === "tabungan" ||
+      catName === "alokasi tabungan" ||
+      desc.includes("[Ref:goal-") ||
+      desc.startsWith("Alokasi Tabungan:") ||
+      desc.startsWith("Penarikan Tabungan:")
+    );
+  };
+
+  // Aggregate Current Period Totals Normalized to Display Currency
   const {
     totalIncome,
     totalExpense,
@@ -239,6 +257,11 @@ export function ReportsView({
     let exp = 0;
 
     currentPeriodTx.forEach((tx) => {
+      // Exclude savings goal deposits/withdrawals from operational burn/revenue
+      if (isSavingsTransfer(tx)) {
+        return;
+      }
+
       const converted = convertAmount(
         tx.amount,
         tx.currency || tx.account?.currency || "IDR",
@@ -281,6 +304,10 @@ export function ReportsView({
     let exp = 0;
 
     priorPeriodTx.forEach((tx) => {
+      if (isSavingsTransfer(tx)) {
+        return;
+      }
+
       const converted = convertAmount(
         tx.amount,
         tx.currency || tx.account?.currency || "IDR",
@@ -315,14 +342,14 @@ export function ReportsView({
     return ((totalIncome - priorTotalIncome) / priorTotalIncome) * 100;
   }, [totalIncome, priorTotalIncome]);
 
-  // Expense Categories Breakdown (Always full for print & screen)
+  // Expense Categories Breakdown (Always full for print & screen, excludes savings transfers)
   const allExpenseCategories = useMemo(() => {
     const map = new Map<
       string,
       { id: string; category: Category | null; total: number; count: number }
     >();
     currentPeriodTx.forEach((tx) => {
-      if (tx.type === "expense") {
+      if (tx.type === "expense" && !isSavingsTransfer(tx)) {
         const catId = tx.category_id || "uncategorized";
         const existing = map.get(catId) || {
           id: catId,
@@ -350,14 +377,14 @@ export function ReportsView({
     }));
   }, [currentPeriodTx, totalExpense, displayCurrency, rates]);
 
-  // Income Categories Breakdown (Always full for print & screen)
+  // Income Categories Breakdown (Always full for print & screen, excludes savings withdrawals)
   const allIncomeCategories = useMemo(() => {
     const map = new Map<
       string,
       { id: string; category: Category | null; total: number; count: number }
     >();
     currentPeriodTx.forEach((tx) => {
-      if (tx.type === "income") {
+      if (tx.type === "income" && !isSavingsTransfer(tx)) {
         const catId = tx.category_id || "uncategorized";
         const existing = map.get(catId) || {
           id: catId,
@@ -400,7 +427,7 @@ export function ReportsView({
     >();
 
     currentPeriodTx.forEach((tx) => {
-      if (tx.type === "expense") {
+      if (tx.type === "expense" && !isSavingsTransfer(tx)) {
         const accId = tx.account_id || "unknown";
         const existing = map.get(accId) || {
           account: tx.account || null,
@@ -456,7 +483,7 @@ export function ReportsView({
   // Top 5 / Top 10 Expenses
   const topExpenses = useMemo(() => {
     return [...currentPeriodTx]
-      .filter((tx) => tx.type === "expense")
+      .filter((tx) => tx.type === "expense" && !isSavingsTransfer(tx))
       .map((tx) => ({
         ...tx,
         convertedAmount: convertAmount(
@@ -484,6 +511,7 @@ export function ReportsView({
         let exp = 0;
 
         currentPeriodTx.forEach((tx) => {
+          if (isSavingsTransfer(tx)) return;
           const tDate = parseISO(tx.transaction_date);
           if (isWithinInterval(tDate, { start: mStart, end: mEnd })) {
             const val = convertAmount(
@@ -519,6 +547,7 @@ export function ReportsView({
         let exp = 0;
 
         currentPeriodTx.forEach((tx) => {
+          if (isSavingsTransfer(tx)) return;
           const tDate = parseISO(tx.transaction_date);
           if (isWithinInterval(tDate, { start: cStart, end: cEnd })) {
             const val = convertAmount(

@@ -266,19 +266,13 @@ export async function deleteDebt(id: string) {
     .eq('user_id', user.id)
     .ilike('description', `%[Ref:debt-${id}]%`)
 
-  // Fallback: If created before Ref tags, search by standard initial description
+  // Fallback: If created before Ref tags, search by counterparty name
   if (debt) {
-    const fallbackDesc =
-      debt.type === 'receivable'
-        ? `Pemberian Pinjaman ke ${debt.counterparty_name}%`
-        : `Pencairan Utang dari ${debt.counterparty_name}%`
-
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase.from('transactions') as any)
       .delete()
       .eq('user_id', user.id)
-      .eq('amount', debt.initial_amount)
-      .ilike('description', fallbackDesc)
+      .or(`description.ilike.%Pemberian Pinjaman ke ${debt.counterparty_name}%,description.ilike.%Pencairan Utang dari ${debt.counterparty_name}%,description.ilike.%${debt.counterparty_name}%`)
   }
 
   // 4. Delete the debt record (debt_payments cascade-deleted automatically)

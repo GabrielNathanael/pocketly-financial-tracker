@@ -560,6 +560,44 @@ export interface Database {
           created_at?: string
         }
       }
+      pinned_templates: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          account_id: string
+          category_id: string
+          type: 'income' | 'expense'
+          amount: number
+          currency: CurrencyCode
+          description: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string
+          name: string
+          account_id: string
+          category_id: string
+          type: 'income' | 'expense'
+          amount: number
+          currency?: CurrencyCode
+          description?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          account_id?: string
+          category_id?: string
+          type?: 'income' | 'expense'
+          amount?: number
+          currency?: CurrencyCode
+          description?: string | null
+          created_at?: string
+        }
+      }
     }
   }
 }
@@ -581,6 +619,7 @@ export type SavingsGoal = Tables<'savings_goals'>
 export type SavingsGoalDeposit = Tables<'savings_goal_deposits'>
 export type StockHolding = Tables<'stock_holdings'>
 export type StockTrade = Tables<'stock_trades'>
+export type PinnedTemplateDB = Tables<'pinned_templates'>
 
 // Joined / enriched view types
 export interface EnrichedTransaction extends Transaction {

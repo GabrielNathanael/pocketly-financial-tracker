@@ -492,7 +492,7 @@ function QuickAddSheetContent({
                 key={n}
                 type="button"
                 onClick={() => handleKeypadPress(n)}
-                className="py-3.5 sm:py-4 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-base sm:text-lg hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none"
+                className="h-13 sm:h-16 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-xl sm:text-2xl hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
               >
                 {n}
               </button>
@@ -500,9 +500,9 @@ function QuickAddSheetContent({
             <button
               type="button"
               onClick={handleKeypadBackspace}
-              className="py-3.5 sm:py-4 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] flex items-center justify-center text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none"
+              className="h-13 sm:h-16 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] flex items-center justify-center text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none"
             >
-              <Delete className="w-5 h-5" />
+              <Delete className="w-6 h-6" />
             </button>
 
             {['4', '5', '6'].map((n) => (
@@ -510,7 +510,7 @@ function QuickAddSheetContent({
                 key={n}
                 type="button"
                 onClick={() => handleKeypadPress(n)}
-                className="py-3.5 sm:py-4 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-base sm:text-lg hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none"
+                className="h-13 sm:h-16 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-xl sm:text-2xl hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
               >
                 {n}
               </button>
@@ -518,7 +518,7 @@ function QuickAddSheetContent({
             <button
               type="button"
               onClick={() => handleKeypadPress('000')}
-              className="py-3.5 sm:py-4 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-xs sm:text-sm hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none"
+              className="h-13 sm:h-16 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-sm sm:text-base hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
             >
               .000
             </button>
@@ -528,7 +528,7 @@ function QuickAddSheetContent({
                 key={n}
                 type="button"
                 onClick={() => handleKeypadPress(n)}
-                className="py-3.5 sm:py-4 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-base sm:text-lg hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none"
+                className="h-13 sm:h-16 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-xl sm:text-2xl hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
               >
                 {n}
               </button>
@@ -536,7 +536,7 @@ function QuickAddSheetContent({
             <button
               type="button"
               onClick={() => setAmountStr('0')}
-              className="py-3.5 sm:py-4 rounded-xl bg-[#FFF1F2] dark:bg-[#881337]/20 text-[#E11D48] font-mono font-bold text-sm hover:bg-[#FFE4E6] dark:hover:bg-[#881337]/40 border border-[#FECDD3] dark:border-[#9F1239]/40 active:scale-95 transition-all cursor-pointer select-none"
+              className="h-13 sm:h-16 rounded-xl bg-[#FFF1F2] dark:bg-[#881337]/20 text-[#E11D48] font-mono font-bold text-base sm:text-lg hover:bg-[#FFE4E6] dark:hover:bg-[#881337]/40 border border-[#FECDD3] dark:border-[#9F1239]/40 active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
             >
               C
             </button>
@@ -544,23 +544,23 @@ function QuickAddSheetContent({
             <button
               type="button"
               onClick={() => handleKeypadPress('00')}
-              className="py-3.5 sm:py-4 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-sm hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none"
+              className="h-13 sm:h-16 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-base sm:text-lg hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
             >
               00
             </button>
             <button
               type="button"
               onClick={() => handleKeypadPress('0')}
-              className="py-3.5 sm:py-4 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-base sm:text-lg hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none"
+              className="h-13 sm:h-16 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-xl sm:text-2xl hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
             >
               0
             </button>
             <button
               type="button"
               onClick={() => setIsNumpadOpen(false)}
-              className="col-span-2 py-3.5 sm:py-4 rounded-xl bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] font-bold text-xs flex items-center justify-center gap-1.5 hover:opacity-90 active:scale-95 shadow-md transition-all cursor-pointer select-none"
+              className="col-span-2 h-13 sm:h-16 rounded-xl bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] font-bold text-sm sm:text-base flex items-center justify-center gap-1.5 hover:opacity-90 active:scale-95 shadow-md transition-all cursor-pointer select-none"
             >
-              <Check className="w-4 h-4 stroke-[3]" />
+              <Check className="w-5 h-5 stroke-[3]" />
               <span>{language === 'en' ? 'Done' : 'Selesai'}</span>
             </button>
           </div>
