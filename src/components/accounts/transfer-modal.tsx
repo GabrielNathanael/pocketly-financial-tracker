@@ -27,7 +27,7 @@ import { useLanguage } from "@/lib/i18n/language-context";
 import { getDefaultAccountId } from "@/lib/storage/default-account";
 import { ArrowRightLeft, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-
+import { localDateToISO } from "@/lib/utils/date";
 interface TransferModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -72,10 +72,23 @@ interface TransferFormProps {
   onSuccess?: () => void;
 }
 
-function TransferForm({ accounts, defaultFromAccountId, onClose, onSuccess }: TransferFormProps) {
+function TransferForm({
+  accounts,
+  defaultFromAccountId,
+  onClose,
+  onSuccess,
+}: TransferFormProps) {
   const { language, t } = useLanguage();
-  const initialFrom = defaultFromAccountId || (accounts.find((a) => a.id === getDefaultAccountId())?.id) || accounts[0]?.id || "";
-  const initialTo = accounts.find((a) => a.id !== initialFrom)?.id || accounts[1]?.id || accounts[0]?.id || "";
+  const initialFrom =
+    defaultFromAccountId ||
+    accounts.find((a) => a.id === getDefaultAccountId())?.id ||
+    accounts[0]?.id ||
+    "";
+  const initialTo =
+    accounts.find((a) => a.id !== initialFrom)?.id ||
+    accounts[1]?.id ||
+    accounts[0]?.id ||
+    "";
   const [fromAccountId, setFromAccountId] = useState<string>(initialFrom);
   const [toAccountId, setToAccountId] = useState<string>(initialTo);
   const [amount, setAmount] = useState<string>("");
@@ -100,7 +113,7 @@ function TransferForm({ accounts, defaultFromAccountId, onClose, onSuccess }: Tr
   const pairInfo = getNaturalPairInfo(
     fromAccount?.currency || "IDR",
     toAccount?.currency || "IDR",
-    rates
+    rates,
   );
 
   const recalculateAmounts = useCallback(
@@ -109,13 +122,16 @@ function TransferForm({ accounts, defaultFromAccountId, onClose, onSuccess }: Tr
       toId: string,
       sentVal: string,
       curRates: ForexRatesMap,
-      customNatRate?: string
+      customNatRate?: string,
     ) => {
       const fromA = accounts.find((a) => a.id === fromId);
       const toA = accounts.find((a) => a.id === toId);
       if (fromA && toA && fromA.currency !== toA.currency) {
         const info = getNaturalPairInfo(fromA.currency, toA.currency, curRates);
-        const rateToUse = customNatRate !== undefined ? (parseFloat(customNatRate) || info.defaultRate) : info.defaultRate;
+        const rateToUse =
+          customNatRate !== undefined
+            ? parseFloat(customNatRate) || info.defaultRate
+            : info.defaultRate;
         const numericAmount = parseFloat(sentVal);
         if (!isNaN(numericAmount) && numericAmount > 0) {
           const converted = info.calculateReceived(numericAmount, rateToUse);
@@ -236,7 +252,9 @@ function TransferForm({ accounts, defaultFromAccountId, onClose, onSuccess }: Tr
     setError(null);
 
     if (fromAccountId === toAccountId) {
-      const err = t.transfer.sameAccountError || "Akun sumber dan tujuan tidak boleh sama";
+      const err =
+        t.transfer.sameAccountError ||
+        "Akun sumber dan tujuan tidak boleh sama";
       setError(err);
       toast.error(err);
       return;
@@ -263,8 +281,13 @@ function TransferForm({ accounts, defaultFromAccountId, onClose, onSuccess }: Tr
 
     let rawMultiplier = 1;
     if (isCrossCurrency) {
-      const recv = parseFloat(receivedAmount) || pairInfo.calculateReceived(numAmount, parseFloat(naturalRate) || pairInfo.defaultRate);
-      rawMultiplier = numAmount > 0 ? (recv / numAmount) : 1;
+      const recv =
+        parseFloat(receivedAmount) ||
+        pairInfo.calculateReceived(
+          numAmount,
+          parseFloat(naturalRate) || pairInfo.defaultRate,
+        );
+      rawMultiplier = numAmount > 0 ? recv / numAmount : 1;
     }
 
     setIsLoading(true);
@@ -277,12 +300,14 @@ function TransferForm({ accounts, defaultFromAccountId, onClose, onSuccess }: Tr
         transferFee: numFee,
         exchangeRateUsed: rawMultiplier,
         description: description.trim() || null,
-        transferDate: `${transferDate}T${new Date().toTimeString().split(" ")[0]}.000Z`,
+        transferDate: localDateToISO(transferDate),
       });
 
       if (res.error) {
         setError(res.error);
-        toast.error(t.transfer.transferFailed || "Gagal Transfer", { description: res.error });
+        toast.error(t.transfer.transferFailed || "Gagal Transfer", {
+          description: res.error,
+        });
       } else {
         toast.success(
           isCrossCurrency
@@ -297,9 +322,14 @@ function TransferForm({ accounts, defaultFromAccountId, onClose, onSuccess }: Tr
         onClose();
       }
     } catch {
-      const err = language === "en" ? "Failed to save transfer" : "Gagal menyimpan transfer";
+      const err =
+        language === "en"
+          ? "Failed to save transfer"
+          : "Gagal menyimpan transfer";
       setError(err);
-      toast.error(t.transfer.transferFailed || "Gagal Transfer", { description: err });
+      toast.error(t.transfer.transferFailed || "Gagal Transfer", {
+        description: err,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -367,7 +397,7 @@ function TransferForm({ accounts, defaultFromAccountId, onClose, onSuccess }: Tr
 
       <div className="flex flex-col gap-2.5">
         <Input
-          label={`${t.transfer.amountLabel} (${fromAccount?.currency || 'IDR'})`}
+          label={`${t.transfer.amountLabel} (${fromAccount?.currency || "IDR"})`}
           type="number"
           step="any"
           placeholder="0"
@@ -378,13 +408,13 @@ function TransferForm({ accounts, defaultFromAccountId, onClose, onSuccess }: Tr
           className="font-mono font-bold text-sm tnum"
           rightIcon={
             <span className="text-xs font-mono font-bold text-[#94A3B8]">
-              {fromAccount?.currency || 'IDR'}
+              {fromAccount?.currency || "IDR"}
             </span>
           }
         />
 
         <Input
-          label={`${t.transfer.adminFeeLabel || (language === "en" ? "Admin Fee (Optional)" : "Biaya Admin (Opsional)")} (${fromAccount?.currency || 'IDR'})`}
+          label={`${t.transfer.adminFeeLabel || (language === "en" ? "Admin Fee (Optional)" : "Biaya Admin (Opsional)")} (${fromAccount?.currency || "IDR"})`}
           type="number"
           step="any"
           placeholder="0"
@@ -393,7 +423,7 @@ function TransferForm({ accounts, defaultFromAccountId, onClose, onSuccess }: Tr
           className="font-mono text-sm tnum"
           rightIcon={
             <span className="text-xs font-mono font-bold text-[#94A3B8]">
-              {fromAccount?.currency || 'IDR'}
+              {fromAccount?.currency || "IDR"}
             </span>
           }
         />
@@ -405,7 +435,10 @@ function TransferForm({ accounts, defaultFromAccountId, onClose, onSuccess }: Tr
             {t.transfer.totalDeductedLabel || "Total Terpotong"}:
           </span>
           <span className="font-mono font-black">
-            {formatCurrency((parseFloat(amount) || 0) + (parseFloat(transferFee) || 0), fromAccount?.currency)}
+            {formatCurrency(
+              (parseFloat(amount) || 0) + (parseFloat(transferFee) || 0),
+              fromAccount?.currency,
+            )}
           </span>
         </div>
       )}
@@ -427,8 +460,12 @@ function TransferForm({ accounts, defaultFromAccountId, onClose, onSuccess }: Tr
               />
               <span>
                 {isFetchingRates
-                  ? (language === "en" ? "Updating..." : "Memperbarui...")
-                  : (language === "en" ? "Sync Rates" : "Sinkron Kurs")}
+                  ? language === "en"
+                    ? "Updating..."
+                    : "Memperbarui..."
+                  : language === "en"
+                    ? "Sync Rates"
+                    : "Sinkron Kurs"}
               </span>
             </button>
           </div>
@@ -466,7 +503,11 @@ function TransferForm({ accounts, defaultFromAccountId, onClose, onSuccess }: Tr
                 {language === "en" ? "Effective Rate:" : "Kurs Berlaku:"}
               </span>
               <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                1 {pairInfo.baseCurrency} = {formatCurrency(parseFloat(naturalRate) || pairInfo.defaultRate, pairInfo.quoteCurrency)}
+                1 {pairInfo.baseCurrency} ={" "}
+                {formatCurrency(
+                  parseFloat(naturalRate) || pairInfo.defaultRate,
+                  pairInfo.quoteCurrency,
+                )}
               </span>
             </div>
           </div>
@@ -489,7 +530,12 @@ function TransferForm({ accounts, defaultFromAccountId, onClose, onSuccess }: Tr
           rows={2}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder={t.transfer.notePlaceholder || (language === 'en' ? 'e.g. Monthly savings, Wise FX conversion, family transfer...' : 'Contoh: Tabungan bulanan, konversi Wise, transfer keluarga...')}
+          placeholder={
+            t.transfer.notePlaceholder ||
+            (language === "en"
+              ? "e.g. Monthly savings, Wise FX conversion, family transfer..."
+              : "Contoh: Tabungan bulanan, konversi Wise, transfer keluarga...")
+          }
           className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#F8FAFC] placeholder:text-[#94A3B8] focus:outline-none focus:ring-1 focus:ring-[#0F172A] dark:focus:ring-white resize-y min-h-[56px] max-h-[160px] transition-colors"
         />
       </div>

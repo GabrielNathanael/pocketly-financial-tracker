@@ -39,7 +39,7 @@ import {
 import { cn } from "@/lib/utils/cn";
 import { toast } from "sonner";
 import { scanReceipt } from "@/lib/ocr/receipt-scanner";
-
+import { localDateToISO } from "@/lib/utils/date";
 interface QuickAddSheetProps {
   isOpen: boolean;
   onClose: () => void;
@@ -407,7 +407,7 @@ function QuickAddSheetContent({
         currency: currentCurrency,
         description: finalDesc,
         tags: finalTags.length > 0 ? finalTags : undefined,
-        transactionDate: `${txDate}T${new Date().toTimeString().split(" ")[0]}.000Z`,
+        transactionDate: localDateToISO(txDate),
       });
 
       if (res.error) {

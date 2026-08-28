@@ -19,6 +19,7 @@ import { useLanguage } from "@/lib/i18n/language-context";
 import { getDefaultAccountId } from "@/lib/storage/default-account";
 import { Wallet, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { localDateToISO } from "@/lib/utils/date";
 
 interface DebtPaymentModalProps {
   isOpen: boolean;
@@ -122,7 +123,7 @@ export function DebtPaymentModal({
       const res = await addDebtPayment({
         debtId: debt.id,
         amount: numericAmount,
-        paymentDate: `${paymentDate}T${new Date().toTimeString().split(" ")[0]}.000Z`,
+        paymentDate: localDateToISO(paymentDate),
         accountId: selectedAccountId,
       });
 

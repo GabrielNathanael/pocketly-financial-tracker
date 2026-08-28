@@ -1,16 +1,25 @@
-'use client'
+"use client";
 
-import React, { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import * as PopoverPrimitive from '@radix-ui/react-popover'
-import { Account, Category, EnrichedTransaction, TransactionType } from '@/types/database'
-import { createTransaction, updateTransaction, deleteTransaction } from '@/actions/transactions'
-import { DatePicker } from '@/components/ui/date-picker'
-import { DynamicIcon } from '@/components/ui/dynamic-icon'
-import { ConfirmDialog } from '@/components/ui/confirm-dialog'
-import { useLanguage } from '@/lib/i18n/language-context'
-import { useUndo } from '@/lib/context/undo-context'
-import { formatCurrency } from '@/lib/utils/currency'
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import * as PopoverPrimitive from "@radix-ui/react-popover";
+import {
+  Account,
+  Category,
+  EnrichedTransaction,
+  TransactionType,
+} from "@/types/database";
+import {
+  createTransaction,
+  updateTransaction,
+  deleteTransaction,
+} from "@/actions/transactions";
+import { DatePicker } from "@/components/ui/date-picker";
+import { DynamicIcon } from "@/components/ui/dynamic-icon";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useLanguage } from "@/lib/i18n/language-context";
+import { useUndo } from "@/lib/context/undo-context";
+import { formatCurrency } from "@/lib/utils/currency";
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -29,75 +38,79 @@ import {
   Camera,
   Loader2,
   Calculator,
-} from 'lucide-react'
-import { cn } from '@/lib/utils/cn'
-import { toast } from 'sonner'
-import { savePinnedTemplate } from '@/lib/storage/pinned-templates'
-import { scanReceipt } from '@/lib/ocr/receipt-scanner'
-import { getDefaultAccountId } from '@/lib/storage/default-account'
+} from "lucide-react";
+import { cn } from "@/lib/utils/cn";
+import { toast } from "sonner";
+import { savePinnedTemplate } from "@/lib/storage/pinned-templates";
+import { scanReceipt } from "@/lib/ocr/receipt-scanner";
+import { getDefaultAccountId } from "@/lib/storage/default-account";
+import { localDateToISO } from "@/lib/utils/date";
 
 interface ItemRow {
-  name: string
-  price: string
+  name: string;
+  price: string;
 }
 
 interface TransactionFormProps {
-  initialData?: EnrichedTransaction | null
-  accounts: Account[]
-  categories: Category[]
-  onSuccess?: () => void
+  initialData?: EnrichedTransaction | null;
+  accounts: Account[];
+  categories: Category[];
+  onSuccess?: () => void;
 }
 
-function parseTransactionDescription(rawDesc?: string | null, rawTags?: string[]) {
+function parseTransactionDescription(
+  rawDesc?: string | null,
+  rawTags?: string[],
+) {
   if (!rawDesc && (!rawTags || rawTags.length === 0)) {
-    return { baseDescription: '', items: [], memo: '', tags: [] }
+    return { baseDescription: "", items: [], memo: "", tags: [] };
   }
 
-  let text = rawDesc || ''
-  const items: ItemRow[] = []
-  let memo = ''
-  const tagsSet = new Set<string>(rawTags || [])
+  let text = rawDesc || "";
+  const items: ItemRow[] = [];
+  let memo = "";
+  const tagsSet = new Set<string>(rawTags || []);
 
   // Extract [Items: ...]
-  const itemsMatch = text.match(/\[Items:\s*([^\]]+)\]/)
+  const itemsMatch = text.match(/\[Items:\s*([^\]]+)\]/);
   if (itemsMatch) {
-    const rawItems = itemsMatch[1].split(',')
+    const rawItems = itemsMatch[1].split(",");
     for (const item of rawItems) {
-      const parts = item.split('(')
-      const name = parts[0]?.trim() || ''
-      let price = ''
+      const parts = item.split("(");
+      const name = parts[0]?.trim() || "";
+      let price = "";
       if (parts[1]) {
-        price = parts[1].replace(/[^0-9.]/g, '')
+        price = parts[1].replace(/[^0-9.]/g, "");
       }
       if (name) {
-        items.push({ name, price })
+        items.push({ name, price });
       }
     }
-    text = text.replace(itemsMatch[0], '').trim()
+    text = text.replace(itemsMatch[0], "").trim();
   }
 
   // Extract [Memo: ...]
-  const memoMatch = text.match(/\[Memo:\s*([^\]]+)\]/)
+  const memoMatch = text.match(/\[Memo:\s*([^\]]+)\]/);
   if (memoMatch) {
-    memo = memoMatch[1].trim()
-    text = text.replace(memoMatch[0], '').trim()
+    memo = memoMatch[1].trim();
+    text = text.replace(memoMatch[0], "").trim();
   }
 
   // Extract inline hashtags #tag
-  const inlineTags = text.match(/#(\w+)/g)
+  const inlineTags = text.match(/#(\w+)/g);
   if (inlineTags) {
     inlineTags.forEach((t) => {
-      tagsSet.add(t.replace('#', '').toLowerCase())
-    })
-    text = text.replace(/#(\w+)/g, '').trim()
+      tagsSet.add(t.replace("#", "").toLowerCase());
+    });
+    text = text.replace(/#(\w+)/g, "").trim();
   }
 
   return {
-    baseDescription: text.replace(/\s+/g, ' ').trim(),
+    baseDescription: text.replace(/\s+/g, " ").trim(),
     items,
     memo,
     tags: Array.from(tagsSet),
-  }
+  };
 }
 
 export function TransactionForm({
@@ -106,243 +119,293 @@ export function TransactionForm({
   categories,
   onSuccess,
 }: TransactionFormProps) {
-  const router = useRouter()
-  const { language, t } = useLanguage()
-  const { queueDelete } = useUndo()
-  const isEditing = !!initialData
+  const router = useRouter();
+  const { language, t } = useLanguage();
+  const { queueDelete } = useUndo();
+  const isEditing = !!initialData;
 
-  const parsed = parseTransactionDescription(initialData?.description, initialData?.tags)
+  const parsed = parseTransactionDescription(
+    initialData?.description,
+    initialData?.tags,
+  );
 
-  const [type, setType] = useState<TransactionType>(initialData?.type || 'expense')
+  const [type, setType] = useState<TransactionType>(
+    initialData?.type || "expense",
+  );
   const [amountStr, setAmountStr] = useState<string>(
-    initialData?.amount ? String(Math.round(Number(initialData.amount))) : '0'
-  )
-  const [isNumpadOpen, setIsNumpadOpen] = useState(false)
+    initialData?.amount ? String(Math.round(Number(initialData.amount))) : "0",
+  );
+  const [isNumpadOpen, setIsNumpadOpen] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState<string>(
-    initialData?.account_id || (accounts.find((a) => a.id === getDefaultAccountId())?.id ?? accounts[0]?.id ?? '')
-  )
+    initialData?.account_id ||
+      (accounts.find((a) => a.id === getDefaultAccountId())?.id ??
+        accounts[0]?.id ??
+        ""),
+  );
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>(
     initialData?.category_id ||
-      (categories.find((c) => c.type === (initialData?.type || 'expense'))?.id ?? categories[0]?.id ?? '')
-  )
-  const [description, setDescription] = useState<string>(parsed.baseDescription)
+      (categories.find((c) => c.type === (initialData?.type || "expense"))
+        ?.id ??
+        categories[0]?.id ??
+        ""),
+  );
+  const [description, setDescription] = useState<string>(
+    parsed.baseDescription,
+  );
   const [txDate, setTxDate] = useState<string>(
     initialData?.transaction_date
-      ? initialData.transaction_date.split('T')[0]
-      : new Date().toISOString().split('T')[0]
-  )
-  const [isPinned, setIsPinned] = useState<boolean>(false)
+      ? initialData.transaction_date.split("T")[0]
+      : new Date().toISOString().split("T")[0],
+  );
+  const [isPinned, setIsPinned] = useState<boolean>(false);
 
   // Sub-items breakdown
-  const [items, setItems] = useState<ItemRow[]>(parsed.items)
-  const [showItemsBreakdown, setShowItemsBreakdown] = useState<boolean>(parsed.items.length > 0)
+  const [items, setItems] = useState<ItemRow[]>(parsed.items);
+  const [showItemsBreakdown, setShowItemsBreakdown] = useState<boolean>(
+    parsed.items.length > 0,
+  );
 
   // Free text memo
-  const [freeTextMemo, setFreeTextMemo] = useState<string>(parsed.memo)
-  const [showFreeMemo, setShowFreeMemo] = useState<boolean>(!!parsed.memo)
+  const [freeTextMemo, setFreeTextMemo] = useState<string>(parsed.memo);
+  const [showFreeMemo, setShowFreeMemo] = useState<boolean>(!!parsed.memo);
 
   // Tags (#tags)
-  const [tags, setTags] = useState<string[]>(parsed.tags)
-  const [showTags, setShowTags] = useState<boolean>(parsed.tags.length > 0)
-  const [tagInput, setTagInput] = useState<string>('')
+  const [tags, setTags] = useState<string[]>(parsed.tags);
+  const [showTags, setShowTags] = useState<boolean>(parsed.tags.length > 0);
+  const [tagInput, setTagInput] = useState<string>("");
 
   // OCR Scan State
-  const [isScanning, setIsScanning] = useState(false)
-  const [ocrProgress, setOcrProgress] = useState<number>(0)
-  const [ocrStatus, setOcrStatus] = useState<string>('')
-  const fileInputRef = React.useRef<HTMLInputElement>(null)
+  const [isScanning, setIsScanning] = useState(false);
+  const [ocrProgress, setOcrProgress] = useState<number>(0);
+  const [ocrStatus, setOcrStatus] = useState<string>("");
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Popover controls
-  const [isAccountPopoverOpen, setIsAccountPopoverOpen] = useState(false)
-  const [isCategoryPopoverOpen, setIsCategoryPopoverOpen] = useState(false)
+  const [isAccountPopoverOpen, setIsAccountPopoverOpen] = useState(false);
+  const [isCategoryPopoverOpen, setIsCategoryPopoverOpen] = useState(false);
 
-  const [isLoading, setIsLoading] = useState(false)
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Receipt OCR File Handler
-  const handleReceiptUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  const handleReceiptUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    setIsScanning(true)
-    setOcrProgress(10)
-    setOcrStatus(t.quickAdd.scanningReceipt)
+    setIsScanning(true);
+    setOcrProgress(10);
+    setOcrStatus(t.quickAdd.scanningReceipt);
 
     try {
       const parsed = await scanReceipt(file, (pct, status) => {
-        setOcrProgress(pct)
-        setOcrStatus(status)
-      })
+        setOcrProgress(pct);
+        setOcrStatus(status);
+      });
 
       if (parsed.amount > 0) {
-        setAmountStr(String(Math.round(parsed.amount)))
+        setAmountStr(String(Math.round(parsed.amount)));
       }
       if (parsed.description) {
-        setDescription(parsed.description)
+        setDescription(parsed.description);
       }
       if (parsed.date) {
-        setTxDate(parsed.date)
+        setTxDate(parsed.date);
       }
       if (parsed.items && parsed.items.length > 0) {
-        setItems(parsed.items)
-        setShowItemsBreakdown(true)
+        setItems(parsed.items);
+        setShowItemsBreakdown(true);
       }
 
-      toast.success(t.quickAdd.scanSuccess)
+      toast.success(t.quickAdd.scanSuccess);
     } catch (err: any) {
-      console.error('OCR Error:', err)
-      toast.error(t.quickAdd.scanFailed)
+      console.error("OCR Error:", err);
+      toast.error(t.quickAdd.scanFailed);
     } finally {
-      setIsScanning(false)
-      setOcrProgress(0)
-      setOcrStatus('')
-      if (e.target) e.target.value = ''
+      setIsScanning(false);
+      setOcrProgress(0);
+      setOcrStatus("");
+      if (e.target) e.target.value = "";
     }
-  }
+  };
 
-  const activeAccount = accounts.find((a) => a.id === selectedAccountId) || accounts[0]
-  const activeCategory = categories.find((c) => c.id === selectedCategoryId) || categories[0]
-  const currentCurrency = activeAccount?.currency || 'IDR'
+  const activeAccount =
+    accounts.find((a) => a.id === selectedAccountId) || accounts[0];
+  const activeCategory =
+    categories.find((c) => c.id === selectedCategoryId) || categories[0];
+  const currentCurrency = activeAccount?.currency || "IDR";
 
-  const filteredCategories = categories.filter((c) => c.type === type)
+  const filteredCategories = categories.filter((c) => c.type === type);
 
   // Sub-items calculation
   const itemsTotal = items.reduce((sum, item) => {
-    const p = parseFloat(item.price) || 0
-    return sum + p
-  }, 0)
+    const p = parseFloat(item.price) || 0;
+    return sum + p;
+  }, 0);
 
   // Numeric amount is strictly driven by the main amountStr input/keypad
-  const numericAmount = parseFloat(amountStr) || 0
-  const remainingAmount = numericAmount - itemsTotal
-  const isItemsExceeding = showItemsBreakdown && items.length > 0 && itemsTotal > numericAmount && numericAmount > 0
-  const isItemsMatching = showItemsBreakdown && items.length > 0 && itemsTotal === numericAmount && numericAmount > 0
-  const hasRemainingUnitemized = showItemsBreakdown && items.length > 0 && remainingAmount > 0 && numericAmount > 0
+  const numericAmount = parseFloat(amountStr) || 0;
+  const remainingAmount = numericAmount - itemsTotal;
+  const isItemsExceeding =
+    showItemsBreakdown &&
+    items.length > 0 &&
+    itemsTotal > numericAmount &&
+    numericAmount > 0;
+  const isItemsMatching =
+    showItemsBreakdown &&
+    items.length > 0 &&
+    itemsTotal === numericAmount &&
+    numericAmount > 0;
+  const hasRemainingUnitemized =
+    showItemsBreakdown &&
+    items.length > 0 &&
+    remainingAmount > 0 &&
+    numericAmount > 0;
 
   // Quick Keypad Press (Always enabled so user can type main amount freely)
   const handleKeypadPress = (val: string) => {
-    setError(null)
-    if (amountStr === '0') {
-      if (val === '000') return
-      setAmountStr(val)
+    setError(null);
+    if (amountStr === "0") {
+      if (val === "000") return;
+      setAmountStr(val);
     } else {
-      if (amountStr.length >= 12) return
-      setAmountStr((prev) => prev + val)
+      if (amountStr.length >= 12) return;
+      setAmountStr((prev) => prev + val);
     }
-  }
+  };
 
   const handleKeypadBackspace = () => {
-    setError(null)
+    setError(null);
     if (amountStr.length <= 1) {
-      setAmountStr('0')
+      setAmountStr("0");
     } else {
-      setAmountStr((prev) => prev.slice(0, -1))
+      setAmountStr((prev) => prev.slice(0, -1));
     }
-  }
+  };
 
   // Type change
   const handleTypeChange = (newType: TransactionType) => {
-    setType(newType)
-    const matchingCats = categories.filter((c) => c.type === newType)
+    setType(newType);
+    const matchingCats = categories.filter((c) => c.type === newType);
     if (matchingCats.length > 0) {
-      setSelectedCategoryId(matchingCats[0].id)
+      setSelectedCategoryId(matchingCats[0].id);
     }
-  }
+  };
 
   // Sub-items CRUD
   const handleAddItem = () => {
-    setItems((prev) => [...prev, { name: '', price: '' }])
-  }
+    setItems((prev) => [...prev, { name: "", price: "" }]);
+  };
 
-  const handleUpdateItem = (index: number, field: keyof ItemRow, value: string) => {
+  const handleUpdateItem = (
+    index: number,
+    field: keyof ItemRow,
+    value: string,
+  ) => {
     setItems((prev) => {
-      const updated = [...prev]
-      updated[index] = { ...updated[index], [field]: value }
-      return updated
-    })
-  }
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  };
 
   const handleRemoveItem = (index: number) => {
-    setItems((prev) => prev.filter((_, i) => i !== index))
-  }
+    setItems((prev) => prev.filter((_, i) => i !== index));
+  };
 
   // Save / Update Transaction
   const handleSave = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault()
+    if (e) e.preventDefault();
 
     if (numericAmount <= 0) {
-      setError(t.quickAdd.nominal + ' > 0')
-      return
+      setError(t.quickAdd.nominal + " > 0");
+      return;
     }
 
     if (!selectedAccountId || !activeAccount) {
-      setError(t.quickAdd.selectAccount)
-      return
+      setError(t.quickAdd.selectAccount);
+      return;
     }
 
     if (!selectedCategoryId) {
-      setError(t.quickAdd.selectCategory)
-      return
+      setError(t.quickAdd.selectCategory);
+      return;
     }
 
-    if (showItemsBreakdown && items.length > 0 && itemsTotal > numericAmount && numericAmount > 0) {
-      setError(`${t.quickAdd.itemsExceedWarning} ${formatCurrency(itemsTotal - numericAmount, currentCurrency)}`)
-      return
+    if (
+      showItemsBreakdown &&
+      items.length > 0 &&
+      itemsTotal > numericAmount &&
+      numericAmount > 0
+    ) {
+      setError(
+        `${t.quickAdd.itemsExceedWarning} ${formatCurrency(itemsTotal - numericAmount, currentCurrency)}`,
+      );
+      return;
     }
 
     // Client-side Strict Non-Negative Balance Guard for Expense
-    if (!isEditing && type === 'expense' && activeAccount) {
-      const currentBal = Number(activeAccount.current_balance) || 0
+    if (!isEditing && type === "expense" && activeAccount) {
+      const currentBal = Number(activeAccount.current_balance) || 0;
       if (currentBal - numericAmount < 0) {
         const err =
-          language === 'en'
+          language === "en"
             ? `Insufficient balance in ${activeAccount.name} (Available: ${formatCurrency(currentBal, activeAccount.currency)}, Required: ${formatCurrency(numericAmount, activeAccount.currency)})`
-            : `Saldo ${activeAccount.name} tidak mencukupi (Tersedia: ${formatCurrency(currentBal, activeAccount.currency)}, Dibutuhkan: ${formatCurrency(numericAmount, activeAccount.currency)})`
-        setError(err)
+            : `Saldo ${activeAccount.name} tidak mencukupi (Tersedia: ${formatCurrency(currentBal, activeAccount.currency)}, Dibutuhkan: ${formatCurrency(numericAmount, activeAccount.currency)})`;
+        setError(err);
         toast.error(
           t.transactions.insufficientBalance ||
-            (language === 'en' ? 'Insufficient Balance' : 'Saldo Tidak Mencukupi'),
-          { description: err }
-        )
-        return
+            (language === "en"
+              ? "Insufficient Balance"
+              : "Saldo Tidak Mencukupi"),
+          { description: err },
+        );
+        return;
       }
     }
 
-    setIsLoading(true)
-    setError(null)
+    setIsLoading(true);
+    setError(null);
 
     // Build compound description if items or memo exist
     const defaultTypeLabel =
-      type === 'expense'
-        ? language === 'en'
-          ? 'Expense'
-          : 'Pengeluaran'
-        : language === 'en'
-          ? 'Income'
-          : 'Pemasukan'
-    let finalDesc = description.trim() || activeCategory?.name || defaultTypeLabel
+      type === "expense"
+        ? language === "en"
+          ? "Expense"
+          : "Pengeluaran"
+        : language === "en"
+          ? "Income"
+          : "Pemasukan";
+    let finalDesc =
+      description.trim() || activeCategory?.name || defaultTypeLabel;
 
     if (showItemsBreakdown && items.length > 0) {
-      const validItems = items.filter((i) => i.name.trim() && parseFloat(i.price) > 0)
+      const validItems = items.filter(
+        (i) => i.name.trim() && parseFloat(i.price) > 0,
+      );
       if (validItems.length > 0) {
         const itemsSummary = validItems
-          .map((i) => `${i.name.trim()} (${formatCurrency(parseFloat(i.price), currentCurrency)})`)
-          .join(', ')
-        finalDesc += ` [Items: ${itemsSummary}]`
+          .map(
+            (i) =>
+              `${i.name.trim()} (${formatCurrency(parseFloat(i.price), currentCurrency)})`,
+          )
+          .join(", ");
+        finalDesc += ` [Items: ${itemsSummary}]`;
       }
     }
 
     if (showFreeMemo && freeTextMemo.trim()) {
-      finalDesc += ` [Memo: ${freeTextMemo.trim()}]`
+      finalDesc += ` [Memo: ${freeTextMemo.trim()}]`;
     }
 
     try {
-      const finalTags = [...tags]
+      const finalTags = [...tags];
       if (tagInput.trim()) {
-        const clean = tagInput.replace(/^#/, '').toLowerCase().trim()
+        const clean = tagInput.replace(/^#/, "").toLowerCase().trim();
         if (clean && !finalTags.includes(clean)) {
-          finalTags.push(clean)
+          finalTags.push(clean);
         }
       }
 
@@ -354,12 +417,15 @@ export function TransactionForm({
         currency: currentCurrency,
         description: finalDesc,
         tags: finalTags.length > 0 ? finalTags : undefined,
-        transactionDate: `${txDate}T${new Date().toTimeString().split(' ')[0]}.000Z`,
-      }
+        transactionDate: localDateToISO(txDate),
+      };
 
       if (isPinned) {
         savePinnedTemplate({
-          name: description.trim() || activeCategory?.name || (type === 'expense' ? 'Pengeluaran' : 'Pemasukan'),
+          name:
+            description.trim() ||
+            activeCategory?.name ||
+            (type === "expense" ? "Pengeluaran" : "Pemasukan"),
           accountId: selectedAccountId,
           accountName: activeAccount?.name,
           categoryId: selectedCategoryId,
@@ -369,85 +435,102 @@ export function TransactionForm({
           amount: numericAmount,
           currency: currentCurrency,
           description: finalDesc,
-        })
+        });
       }
 
       if (isEditing && initialData) {
-        const res = await updateTransaction(initialData.id, payload)
+        const res = await updateTransaction(initialData.id, payload);
         if (res.error) {
-          setError(res.error)
+          setError(res.error);
           toast.error(
             t.transactions.updateFailed ||
-              (language === 'en' ? 'Failed to Update Transaction' : 'Gagal Mengubah Transaksi'),
-            { description: res.error }
-          )
-          return
+              (language === "en"
+                ? "Failed to Update Transaction"
+                : "Gagal Mengubah Transaksi"),
+            { description: res.error },
+          );
+          return;
         }
         toast.success(
-          language === 'en' ? 'Transaction updated successfully' : 'Transaksi berhasil diperbarui'
-        )
+          language === "en"
+            ? "Transaction updated successfully"
+            : "Transaksi berhasil diperbarui",
+        );
       } else {
-        const res = await createTransaction(payload)
+        const res = await createTransaction(payload);
         if (res.error) {
-          setError(res.error)
+          setError(res.error);
           toast.error(
             t.transactions.createFailed ||
-              (language === 'en' ? 'Failed to Record Transaction' : 'Gagal Mencatat Transaksi'),
-            { description: res.error }
-          )
-          return
+              (language === "en"
+                ? "Failed to Record Transaction"
+                : "Gagal Mencatat Transaksi"),
+            { description: res.error },
+          );
+          return;
         }
         toast.success(
-          language === 'en' ? 'Transaction recorded successfully' : 'Transaksi berhasil dicatat'
-        )
+          language === "en"
+            ? "Transaction recorded successfully"
+            : "Transaksi berhasil dicatat",
+        );
       }
 
       if (onSuccess) {
-        onSuccess()
+        onSuccess();
       } else {
-        router.push('/transactions')
+        router.push("/transactions");
       }
     } catch (err: any) {
-      setError(err?.message || 'Failed to save transaction')
+      setError(err?.message || "Failed to save transaction");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // Delete Transaction with Undo Snackbar
   const handleDelete = () => {
-    if (!initialData) return
-    setShowDeleteConfirm(false)
-    router.push('/transactions')
+    if (!initialData) return;
+    setShowDeleteConfirm(false);
+    router.push("/transactions");
 
     queueDelete({
       id: initialData.id,
-      title: description || activeCategory?.name || (language === 'en' ? 'Transaction' : 'Transaksi'),
+      title:
+        description ||
+        activeCategory?.name ||
+        (language === "en" ? "Transaction" : "Transaksi"),
       onExecuteDelete: async () => {
-        const res = await deleteTransaction(initialData.id)
+        const res = await deleteTransaction(initialData.id);
         if (res?.error) {
           toast.error(
             t.transactions.deleteFailed ||
-              (language === 'en' ? 'Failed to Delete Transaction' : 'Gagal Menghapus Transaksi'),
-            { description: res.error }
-          )
+              (language === "en"
+                ? "Failed to Delete Transaction"
+                : "Gagal Menghapus Transaksi"),
+            { description: res.error },
+          );
         } else {
-          router.refresh()
+          router.refresh();
         }
       },
       onUndo: () => {
-        toast.success(t.undo.transactionRestored)
-        router.refresh()
+        toast.success(t.undo.transactionRestored);
+        router.refresh();
       },
-    })
-  }
+    });
+  };
 
   return (
     <form onSubmit={handleSave} className="flex flex-col gap-4">
       {error && (
         <div className="p-3 rounded-lg bg-[#FFF1F2] dark:bg-[#881337]/20 border border-[#FECDD3] dark:border-[#9F1239]/40 text-xs text-[#E11D48] flex items-center justify-between">
           <span>{error}</span>
-          <button type="button" onClick={() => setError(null)} className="text-[#E11D48] hover:opacity-80">
+          <button
+            type="button"
+            onClick={() => setError(null)}
+            className="text-[#E11D48] hover:opacity-80"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -457,12 +540,12 @@ export function TransactionForm({
       <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A]">
         <button
           type="button"
-          onClick={() => handleTypeChange('expense')}
+          onClick={() => handleTypeChange("expense")}
           className={cn(
-            'flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer',
-            type === 'expense'
-              ? 'bg-[#E11D48] text-white shadow-xs'
-              : 'text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
+            "flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer",
+            type === "expense"
+              ? "bg-[#E11D48] text-white shadow-xs"
+              : "text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]",
           )}
         >
           <ArrowDownRight className="w-4 h-4" />
@@ -471,12 +554,12 @@ export function TransactionForm({
 
         <button
           type="button"
-          onClick={() => handleTypeChange('income')}
+          onClick={() => handleTypeChange("income")}
           className={cn(
-            'flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer',
-            type === 'income'
-              ? 'bg-[#0D9488] text-white shadow-xs'
-              : 'text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
+            "flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer",
+            type === "income"
+              ? "bg-[#0D9488] text-white shadow-xs"
+              : "text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]",
           )}
         >
           <ArrowUpRight className="w-4 h-4" />
@@ -487,10 +570,10 @@ export function TransactionForm({
       {/* 2. Amount Input & Pin Shortcut (Click to Open Numpad) */}
       <div
         className={cn(
-          'relative rounded-xl bg-white dark:bg-[#121215] border shadow-2xs overflow-hidden transition-all group',
+          "relative rounded-xl bg-white dark:bg-[#121215] border shadow-2xs overflow-hidden transition-all group",
           isNumpadOpen
-            ? 'border-[#0F172A] dark:border-[#FAFAFA] ring-2 ring-[#0F172A]/10 dark:ring-[#FAFAFA]/10'
-            : 'border-[#E5E7EB] dark:border-[#27272A]'
+            ? "border-[#0F172A] dark:border-[#FAFAFA] ring-2 ring-[#0F172A]/10 dark:ring-[#FAFAFA]/10"
+            : "border-[#E5E7EB] dark:border-[#27272A]",
         )}
       >
         <button
@@ -505,10 +588,10 @@ export function TransactionForm({
 
             <Calculator
               className={cn(
-                'w-4 h-4 transition-colors',
+                "w-4 h-4 transition-colors",
                 isNumpadOpen
-                  ? 'text-[#0F172A] dark:text-[#FAFAFA]'
-                  : 'text-[#94A3B8] group-hover:text-blue-500'
+                  ? "text-[#0F172A] dark:text-[#FAFAFA]"
+                  : "text-[#94A3B8] group-hover:text-blue-500",
               )}
             />
           </div>
@@ -519,8 +602,10 @@ export function TransactionForm({
             </span>
             <span
               className={cn(
-                'flex-1 min-w-0 text-2xl sm:text-3xl font-mono font-bold tracking-tight truncate',
-                numericAmount > 0 ? 'text-[#0F172A] dark:text-[#F8FAFC]' : 'text-[#94A3B8]'
+                "flex-1 min-w-0 text-2xl sm:text-3xl font-mono font-bold tracking-tight truncate",
+                numericAmount > 0
+                  ? "text-[#0F172A] dark:text-[#F8FAFC]"
+                  : "text-[#94A3B8]",
               )}
             >
               {formatCurrency(numericAmount, currentCurrency)}
@@ -533,16 +618,16 @@ export function TransactionForm({
           <button
             type="button"
             onClick={(e) => {
-              e.stopPropagation()
-              setIsPinned(!isPinned)
+              e.stopPropagation();
+              setIsPinned(!isPinned);
             }}
             className={cn(
-              'p-1.5 rounded-md transition-colors cursor-pointer',
+              "p-1.5 rounded-md transition-colors cursor-pointer",
               isPinned
-                ? 'text-amber-500 bg-amber-50 dark:bg-amber-950/40'
-                : 'text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
+                ? "text-amber-500 bg-amber-50 dark:bg-amber-950/40"
+                : "text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]",
             )}
-            title={isPinned ? 'Sematkan aktif' : 'Sematkan transaksi ini'}
+            title={isPinned ? "Sematkan aktif" : "Sematkan transaksi ini"}
           >
             <Pin className="w-3.5 h-3.5" />
           </button>
@@ -553,7 +638,7 @@ export function TransactionForm({
       {isNumpadOpen ? (
         <div className="flex flex-col gap-2 pt-1 animate-in fade-in-50 zoom-in-98 duration-150">
           <div className="grid grid-cols-4 gap-1.5">
-            {['1', '2', '3'].map((n) => (
+            {["1", "2", "3"].map((n) => (
               <button
                 key={n}
                 type="button"
@@ -571,7 +656,7 @@ export function TransactionForm({
               <Delete className="w-5 h-5" />
             </button>
 
-            {['4', '5', '6'].map((n) => (
+            {["4", "5", "6"].map((n) => (
               <button
                 key={n}
                 type="button"
@@ -583,13 +668,13 @@ export function TransactionForm({
             ))}
             <button
               type="button"
-              onClick={() => handleKeypadPress('000')}
+              onClick={() => handleKeypadPress("000")}
               className="py-3.5 sm:py-4 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-xs sm:text-sm hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none"
             >
               .000
             </button>
 
-            {['7', '8', '9'].map((n) => (
+            {["7", "8", "9"].map((n) => (
               <button
                 key={n}
                 type="button"
@@ -601,7 +686,7 @@ export function TransactionForm({
             ))}
             <button
               type="button"
-              onClick={() => setAmountStr('0')}
+              onClick={() => setAmountStr("0")}
               className="py-3.5 sm:py-4 rounded-xl bg-[#FFF1F2] dark:bg-[#881337]/20 text-[#E11D48] font-mono font-bold text-sm hover:bg-[#FFE4E6] dark:hover:bg-[#881337]/40 border border-[#FECDD3] dark:border-[#9F1239]/40 active:scale-95 transition-all cursor-pointer select-none"
             >
               C
@@ -609,14 +694,14 @@ export function TransactionForm({
 
             <button
               type="button"
-              onClick={() => handleKeypadPress('00')}
+              onClick={() => handleKeypadPress("00")}
               className="py-3.5 sm:py-4 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-sm hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none"
             >
               00
             </button>
             <button
               type="button"
-              onClick={() => handleKeypadPress('0')}
+              onClick={() => handleKeypadPress("0")}
               className="py-3.5 sm:py-4 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-base sm:text-lg hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none"
             >
               0
@@ -627,7 +712,7 @@ export function TransactionForm({
               className="col-span-2 py-3.5 sm:py-4 rounded-xl bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] font-bold text-xs flex items-center justify-center gap-1.5 hover:opacity-90 active:scale-95 shadow-md transition-all cursor-pointer select-none"
             >
               <Check className="w-4 h-4 stroke-[3]" />
-              <span>{language === 'en' ? 'Done' : 'Selesai'}</span>
+              <span>{language === "en" ? "Done" : "Selesai"}</span>
             </button>
           </div>
         </div>
@@ -643,10 +728,12 @@ export function TransactionForm({
                 className="w-full px-3 py-2 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs font-medium text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:border-[#0F172A] dark:focus:border-[#FAFAFA]"
               />
             </div>
-            {txDate !== new Date().toISOString().split('T')[0] && (
+            {txDate !== new Date().toISOString().split("T")[0] && (
               <button
                 type="button"
-                onClick={() => setTxDate(new Date().toISOString().split('T')[0])}
+                onClick={() =>
+                  setTxDate(new Date().toISOString().split("T")[0])
+                }
                 className="p-2 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]"
                 title="Set to today"
               >
@@ -656,7 +743,10 @@ export function TransactionForm({
           </div>
 
           {/* 4. Account Picker */}
-          <PopoverPrimitive.Root open={isAccountPopoverOpen} onOpenChange={setIsAccountPopoverOpen}>
+          <PopoverPrimitive.Root
+            open={isAccountPopoverOpen}
+            onOpenChange={setIsAccountPopoverOpen}
+          >
             <PopoverPrimitive.Trigger asChild>
               <button
                 type="button"
@@ -664,7 +754,10 @@ export function TransactionForm({
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className="w-6 h-6 rounded bg-[#F1F3F5] dark:bg-[#1A1A20] text-[#0F172A] dark:text-[#FAFAFA] flex items-center justify-center shrink-0">
-                    <DynamicIcon name={activeAccount?.icon || 'Wallet'} className="w-3.5 h-3.5" />
+                    <DynamicIcon
+                      name={activeAccount?.icon || "Wallet"}
+                      className="w-3.5 h-3.5"
+                    />
                   </div>
                   <div className="flex flex-col text-left min-w-0">
                     <span className="text-[9px] font-bold uppercase tracking-wider text-[#94A3B8]">
@@ -676,7 +769,9 @@ export function TransactionForm({
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0 text-[#64748B] dark:text-[#94A3B8]">
-                  <span className="text-[10px] font-bold">({activeAccount?.currency})</span>
+                  <span className="text-[10px] font-bold">
+                    ({activeAccount?.currency})
+                  </span>
                   <ChevronDown className="w-4 h-4" />
                 </div>
               </button>
@@ -694,18 +789,21 @@ export function TransactionForm({
                       key={acc.id}
                       type="button"
                       onClick={() => {
-                        setSelectedAccountId(acc.id)
-                        setIsAccountPopoverOpen(false)
+                        setSelectedAccountId(acc.id);
+                        setIsAccountPopoverOpen(false);
                       }}
                       className={cn(
-                        'w-full flex items-center justify-between p-2 rounded-lg text-xs transition-colors text-left cursor-pointer',
+                        "w-full flex items-center justify-between p-2 rounded-lg text-xs transition-colors text-left cursor-pointer",
                         acc.id === selectedAccountId
-                          ? 'bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A]'
-                          : 'text-[#0F172A] dark:text-[#F8FAFC] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20]'
+                          ? "bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A]"
+                          : "text-[#0F172A] dark:text-[#F8FAFC] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20]",
                       )}
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        <DynamicIcon name={acc.icon || 'Wallet'} className="w-3.5 h-3.5 shrink-0" />
+                        <DynamicIcon
+                          name={acc.icon || "Wallet"}
+                          className="w-3.5 h-3.5 shrink-0"
+                        />
                         <span className="truncate font-medium">{acc.name}</span>
                       </div>
                       <span className="text-[10px] font-bold opacity-80 shrink-0">
@@ -719,7 +817,10 @@ export function TransactionForm({
           </PopoverPrimitive.Root>
 
           {/* 5. Category Picker */}
-          <PopoverPrimitive.Root open={isCategoryPopoverOpen} onOpenChange={setIsCategoryPopoverOpen}>
+          <PopoverPrimitive.Root
+            open={isCategoryPopoverOpen}
+            onOpenChange={setIsCategoryPopoverOpen}
+          >
             <PopoverPrimitive.Trigger asChild>
               <button
                 type="button"
@@ -728,9 +829,14 @@ export function TransactionForm({
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div
                     className="w-6 h-6 rounded flex items-center justify-center shrink-0 text-white"
-                    style={{ backgroundColor: activeCategory?.color || '#3B82F6' }}
+                    style={{
+                      backgroundColor: activeCategory?.color || "#3B82F6",
+                    }}
                   >
-                    <DynamicIcon name={activeCategory?.icon || 'Tag'} className="w-3.5 h-3.5" />
+                    <DynamicIcon
+                      name={activeCategory?.icon || "Tag"}
+                      className="w-3.5 h-3.5"
+                    />
                   </div>
                   <div className="flex flex-col text-left min-w-0">
                     <span className="text-[9px] font-bold uppercase tracking-wider text-[#94A3B8]">
@@ -757,17 +863,20 @@ export function TransactionForm({
                       key={c.id}
                       type="button"
                       onClick={() => {
-                        setSelectedCategoryId(c.id)
-                        setIsCategoryPopoverOpen(false)
+                        setSelectedCategoryId(c.id);
+                        setIsCategoryPopoverOpen(false);
                       }}
                       className={cn(
-                        'w-full flex items-center gap-2 p-2 rounded-lg text-xs transition-colors text-left cursor-pointer',
+                        "w-full flex items-center gap-2 p-2 rounded-lg text-xs transition-colors text-left cursor-pointer",
                         c.id === selectedCategoryId
-                          ? 'bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A]'
-                          : 'text-[#0F172A] dark:text-[#F8FAFC] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20]'
+                          ? "bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A]"
+                          : "text-[#0F172A] dark:text-[#F8FAFC] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20]",
                       )}
                     >
-                      <DynamicIcon name={c.icon || 'Tag'} className="w-3.5 h-3.5 shrink-0" />
+                      <DynamicIcon
+                        name={c.icon || "Tag"}
+                        className="w-3.5 h-3.5 shrink-0"
+                      />
                       <span className="truncate">{c.name}</span>
                     </button>
                   ))}
@@ -818,10 +927,10 @@ export function TransactionForm({
                 disabled={isScanning}
                 onClick={() => fileInputRef.current?.click()}
                 className={cn(
-                  'py-2 px-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none',
+                  "py-2 px-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none",
                   isScanning
-                    ? 'opacity-60 cursor-not-allowed bg-indigo-50 text-indigo-600 border-indigo-200 dark:bg-indigo-950/40 dark:border-indigo-800'
-                    : 'bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#0F172A] dark:text-[#F8FAFC] hover:border-indigo-400 dark:hover:border-indigo-600 border-[#E5E7EB] dark:border-[#27272A]'
+                    ? "opacity-60 cursor-not-allowed bg-indigo-50 text-indigo-600 border-indigo-200 dark:bg-indigo-950/40 dark:border-indigo-800"
+                    : "bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#0F172A] dark:text-[#F8FAFC] hover:border-indigo-400 dark:hover:border-indigo-600 border-[#E5E7EB] dark:border-[#27272A]",
                 )}
                 title={t.quickAdd.scanReceiptBtn}
               >
@@ -830,7 +939,9 @@ export function TransactionForm({
                 ) : (
                   <Camera className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
                 )}
-                <span className="truncate">{language === 'en' ? 'Scan' : 'Pindai'}</span>
+                <span className="truncate">
+                  {language === "en" ? "Scan" : "Pindai"}
+                </span>
               </button>
 
               {/* Breakdown Items Button */}
@@ -838,14 +949,16 @@ export function TransactionForm({
                 type="button"
                 onClick={() => setShowItemsBreakdown(!showItemsBreakdown)}
                 className={cn(
-                  'py-2 px-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none',
+                  "py-2 px-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none",
                   showItemsBreakdown
-                    ? 'bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A] shadow-xs'
-                    : 'bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]'
+                    ? "bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A] shadow-xs"
+                    : "bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]",
                 )}
               >
                 <ListPlus className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">{language === 'en' ? 'Items' : 'Rincian'}</span>
+                <span className="truncate">
+                  {language === "en" ? "Items" : "Rincian"}
+                </span>
                 {items.length > 0 && (
                   <span className="px-1 py-0.2 rounded-full bg-white/20 text-[9px] font-bold">
                     {items.length}
@@ -858,14 +971,16 @@ export function TransactionForm({
                 type="button"
                 onClick={() => setShowFreeMemo(!showFreeMemo)}
                 className={cn(
-                  'py-2 px-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none',
+                  "py-2 px-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none",
                   showFreeMemo
-                    ? 'bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A] shadow-xs'
-                    : 'bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]'
+                    ? "bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A] shadow-xs"
+                    : "bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]",
                 )}
               >
                 <AlignLeft className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">{language === 'en' ? 'Memo' : 'Memo'}</span>
+                <span className="truncate">
+                  {language === "en" ? "Memo" : "Memo"}
+                </span>
               </button>
 
               {/* Tags (#tags) Button */}
@@ -873,10 +988,10 @@ export function TransactionForm({
                 type="button"
                 onClick={() => setShowTags(!showTags)}
                 className={cn(
-                  'py-2 px-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none',
+                  "py-2 px-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none",
                   showTags
-                    ? 'bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A] shadow-xs'
-                    : 'bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]'
+                    ? "bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A] shadow-xs"
+                    : "bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]",
                 )}
               >
                 <Hash className="w-3.5 h-3.5 shrink-0" />
@@ -917,16 +1032,23 @@ export function TransactionForm({
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ',') {
-                      e.preventDefault()
-                      const clean = tagInput.replace(/^#/, '').toLowerCase().trim()
+                    if (e.key === "Enter" || e.key === ",") {
+                      e.preventDefault();
+                      const clean = tagInput
+                        .replace(/^#/, "")
+                        .toLowerCase()
+                        .trim();
                       if (clean && !tags.includes(clean)) {
-                        setTags([...tags, clean])
-                        setTagInput('')
+                        setTags([...tags, clean]);
+                        setTagInput("");
                       }
                     }
                   }}
-                  placeholder={tags.length === 0 ? t.transactions.tagPlaceholder : '+ tag...'}
+                  placeholder={
+                    tags.length === 0
+                      ? t.transactions.tagPlaceholder
+                      : "+ tag..."
+                  }
                   className="flex-1 min-w-[120px] px-2 py-1 bg-transparent text-xs text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8] focus:outline-none"
                 />
               </div>
@@ -962,14 +1084,18 @@ export function TransactionForm({
                         type="text"
                         placeholder={`Item ${idx + 1}`}
                         value={item.name}
-                        onChange={(e) => handleUpdateItem(idx, 'name', e.target.value)}
+                        onChange={(e) =>
+                          handleUpdateItem(idx, "name", e.target.value)
+                        }
                         className="flex-1 min-w-0 px-2 py-1.5 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8]"
                       />
                       <input
                         type="number"
                         placeholder="0"
                         value={item.price}
-                        onChange={(e) => handleUpdateItem(idx, 'price', e.target.value)}
+                        onChange={(e) =>
+                          handleUpdateItem(idx, "price", e.target.value)
+                        }
                         className="w-20 sm:w-24 px-2 py-1.5 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs font-mono font-bold text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8]"
                       />
                       <button
@@ -989,22 +1115,35 @@ export function TransactionForm({
                 <div className="pt-2 border-t border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-2">
                   <div className="flex items-center justify-between text-[11px] font-mono">
                     <span className="text-[#64748B] dark:text-[#94A3B8]">
-                      {t.quickAdd.itemizedTotal}: <strong className="text-[#0F172A] dark:text-[#FAFAFA]">{formatCurrency(itemsTotal, currentCurrency)}</strong>
+                      {t.quickAdd.itemizedTotal}:{" "}
+                      <strong className="text-[#0F172A] dark:text-[#FAFAFA]">
+                        {formatCurrency(itemsTotal, currentCurrency)}
+                      </strong>
                     </span>
 
                     {isItemsMatching ? (
                       <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                         <Check className="w-3 h-3" />
-                        <span>{language === 'en' ? 'Matched 100%' : 'Cocok 100%'}</span>
+                        <span>
+                          {language === "en" ? "Matched 100%" : "Cocok 100%"}
+                        </span>
                       </span>
                     ) : hasRemainingUnitemized ? (
                       <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400">
-                        {t.quickAdd.unitemizedRemaining}: +{formatCurrency(remainingAmount, currentCurrency)}
+                        {t.quickAdd.unitemizedRemaining}: +
+                        {formatCurrency(remainingAmount, currentCurrency)}
                       </span>
                     ) : isItemsExceeding ? (
                       <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 flex items-center gap-1">
                         <AlertCircle className="w-3 h-3" />
-                        <span>+{formatCurrency(itemsTotal - numericAmount, currentCurrency)} ({language === 'en' ? 'Exceeds' : 'Melebihi'})</span>
+                        <span>
+                          +
+                          {formatCurrency(
+                            itemsTotal - numericAmount,
+                            currentCurrency,
+                          )}{" "}
+                          ({language === "en" ? "Exceeds" : "Melebihi"})
+                        </span>
                       </span>
                     ) : null}
                   </div>
@@ -1014,13 +1153,18 @@ export function TransactionForm({
                     <button
                       type="button"
                       onClick={() => {
-                        setAmountStr(String(Math.round(itemsTotal)))
-                        setError(null)
+                        setAmountStr(String(Math.round(itemsTotal)));
+                        setError(null);
                       }}
                       className="w-full py-1.5 px-2 rounded-lg bg-white dark:bg-[#121215] border border-dashed border-[#CBD5E1] dark:border-[#334155] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] text-[11px] font-medium text-[#475569] dark:text-[#CBD5E1] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                     >
                       <Check className="w-3 h-3 text-[#0D9488]" />
-                      <span>{t.quickAdd.syncTotalWithItems}: <strong>{formatCurrency(itemsTotal, currentCurrency)}</strong></span>
+                      <span>
+                        {t.quickAdd.syncTotalWithItems}:{" "}
+                        <strong>
+                          {formatCurrency(itemsTotal, currentCurrency)}
+                        </strong>
+                      </span>
                     </button>
                   )}
                 </div>
@@ -1041,7 +1185,11 @@ export function TransactionForm({
             </div>
           )}
 
-          {error && <p className="text-xs font-semibold text-[#E11D48] text-center pt-1">{error}</p>}
+          {error && (
+            <p className="text-xs font-semibold text-[#E11D48] text-center pt-1">
+              {error}
+            </p>
+          )}
 
           {/* 9. Actions Bar: Save, Cancel, Delete */}
           <div className="flex items-center justify-between gap-2.5 mt-2 pt-3 border-t border-[#E5E7EB] dark:border-[#27272A]">
@@ -1095,5 +1243,5 @@ export function TransactionForm({
         isLoading={false}
       />
     </form>
-  )
+  );
 }
