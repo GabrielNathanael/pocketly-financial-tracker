@@ -85,7 +85,7 @@ export function InvestmentsView({
   const [buyTicker, setBuyTicker] = useState("");
   const [buyNetAmount, setBuyNetAmount] = useState("");
   const [buyNotes, setBuyNotes] = useState("");
-  const [buyDate, setBuyDate] = useState(useState(getLocalDateString()));
+  const [buyDate, setBuyDate] = useState(getLocalDateString());
   const [isSubmittingBuy, setIsSubmittingBuy] = useState(false);
   const [buyError, setBuyError] = useState<string | null>(null);
 
@@ -93,7 +93,7 @@ export function InvestmentsView({
   const [sellHoldingId, setSellHoldingId] = useState<string>("");
   const [sellNetAmount, setSellNetAmount] = useState("");
   const [sellNotes, setSellNotes] = useState("");
-  const [sellDate, setSellDate] = useState(useState(getLocalDateString()));
+  const [sellDate, setSellDate] = useState(getLocalDateString());
   const [isSubmittingSell, setIsSubmittingSell] = useState(false);
   const [sellError, setSellError] = useState<string | null>(null);
 
