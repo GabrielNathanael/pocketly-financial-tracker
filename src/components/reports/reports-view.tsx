@@ -34,6 +34,7 @@ import {
   differenceInCalendarDays,
   eachDayOfInterval,
   eachMonthOfInterval,
+  endOfDay,
 } from "date-fns";
 import { id as idLocale, enUS } from "date-fns/locale";
 import {
@@ -140,7 +141,9 @@ export function ReportsView({
         start = customRange.start
           ? parseISO(customRange.start)
           : startOfMonth(now);
-        end = customRange.end ? parseISO(customRange.end) : endOfMonth(now);
+        end = customRange.end
+          ? endOfDay(parseISO(customRange.end))
+          : endOfMonth(now);
         const dayDiff = Math.max(1, differenceInCalendarDays(end, start));
         pEnd = new Date(start.getTime() - 86400000);
         pStart = new Date(pEnd.getTime() - dayDiff * 86400000);

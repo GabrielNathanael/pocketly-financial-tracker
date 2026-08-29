@@ -19,7 +19,7 @@ import { useLanguage } from "@/lib/i18n/language-context";
 import { getDefaultAccountId } from "@/lib/storage/default-account";
 import { Wallet, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
-import { localDateToISO } from "@/lib/utils/date";
+import { localDateToISO, getLocalDateString } from "@/lib/utils/date";
 
 interface DebtPaymentEditModalProps {
   isOpen: boolean;
@@ -94,8 +94,8 @@ function DebtPaymentEditForm({
   const [amount, setAmount] = useState<string>(String(payment.amount));
   const [paymentDate, setPaymentDate] = useState<string>(
     payment.payment_date
-      ? payment.payment_date.split("T")[0]
-      : new Date().toISOString().split("T")[0],
+      ? getLocalDateString(payment.payment_date)
+      : getLocalDateString(),
   );
   const [selectedAccountId, setSelectedAccountId] =
     useState<string>(initialAccountId);

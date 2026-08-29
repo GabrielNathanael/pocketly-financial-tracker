@@ -7,6 +7,7 @@ import { UndoSnackbar } from "@/components/ui/undo-snackbar";
 import { Toaster } from "sonner";
 import { Analytics } from "@vercel/analytics/next";
 import { PwaRegister } from "@/components/pwa/pwa-register";
+import { PinnedTemplatesAuthSync } from "@/lib/storage/pinned-templates-auth-sync";
 import "./globals.css";
 
 const jakartaSans = Plus_Jakarta_Sans({
@@ -34,7 +35,11 @@ export const metadata: Metadata = {
     ],
     shortcut: "/favicon/favicon.ico",
     apple: [
-      { url: "/favicon/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+      {
+        url: "/favicon/apple-touch-icon.png",
+        sizes: "180x180",
+        type: "image/png",
+      },
     ],
   },
   manifest: "/manifest.webmanifest",
@@ -81,6 +86,7 @@ export default function RootLayout({
             </UndoProvider>
           </LanguageProvider>
         </ThemeProvider>
+        <PinnedTemplatesAuthSync />
         <Analytics />
         <PwaRegister />
       </body>

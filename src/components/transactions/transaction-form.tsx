@@ -44,7 +44,7 @@ import { toast } from "sonner";
 import { savePinnedTemplate } from "@/lib/storage/pinned-templates";
 import { scanReceipt } from "@/lib/ocr/receipt-scanner";
 import { getDefaultAccountId } from "@/lib/storage/default-account";
-import { localDateToISO } from "@/lib/utils/date";
+import { localDateToISO, getLocalDateString } from "@/lib/utils/date";
 
 interface ItemRow {
   name: string;
@@ -154,8 +154,8 @@ export function TransactionForm({
   );
   const [txDate, setTxDate] = useState<string>(
     initialData?.transaction_date
-      ? initialData.transaction_date.split("T")[0]
-      : new Date().toISOString().split("T")[0],
+      ? getLocalDateString(initialData.transaction_date)
+      : getLocalDateString(),
   );
   const [isPinned, setIsPinned] = useState<boolean>(false);
 
@@ -728,12 +728,10 @@ export function TransactionForm({
                 className="w-full px-3 py-2 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs font-medium text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:border-[#0F172A] dark:focus:border-[#FAFAFA]"
               />
             </div>
-            {txDate !== new Date().toISOString().split("T")[0] && (
+            {txDate !== getLocalDateString() && (
               <button
                 type="button"
-                onClick={() =>
-                  setTxDate(new Date().toISOString().split("T")[0])
-                }
+                onClick={() => setTxDate(getLocalDateString())}
                 className="p-2 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]"
                 title="Set to today"
               >

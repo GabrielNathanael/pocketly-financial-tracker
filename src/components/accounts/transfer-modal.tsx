@@ -27,7 +27,7 @@ import { useLanguage } from "@/lib/i18n/language-context";
 import { getDefaultAccountId } from "@/lib/storage/default-account";
 import { ArrowRightLeft, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import { localDateToISO } from "@/lib/utils/date";
+import { localDateToISO, getLocalDateString } from "@/lib/utils/date";
 interface TransferModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -96,9 +96,8 @@ function TransferForm({
   const [receivedAmount, setReceivedAmount] = useState<string>("");
   const [naturalRate, setNaturalRate] = useState<string>("1");
   const [description, setDescription] = useState<string>("");
-  const [transferDate, setTransferDate] = useState<string>(
-    new Date().toISOString().split("T")[0],
-  );
+  const [transferDate, setTransferDate] =
+    useState<string>(getLocalDateString());
   const [rates, setRates] = useState<ForexRatesMap>(DEFAULT_FALLBACK_RATES);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isFetchingRates, setIsFetchingRates] = useState<boolean>(false);
@@ -301,6 +300,7 @@ function TransferForm({
         exchangeRateUsed: rawMultiplier,
         description: description.trim() || null,
         transferDate: localDateToISO(transferDate),
+        transferDateLocal: getLocalDateString(),
       });
 
       if (res.error) {

@@ -19,7 +19,7 @@ import { useLanguage } from "@/lib/i18n/language-context";
 import { getDefaultAccountId } from "@/lib/storage/default-account";
 import { Wallet, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
-import { localDateToISO } from "@/lib/utils/date";
+import { localDateToISO, getLocalDateString } from "@/lib/utils/date";
 
 interface DebtPaymentModalProps {
   isOpen: boolean;
@@ -39,9 +39,7 @@ export function DebtPaymentModal({
   const { language, t } = useLanguage();
 
   const [amount, setAmount] = useState<string>("");
-  const [paymentDate, setPaymentDate] = useState<string>(
-    new Date().toISOString().split("T")[0],
-  );
+  const [paymentDate, setPaymentDate] = useState<string>(getLocalDateString());
   const [selectedAccountId, setSelectedAccountId] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

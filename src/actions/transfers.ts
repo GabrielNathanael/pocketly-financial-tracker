@@ -1,92 +1,99 @@
-'use server'
+"use server";
 
-import { revalidatePath } from 'next/cache'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { EnrichedTransfer, CurrencyCode } from '@/types/database'
-import { transferSchema } from '@/lib/validations/transfer'
-import { formatCurrency } from '@/lib/utils/currency'
+import { revalidatePath } from "next/cache";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { EnrichedTransfer, CurrencyCode } from "@/types/database";
+import { transferSchema } from "@/lib/validations/transfer";
+import { formatCurrency } from "@/lib/utils/currency";
 
 export async function getTransfers(): Promise<EnrichedTransfer[]> {
-  const supabase = await createServerSupabaseClient()
+  const supabase = await createServerSupabaseClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase.from('transfers') as any)
-    .select(`
+  const { data, error } = await (supabase.from("transfers") as any)
+    .select(
+      `
       *,
       from_account:accounts!transfers_from_account_id_fkey(*),
       to_account:accounts!transfers_to_account_id_fkey(*)
-    `)
-    .order('transfer_date', { ascending: false })
+    `,
+    )
+    .order("transfer_date", { ascending: false });
 
   if (error) {
-    console.error('Error fetching transfers:', error)
-    return []
+    console.error("Error fetching transfers:", error);
+    return [];
   }
 
-  return (data as unknown as EnrichedTransfer[]) || []
+  return (data as unknown as EnrichedTransfer[]) || [];
 }
 
 export async function createTransfer(input: {
-  fromAccountId: string
-  toAccountId: string
-  amount: number
-  transferFee?: number
-  exchangeRateUsed?: number
-  description?: string | null
-  transferDate: string
+  fromAccountId: string;
+  toAccountId: string;
+  amount: number;
+  transferFee?: number;
+  exchangeRateUsed?: number;
+  description?: string | null;
+  transferDate: string;
+  transferDateLocal: string;
 }) {
-  const validation = transferSchema.safeParse(input)
+  const validation = transferSchema.safeParse(input);
   if (!validation.success) {
-    const firstIssue = validation.error.issues[0]
-    return { error: firstIssue?.message || 'Invalid input' }
+    const firstIssue = validation.error.issues[0];
+    return { error: firstIssue?.message || "Invalid input" };
   }
 
-  const supabase = await createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) {
-    return { error: 'Unauthorized' }
+    return { error: "Unauthorized" };
   }
 
-  const fee = Number(input.transferFee) || 0
+  const fee = Number(input.transferFee) || 0;
 
   // 1. Fetch Accounts
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: fromAcc, error: fromErr } = await (supabase.from('accounts') as any)
-    .select('id, name, currency, current_balance')
-    .eq('id', input.fromAccountId)
-    .single()
+  const { data: fromAcc, error: fromErr } = await (
+    supabase.from("accounts") as any
+  )
+    .select("id, name, currency, current_balance")
+    .eq("id", input.fromAccountId)
+    .single();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: toAcc, error: toErr } = await (supabase.from('accounts') as any)
-    .select('id, name, currency, current_balance')
-    .eq('id', input.toAccountId)
-    .single()
+  const { data: toAcc, error: toErr } = await (supabase.from("accounts") as any)
+    .select("id, name, currency, current_balance")
+    .eq("id", input.toAccountId)
+    .single();
 
   if (fromErr || !fromAcc || toErr || !toAcc) {
-    return { error: 'Akun pengirim atau penerima tidak ditemukan' }
+    return { error: "Akun pengirim atau penerima tidak ditemukan" };
   }
 
   // 2. Strict Non-Negative Balance Guard for Source Account (Amount + Fee)
-  const fromBal = Number(fromAcc.current_balance) || 0
-  const totalDeducted = input.amount + fee
+  const fromBal = Number(fromAcc.current_balance) || 0;
+  const totalDeducted = input.amount + fee;
 
   if (fromBal - totalDeducted < 0) {
     return {
       error: `Saldo akun asal (${fromAcc.name}) tidak mencukupi untuk transfer & biaya admin. (Tersedia: ${formatCurrency(fromBal, fromAcc.currency)}, Diperlukan: ${formatCurrency(totalDeducted, fromAcc.currency)})`,
-    }
+    };
   }
 
-  const fromCurrency = (fromAcc.currency as CurrencyCode) || 'IDR'
-  const toCurrency = (toAcc.currency as CurrencyCode) || 'IDR'
+  const fromCurrency = (fromAcc.currency as CurrencyCode) || "IDR";
+  const toCurrency = (toAcc.currency as CurrencyCode) || "IDR";
 
-  let rate = input.exchangeRateUsed || 1
+  let rate = input.exchangeRateUsed || 1;
   if (fromCurrency === toCurrency) {
-    rate = 1
+    rate = 1;
   }
 
   // 3. Execute Transfer
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase.from('transfers') as any)
+  const { data, error } = await (supabase.from("transfers") as any)
     .insert({
       user_id: user.id,
       from_account_id: input.fromAccountId,
@@ -98,95 +105,102 @@ export async function createTransfer(input: {
       description: input.description?.trim() || null,
       transfer_date: input.transferDate || new Date().toISOString(),
     })
-    .select(`*, from_account:accounts!transfers_from_account_id_fkey(*), to_account:accounts!transfers_to_account_id_fkey(*)`)
-    .single()
+    .select(
+      `*, from_account:accounts!transfers_from_account_id_fkey(*), to_account:accounts!transfers_to_account_id_fkey(*)`,
+    )
+    .single();
 
   if (error) {
-    return { error: error.message }
+    return { error: error.message };
   }
 
   // 4. Record Admin/Transfer Fee as Expense Transaction if fee > 0
   if (fee > 0) {
     // Find Transfer Fee system category
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let { data: expCat } = await (supabase.from('categories') as any)
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('name', 'Transfer Fee')
-      .eq('type', 'expense')
+    let { data: expCat } = await (supabase.from("categories") as any)
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("name", "Transfer Fee")
+      .eq("type", "expense")
       .limit(1)
-      .maybeSingle()
+      .maybeSingle();
 
     if (!expCat) {
       // Fallback: look for Transfer or Other Expense
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: fallbackCat } = await (supabase.from('categories') as any)
-        .select('id')
-        .eq('user_id', user.id)
-        .in('name', ['Transfer', 'Other Expense'])
-        .eq('type', 'expense')
+      const { data: fallbackCat } = await (supabase.from("categories") as any)
+        .select("id")
+        .eq("user_id", user.id)
+        .in("name", ["Transfer", "Other Expense"])
+        .eq("type", "expense")
         .limit(1)
-        .maybeSingle()
-      expCat = fallbackCat
+        .maybeSingle();
+      expCat = fallbackCat;
     }
 
     if (expCat) {
-      const feeTxDate = input.transferDate ? `${input.transferDate.split('T')[0]}T12:00:00.000Z` : new Date().toISOString()
+      const feeTxDate = input.transferDate
+        ? `${input.transferDateLocal}T12:00:00.000Z`
+        : new Date().toISOString();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase.from('transactions') as any).insert({
+      await (supabase.from("transactions") as any).insert({
         user_id: user.id,
         account_id: input.fromAccountId,
         category_id: expCat.id,
-        type: 'expense',
+        type: "expense",
         amount: fee,
         currency: fromCurrency,
-        description: `Biaya Admin Transfer ke ${toAcc.name}${input.description ? ` (${input.description})` : ''}`,
+        description: `Biaya Admin Transfer ke ${toAcc.name}${input.description ? ` (${input.description})` : ""}`,
         transaction_date: feeTxDate,
-      })
+      });
     }
   }
 
-  revalidatePath('/accounts')
-  revalidatePath('/dashboard')
-  revalidatePath('/transactions')
-  revalidatePath('/reports')
-  revalidatePath('/net-worth')
-  revalidatePath('/')
-  return { data }
+  revalidatePath("/accounts");
+  revalidatePath("/dashboard");
+  revalidatePath("/transactions");
+  revalidatePath("/reports");
+  revalidatePath("/net-worth");
+  revalidatePath("/");
+  return { data };
 }
 
 export async function deleteTransfer(id: string) {
-  const supabase = await createServerSupabaseClient()
+  const supabase = await createServerSupabaseClient();
 
   // 1. Fetch Transfer before delete to check receiver balance
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: transfer, error: tErr } = await (supabase.from('transfers') as any)
-    .select('*, to_account:accounts!transfers_to_account_id_fkey(*)')
-    .eq('id', id)
-    .single()
+  const { data: transfer, error: tErr } = await (
+    supabase.from("transfers") as any
+  )
+    .select("*, to_account:accounts!transfers_to_account_id_fkey(*)")
+    .eq("id", id)
+    .single();
 
   if (tErr || !transfer) {
-    return { error: 'Data transfer tidak ditemukan' }
+    return { error: "Data transfer tidak ditemukan" };
   }
 
   if (transfer.to_account) {
-    const toBal = Number(transfer.to_account.current_balance) || 0
-    const inAmount = Number(transfer.amount) * (Number(transfer.exchange_rate_used) || 1)
+    const toBal = Number(transfer.to_account.current_balance) || 0;
+    const inAmount =
+      Number(transfer.amount) * (Number(transfer.exchange_rate_used) || 1);
     if (toBal - inAmount < 0) {
       return {
         error: `Gagal membatalkan transfer: Saldo akun penerima (${transfer.to_account.name}) saat ini tidak mencukupi untuk menarik kembali dana sebesar ${formatCurrency(inAmount, transfer.to_currency)}.`,
-      }
+      };
     }
   }
 
-  const { error } = await supabase.from('transfers').delete().eq('id', id)
+  const { error } = await supabase.from("transfers").delete().eq("id", id);
 
   if (error) {
-    return { error: error.message }
+    return { error: error.message };
   }
 
-  revalidatePath('/accounts')
-  revalidatePath('/dashboard')
-  revalidatePath('/')
-  return { success: true }
+  revalidatePath("/accounts");
+  revalidatePath("/dashboard");
+  revalidatePath("/");
+  return { success: true };
 }

@@ -39,7 +39,7 @@ import {
 import { cn } from "@/lib/utils/cn";
 import { toast } from "sonner";
 import { scanReceipt } from "@/lib/ocr/receipt-scanner";
-import { localDateToISO } from "@/lib/utils/date";
+import { localDateToISO, getLocalDateString } from "@/lib/utils/date";
 interface QuickAddSheetProps {
   isOpen: boolean;
   onClose: () => void;
@@ -98,9 +98,7 @@ function QuickAddSheetContent({
   const [selectedAccountId, setSelectedAccountId] = useState<string>("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   const [description, setDescription] = useState<string>("");
-  const [txDate, setTxDate] = useState<string>(
-    new Date().toISOString().split("T")[0],
-  );
+  const [txDate, setTxDate] = useState<string>(getLocalDateString());
   const [isPinned, setIsPinned] = useState<boolean>(false);
 
   // Sub-items breakdown
@@ -303,7 +301,7 @@ function QuickAddSheetContent({
     setSelectedCategoryId(tpl.categoryId);
     setAmountStr(String(tpl.amount));
     setDescription(tpl.description || tpl.name);
-    setTxDate(new Date().toISOString().split("T")[0]);
+    setTxDate(getLocalDateString());
     setIsPinned(true);
   };
 

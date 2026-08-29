@@ -146,3 +146,16 @@ export function localDateToISO(dateStr: string): string {
     now.getSeconds(),
   ).toISOString();
 }
+
+/**
+ * Convert a Date or ISO timestamp string to a "yyyy-MM-dd" string,
+ * using the device's local timezone (not UTC).
+ * Use this everywhere instead of .toISOString().split("T")[0] or .split("T")[0]
+ * on a raw UTC timestamp — those silently use UTC and cause off-by-one-day bugs.
+ */
+export function getLocalDateString(
+  dateInput: Date | string = new Date(),
+): string {
+  const date = typeof dateInput === "string" ? parseISO(dateInput) : dateInput;
+  return format(date, "yyyy-MM-dd");
+}
