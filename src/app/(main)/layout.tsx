@@ -1,38 +1,43 @@
-import React from 'react'
-import { redirect } from 'next/navigation'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { getAccounts } from '@/actions/accounts'
-import { getCategories, seedUserDefaultCategories } from '@/actions/categories'
-import { getTransactions } from '@/actions/transactions'
-import { getDebts } from '@/actions/debts'
-import { BottomNav } from '@/components/layout/bottom-nav'
-import { DemoNoticeBanner } from '@/components/dashboard/demo-notice-banner'
+import React from "react";
+import { redirect } from "next/navigation";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { getAccounts } from "@/actions/accounts";
+import { getCategories, seedUserDefaultCategories } from "@/actions/categories";
+import {
+  getTransactions,
+  getMostUsedCategoriesByAccount,
+} from "@/actions/transactions";
+import { getDebts } from "@/actions/debts";
+import { BottomNav } from "@/components/layout/bottom-nav";
+import { DemoNoticeBanner } from "@/components/dashboard/demo-notice-banner";
 
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic";
 
 export default async function MainLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
-  const supabase = await createServerSupabaseClient()
+  const supabase = await createServerSupabaseClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser()
+  } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/login')
+    redirect("/login");
   }
 
   // Ensure default categories seeded for new users
-  await seedUserDefaultCategories(user.id)
+  await seedUserDefaultCategories(user.id);
 
-  const [accounts, categories, transactions, debts] = await Promise.all([
-    getAccounts(),
-    getCategories(),
-    getTransactions({ limit: 50 }),
-    getDebts('all', 'all'),
-  ])
+  const [accounts, categories, transactions, debts, mostUsedCategoryByAccount] =
+    await Promise.all([
+      getAccounts(),
+      getCategories(),
+      getTransactions({ limit: 50 }),
+      getDebts("all", "all"),
+      getMostUsedCategoriesByAccount(),
+    ]);
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] dark:bg-[#09090B] text-[#0F172A] dark:text-[#F8FAFC] flex flex-col pb-20 md:pb-10">
@@ -46,7 +51,8 @@ export default async function MainLayout({
         categories={categories}
         transactions={transactions}
         debts={debts}
+        mostUsedCategoryByAccount={mostUsedCategoryByAccount}
       />
     </div>
-  )
+  );
 }

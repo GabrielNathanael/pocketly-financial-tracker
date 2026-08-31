@@ -42,6 +42,7 @@ interface BottomNavProps {
   categories?: Category[];
   transactions?: EnrichedTransaction[];
   debts?: Debt[];
+  mostUsedCategoryByAccount?: Record<string, string>;
 }
 
 export function BottomNav({
@@ -49,6 +50,7 @@ export function BottomNav({
   categories = [],
   transactions = [],
   debts = [],
+  mostUsedCategoryByAccount = {},
 }: BottomNavProps) {
   const pathname = usePathname();
   const { t, language } = useLanguage();
@@ -156,7 +158,8 @@ export function BottomNav({
           isActive: pathname.startsWith("/due-center"),
         },
         {
-          label: language === "en" ? "Investments & Stocks" : "Investasi & Saham",
+          label:
+            language === "en" ? "Investments & Stocks" : "Investasi & Saham",
           href: "/investments",
           icon: TrendingUp,
           isActive: pathname.startsWith("/investments"),
@@ -230,13 +233,19 @@ export function BottomNav({
       label: language === "en" ? "Investments & Stocks" : "Investasi & Saham",
       href: "/investments",
       icon: TrendingUp,
-      desc: language === "en" ? "Track IDX stocks, RDN balance, and trading P&L" : "Kelola portofolio saham IDX & mutasi RDN",
+      desc:
+        language === "en"
+          ? "Track IDX stocks, RDN balance, and trading P&L"
+          : "Kelola portofolio saham IDX & mutasi RDN",
     },
     {
       label: language === "en" ? "Due Dates & Bills" : "Pusat Tagihan",
       href: "/due-center",
       icon: CalendarClock,
-      desc: language === "en" ? "Track upcoming bills, dues, and milestones" : "Pantau tagihan jatuh tempo & komitmen keuangan",
+      desc:
+        language === "en"
+          ? "Track upcoming bills, dues, and milestones"
+          : "Pantau tagihan jatuh tempo & komitmen keuangan",
     },
     {
       label: t.nav.budget,
@@ -533,6 +542,7 @@ export function BottomNav({
         onClose={() => setIsQuickAddOpen(false)}
         accounts={accounts}
         categories={categories}
+        mostUsedCategoryByAccount={mostUsedCategoryByAccount}
       />
     </>
   );

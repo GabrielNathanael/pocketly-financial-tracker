@@ -9,16 +9,10 @@ import {
   EnrichedTransaction,
   TransactionType,
 } from "@/types/database";
-import {
-  createTransaction,
-  updateTransaction,
-  deleteTransaction,
-} from "@/actions/transactions";
+import { createTransaction, updateTransaction } from "@/actions/transactions";
 import { DatePicker } from "@/components/ui/date-picker";
 import { DynamicIcon } from "@/components/ui/dynamic-icon";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useLanguage } from "@/lib/i18n/language-context";
-import { useUndo } from "@/lib/context/undo-context";
 import { formatCurrency } from "@/lib/utils/currency";
 import {
   ArrowDownRight,
@@ -30,7 +24,6 @@ import {
   Trash2,
   Delete,
   Pin,
-  Save,
   X,
   Hash,
   Check,
@@ -38,7 +31,16 @@ import {
   Camera,
   Loader2,
   Calculator,
+  Search,
 } from "lucide-react";
+import {
+  Command,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+} from "cmdk";
 import { cn } from "@/lib/utils/cn";
 import { toast } from "sonner";
 import { savePinnedTemplate } from "@/lib/storage/pinned-templates";
@@ -56,6 +58,14 @@ interface TransactionFormProps {
   accounts: Account[];
   categories: Category[];
   onSuccess?: () => void;
+  /**
+   * Map "{accountId}_{type}" -> categoryId paling sering dipakai.
+   * HANYA dipakai untuk auto-suggest di mode CREATE (initialData kosong).
+   * Mode edit tidak pernah auto-suggest kategori, walau akun diganti,
+   * supaya kategori transaksi lama yang sedang diedit tidak berubah
+   * tanpa disadari user.
+   */
+  mostUsedCategoryByAccount?: Record<string, string>;
 }
 
 function parseTransactionDescription(
@@ -118,10 +128,10 @@ export function TransactionForm({
   accounts,
   categories,
   onSuccess,
+  mostUsedCategoryByAccount = {},
 }: TransactionFormProps) {
   const router = useRouter();
   const { language, t } = useLanguage();
-  const { queueDelete } = useUndo();
   const isEditing = !!initialData;
 
   const parsed = parseTransactionDescription(
@@ -136,19 +146,31 @@ export function TransactionForm({
     initialData?.amount ? String(Math.round(Number(initialData.amount))) : "0",
   );
   const [isNumpadOpen, setIsNumpadOpen] = useState(false);
-  const [selectedAccountId, setSelectedAccountId] = useState<string>(
+
+  const initialAccountId =
     initialData?.account_id ||
-      (accounts.find((a) => a.id === getDefaultAccountId())?.id ??
-        accounts[0]?.id ??
-        ""),
-  );
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>(
-    initialData?.category_id ||
-      (categories.find((c) => c.type === (initialData?.type || "expense"))
-        ?.id ??
-        categories[0]?.id ??
-        ""),
-  );
+    (accounts.find((a) => a.id === getDefaultAccountId())?.id ??
+      accounts[0]?.id ??
+      "");
+
+  const [selectedAccountId, setSelectedAccountId] =
+    useState<string>(initialAccountId);
+
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>(() => {
+    // Edit mode: always keep the transaction's own category, never auto-suggest.
+    if (initialData?.category_id) return initialData.category_id;
+
+    // Create mode: prefer the most-used category for this account+type,
+    // fall back to the first category matching the type.
+    const txType = initialData?.type || "expense";
+    const matchingCats = categories.filter((c) => c.type === txType);
+    const suggestedId =
+      mostUsedCategoryByAccount[`${initialAccountId}_${txType}`];
+    const suggestedStillValid =
+      suggestedId && matchingCats.some((c) => c.id === suggestedId);
+
+    return suggestedStillValid ? suggestedId : (matchingCats[0]?.id ?? "");
+  });
   const [description, setDescription] = useState<string>(
     parsed.baseDescription,
   );
@@ -185,7 +207,6 @@ export function TransactionForm({
   const [isCategoryPopoverOpen, setIsCategoryPopoverOpen] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Receipt OCR File Handler
@@ -288,9 +309,22 @@ export function TransactionForm({
   // Type change
   const handleTypeChange = (newType: TransactionType) => {
     setType(newType);
+
+    // Edit mode: don't touch the category when the type changes.
+    if (isEditing) return;
+
     const matchingCats = categories.filter((c) => c.type === newType);
-    if (matchingCats.length > 0) {
-      setSelectedCategoryId(matchingCats[0].id);
+    const suggestedId =
+      mostUsedCategoryByAccount[`${selectedAccountId}_${newType}`];
+    const suggestedStillValid =
+      suggestedId && matchingCats.some((c) => c.id === suggestedId);
+
+    const defaultCategoryId = suggestedStillValid
+      ? suggestedId
+      : matchingCats[0]?.id;
+
+    if (defaultCategoryId) {
+      setSelectedCategoryId(defaultCategoryId);
     }
   };
 
@@ -486,39 +520,6 @@ export function TransactionForm({
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // Delete Transaction with Undo Snackbar
-  const handleDelete = () => {
-    if (!initialData) return;
-    setShowDeleteConfirm(false);
-    router.push("/transactions");
-
-    queueDelete({
-      id: initialData.id,
-      title:
-        description ||
-        activeCategory?.name ||
-        (language === "en" ? "Transaction" : "Transaksi"),
-      onExecuteDelete: async () => {
-        const res = await deleteTransaction(initialData.id);
-        if (res?.error) {
-          toast.error(
-            t.transactions.deleteFailed ||
-              (language === "en"
-                ? "Failed to Delete Transaction"
-                : "Gagal Menghapus Transaksi"),
-            { description: res.error },
-          );
-        } else {
-          router.refresh();
-        }
-      },
-      onUndo: () => {
-        toast.success(t.undo.transactionRestored);
-        router.refresh();
-      },
-    });
   };
 
   return (
@@ -779,37 +780,83 @@ export function TransactionForm({
               <PopoverPrimitive.Content
                 align="start"
                 sideOffset={4}
-                className="z-50 w-72 max-h-60 overflow-y-auto p-1 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] shadow-lg animate-in fade-in zoom-in-95"
+                className="z-50 w-[calc(100vw-2.5rem)] max-w-sm p-0 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] shadow-xl overflow-hidden animate-in fade-in-0 zoom-in-95"
               >
-                <div className="flex flex-col gap-0.5">
-                  {accounts.map((acc) => (
-                    <button
-                      key={acc.id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedAccountId(acc.id);
-                        setIsAccountPopoverOpen(false);
-                      }}
-                      className={cn(
-                        "w-full flex items-center justify-between p-2 rounded-lg text-xs transition-colors text-left cursor-pointer",
-                        acc.id === selectedAccountId
-                          ? "bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A]"
-                          : "text-[#0F172A] dark:text-[#F8FAFC] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20]",
-                      )}
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <DynamicIcon
-                          name={acc.icon || "Wallet"}
-                          className="w-3.5 h-3.5 shrink-0"
-                        />
-                        <span className="truncate font-medium">{acc.name}</span>
-                      </div>
-                      <span className="text-[10px] font-bold opacity-80 shrink-0">
-                        {acc.currency}
-                      </span>
-                    </button>
-                  ))}
-                </div>
+                <Command
+                  className="flex flex-col bg-transparent"
+                  filter={(value, search) =>
+                    value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0
+                  }
+                >
+                  <div className="flex items-center gap-2 px-3 border-b border-[#E5E7EB] dark:border-[#27272A]">
+                    <Search className="w-4 h-4 text-[#94A3B8] shrink-0" />
+                    <CommandInput
+                      autoFocus
+                      placeholder={
+                        language === "en" ? "Search account..." : "Cari akun..."
+                      }
+                      className="flex-1 py-3 bg-transparent text-sm text-[#0F172A] dark:text-[#F8FAFC] placeholder:text-[#94A3B8] focus:outline-none"
+                    />
+                  </div>
+                  <CommandList className="max-h-64 overflow-y-auto p-1.5">
+                    <CommandEmpty className="py-6 text-center text-xs text-[#94A3B8]">
+                      {language === "en"
+                        ? "No account found."
+                        : "Akun tidak ditemukan."}
+                    </CommandEmpty>
+                    <CommandGroup>
+                      {accounts.map((acc) => (
+                        <CommandItem
+                          key={acc.id}
+                          value={acc.name}
+                          onSelect={() => {
+                            setSelectedAccountId(acc.id);
+
+                            // Edit mode: never auto-suggest category on account
+                            // change — user may just be moving the transaction
+                            // to a different account, category stays as-is.
+                            if (!isEditing) {
+                              const matchingCats = categories.filter(
+                                (c) => c.type === type,
+                              );
+                              const suggestedId =
+                                mostUsedCategoryByAccount[`${acc.id}_${type}`];
+                              const suggestedStillValid =
+                                suggestedId &&
+                                matchingCats.some((c) => c.id === suggestedId);
+                              const defaultCategoryId = suggestedStillValid
+                                ? suggestedId
+                                : matchingCats[0]?.id;
+
+                              if (defaultCategoryId) {
+                                setSelectedCategoryId(defaultCategoryId);
+                              }
+                            }
+
+                            setIsAccountPopoverOpen(false);
+                          }}
+                          className={cn(
+                            "flex items-center justify-between gap-2 p-3 rounded-lg text-sm font-medium cursor-pointer transition-colors",
+                            acc.id === selectedAccountId
+                              ? "bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A]"
+                              : "text-[#0F172A] dark:text-[#F8FAFC] data-[selected=true]:bg-[#F1F3F5] dark:data-[selected=true]:bg-[#1A1A20]",
+                          )}
+                        >
+                          <div className="flex items-center gap-2.5 truncate">
+                            <DynamicIcon
+                              name={acc.icon || "Wallet"}
+                              className="w-4 h-4 shrink-0"
+                            />
+                            <span className="truncate">{acc.name}</span>
+                          </div>
+                          <span className="text-xs font-mono opacity-80 shrink-0 ml-1">
+                            {acc.currency}
+                          </span>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
               </PopoverPrimitive.Content>
             </PopoverPrimitive.Portal>
           </PopoverPrimitive.Root>
@@ -853,32 +900,65 @@ export function TransactionForm({
               <PopoverPrimitive.Content
                 align="start"
                 sideOffset={4}
-                className="z-50 w-72 max-h-60 overflow-y-auto p-1 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] shadow-lg animate-in fade-in zoom-in-95"
+                className="z-50 w-[calc(100vw-2.5rem)] max-w-sm p-0 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] shadow-xl overflow-hidden animate-in fade-in-0 zoom-in-95"
               >
-                <div className="flex flex-col gap-0.5">
-                  {filteredCategories.map((c) => (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedCategoryId(c.id);
-                        setIsCategoryPopoverOpen(false);
-                      }}
-                      className={cn(
-                        "w-full flex items-center gap-2 p-2 rounded-lg text-xs transition-colors text-left cursor-pointer",
-                        c.id === selectedCategoryId
-                          ? "bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A]"
-                          : "text-[#0F172A] dark:text-[#F8FAFC] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20]",
-                      )}
-                    >
-                      <DynamicIcon
-                        name={c.icon || "Tag"}
-                        className="w-3.5 h-3.5 shrink-0"
-                      />
-                      <span className="truncate">{c.name}</span>
-                    </button>
-                  ))}
-                </div>
+                <Command
+                  className="flex flex-col bg-transparent"
+                  filter={(value, search) =>
+                    value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0
+                  }
+                >
+                  <div className="flex items-center gap-2 px-3 border-b border-[#E5E7EB] dark:border-[#27272A]">
+                    <Search className="w-4 h-4 text-[#94A3B8] shrink-0" />
+                    <CommandInput
+                      autoFocus
+                      placeholder={
+                        language === "en"
+                          ? "Search category..."
+                          : "Cari kategori..."
+                      }
+                      className="flex-1 py-3 bg-transparent text-sm text-[#0F172A] dark:text-[#F8FAFC] placeholder:text-[#94A3B8] focus:outline-none"
+                    />
+                  </div>
+                  <CommandList className="max-h-64 overflow-y-auto p-1.5">
+                    <CommandEmpty className="py-6 text-center text-xs text-[#94A3B8]">
+                      {language === "en"
+                        ? "No category found."
+                        : "Kategori tidak ditemukan."}
+                    </CommandEmpty>
+                    <CommandGroup>
+                      {filteredCategories.map((c) => (
+                        <CommandItem
+                          key={c.id}
+                          value={c.name}
+                          onSelect={() => {
+                            setSelectedCategoryId(c.id);
+                            setIsCategoryPopoverOpen(false);
+                          }}
+                          className={cn(
+                            "flex items-center gap-2.5 p-3 rounded-lg text-sm font-medium cursor-pointer transition-colors",
+                            c.id === selectedCategoryId
+                              ? "bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A]"
+                              : "text-[#0F172A] dark:text-[#F8FAFC] data-[selected=true]:bg-[#F1F3F5] dark:data-[selected=true]:bg-[#1A1A20]",
+                          )}
+                        >
+                          <div
+                            className="w-5 h-5 rounded flex items-center justify-center shrink-0 text-white"
+                            style={{
+                              backgroundColor: c.color || "#3B82F6",
+                            }}
+                          >
+                            <DynamicIcon
+                              name={c.icon || "Tag"}
+                              className="w-3 h-3"
+                            />
+                          </div>
+                          <span className="truncate">{c.name}</span>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
               </PopoverPrimitive.Content>
             </PopoverPrimitive.Portal>
           </PopoverPrimitive.Root>
@@ -1189,57 +1269,20 @@ export function TransactionForm({
             </p>
           )}
 
-          {/* 9. Actions Bar: Save, Cancel, Delete */}
-          <div className="flex items-center justify-between gap-2.5 mt-2 pt-3 border-t border-[#E5E7EB] dark:border-[#27272A]">
-            {isEditing ? (
-              <button
-                type="button"
-                onClick={() => setShowDeleteConfirm(true)}
-                disabled={isLoading}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-red-600 dark:text-red-400 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 active:scale-95 transition-all cursor-pointer"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>{t.common.delete}</span>
-              </button>
-            ) : (
-              <div />
-            )}
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => router.back()}
-                disabled={isLoading}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] bg-[#F1F3F5] dark:bg-[#1A1A20] hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer"
-              >
-                <X className="w-3.5 h-3.5" />
-                <span>{t.common.cancel}</span>
-              </button>
-
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer"
-              >
-                <Save className="w-3.5 h-3.5" />
-                <span>{isLoading ? t.common.loading : t.common.save}</span>
-              </button>
-            </div>
+          {/* 9. Action Footer Bar: Save only — Cancel lives in the page
+              header above, and Delete lives outside this form entirely. */}
+          <div className="mt-auto flex items-center gap-2 pt-2 border-t border-[#E5E7EB] dark:border-[#27272A]">
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer disabled:opacity-60"
+            >
+              <Check className="w-3.5 h-3.5 stroke-[3]" />
+              <span>{isLoading ? t.common.loading : t.common.save}</span>
+            </button>
           </div>
         </>
       )}
-
-      {/* Delete confirmation dialog */}
-      <ConfirmDialog
-        isOpen={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
-        onConfirm={handleDelete}
-        title={t.transactions.deleteConfirmTitle}
-        message={t.transactions.deleteConfirmMsg}
-        confirmText={t.common.delete}
-        variant="danger"
-        isLoading={false}
-      />
     </form>
   );
 }

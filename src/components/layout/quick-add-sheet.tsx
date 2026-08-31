@@ -3,6 +3,14 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
+import {
+  Command,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+} from "cmdk";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -35,6 +43,7 @@ import {
   Camera,
   Loader2,
   Calculator,
+  Search,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { toast } from "sonner";
@@ -46,6 +55,12 @@ interface QuickAddSheetProps {
   accounts: Account[];
   categories: Category[];
   onSuccess?: () => void;
+  /**
+   * Map "{accountId}_{type}" -> categoryId yang paling sering dipakai
+   * di kombinasi akun+tipe tersebut. Di-fetch sekali di parent/page,
+   * dipakai untuk auto-suggest default kategori di form ini.
+   */
+  mostUsedCategoryByAccount?: Record<string, string>;
 }
 
 interface ItemRow {
@@ -58,6 +73,7 @@ interface QuickAddSheetContentProps {
   categories: Category[];
   onClose: () => void;
   onSuccess?: () => void;
+  mostUsedCategoryByAccount?: Record<string, string>;
 }
 
 export function QuickAddSheet({
@@ -66,6 +82,7 @@ export function QuickAddSheet({
   accounts,
   categories,
   onSuccess,
+  mostUsedCategoryByAccount,
 }: QuickAddSheetProps) {
   const { t } = useLanguage();
 
@@ -78,6 +95,7 @@ export function QuickAddSheet({
         categories={categories}
         onClose={onClose}
         onSuccess={onSuccess}
+        mostUsedCategoryByAccount={mostUsedCategoryByAccount}
       />
     </BottomSheet>
   );
@@ -88,6 +106,7 @@ function QuickAddSheetContent({
   accounts,
   categories,
   onSuccess,
+  mostUsedCategoryByAccount = {},
 }: QuickAddSheetContentProps) {
   const router = useRouter();
   const { language, t } = useLanguage();
@@ -172,6 +191,22 @@ function QuickAddSheetContent({
     }
   };
 
+  // Resolve default category for a given account + type: prefer the
+  // most-used category for that combo (if it still exists in `categories`),
+  // otherwise fall back to the first category matching the type.
+  const resolveDefaultCategory = React.useCallback(
+    (accountId: string, txType: TransactionType): string | undefined => {
+      const matchingCats = categories.filter((c) => c.type === txType);
+      const suggestedId = mostUsedCategoryByAccount[`${accountId}_${txType}`];
+      const suggestedStillValid =
+        suggestedId && matchingCats.some((c) => c.id === suggestedId);
+
+      if (suggestedStillValid) return suggestedId;
+      return matchingCats[0]?.id;
+    },
+    [categories, mostUsedCategoryByAccount],
+  );
+
   // Initialize defaults
   React.useEffect(() => {
     if (true) {
@@ -179,9 +214,13 @@ function QuickAddSheetContent({
       const primary = accounts.find((a) => a.id === defaultId) || accounts[0];
       if (primary) setSelectedAccountId(primary.id);
 
-      const matchingCats = categories.filter((c) => c.type === "expense");
-      if (matchingCats.length > 0) setSelectedCategoryId(matchingCats[0].id);
+      const defaultCategoryId = resolveDefaultCategory(
+        primary?.id || "",
+        "expense",
+      );
+      if (defaultCategoryId) setSelectedCategoryId(defaultCategoryId);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accounts, categories]);
 
   const activeAccount =
@@ -268,9 +307,12 @@ function QuickAddSheetContent({
   // Type change
   const handleTypeChange = (newType: TransactionType) => {
     setType(newType);
-    const matchingCats = categories.filter((c) => c.type === newType);
-    if (matchingCats.length > 0) {
-      setSelectedCategoryId(matchingCats[0].id);
+    const defaultCategoryId = resolveDefaultCategory(
+      selectedAccountId,
+      newType,
+    );
+    if (defaultCategoryId) {
+      setSelectedCategoryId(defaultCategoryId);
     }
   };
 
@@ -472,8 +514,8 @@ function QuickAddSheetContent({
           }
         }
       `}</style>
-      {/* Pinned Templates Shortcuts */}
-      {pinnedTemplates.length > 0 && (
+      {/* Pinned Templates Shortcuts (hidden while numpad is open to free up vertical space) */}
+      {pinnedTemplates.length > 0 && !isNumpadOpen && (
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-0.5 no-scrollbar scroll-smooth">
           <Star className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
           {pinnedTemplates.map((tpl) => (
@@ -492,13 +534,19 @@ function QuickAddSheetContent({
         </div>
       )}
 
-      {/* 1. Header: Segmented Type Switcher */}
-      <div className="grid grid-cols-2 p-0.5 bg-[#F1F3F5] dark:bg-[#1A1A20] rounded-lg border border-[#E5E7EB] dark:border-[#27272A]">
+      {/* 1. Header: Segmented Type Switcher (compacts while numpad is open) */}
+      <div
+        className={cn(
+          "grid grid-cols-2 p-0.5 bg-[#F1F3F5] dark:bg-[#1A1A20] rounded-lg border border-[#E5E7EB] dark:border-[#27272A] transition-all",
+          isNumpadOpen && "scale-[0.97] opacity-90",
+        )}
+      >
         <button
           type="button"
           onClick={() => handleTypeChange("expense")}
           className={cn(
-            "flex items-center justify-center gap-1.5 py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer",
+            "flex items-center justify-center gap-1.5 text-xs font-bold rounded-md transition-all cursor-pointer",
+            isNumpadOpen ? "py-1" : "py-1.5",
             type === "expense"
               ? "bg-[#E11D48] text-white shadow-2xs"
               : "text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]",
@@ -512,7 +560,8 @@ function QuickAddSheetContent({
           type="button"
           onClick={() => handleTypeChange("income")}
           className={cn(
-            "flex items-center justify-center gap-1.5 py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer",
+            "flex items-center justify-center gap-1.5 text-xs font-bold rounded-md transition-all cursor-pointer",
+            isNumpadOpen ? "py-1" : "py-1.5",
             type === "income"
               ? "bg-[#0D9488] text-white shadow-2xs"
               : "text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]",
@@ -537,7 +586,10 @@ function QuickAddSheetContent({
         <button
           type="button"
           onClick={() => setIsNumpadOpen(!isNumpadOpen)}
-          className="w-full p-3 flex flex-col gap-1 text-left cursor-pointer hover:bg-[#F8F9FA] dark:hover:bg-[#16161A] transition-colors"
+          className={cn(
+            "w-full flex flex-col text-left cursor-pointer hover:bg-[#F8F9FA] dark:hover:bg-[#16161A] transition-all",
+            isNumpadOpen ? "p-4 gap-1.5" : "p-3 gap-1",
+          )}
         >
           <div className="flex items-center justify-between pr-8">
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
@@ -554,13 +606,24 @@ function QuickAddSheetContent({
             />
           </div>
 
-          <div className="flex items-baseline gap-2 pt-0.5">
-            <span className="text-xl font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+          <div
+            className={cn(
+              "flex items-baseline gap-2",
+              isNumpadOpen ? "pt-1" : "pt-0.5",
+            )}
+          >
+            <span
+              className={cn(
+                "font-bold text-[#0F172A] dark:text-[#F8FAFC]",
+                isNumpadOpen ? "text-2xl" : "text-xl",
+              )}
+            >
               {currentCurrency}
             </span>
             <span
               className={cn(
-                "flex-1 min-w-0 text-2xl sm:text-3xl font-mono font-bold tracking-tight truncate",
+                "flex-1 min-w-0 font-mono font-bold tracking-tight truncate",
+                isNumpadOpen ? "text-4xl sm:text-5xl" : "text-2xl sm:text-3xl",
                 numericAmount > 0
                   ? "text-[#0F172A] dark:text-[#F8FAFC]"
                   : "text-[#94A3B8]",
@@ -592,24 +655,40 @@ function QuickAddSheetContent({
         </div>
       </div>
 
-      {/* Conditionally render: If Numpad Open -> In-Place Keypad Grid; Else -> Form Fields */}
-      {isNumpadOpen ? (
-        <div className="flex flex-col gap-2 pt-1 animate-in fade-in-50 zoom-in-98 duration-150">
-          <div className="grid grid-cols-4 gap-1.5">
+      {/*
+        Numpad view and Form view are stacked in the SAME grid cell (both
+        col-start-1 row-start-1) instead of being conditionally mounted.
+        A CSS grid row sizes itself to the tallest cell content, so with
+        both views permanently present the row height is always the max
+        of the two - toggling isNumpadOpen only swaps which one is
+        visible/interactive, it never changes the sheet's total height.
+      */}
+      <div className="grid pt-1">
+        {/* Numpad View: big, thumb-friendly keypad (visible when isNumpadOpen) */}
+        <div
+          className={cn(
+            "col-start-1 row-start-1 flex flex-col gap-2 transition-opacity duration-150",
+            isNumpadOpen ? "opacity-100" : "opacity-0 pointer-events-none",
+          )}
+          aria-hidden={!isNumpadOpen}
+        >
+          <div className="grid grid-cols-4 gap-2">
             {["1", "2", "3"].map((n) => (
               <button
                 key={n}
                 type="button"
+                tabIndex={isNumpadOpen ? 0 : -1}
                 onClick={() => handleKeypadPress(n)}
-                className="h-full min-h-14 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-xl sm:text-2xl hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
+                className="h-full min-h-16 sm:min-h-[4.75rem] rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-2xl sm:text-3xl hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
               >
                 {n}
               </button>
             ))}
             <button
               type="button"
+              tabIndex={isNumpadOpen ? 0 : -1}
               onClick={handleKeypadBackspace}
-              className="h-full min-h-14 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] flex items-center justify-center text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none"
+              className="h-full min-h-16 sm:min-h-[4.75rem] rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] flex items-center justify-center text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none"
             >
               <Delete className="w-6 h-6" />
             </button>
@@ -618,16 +697,18 @@ function QuickAddSheetContent({
               <button
                 key={n}
                 type="button"
+                tabIndex={isNumpadOpen ? 0 : -1}
                 onClick={() => handleKeypadPress(n)}
-                className="h-full min-h-14 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-xl sm:text-2xl hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
+                className="h-full min-h-16 sm:min-h-[4.75rem] rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-2xl sm:text-3xl hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
               >
                 {n}
               </button>
             ))}
             <button
               type="button"
+              tabIndex={isNumpadOpen ? 0 : -1}
               onClick={() => handleKeypadPress("000")}
-              className="h-full min-h-14 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-sm sm:text-base hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
+              className="h-full min-h-16 sm:min-h-[4.75rem] rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-base sm:text-lg hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
             >
               .000
             </button>
@@ -636,56 +717,70 @@ function QuickAddSheetContent({
               <button
                 key={n}
                 type="button"
+                tabIndex={isNumpadOpen ? 0 : -1}
                 onClick={() => handleKeypadPress(n)}
-                className="h-full min-h-14 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-xl sm:text-2xl hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
+                className="h-full min-h-16 sm:min-h-[4.75rem] rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-2xl sm:text-3xl hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
               >
                 {n}
               </button>
             ))}
             <button
               type="button"
+              tabIndex={isNumpadOpen ? 0 : -1}
               onClick={() => {
                 triggerHaptic();
                 setAmountStr("0");
               }}
-              className="h-full min-h-14 rounded-xl bg-[#FFF1F2] dark:bg-[#881337]/20 text-[#E11D48] font-mono font-bold text-base sm:text-lg hover:bg-[#FFE4E6] dark:hover:bg-[#881337]/40 border border-[#FECDD3] dark:border-[#9F1239]/40 active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
+              className="h-full min-h-16 sm:min-h-[4.75rem] rounded-xl bg-[#FFF1F2] dark:bg-[#881337]/20 text-[#E11D48] font-mono font-bold text-lg sm:text-xl hover:bg-[#FFE4E6] dark:hover:bg-[#881337]/40 border border-[#FECDD3] dark:border-[#9F1239]/40 active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
             >
               C
             </button>
 
             <button
               type="button"
+              tabIndex={isNumpadOpen ? 0 : -1}
               onClick={() => handleKeypadPress("00")}
-              className="h-full min-h-14 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-base sm:text-lg hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
+              className="h-full min-h-16 sm:min-h-[4.75rem] rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-lg sm:text-xl hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
             >
               00
             </button>
             <button
               type="button"
+              tabIndex={isNumpadOpen ? 0 : -1}
               onClick={() => handleKeypadPress("0")}
-              className="h-full min-h-14 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-xl sm:text-2xl hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
+              className="h-full min-h-16 sm:min-h-[4.75rem] rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-2xl sm:text-3xl hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
             >
               0
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                triggerHaptic();
-                setIsNumpadOpen(false);
-              }}
-              className="col-span-2 h-full min-h-14 rounded-xl bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] font-bold text-sm sm:text-base flex items-center justify-center gap-1.5 hover:opacity-90 active:scale-95 shadow-md transition-all cursor-pointer select-none"
-            >
-              <Check className="w-5 h-5 stroke-[3]" />
-              <span>{language === "en" ? "Done" : "Selesai"}</span>
-            </button>
           </div>
+
+          {/* Confirm button: its own full-width row (not squeezed into the grid) */}
+          <button
+            type="button"
+            tabIndex={isNumpadOpen ? 0 : -1}
+            onClick={() => {
+              triggerHaptic();
+              setIsNumpadOpen(false);
+            }}
+            className="w-full min-h-14 rounded-xl bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] font-bold text-sm sm:text-base flex items-center justify-center gap-1.5 hover:opacity-90 active:scale-95 shadow-md transition-all cursor-pointer select-none"
+          >
+            <Check className="w-5 h-5 stroke-[3]" />
+            <span>{language === "en" ? "Done" : "Selesai"}</span>
+          </button>
         </div>
-      ) : (
-        <>
+
+        {/* Form View (visible when numpad is closed) */}
+        <div
+          className={cn(
+            "col-start-1 row-start-1 flex flex-col gap-3 transition-opacity duration-150",
+            isNumpadOpen ? "opacity-0 pointer-events-none" : "opacity-100",
+          )}
+          aria-hidden={isNumpadOpen}
+        >
           {/* 3. Date Picker (Placed above Account & Category) */}
           <DatePicker value={txDate} onChange={setTxDate} />
 
-          {/* 4. Account Popover */}
+          {/* 4. Account Popover (searchable combobox via cmdk) */}
           <PopoverPrimitive.Root
             open={isAccountPopoverOpen}
             onOpenChange={setIsAccountPopoverOpen}
@@ -693,7 +788,7 @@ function QuickAddSheetContent({
             <PopoverPrimitive.Trigger asChild>
               <button
                 type="button"
-                className="flex items-center justify-between p-2.5 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors text-left cursor-pointer w-full"
+                className="flex items-center justify-between p-3 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors text-left cursor-pointer w-full"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <DynamicIcon
@@ -704,7 +799,7 @@ function QuickAddSheetContent({
                     <span className="text-[9px] uppercase font-bold text-[#64748B] dark:text-[#94A3B8] leading-none">
                       {t.quickAdd.account}
                     </span>
-                    <span className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate mt-0.5">
+                    <span className="text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate mt-0.5">
                       {activeAccount?.name || t.quickAdd.selectAccount}
                     </span>
                   </div>
@@ -720,42 +815,74 @@ function QuickAddSheetContent({
             <PopoverPrimitive.Portal>
               <PopoverPrimitive.Content
                 align="start"
-                className="z-50 w-64 p-1 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] shadow-xl animate-in fade-in-0 zoom-in-95"
+                sideOffset={6}
+                className="z-50 w-[calc(100vw-2.5rem)] max-w-sm p-0 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] shadow-xl overflow-hidden animate-in fade-in-0 zoom-in-95"
               >
-                <div className="flex flex-col gap-0.5 max-h-48 overflow-y-auto">
-                  {accounts.map((a) => (
-                    <button
-                      key={a.id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedAccountId(a.id);
-                        setIsAccountPopoverOpen(false);
-                      }}
-                      className={cn(
-                        "flex items-center justify-between p-2 rounded-lg text-xs font-medium transition-colors text-left cursor-pointer",
-                        a.id === selectedAccountId
-                          ? "bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A]"
-                          : "hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] text-[#0F172A] dark:text-[#F8FAFC]",
-                      )}
-                    >
-                      <div className="flex items-center gap-2 truncate">
-                        <DynamicIcon
-                          name={a.icon || "Wallet"}
-                          className="w-3.5 h-3.5 shrink-0"
-                        />
-                        <span className="truncate">{a.name}</span>
-                      </div>
-                      <span className="text-[10px] font-mono opacity-80 shrink-0 ml-1">
-                        {a.currency}
-                      </span>
-                    </button>
-                  ))}
-                </div>
+                <Command
+                  className="flex flex-col bg-transparent"
+                  filter={(value, search) =>
+                    value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0
+                  }
+                >
+                  <div className="flex items-center gap-2 px-3 border-b border-[#E5E7EB] dark:border-[#27272A]">
+                    <Search className="w-4 h-4 text-[#94A3B8] shrink-0" />
+                    <CommandInput
+                      autoFocus
+                      placeholder={
+                        language === "en" ? "Search account..." : "Cari akun..."
+                      }
+                      className="flex-1 py-3 bg-transparent text-sm text-[#0F172A] dark:text-[#F8FAFC] placeholder:text-[#94A3B8] focus:outline-none"
+                    />
+                  </div>
+                  <CommandList className="max-h-64 overflow-y-auto p-1.5">
+                    <CommandEmpty className="py-6 text-center text-xs text-[#94A3B8]">
+                      {language === "en"
+                        ? "No account found."
+                        : "Akun tidak ditemukan."}
+                    </CommandEmpty>
+                    <CommandGroup>
+                      {accounts.map((a) => (
+                        <CommandItem
+                          key={a.id}
+                          value={a.name}
+                          onSelect={() => {
+                            setSelectedAccountId(a.id);
+                            const defaultCategoryId = resolveDefaultCategory(
+                              a.id,
+                              type,
+                            );
+                            if (defaultCategoryId) {
+                              setSelectedCategoryId(defaultCategoryId);
+                            }
+                            setIsAccountPopoverOpen(false);
+                          }}
+                          className={cn(
+                            "flex items-center justify-between gap-2 p-3 rounded-lg text-sm font-medium cursor-pointer transition-colors",
+                            a.id === selectedAccountId
+                              ? "bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A]"
+                              : "text-[#0F172A] dark:text-[#F8FAFC] data-[selected=true]:bg-[#F1F3F5] dark:data-[selected=true]:bg-[#1A1A20]",
+                          )}
+                        >
+                          <div className="flex items-center gap-2.5 truncate">
+                            <DynamicIcon
+                              name={a.icon || "Wallet"}
+                              className="w-4 h-4 shrink-0"
+                            />
+                            <span className="truncate">{a.name}</span>
+                          </div>
+                          <span className="text-xs font-mono opacity-80 shrink-0 ml-1">
+                            {a.currency}
+                          </span>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
               </PopoverPrimitive.Content>
             </PopoverPrimitive.Portal>
           </PopoverPrimitive.Root>
 
-          {/* 5. Category Popover */}
+          {/* 5. Category Popover (searchable combobox via cmdk) */}
           <PopoverPrimitive.Root
             open={isCategoryPopoverOpen}
             onOpenChange={setIsCategoryPopoverOpen}
@@ -763,7 +890,7 @@ function QuickAddSheetContent({
             <PopoverPrimitive.Trigger asChild>
               <button
                 type="button"
-                className="flex items-center justify-between p-2.5 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors text-left cursor-pointer w-full"
+                className="flex items-center justify-between p-3 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors text-left cursor-pointer w-full"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <DynamicIcon
@@ -774,7 +901,7 @@ function QuickAddSheetContent({
                     <span className="text-[9px] uppercase font-bold text-[#64748B] dark:text-[#94A3B8] leading-none">
                       {t.quickAdd.category}
                     </span>
-                    <span className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate mt-0.5">
+                    <span className="text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate mt-0.5">
                       {activeCategory?.name || t.quickAdd.selectCategory}
                     </span>
                   </div>
@@ -785,32 +912,59 @@ function QuickAddSheetContent({
             <PopoverPrimitive.Portal>
               <PopoverPrimitive.Content
                 align="start"
-                className="z-50 w-64 p-1 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] shadow-xl animate-in fade-in-0 zoom-in-95"
+                sideOffset={6}
+                className="z-50 w-[calc(100vw-2.5rem)] max-w-sm p-0 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] shadow-xl overflow-hidden animate-in fade-in-0 zoom-in-95"
               >
-                <div className="flex flex-col gap-0.5 max-h-48 overflow-y-auto">
-                  {filteredCategories.map((c) => (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedCategoryId(c.id);
-                        setIsCategoryPopoverOpen(false);
-                      }}
-                      className={cn(
-                        "flex items-center gap-2 p-2 rounded-lg text-xs font-medium transition-colors text-left cursor-pointer",
-                        c.id === selectedCategoryId
-                          ? "bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A]"
-                          : "hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] text-[#0F172A] dark:text-[#F8FAFC]",
-                      )}
-                    >
-                      <DynamicIcon
-                        name={c.icon || "Tag"}
-                        className="w-3.5 h-3.5 shrink-0"
-                      />
-                      <span className="truncate">{c.name}</span>
-                    </button>
-                  ))}
-                </div>
+                <Command
+                  className="flex flex-col bg-transparent"
+                  filter={(value, search) =>
+                    value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0
+                  }
+                >
+                  <div className="flex items-center gap-2 px-3 border-b border-[#E5E7EB] dark:border-[#27272A]">
+                    <Search className="w-4 h-4 text-[#94A3B8] shrink-0" />
+                    <CommandInput
+                      autoFocus
+                      placeholder={
+                        language === "en"
+                          ? "Search category..."
+                          : "Cari kategori..."
+                      }
+                      className="flex-1 py-3 bg-transparent text-sm text-[#0F172A] dark:text-[#F8FAFC] placeholder:text-[#94A3B8] focus:outline-none"
+                    />
+                  </div>
+                  <CommandList className="max-h-64 overflow-y-auto p-1.5">
+                    <CommandEmpty className="py-6 text-center text-xs text-[#94A3B8]">
+                      {language === "en"
+                        ? "No category found."
+                        : "Kategori tidak ditemukan."}
+                    </CommandEmpty>
+                    <CommandGroup>
+                      {filteredCategories.map((c) => (
+                        <CommandItem
+                          key={c.id}
+                          value={c.name}
+                          onSelect={() => {
+                            setSelectedCategoryId(c.id);
+                            setIsCategoryPopoverOpen(false);
+                          }}
+                          className={cn(
+                            "flex items-center gap-2.5 p-3 rounded-lg text-sm font-medium cursor-pointer transition-colors",
+                            c.id === selectedCategoryId
+                              ? "bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A]"
+                              : "text-[#0F172A] dark:text-[#F8FAFC] data-[selected=true]:bg-[#F1F3F5] dark:data-[selected=true]:bg-[#1A1A20]",
+                          )}
+                        >
+                          <DynamicIcon
+                            name={c.icon || "Tag"}
+                            className="w-4 h-4 shrink-0"
+                          />
+                          <span className="truncate">{c.name}</span>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
               </PopoverPrimitive.Content>
             </PopoverPrimitive.Portal>
           </PopoverPrimitive.Root>
@@ -1143,8 +1297,8 @@ function QuickAddSheetContent({
               <span>{t.quickAdd.recordBtn}</span>
             </Button>
           </div>
-        </>
-      )}
+        </div>
+      </div>
     </div>
   );
 }
