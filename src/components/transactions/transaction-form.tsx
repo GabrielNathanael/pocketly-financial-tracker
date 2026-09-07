@@ -68,6 +68,54 @@ interface TransactionFormProps {
   mostUsedCategoryByAccount?: Record<string, string>;
 }
 
+/**
+ * Reverse-parse angka dari string hasil formatCurrency, misal "Rp 6.000",
+ * "$6.00", atau "S$1.340,50". HARUS sinkron dengan format yang dipakai
+ * formatCurrency di lib/utils/currency.ts:
+ * - IDR (id-ID): titik = pemisah ribuan, koma = desimal
+ * - USD/SGD (en-US/en-SG): koma = pemisah ribuan, titik = desimal
+ */
+function parseFormattedPriceToPlainString(raw: string): string {
+  const s = raw.trim();
+  const isUsdOrSgd = /^\$|^S\$|USD|SGD/i.test(s);
+
+  // Buang semua kecuali digit, titik, koma, minus
+  let numeric = s.replace(/[^0-9.,-]/g, "");
+
+  if (isUsdOrSgd) {
+    // en-US/en-SG: koma ribuan dibuang, titik tetap jadi desimal
+    numeric = numeric.replace(/,/g, "");
+  } else {
+    // id-ID (default/IDR): titik ribuan dibuang, koma jadi desimal
+    numeric = numeric.replace(/\./g, "").replace(",", ".");
+  }
+
+  const num = parseFloat(numeric);
+  return isNaN(num) ? "" : String(num);
+}
+
+/**
+ * Split isi "[Items: a (Rp 1.000), b (Rp 2.000,50)]" dengan benar,
+ * tanpa ikut kepotong koma desimal yang ada DI DALAM tanda kurung.
+ */
+function splitItemsRespectingParens(itemsText: string): string[] {
+  const result: string[] = [];
+  let depth = 0;
+  let current = "";
+  for (const ch of itemsText) {
+    if (ch === "(") depth++;
+    if (ch === ")") depth--;
+    if (ch === "," && depth === 0) {
+      result.push(current);
+      current = "";
+    } else {
+      current += ch;
+    }
+  }
+  if (current.trim()) result.push(current);
+  return result;
+}
+
 function parseTransactionDescription(
   rawDesc?: string | null,
   rawTags?: string[],
@@ -84,13 +132,15 @@ function parseTransactionDescription(
   // Extract [Items: ...]
   const itemsMatch = text.match(/\[Items:\s*([^\]]+)\]/);
   if (itemsMatch) {
-    const rawItems = itemsMatch[1].split(",");
+    const rawItems = splitItemsRespectingParens(itemsMatch[1]);
     for (const item of rawItems) {
       const parts = item.split("(");
       const name = parts[0]?.trim() || "";
       let price = "";
       if (parts[1]) {
-        price = parts[1].replace(/[^0-9.]/g, "");
+        // Buang ")" penutup sebelum diparse
+        const priceText = parts[1].replace(/\)\s*$/, "");
+        price = parseFormattedPriceToPlainString(priceText);
       }
       if (name) {
         items.push({ name, price });

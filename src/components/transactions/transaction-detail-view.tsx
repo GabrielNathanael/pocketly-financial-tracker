@@ -93,6 +93,14 @@ export function TransactionDetailView({
     ]),
   );
 
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      router.back();
+    } else {
+      router.push("/transactions");
+    }
+  };
+
   const handlePin = () => {
     const name = cleanDescription || memoText || category?.name || "Template";
     savePinnedTemplate({
@@ -180,13 +188,14 @@ export function TransactionDetailView({
     <div className="flex flex-col gap-5 max-w-lg mx-auto">
       {/* Top Bar Navigation */}
       <div className="flex items-center justify-between">
-        <Link
-          href="/transactions"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]"
+        <button
+          type="button"
+          onClick={handleBack}
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>{t.transactions.backToLedger}</span>
-        </Link>
+        </button>
 
         <Link
           href={`/transactions/${transaction.id}/audit-log`}
