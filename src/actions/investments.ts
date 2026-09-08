@@ -6,6 +6,104 @@ import { EnrichedStockHolding, EnrichedStockTrade } from '@/types/database'
 import { formatCurrency } from '@/lib/utils/currency'
 
 /**
+ * Automatically recalculate and synchronize a stock holding's lots, total_shares,
+ * total_cost, and avg_buy_price directly from the user's trade history for that ticker.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function syncStockHolding(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  userId: string,
+  accountId: string,
+  ticker: string
+) {
+  const cleanTicker = ticker.trim().toUpperCase()
+
+  // 1. Fetch all trades for this user, account, and ticker ordered chronologically
+  const { data: trades, error } = await supabase
+    .from('stock_trades')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('account_id', accountId)
+    .eq('ticker', cleanTicker)
+    .order('trade_date', { ascending: true })
+
+  if (error || !trades || trades.length === 0) {
+    // If no trades exist, delete any orphaned holding for this ticker
+    await supabase
+      .from('stock_holdings')
+      .delete()
+      .eq('user_id', userId)
+      .eq('account_id', accountId)
+      .eq('ticker', cleanTicker)
+    return
+  }
+
+  let runningLots = 0
+  let runningShares = 0
+  let runningCost = 0
+
+  for (const tr of trades) {
+    const trLots = Number(tr.lots) || (Number(tr.shares) / 100) || 0
+    const trShares = Number(tr.shares) || Math.round(trLots * 100)
+    const trAmount = Number(tr.net_amount) || 0
+
+    if (tr.type === 'buy') {
+      runningLots += trLots
+      runningShares += trShares
+      runningCost += trAmount
+    } else if (tr.type === 'sell') {
+      const costDeducted = Number(tr.buy_cost) || (runningLots > 0 ? (trLots / runningLots) * runningCost : 0)
+      runningLots = Math.max(0, runningLots - trLots)
+      runningShares = Math.max(0, runningShares - trShares)
+      runningCost = Math.max(0, runningCost - costDeducted)
+    }
+  }
+
+  const avgBuyPrice = runningShares > 0 ? runningCost / runningShares : 0
+
+  // 2. Check if holding exists in database
+  const { data: holding } = await supabase
+    .from('stock_holdings')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('account_id', accountId)
+    .eq('ticker', cleanTicker)
+    .maybeSingle()
+
+  if (runningLots <= 0 || runningCost <= 0) {
+    if (holding) {
+      await supabase.from('stock_holdings').delete().eq('id', holding.id)
+    }
+  } else {
+    if (holding) {
+      await supabase
+        .from('stock_holdings')
+        .update({
+          lots: runningLots,
+          total_shares: runningShares,
+          total_cost: runningCost,
+          avg_buy_price: avgBuyPrice,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', holding.id)
+    } else {
+      await supabase
+        .from('stock_holdings')
+        .insert({
+          user_id: userId,
+          account_id: accountId,
+          ticker: cleanTicker,
+          lots: runningLots,
+          total_shares: runningShares,
+          total_cost: runningCost,
+          avg_buy_price: avgBuyPrice,
+        })
+    }
+  }
+}
+
+/**
  * Fetch all active stock holdings for the current user
  */
 export async function getInvestmentHoldings(): Promise<EnrichedStockHolding[]> {
@@ -28,7 +126,28 @@ export async function getInvestmentHoldings(): Promise<EnrichedStockHolding[]> {
     return []
   }
 
-  return (data as EnrichedStockHolding[]) || []
+  const holdings = (data as EnrichedStockHolding[]) || []
+
+  // Auto-sync if any holding in the database has 0 or null lots from older migrations
+  let hasSyncedAny = false
+  for (const h of holdings) {
+    if (!h.lots || Number(h.lots) === 0 || !h.avg_buy_price || Number(h.avg_buy_price) === 0) {
+      await syncStockHolding(supabase, user.id, h.account_id, h.ticker)
+      hasSyncedAny = true
+    }
+  }
+
+  if (hasSyncedAny) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: refreshed } = await (supabase.from('stock_holdings') as any)
+      .select(`*, account:accounts(*)`)
+      .eq('user_id', user.id)
+      .gt('total_cost', 0)
+      .order('ticker', { ascending: true })
+    return (refreshed as EnrichedStockHolding[]) || []
+  }
+
+  return holdings
 }
 
 /**
@@ -98,10 +217,9 @@ export async function getDailyTradingVolume(accountId: string, dateStr: string) 
 /**
  * Record a stock purchase (Supports DCA Averaging & Lots):
  * 1. Checks that RDN source account has enough balance (including potential Rp 10.000 stamp duty).
- * 2. Determines if Bea Materai applies for today's accumulated transactions (> Rp 10.000.000).
- * 3. Deducts (netAmount + stampDuty) from RDN cash balance.
- * 4. Creates or updates the stock holding position (calculates new accumulated Lots and average buy price).
- * 5. Logs a 'buy' trade entry.
+ * 2. Deducts net buy amount (+ stamp duty if triggered) from RDN cash balance.
+ * 3. Records the trade log.
+ * 4. Syncs the holding state accurately from all trades.
  */
 export async function recordStockBuy(input: {
   accountId: string
@@ -109,29 +227,30 @@ export async function recordStockBuy(input: {
   lots: number
   netAmount: number
   notes?: string | null
-  tradeDate?: string | null
+  tradeDate?: string
 }) {
-  const cleanTicker = input.ticker.trim().toUpperCase()
-  if (!cleanTicker) {
-    return { error: 'Kode saham / emiten wajib diisi' }
-  }
-  const lots = Number(input.lots)
-  if (!lots || lots <= 0) {
-    return { error: 'Jumlah lot harus lebih besar dari 0' }
-  }
-  const netAmount = Number(input.netAmount)
-  if (!netAmount || netAmount <= 0) {
-    return { error: 'Nominal pembelian harus lebih besar dari 0' }
-  }
-
   const supabase = await createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Unauthorized' }
 
-  // 1. Fetch RDN account
+  const cleanTicker = input.ticker.trim().toUpperCase()
+  const lots = Number(input.lots)
+  const netAmount = Number(input.netAmount)
+
+  if (!cleanTicker) {
+    return { error: 'Kode saham wajib diisi' }
+  }
+  if (!lots || lots <= 0) {
+    return { error: 'Jumlah lot harus lebih besar dari 0' }
+  }
+  if (!netAmount || netAmount <= 0) {
+    return { error: 'Total nominal pembelian harus lebih besar dari 0' }
+  }
+
+  // 1. Fetch RDN Account
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: acc, error: accErr } = await (supabase.from('accounts') as any)
-    .select('id, name, currency, current_balance, type')
+    .select('*')
     .eq('id', input.accountId)
     .eq('user_id', user.id)
     .single()
@@ -140,14 +259,10 @@ export async function recordStockBuy(input: {
     return { error: 'Akun RDN tidak ditemukan' }
   }
 
-  if (acc.type !== 'investment') {
-    return { error: 'Hanya akun bertipe Investasi (RDN) yang dapat digunakan untuk transaksi saham.' }
-  }
-
+  // 2. Check Daily Trading Volume & Stamp Duty (Bea Materai Rp 10.000)
   const dateOnly = input.tradeDate || new Date().toISOString().split('T')[0]
   const { dailyVolume, stampDutyCharged } = await getDailyTradingVolume(acc.id, dateOnly)
 
-  // Check if this trade triggers Bea Materai Rp 10.000 for the first time today
   let stampDutyToApply = 0
   if (stampDutyCharged === 0 && (dailyVolume + netAmount) > 10_000_000) {
     stampDutyToApply = 10_000
@@ -156,13 +271,13 @@ export async function recordStockBuy(input: {
   const totalDeduction = netAmount + stampDutyToApply
   const currentBal = Number(acc.current_balance) || 0
 
-  if (currentBal - totalDeduction < 0) {
+  if (currentBal < totalDeduction) {
     return {
-      error: `Saldo kas ${acc.name} tidak mencukupi (Tersedia: ${formatCurrency(currentBal, acc.currency)}, Dibutuhkan: ${formatCurrency(totalDeduction, acc.currency)}${stampDutyToApply > 0 ? ' termasuk Bea Materai Rp 10.000' : ''})`,
+      error: `Saldo kas RDN (${acc.name}) tidak mencukupi. Dibutuhkan: ${formatCurrency(totalDeduction, acc.currency)}, Tersedia: ${formatCurrency(currentBal, acc.currency)}`,
     }
   }
 
-  // 2. Deduct RDN cash balance
+  // Deduct RDN Balance
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error: updBalErr } = await (supabase.from('accounts') as any)
     .update({ current_balance: currentBal - totalDeduction })
@@ -172,71 +287,17 @@ export async function recordStockBuy(input: {
     return { error: updBalErr.message }
   }
 
-  // 3. Upsert Stock Holding (DCA Accumulation)
+  // 3. Record Trade Log
   const sharesToAdd = Math.round(lots * 100)
   const pricePerShare = netAmount / sharesToAdd
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: existingHolding } = await (supabase.from('stock_holdings') as any)
-    .select('*')
-    .eq('user_id', user.id)
-    .eq('account_id', acc.id)
-    .eq('ticker', cleanTicker)
-    .maybeSingle()
-
-  let holdingId = existingHolding?.id
-
-  if (existingHolding) {
-    const prevLots = Number(existingHolding.lots) || (Number(existingHolding.total_cost) > 0 ? (Number(existingHolding.total_shares) / 100 || 0) : 0)
-    const prevShares = Number(existingHolding.total_shares) || (prevLots * 100)
-    const prevCost = Number(existingHolding.total_cost) || 0
-
-    const updatedLots = prevLots + lots
-    const updatedShares = prevShares + sharesToAdd
-    const updatedCost = prevCost + netAmount
-    const updatedAvgPrice = updatedShares > 0 ? updatedCost / updatedShares : pricePerShare
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from('stock_holdings') as any)
-      .update({
-        lots: updatedLots,
-        total_shares: updatedShares,
-        total_cost: updatedCost,
-        avg_buy_price: updatedAvgPrice,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', existingHolding.id)
-  } else {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: newHolding, error: holdErr } = await (supabase.from('stock_holdings') as any)
-      .insert({
-        user_id: user.id,
-        account_id: acc.id,
-        ticker: cleanTicker,
-        lots: lots,
-        total_shares: sharesToAdd,
-        total_cost: netAmount,
-        avg_buy_price: pricePerShare,
-        notes: input.notes || null,
-      })
-      .select()
-      .single()
-
-    if (holdErr) {
-      console.error('Error creating stock holding:', holdErr)
-    } else if (newHolding) {
-      holdingId = newHolding.id
-    }
-  }
-
-  // 4. Record Trade Log
   const txDate = input.tradeDate ? `${input.tradeDate}T12:00:00.000Z` : new Date().toISOString()
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error: tradeErr } = await (supabase.from('stock_trades') as any)
     .insert({
       user_id: user.id,
       account_id: acc.id,
-      holding_id: holdingId || null,
+      holding_id: null,
       ticker: cleanTicker,
       type: 'buy',
       net_amount: netAmount,
@@ -253,6 +314,9 @@ export async function recordStockBuy(input: {
   if (tradeErr) {
     console.error('Error inserting stock trade:', tradeErr)
   }
+
+  // 4. Sync Holding from Trades
+  await syncStockHolding(supabase, user.id, acc.id, cleanTicker)
 
   revalidatePath('/investments')
   revalidatePath('/accounts')
@@ -272,30 +336,30 @@ export async function recordStockBuy(input: {
  * 4. Calculates realized PnL = netAmount - proportionalBuyCost.
  * 5. Checks Bea Materai Rp 10.000 for today's volume.
  * 6. Credits (netAmount - stampDuty) to RDN account.
- * 7. Updates holding remaining lots/cost, or deletes holding if 100% sold.
- * 8. Logs a 'sell' trade entry.
+ * 7. Records the trade log and syncs holding.
  */
 export async function recordStockSell(input: {
   holdingId: string
   lots: number
   netAmount: number
   notes?: string | null
-  tradeDate?: string | null
+  tradeDate?: string
 }) {
-  const lotsToSell = Number(input.lots)
-  if (!lotsToSell || lotsToSell <= 0) {
-    return { error: 'Jumlah lot yang dijual harus lebih besar dari 0' }
-  }
-  const netAmount = Number(input.netAmount)
-  if (!netAmount || netAmount <= 0) {
-    return { error: 'Nominal penjualan bersih harus lebih besar dari 0' }
-  }
-
   const supabase = await createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Unauthorized' }
 
-  // 1. Fetch holding
+  const lotsToSell = Number(input.lots)
+  const netAmount = Number(input.netAmount)
+
+  if (!lotsToSell || lotsToSell <= 0) {
+    return { error: 'Jumlah lot yang dijual harus lebih besar dari 0' }
+  }
+  if (!netAmount || netAmount <= 0) {
+    return { error: 'Nominal penjualan bersih harus lebih besar dari 0' }
+  }
+
+  // 1. Fetch holding & account
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: holding, error: holdErr } = await (supabase.from('stock_holdings') as any)
     .select('*, account:accounts(*)')
@@ -314,7 +378,6 @@ export async function recordStockSell(input: {
 
   const currentLots = Number(holding.lots) || (Number(holding.total_shares) / 100) || 1
   const currentTotalCost = Number(holding.total_cost) || 0
-  const currentAvgPrice = Number(holding.avg_buy_price) || (currentLots > 0 ? currentTotalCost / (currentLots * 100) : 0)
 
   if (lotsToSell > currentLots + 0.0001) {
     return {
@@ -322,10 +385,7 @@ export async function recordStockSell(input: {
     }
   }
 
-  const isFullSell = lotsToSell >= currentLots - 0.0001
-  const proportionalBuyCost = isFullSell
-    ? currentTotalCost
-    : (lotsToSell / currentLots) * currentTotalCost
+  const proportionalBuyCost = (lotsToSell / currentLots) * currentTotalCost
   const realizedPnl = netAmount - proportionalBuyCost
   const sharesSold = Math.round(lotsToSell * 100)
   const sellPricePerShare = sharesSold > 0 ? netAmount / sharesSold : 0
@@ -352,30 +412,7 @@ export async function recordStockSell(input: {
     return { error: updBalErr.message }
   }
 
-  // 4. Update or Delete Stock Holding
-  if (isFullSell) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from('stock_holdings') as any)
-      .delete()
-      .eq('id', holding.id)
-  } else {
-    const remainingLots = Math.max(0, currentLots - lotsToSell)
-    const remainingShares = Math.round(remainingLots * 100)
-    const remainingCost = Math.max(0, currentTotalCost - proportionalBuyCost)
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from('stock_holdings') as any)
-      .update({
-        lots: remainingLots,
-        total_shares: remainingShares,
-        total_cost: remainingCost,
-        avg_buy_price: currentAvgPrice,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', holding.id)
-  }
-
-  // 5. Record Trade Log
+  // 4. Record Trade Log
   const txDate = input.tradeDate ? `${input.tradeDate}T12:00:00.000Z` : new Date().toISOString()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error: tradeErr } = await (supabase.from('stock_trades') as any)
@@ -400,6 +437,9 @@ export async function recordStockSell(input: {
     console.error('Error inserting stock trade:', tradeErr)
   }
 
+  // 5. Sync Holding from Trades
+  await syncStockHolding(supabase, user.id, acc.id, holding.ticker)
+
   revalidatePath('/investments')
   revalidatePath('/accounts')
   revalidatePath('/net-worth')
@@ -412,13 +452,49 @@ export async function recordStockSell(input: {
 }
 
 /**
- * Delete a trade entry and revert associated calculations safely
+ * Delete a trade entry, revert account cash balance, and resync holding
  */
 export async function deleteStockTrade(id: string) {
   const supabase = await createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Unauthorized' }
 
+  // 1. Fetch trade first
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: trade, error: fetchErr } = await (supabase.from('stock_trades') as any)
+    .select('*, account:accounts(*)')
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .single()
+
+  if (fetchErr || !trade) {
+    return { error: 'Transaksi tidak ditemukan' }
+  }
+
+  const acc = trade.account
+  const tradeAmount = Number(trade.net_amount) || 0
+  const stampDuty = Number(trade.stamp_duty) || 0
+
+  // 2. Revert RDN account balance
+  if (acc) {
+    const curBal = Number(acc.current_balance) || 0
+    if (trade.type === 'buy') {
+      // Revert buy by returning funds + stamp duty back to RDN
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase.from('accounts') as any)
+        .update({ current_balance: curBal + tradeAmount + stampDuty })
+        .eq('id', acc.id)
+    } else {
+      // Revert sell by deducting proceeds
+      const netSellProceeds = tradeAmount - stampDuty
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase.from('accounts') as any)
+        .update({ current_balance: curBal - netSellProceeds })
+        .eq('id', acc.id)
+    }
+  }
+
+  // 3. Delete the trade record
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabase.from('stock_trades') as any)
     .delete()
@@ -427,6 +503,11 @@ export async function deleteStockTrade(id: string) {
 
   if (error) {
     return { error: error.message }
+  }
+
+  // 4. Resync the holding
+  if (acc) {
+    await syncStockHolding(supabase, user.id, acc.id, trade.ticker)
   }
 
   revalidatePath('/investments')
@@ -446,7 +527,7 @@ interface UpdateStockTradeInput {
 }
 
 /**
- * Edit an existing stock trade entry (buy/sell)
+ * Edit an existing stock trade entry (buy/sell) and automatically resync holding & RDN cash
  */
 export async function updateStockTrade(input: UpdateStockTradeInput) {
   const supabase = await createServerSupabaseClient()
@@ -473,10 +554,12 @@ export async function updateStockTrade(input: UpdateStockTradeInput) {
   const oldAmount = Number(trade.net_amount) || 0
   const delta = newAmount - oldAmount
   const acc = trade.account
-  const newLots = input.lots !== undefined ? Number(input.lots) : Number(trade.lots)
+  const newLots = input.lots !== undefined ? Number(input.lots) : (Number(trade.lots) || 1)
   const newShares = Math.round(newLots * 100)
   const newPricePerShare = newShares > 0 ? newAmount / newShares : 0
+  const cleanTicker = input.ticker.trim().toUpperCase()
 
+  // 2. Adjust RDN balance if net amount changed
   if (delta !== 0 && acc) {
     const currentBal = Number(acc.current_balance) || 0
     if (trade.type === 'buy') {
@@ -487,29 +570,6 @@ export async function updateStockTrade(input: UpdateStockTradeInput) {
       await (supabase.from('accounts') as any)
         .update({ current_balance: currentBal - delta })
         .eq('id', acc.id)
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: holding } = await (supabase.from('stock_holdings') as any)
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('account_id', acc.id)
-        .eq('ticker', trade.ticker)
-        .maybeSingle()
-
-      if (holding) {
-        const newCost = Math.max(0, Number(holding.total_cost) + delta)
-        const holdingLots = Number(holding.lots) || (Number(holding.total_shares) / 100) || 1
-        const holdingShares = holdingLots * 100
-        const newAvgPrice = holdingShares > 0 ? newCost / holdingShares : 0
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase.from('stock_holdings') as any)
-          .update({
-            total_cost: newCost,
-            avg_buy_price: newAvgPrice,
-          })
-          .eq('id', holding.id)
-      }
     } else {
       // Sell: proceeds change
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -519,7 +579,7 @@ export async function updateStockTrade(input: UpdateStockTradeInput) {
     }
   }
 
-  // Recalculate realized PnL if sell
+  // 3. Recalculate realized PnL if sell
   let newRealizedPnl = trade.realized_pnl
   if (trade.type === 'sell') {
     const buyCost = Number(trade.buy_cost) || 0
@@ -528,10 +588,11 @@ export async function updateStockTrade(input: UpdateStockTradeInput) {
 
   const txDate = input.tradeDate ? `${input.tradeDate}T12:00:00.000Z` : trade.trade_date
 
+  // 4. Update the trade row
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error: updErr } = await (supabase.from('stock_trades') as any)
     .update({
-      ticker: input.ticker.trim().toUpperCase(),
+      ticker: cleanTicker,
       lots: newLots,
       shares: newShares,
       price_per_share: newPricePerShare,
@@ -545,6 +606,14 @@ export async function updateStockTrade(input: UpdateStockTradeInput) {
 
   if (updErr) {
     return { error: updErr.message }
+  }
+
+  // 5. Automatically recalculate & sync the stock holding from trades
+  if (acc) {
+    await syncStockHolding(supabase, user.id, acc.id, cleanTicker)
+    if (trade.ticker && trade.ticker !== cleanTicker) {
+      await syncStockHolding(supabase, user.id, acc.id, trade.ticker)
+    }
   }
 
   revalidatePath('/investments')
