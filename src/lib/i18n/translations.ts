@@ -477,7 +477,7 @@ export const translations = {
       colAvgPrice: "Harga Rata-Rata",
       colCapital: "Modal Pokok",
       colActions: "Aksi Cepat",
-      quickBuy: "+ Beli",
+      quickBuy: "Beli",
       quickSell: "Jual",
       stampTotalPaid: "Total Materai Terbayar",
       stampDaysOver10m: "Hari Transaksi > 10Jt",
