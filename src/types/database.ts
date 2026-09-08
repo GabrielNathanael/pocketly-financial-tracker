@@ -491,6 +491,9 @@ export interface Database {
           account_id: string
           ticker: string
           total_cost: number
+          lots: number
+          total_shares: number
+          avg_buy_price: number
           notes: string | null
           created_at: string
           updated_at: string
@@ -501,6 +504,9 @@ export interface Database {
           account_id: string
           ticker: string
           total_cost: number
+          lots?: number
+          total_shares?: number
+          avg_buy_price?: number
           notes?: string | null
           created_at?: string
           updated_at?: string
@@ -511,6 +517,9 @@ export interface Database {
           account_id?: string
           ticker?: string
           total_cost?: number
+          lots?: number
+          total_shares?: number
+          avg_buy_price?: number
           notes?: string | null
           created_at?: string
           updated_at?: string
@@ -527,6 +536,10 @@ export interface Database {
           net_amount: number
           buy_cost: number
           realized_pnl: number
+          lots: number
+          shares: number
+          price_per_share: number
+          stamp_duty: number
           notes: string | null
           trade_date: string
           created_at: string
@@ -541,6 +554,10 @@ export interface Database {
           net_amount: number
           buy_cost?: number
           realized_pnl?: number
+          lots?: number
+          shares?: number
+          price_per_share?: number
+          stamp_duty?: number
           notes?: string | null
           trade_date?: string
           created_at?: string
@@ -555,6 +572,10 @@ export interface Database {
           net_amount?: number
           buy_cost?: number
           realized_pnl?: number
+          lots?: number
+          shares?: number
+          price_per_share?: number
+          stamp_duty?: number
           notes?: string | null
           trade_date?: string
           created_at?: string

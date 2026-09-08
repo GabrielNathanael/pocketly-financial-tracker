@@ -21,6 +21,155 @@ export function humanizeAuditLog(log: AuditLog, lang: 'id' | 'en' = 'id'): Human
   const table = log.table_name
 
   // ==========================================
+  // 0. STOCK TRADES & STOCK HOLDINGS
+  // ==========================================
+  if (table === 'stock_trades') {
+    const ticker = newVal.ticker || oldVal.ticker || 'STOCK'
+    const type = newVal.type || oldVal.type || 'buy'
+    const isBuy = type === 'buy'
+    const typeLabel = isBuy ? (isId ? 'Beli Saham' : 'Buy Stock') : (isId ? 'Jual Saham' : 'Sell Stock')
+    const lots = newVal.lots || oldVal.lots || (Number(newVal.shares || oldVal.shares) / 100 || 0)
+    const shares = newVal.shares || oldVal.shares || (lots * 100)
+    const netAmount = Number(newVal.net_amount || oldVal.net_amount || 0)
+    const formattedNet = formatCurrency(netAmount, 'IDR')
+    const pricePerShare = Number(newVal.price_per_share || oldVal.price_per_share || (shares > 0 ? netAmount / shares : 0))
+    const realizedPnl = Number(newVal.realized_pnl || oldVal.realized_pnl || 0)
+    const stampDuty = Number(newVal.stamp_duty || oldVal.stamp_duty || 0)
+
+    if (log.action === 'INSERT') {
+      return {
+        moduleName: isId ? 'Investasi Saham' : 'Stock Trades',
+        title: `${ticker} • ${typeLabel} ${lots ? `${lots} Lot` : ''} (${formattedNet})`,
+        summary: isId
+          ? `Mencatat transaksi ${typeLabel.toLowerCase()} ${ticker} sebanyak ${lots} lot senilai ${formattedNet}`
+          : `Recorded ${typeLabel.toLowerCase()} of ${ticker} for ${lots} lots totaling ${formattedNet}`,
+        changes: [
+          { field: isId ? 'Kode Saham' : 'Ticker', to: ticker },
+          { field: isId ? 'Tipe Transaksi' : 'Transaction Type', to: typeLabel },
+          ...(lots ? [{ field: isId ? 'Jumlah Lot' : 'Lots', to: `${lots} Lot (${shares.toLocaleString()} lbr)` }] : []),
+          ...(pricePerShare > 0 ? [{ field: isId ? 'Harga per Lembar' : 'Price / Share', to: formatCurrency(Math.round(pricePerShare), 'IDR') }] : []),
+          { field: isId ? 'Nominal Bersih' : 'Net Amount', to: formattedNet },
+          ...(!isBuy && realizedPnl !== 0 ? [{ field: isId ? 'Realized PnL' : 'Realized P&L', to: `${realizedPnl >= 0 ? '+' : ''}${formatCurrency(realizedPnl, 'IDR')}` }] : []),
+          ...(stampDuty > 0 ? [{ field: isId ? 'Bea Materai' : 'Stamp Duty', to: formatCurrency(stampDuty, 'IDR') }] : []),
+          ...(newVal.trade_date ? [{ field: isId ? 'Tanggal Transaksi' : 'Trade Date', to: formatDate(newVal.trade_date, 'd MMM yyyy', lang) }] : []),
+        ],
+        badgeType: 'create',
+        badgeLabel: isId ? 'Dibuat' : 'Created',
+      }
+    }
+
+    if (log.action === 'DELETE') {
+      return {
+        moduleName: isId ? 'Investasi Saham' : 'Stock Trades',
+        title: `${ticker} • ${typeLabel} (${formattedNet})`,
+        summary: isId
+          ? `Menghapus catatan transaksi ${ticker} senilai ${formattedNet}`
+          : `Deleted transaction record of ${ticker} worth ${formattedNet}`,
+        changes: [
+          { field: isId ? 'Kode Saham' : 'Ticker', from: ticker },
+          { field: isId ? 'Nominal Dihapus' : 'Deleted Amount', from: formattedNet },
+        ],
+        badgeType: 'delete',
+        badgeLabel: isId ? 'Dihapus' : 'Deleted',
+      }
+    }
+
+    if (log.action === 'UPDATE') {
+      const tradeChanges: Array<{ field: string; from?: string; to?: string }> = []
+      if (oldVal.net_amount !== newVal.net_amount) {
+        tradeChanges.push({
+          field: isId ? 'Nominal Transaksi' : 'Net Amount',
+          from: formatCurrency(Number(oldVal.net_amount || 0), 'IDR'),
+          to: formatCurrency(Number(newVal.net_amount || 0), 'IDR'),
+        })
+      }
+      if (oldVal.lots !== newVal.lots) {
+        tradeChanges.push({
+          field: isId ? 'Jumlah Lot' : 'Lots',
+          from: `${oldVal.lots || 0} Lot`,
+          to: `${newVal.lots || 0} Lot`,
+        })
+      }
+      if (oldVal.notes !== newVal.notes) {
+        tradeChanges.push({
+          field: isId ? 'Catatan' : 'Notes',
+          from: oldVal.notes || (isId ? '(Kosong)' : '(Empty)'),
+          to: newVal.notes || (isId ? '(Kosong)' : '(Empty)'),
+        })
+      }
+
+      return {
+        moduleName: isId ? 'Investasi Saham' : 'Stock Trades',
+        title: `${ticker} • ${typeLabel} (${formattedNet})`,
+        summary: isId
+          ? `Memperbarui data transaksi saham ${ticker}`
+          : `Updated stock transaction details for ${ticker}`,
+        changes: tradeChanges,
+        badgeType: 'update',
+        badgeLabel: isId ? 'Diubah' : 'Updated',
+      }
+    }
+  }
+
+  if (table === 'stock_holdings') {
+    const ticker = newVal.ticker || oldVal.ticker || 'STOCK'
+    const lots = newVal.lots || oldVal.lots || 0
+    const totalCost = formatCurrency(Number(newVal.total_cost || oldVal.total_cost || 0), 'IDR')
+    const avgPrice = formatCurrency(Number(newVal.avg_buy_price || oldVal.avg_buy_price || 0), 'IDR')
+
+    if (log.action === 'INSERT') {
+      return {
+        moduleName: isId ? 'Portofolio Saham' : 'Stock Portfolio',
+        title: `${ticker} (${lots} Lot)`,
+        summary: isId
+          ? `Membuka posisi kepemilikan baru saham ${ticker} (${lots} lot)`
+          : `Opened new stock holding position for ${ticker} (${lots} lots)`,
+        changes: [
+          { field: isId ? 'Kode Saham' : 'Ticker', to: ticker },
+          { field: isId ? 'Jumlah Lot' : 'Lots', to: `${lots} Lot` },
+          { field: isId ? 'Total Modal' : 'Total Capital', to: totalCost },
+          { field: isId ? 'Harga Rata-Rata' : 'Avg Buy Price', to: `${avgPrice} / lbr` },
+        ],
+        badgeType: 'create',
+        badgeLabel: isId ? 'Dibuat' : 'Created',
+      }
+    }
+
+    if (log.action === 'DELETE') {
+      return {
+        moduleName: isId ? 'Portofolio Saham' : 'Stock Portfolio',
+        title: `${ticker} (${isId ? 'Posisi Ditutup' : 'Position Closed'})`,
+        summary: isId
+          ? `Menutup / menghapus kepemilikan saham ${ticker}`
+          : `Closed / removed stock holding for ${ticker}`,
+        changes: [
+          { field: isId ? 'Kode Saham' : 'Ticker', from: ticker },
+          { field: isId ? 'Modal Sebelumnya' : 'Previous Cost', from: totalCost },
+        ],
+        badgeType: 'delete',
+        badgeLabel: isId ? 'Dihapus' : 'Deleted',
+      }
+    }
+
+    if (log.action === 'UPDATE') {
+      return {
+        moduleName: isId ? 'Portofolio Saham' : 'Stock Portfolio',
+        title: `${ticker} (${lots} Lot)`,
+        summary: isId
+          ? `Memperbarui akumulasi lot dan modal saham ${ticker}`
+          : `Updated accumulated lots and cost basis for ${ticker}`,
+        changes: [
+          { field: isId ? 'Jumlah Lot' : 'Lots', from: `${oldVal.lots || 0} Lot`, to: `${newVal.lots || 0} Lot` },
+          { field: isId ? 'Total Modal' : 'Total Capital', from: formatCurrency(Number(oldVal.total_cost || 0), 'IDR'), to: totalCost },
+          { field: isId ? 'Harga Rata-Rata' : 'Avg Buy Price', from: `${formatCurrency(Number(oldVal.avg_buy_price || 0), 'IDR')} / lbr`, to: `${avgPrice} / lbr` },
+        ],
+        badgeType: 'update',
+        badgeLabel: isId ? 'Diubah' : 'Updated',
+      }
+    }
+  }
+
+  // ==========================================
   // 1. TRANSFERS
   // ==========================================
   if (table === 'transfers') {

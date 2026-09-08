@@ -87,8 +87,13 @@ export function GlobalAuditLogView({ initialLogs }: GlobalAuditLogViewProps) {
   const filteredLogs = useMemo(() => {
     return initialLogs.filter((log) => {
       // 1. Module filter
-      if (moduleFilter !== "all" && log.table_name !== moduleFilter)
-        return false;
+      if (moduleFilter !== "all") {
+        if (moduleFilter === "stock_trades") {
+          if (log.table_name !== "stock_trades" && log.table_name !== "stock_holdings") return false;
+        } else if (log.table_name !== moduleFilter) {
+          return false;
+        }
+      }
 
       // 2. Action filter
       if (actionFilter !== "all" && log.action !== actionFilter) return false;
