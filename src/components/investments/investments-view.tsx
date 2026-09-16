@@ -87,14 +87,18 @@ export function InvestmentsView({
   );
 
   // Active Main Tab
-  const [activeTab, setActiveTab] = useState<"holdings" | "trades" | "stamp_duty">("holdings");
+  const [activeTab, setActiveTab] = useState<
+    "holdings" | "trades" | "stamp_duty"
+  >("holdings");
   // Holdings View Mode: Grid Cards vs Pro Table
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   // Selected Account Filter
   const [selectedAccountId, setSelectedAccountId] = useState<string>("all");
 
   // Filter & Search states for Trades
-  const [tradeFilter, setTradeFilter] = useState<"all" | "buy" | "sell" | "stamp_only">("all");
+  const [tradeFilter, setTradeFilter] = useState<
+    "all" | "buy" | "sell" | "stamp_only"
+  >("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [tradesDisplayLimit, setTradesDisplayLimit] = useState(25);
 
@@ -199,7 +203,8 @@ export function InvestmentsView({
 
   const netTradingPnl = totalRealizedProfit - totalRealizedLoss;
   const totalPortfolioValue = totalStockCost + totalRdnCash;
-  const winRate = totalClosedTrades > 0 ? (winningTradesCount / totalClosedTrades) * 100 : 0;
+  const winRate =
+    totalClosedTrades > 0 ? (winningTradesCount / totalClosedTrades) * 100 : 0;
 
   // Daily Trading Volume & Stamp Duty (Bea Materai Rp 10.000) Tracker for Today
   const todayDateStr = getLocalDateString();
@@ -215,7 +220,12 @@ export function InvestmentsView({
   // Asset Allocation breakdown
   const allocationItems = useMemo(() => {
     if (totalPortfolioValue <= 0) return [];
-    const items: { label: string; value: number; percent: number; color: string }[] = [];
+    const items: {
+      label: string;
+      value: number;
+      percent: number;
+      color: string;
+    }[] = [];
 
     holdings.forEach((h, idx) => {
       const val = convertAmount(
@@ -245,11 +255,21 @@ export function InvestmentsView({
     }
 
     return items;
-  }, [holdings, totalPortfolioValue, totalRdnCash, displayCurrency, exchangeRate, t]);
+  }, [
+    holdings,
+    totalPortfolioValue,
+    totalRdnCash,
+    displayCurrency,
+    exchangeRate,
+    t,
+  ]);
 
   // Stamp Duty Audit Days
   const stampDutyDays = useMemo(() => {
-    const daysMap = new Map<string, { date: string; volume: number; duty: number; count: number }>();
+    const daysMap = new Map<
+      string,
+      { date: string; volume: number; duty: number; count: number }
+    >();
     trades.forEach((tr) => {
       const d = tr.trade_date ? tr.trade_date.split("T")[0] : "";
       if (!d) return;
@@ -268,12 +288,11 @@ export function InvestmentsView({
   const activeSellHolding =
     holdings.find((h) => h.id === sellHoldingId) || selectedHoldingForSell;
 
-  const currentHoldingLots =
-    activeSellHolding
-      ? Number(activeSellHolding.lots) ||
-        (Number(activeSellHolding.total_shares) / 100 ||
-          (Number(activeSellHolding.total_cost) > 0 ? 1 : 0))
-      : 0;
+  const currentHoldingLots = activeSellHolding
+    ? Number(activeSellHolding.lots) ||
+      Number(activeSellHolding.total_shares) / 100 ||
+      (Number(activeSellHolding.total_cost) > 0 ? 1 : 0)
+    : 0;
 
   const currentHoldingTotalCost = activeSellHolding
     ? Number(activeSellHolding.total_cost) || 0
@@ -288,7 +307,8 @@ export function InvestmentsView({
   // Real-time calculations for Sell Modal
   const numSellLots = parseFloat(sellLots) || 0;
   const numSellNetAmount = parseFloat(sellNetAmount) || 0;
-  const isFullSell = numSellLots >= currentHoldingLots - 0.0001 && currentHoldingLots > 0;
+  const isFullSell =
+    numSellLots >= currentHoldingLots - 0.0001 && currentHoldingLots > 0;
   const estSellCostBasis =
     currentHoldingLots > 0
       ? (numSellLots / currentHoldingLots) * currentHoldingTotalCost
@@ -316,7 +336,10 @@ export function InvestmentsView({
     if (pct === 100) {
       setSellLots(String(currentHoldingLots));
     } else {
-      const calculatedLots = Math.max(1, Math.floor((currentHoldingLots * pct) / 100));
+      const calculatedLots = Math.max(
+        1,
+        Math.floor((currentHoldingLots * pct) / 100),
+      );
       setSellLots(String(calculatedLots));
     }
   };
@@ -338,8 +361,7 @@ export function InvestmentsView({
     setSelectedHoldingForSell(holding);
     setSellHoldingId(holding.id);
     const holdLots =
-      Number(holding.lots) ||
-      (Number(holding.total_shares) / 100 || 1);
+      Number(holding.lots) || Number(holding.total_shares) / 100 || 1;
     setSellLots(String(holdLots));
     setSellNetAmount("");
     setSellNotes("");
@@ -354,19 +376,35 @@ export function InvestmentsView({
     setBuyError(null);
 
     if (!buyAccountId) {
-      setBuyError(language === "en" ? "Please select a payment account (RDN)" : "Pilih akun pembayaran (RDN)");
+      setBuyError(
+        language === "en"
+          ? "Please select a payment account (RDN)"
+          : "Pilih akun pembayaran (RDN)",
+      );
       return;
     }
     if (!buyTicker.trim()) {
-      setBuyError(language === "en" ? "Stock ticker is required" : "Kode saham wajib diisi");
+      setBuyError(
+        language === "en"
+          ? "Stock ticker is required"
+          : "Kode saham wajib diisi",
+      );
       return;
     }
     if (numBuyLots <= 0) {
-      setBuyError(language === "en" ? "Lot quantity must be greater than 0" : "Jumlah lot harus lebih besar dari 0");
+      setBuyError(
+        language === "en"
+          ? "Lot quantity must be greater than 0"
+          : "Jumlah lot harus lebih besar dari 0",
+      );
       return;
     }
     if (numBuyNetAmount <= 0) {
-      setBuyError(language === "en" ? "Total purchase amount must be greater than 0" : "Total nominal pembelian harus lebih besar dari 0");
+      setBuyError(
+        language === "en"
+          ? "Total purchase amount must be greater than 0"
+          : "Total nominal pembelian harus lebih besar dari 0",
+      );
       return;
     }
 
@@ -379,11 +417,17 @@ export function InvestmentsView({
         netAmount: numBuyNetAmount,
         notes: buyNotes.trim() || null,
         tradeDate: buyDate,
+        language,
       });
 
       if (res.error) {
         setBuyError(res.error);
-        toast.error(language === "en" ? "Failed to Record Purchase" : "Gagal Mencatat Pembelian", { description: res.error });
+        toast.error(
+          language === "en"
+            ? "Failed to Record Purchase"
+            : "Gagal Mencatat Pembelian",
+          { description: res.error },
+        );
       } else {
         toast.success(
           res.stampDutyApplied
@@ -414,15 +458,27 @@ export function InvestmentsView({
     const holding =
       holdings.find((h) => h.id === sellHoldingId) || selectedHoldingForSell;
     if (!holding) {
-      setSellError(language === "en" ? "Please select a stock to sell" : "Pilih saham yang ingin dijual");
+      setSellError(
+        language === "en"
+          ? "Please select a stock to sell"
+          : "Pilih saham yang ingin dijual",
+      );
       return;
     }
     if (numSellLots <= 0) {
-      setSellError(language === "en" ? "Lots to sell must be greater than 0" : "Jumlah lot yang dijual harus lebih dari 0");
+      setSellError(
+        language === "en"
+          ? "Lots to sell must be greater than 0"
+          : "Jumlah lot yang dijual harus lebih dari 0",
+      );
       return;
     }
     if (numSellNetAmount <= 0) {
-      setSellError(language === "en" ? "Net proceeds must be greater than 0" : "Nominal penerimaan bersih harus lebih dari 0");
+      setSellError(
+        language === "en"
+          ? "Net proceeds must be greater than 0"
+          : "Nominal penerimaan bersih harus lebih dari 0",
+      );
       return;
     }
 
@@ -434,11 +490,17 @@ export function InvestmentsView({
         netAmount: numSellNetAmount,
         notes: sellNotes.trim() || null,
         tradeDate: sellDate,
+        language,
       });
 
       if (res.error) {
         setSellError(res.error);
-        toast.error(language === "en" ? "Failed to Record Sale" : "Gagal Mencatat Penjualan", { description: res.error });
+        toast.error(
+          language === "en"
+            ? "Failed to Record Sale"
+            : "Gagal Mencatat Penjualan",
+          { description: res.error },
+        );
       } else {
         const pnl = res.realizedPnl || 0;
         const isProfit = pnl >= 0;
@@ -467,13 +529,21 @@ export function InvestmentsView({
     try {
       const res = await deleteStockTrade(tradeId);
       if (res.error) {
-        toast.error(language === "en" ? "Failed to Delete Transaction" : "Gagal Menghapus Transaksi", { description: res.error });
+        toast.error(
+          language === "en"
+            ? "Failed to Delete Transaction"
+            : "Gagal Menghapus Transaksi",
+          { description: res.error },
+        );
       } else {
         toast.success(t.investments.deleteSuccess);
         router.refresh();
       }
     } catch (err: any) {
-      toast.error(language === "en" ? "An Error Occurred" : "Terjadi Kesalahan", { description: err.message });
+      toast.error(
+        language === "en" ? "An Error Occurred" : "Terjadi Kesalahan",
+        { description: err.message },
+      );
     }
   };
 
@@ -481,7 +551,7 @@ export function InvestmentsView({
   const handleOpenEditTrade = (trade: EnrichedStockTrade) => {
     setEditingTrade(trade);
     setEditTicker(trade.ticker);
-    setEditLots(String(trade.lots || (Number(trade.shares) / 100 || 1)));
+    setEditLots(String(trade.lots || Number(trade.shares) / 100 || 1));
     setEditNetAmount(String(trade.net_amount));
     setEditTradeDate(getLocalDateString(trade.trade_date));
     setEditNotes(trade.notes || "");
@@ -495,7 +565,11 @@ export function InvestmentsView({
     if (!editingTrade) return;
     const numAmount = parseFloat(editNetAmount);
     if (isNaN(numAmount) || numAmount <= 0) {
-      setEditTradeError(language === "en" ? "Transaction amount must be greater than 0" : "Nominal transaksi harus lebih besar dari 0");
+      setEditTradeError(
+        language === "en"
+          ? "Transaction amount must be greater than 0"
+          : "Nominal transaksi harus lebih besar dari 0",
+      );
       return;
     }
     const numEditLots = parseFloat(editLots) || 0;
@@ -514,7 +588,12 @@ export function InvestmentsView({
 
       if (res.error) {
         setEditTradeError(res.error);
-        toast.error(language === "en" ? "Failed to Update Transaction" : "Gagal Mengupdate Transaksi", { description: res.error });
+        toast.error(
+          language === "en"
+            ? "Failed to Update Transaction"
+            : "Gagal Mengupdate Transaksi",
+          { description: res.error },
+        );
       } else {
         toast.success(t.investments.editTradeSuccess);
         setIsEditTradeModalOpen(false);
@@ -531,10 +610,12 @@ export function InvestmentsView({
   // Filtered trades list
   const filteredTrades = useMemo(() => {
     return trades.filter((tr) => {
-      if (selectedAccountId !== "all" && tr.account_id !== selectedAccountId) return false;
+      if (selectedAccountId !== "all" && tr.account_id !== selectedAccountId)
+        return false;
       if (tradeFilter === "buy" && tr.type !== "buy") return false;
       if (tradeFilter === "sell" && tr.type !== "sell") return false;
-      if (tradeFilter === "stamp_only" && (Number(tr.stamp_duty) || 0) === 0) return false;
+      if (tradeFilter === "stamp_only" && (Number(tr.stamp_duty) || 0) === 0)
+        return false;
       if (
         searchQuery &&
         !tr.ticker.toLowerCase().includes(searchQuery.toLowerCase()) &&
@@ -569,12 +650,17 @@ export function InvestmentsView({
           <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
             {/* Account Selector */}
             {rdnAccounts.length > 1 && (
-              <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
+              <Select
+                value={selectedAccountId}
+                onValueChange={setSelectedAccountId}
+              >
                 <SelectTrigger className="w-full sm:w-44 h-8 text-xs">
                   <SelectValue placeholder={t.investments.allAccounts} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">{t.investments.allAccounts}</SelectItem>
+                  <SelectItem value="all">
+                    {t.investments.allAccounts}
+                  </SelectItem>
                   {rdnAccounts.map((acc) => (
                     <SelectItem key={acc.id} value={acc.id}>
                       {acc.name}
@@ -648,7 +734,8 @@ export function InvestmentsView({
               {formatCurrency(netTradingPnl, displayCurrency)}
             </div>
             <span className="text-[10px] text-[#64748B] dark:text-[#94A3B8] mt-1">
-              {t.investments.fromSales} {totalClosedTrades} {t.investments.salesCount}
+              {t.investments.fromSales} {totalClosedTrades}{" "}
+              {t.investments.salesCount}
             </span>
           </div>
 
@@ -661,7 +748,8 @@ export function InvestmentsView({
               {formatCurrency(totalRdnCash, displayCurrency)}
             </div>
             <span className="text-[10px] text-[#64748B] dark:text-[#94A3B8] mt-1">
-              {t.investments.availableInAccounts} {rdnAccounts.length} {t.investments.accountsText}
+              {t.investments.availableInAccounts} {rdnAccounts.length}{" "}
+              {t.investments.accountsText}
             </span>
           </div>
 
@@ -679,12 +767,16 @@ export function InvestmentsView({
                     : "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300",
                 )}
               >
-                {isTodayStampDutyTriggered ? t.investments.stampCharged : t.investments.stampFree}
+                {isTodayStampDutyTriggered
+                  ? t.investments.stampCharged
+                  : t.investments.stampFree}
               </span>
             </div>
             <div className="tnum font-bold text-xs sm:text-sm text-[#0F172A] dark:text-[#F8FAFC] mt-1">
               {formatCurrency(todayTradingVolume, "IDR")}{" "}
-              <span className="text-[10px] text-[#94A3B8] font-normal">/ 10 Jt</span>
+              <span className="text-[10px] text-[#94A3B8] font-normal">
+                / 10 Jt
+              </span>
             </div>
             <div className="w-full bg-[#E5E7EB] dark:bg-[#27272A] h-1.5 rounded-full overflow-hidden mt-1.5">
               <div
@@ -708,7 +800,9 @@ export function InvestmentsView({
                 <PieChart className="w-3.5 h-3.5" />
                 {t.investments.portfolioAllocation}
               </span>
-              <span>{holdings.length} {t.investments.activeTickers}</span>
+              <span>
+                {holdings.length} {t.investments.activeTickers}
+              </span>
             </div>
 
             {/* Multi-segment Progress Bar */}
@@ -716,7 +810,10 @@ export function InvestmentsView({
               {allocationItems.map((item, idx) => (
                 <div
                   key={idx}
-                  className={cn("h-full transition-all hover:opacity-80 cursor-pointer", item.color)}
+                  className={cn(
+                    "h-full transition-all hover:opacity-80 cursor-pointer",
+                    item.color,
+                  )}
                   style={{ width: `${item.percent}%` }}
                   title={`${item.label}: ${item.percent.toFixed(1)}% (${formatCurrency(item.value, displayCurrency)})`}
                 />
@@ -757,7 +854,9 @@ export function InvestmentsView({
               )}
             >
               <Layers className="w-3.5 h-3.5" />
-              <span>{t.investments.holdingsTab} ({filteredHoldings.length})</span>
+              <span>
+                {t.investments.holdingsTab} ({filteredHoldings.length})
+              </span>
             </button>
 
             <button
@@ -771,7 +870,9 @@ export function InvestmentsView({
               )}
             >
               <Clock className="w-3.5 h-3.5" />
-              <span>{t.investments.tradesTab} ({trades.length})</span>
+              <span>
+                {t.investments.tradesTab} ({trades.length})
+              </span>
             </button>
 
             <button
@@ -860,16 +961,24 @@ export function InvestmentsView({
                 {filteredHoldings.map((h) => {
                   const lots =
                     Number(h.lots) ||
-                    (Number(h.total_shares) / 100 ||
-                      (Number(h.total_cost) > 0 ? 1 : 0));
-                  const shares = Number(h.total_shares) || Math.round(lots * 100);
+                    Number(h.total_shares) / 100 ||
+                    (Number(h.total_cost) > 0 ? 1 : 0);
+                  const shares =
+                    Number(h.total_shares) || Math.round(lots * 100);
                   const totalCost = Number(h.total_cost) || 0;
                   const avgBuyPrice =
                     Number(h.avg_buy_price) ||
                     (shares > 0 ? totalCost / shares : 0);
                   const allocationPct =
                     totalPortfolioValue > 0
-                      ? (convertAmount(totalCost, h.account?.currency || "IDR", displayCurrency, exchangeRate) / totalPortfolioValue) * 100
+                      ? (convertAmount(
+                          totalCost,
+                          h.account?.currency || "IDR",
+                          displayCurrency,
+                          exchangeRate,
+                        ) /
+                          totalPortfolioValue) *
+                        100
                       : 0;
 
                   return (
@@ -890,7 +999,8 @@ export function InvestmentsView({
                           </div>
 
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300">
-                            {allocationPct.toFixed(1)}% {t.investments.portfolioShares}
+                            {allocationPct.toFixed(1)}%{" "}
+                            {t.investments.portfolioShares}
                           </span>
                         </div>
 
@@ -901,10 +1011,14 @@ export function InvestmentsView({
                               {t.investments.totalHoldings}
                             </span>
                             <span className="tnum font-bold text-xs sm:text-sm text-[#0F172A] dark:text-[#F8FAFC] mt-0.5 block">
-                              {lots} <span className="text-[10px] font-normal text-[#94A3B8]">Lot</span>
+                              {lots}{" "}
+                              <span className="text-[10px] font-normal text-[#94A3B8]">
+                                Lot
+                              </span>
                             </span>
                             <span className="text-[10px] text-[#94A3B8]">
-                              ({shares.toLocaleString()} {t.investments.stockShares})
+                              ({shares.toLocaleString()}{" "}
+                              {t.investments.stockShares})
                             </span>
                           </div>
 
@@ -913,10 +1027,17 @@ export function InvestmentsView({
                               {t.investments.avgBuyPrice}
                             </span>
                             <span className="tnum font-bold text-xs sm:text-sm text-indigo-600 dark:text-indigo-400 mt-0.5 block">
-                              {formatCurrency(Math.round(avgBuyPrice), h.account?.currency || "IDR")}
+                              {formatCurrency(
+                                Math.round(avgBuyPrice),
+                                h.account?.currency || "IDR",
+                              )}
                             </span>
                             <span className="text-[10px] text-[#94A3B8]">
-                              {t.investments.costBasisLabel}: {formatCurrency(totalCost, h.account?.currency || "IDR")}
+                              {t.investments.costBasisLabel}:{" "}
+                              {formatCurrency(
+                                totalCost,
+                                h.account?.currency || "IDR",
+                              )}
                             </span>
                           </div>
                         </div>
@@ -960,28 +1081,48 @@ export function InvestmentsView({
                     <tr className="border-b border-[#E5E7EB] dark:border-[#27272A] text-[10px] uppercase font-bold text-[#94A3B8] bg-[#F8F9FA] dark:bg-[#1A1A20]">
                       <th className="py-3 px-4">{t.investments.colTicker}</th>
                       <th className="py-3 px-3">{t.investments.colAccount}</th>
-                      <th className="py-3 px-3 text-right">{t.investments.colAllocation}</th>
-                      <th className="py-3 px-3 text-right">{t.investments.colLots}</th>
-                      <th className="py-3 px-3 text-right">{t.investments.colShares}</th>
-                      <th className="py-3 px-3 text-right">{t.investments.colAvgPrice}</th>
-                      <th className="py-3 px-3 text-right">{t.investments.colCapital}</th>
-                      <th className="py-3 px-4 text-center">{t.investments.colActions}</th>
+                      <th className="py-3 px-3 text-right">
+                        {t.investments.colAllocation}
+                      </th>
+                      <th className="py-3 px-3 text-right">
+                        {t.investments.colLots}
+                      </th>
+                      <th className="py-3 px-3 text-right">
+                        {t.investments.colShares}
+                      </th>
+                      <th className="py-3 px-3 text-right">
+                        {t.investments.colAvgPrice}
+                      </th>
+                      <th className="py-3 px-3 text-right">
+                        {t.investments.colCapital}
+                      </th>
+                      <th className="py-3 px-4 text-center">
+                        {t.investments.colActions}
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#E5E7EB] dark:divide-[#27272A]">
                     {filteredHoldings.map((h) => {
                       const lots =
                         Number(h.lots) ||
-                        (Number(h.total_shares) / 100 ||
-                          (Number(h.total_cost) > 0 ? 1 : 0));
-                      const shares = Number(h.total_shares) || Math.round(lots * 100);
+                        Number(h.total_shares) / 100 ||
+                        (Number(h.total_cost) > 0 ? 1 : 0);
+                      const shares =
+                        Number(h.total_shares) || Math.round(lots * 100);
                       const totalCost = Number(h.total_cost) || 0;
                       const avgBuyPrice =
                         Number(h.avg_buy_price) ||
                         (shares > 0 ? totalCost / shares : 0);
                       const allocationPct =
                         totalPortfolioValue > 0
-                          ? (convertAmount(totalCost, h.account?.currency || "IDR", displayCurrency, exchangeRate) / totalPortfolioValue) * 100
+                          ? (convertAmount(
+                              totalCost,
+                              h.account?.currency || "IDR",
+                              displayCurrency,
+                              exchangeRate,
+                            ) /
+                              totalPortfolioValue) *
+                            100
                           : 0;
 
                       return (
@@ -1007,10 +1148,16 @@ export function InvestmentsView({
                             {shares.toLocaleString()}
                           </td>
                           <td className="py-3 px-3 text-right font-mono font-bold text-indigo-600 dark:text-indigo-400">
-                            {formatCurrency(Math.round(avgBuyPrice), h.account?.currency || "IDR")}
+                            {formatCurrency(
+                              Math.round(avgBuyPrice),
+                              h.account?.currency || "IDR",
+                            )}
                           </td>
                           <td className="py-3 px-3 text-right font-mono font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-                            {formatCurrency(totalCost, h.account?.currency || "IDR")}
+                            {formatCurrency(
+                              totalCost,
+                              h.account?.currency || "IDR",
+                            )}
                           </td>
                           <td className="py-3 px-4 text-center">
                             <div className="flex items-center justify-center gap-1.5">
@@ -1122,11 +1269,12 @@ export function InvestmentsView({
                     const pnl = Number(tItem.realized_pnl) || 0;
                     const isProfit = pnl >= 0;
                     const tradeLots =
-                      Number(tItem.lots) ||
-                      (Number(tItem.shares) / 100 || 1);
+                      Number(tItem.lots) || Number(tItem.shares) / 100 || 1;
                     const pricePerShare =
                       Number(tItem.price_per_share) ||
-                      (tradeLots > 0 ? Number(tItem.net_amount) / (tradeLots * 100) : 0);
+                      (tradeLots > 0
+                        ? Number(tItem.net_amount) / (tradeLots * 100)
+                        : 0);
                     const stampDuty = Number(tItem.stamp_duty) || 0;
 
                     return (
@@ -1168,10 +1316,20 @@ export function InvestmentsView({
                                     : "bg-gray-100 dark:bg-[#27272A] text-[#64748B]",
                                 )}
                               >
-                                {isBuy ? (language === "en" ? "BUY" : "BELI") : (language === "en" ? "SELL" : "JUAL")}
+                                {isBuy
+                                  ? language === "en"
+                                    ? "BUY"
+                                    : "BELI"
+                                  : language === "en"
+                                    ? "SELL"
+                                    : "JUAL"}
                               </span>
                               <span className="text-[10px] font-mono text-[#64748B] dark:text-[#94A3B8]">
-                                {tradeLots} Lot @ {formatCurrency(Math.round(pricePerShare), "IDR")}
+                                {tradeLots} Lot @{" "}
+                                {formatCurrency(
+                                  Math.round(pricePerShare),
+                                  "IDR",
+                                )}
                               </span>
                               {stampDuty > 0 && (
                                 <span className="px-1.5 py-0.2 rounded bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 text-[9px] font-bold">
@@ -1180,8 +1338,11 @@ export function InvestmentsView({
                               )}
                             </div>
                             <span className="text-[10px] text-[#64748B] dark:text-[#94A3B8] truncate mt-0.5">
-                              {format(parseISO(tItem.trade_date), "dd MMM yyyy")} •{" "}
-                              {tItem.account?.name || "RDN"}
+                              {format(
+                                parseISO(tItem.trade_date),
+                                "dd MMM yyyy",
+                              )}{" "}
+                              • {tItem.account?.name || "RDN"}
                             </span>
                           </div>
                         </div>
@@ -1274,7 +1435,9 @@ export function InvestmentsView({
                     {t.investments.stampTodayStatus}
                   </span>
                   <span className="tnum font-bold text-sm sm:text-base text-emerald-600 dark:text-emerald-400 mt-0.5 block">
-                    {isTodayStampDutyTriggered ? t.investments.stampCharged : t.investments.stampFree}
+                    {isTodayStampDutyTriggered
+                      ? t.investments.stampCharged
+                      : t.investments.stampFree}
                   </span>
                 </div>
               </div>
@@ -1295,26 +1458,40 @@ export function InvestmentsView({
                   <table className="w-full text-left text-xs">
                     <thead>
                       <tr className="border-b border-[#E5E7EB] dark:border-[#27272A] text-[10px] uppercase font-bold text-[#94A3B8] bg-[#F8F9FA] dark:bg-[#1A1A20]">
-                        <th className="py-2.5 px-4">{t.investments.stampExchangeDate}</th>
-                        <th className="py-2.5 px-3">{t.investments.stampOrderCount}</th>
-                        <th className="py-2.5 px-3 text-right">{t.investments.stampDailyVolume}</th>
-                        <th className="py-2.5 px-4 text-right">{t.investments.stampDutyFee}</th>
+                        <th className="py-2.5 px-4">
+                          {t.investments.stampExchangeDate}
+                        </th>
+                        <th className="py-2.5 px-3">
+                          {t.investments.stampOrderCount}
+                        </th>
+                        <th className="py-2.5 px-3 text-right">
+                          {t.investments.stampDailyVolume}
+                        </th>
+                        <th className="py-2.5 px-4 text-right">
+                          {t.investments.stampDutyFee}
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#E5E7EB] dark:divide-[#27272A]">
                       {stampDutyDays.map((dayItem) => (
-                        <tr key={dayItem.date} className="hover:bg-[#F8F9FA] dark:hover:bg-[#1A1A20]">
+                        <tr
+                          key={dayItem.date}
+                          className="hover:bg-[#F8F9FA] dark:hover:bg-[#1A1A20]"
+                        >
                           <td className="py-2.5 px-4 font-bold text-[#0F172A] dark:text-[#FAFAFA]">
                             {format(parseISO(dayItem.date), "dd MMMM yyyy")}
                           </td>
                           <td className="py-2.5 px-3 text-[#64748B] dark:text-[#94A3B8]">
-                            {dayItem.count} {language === "en" ? "orders" : "order"}
+                            {dayItem.count}{" "}
+                            {language === "en" ? "orders" : "order"}
                           </td>
                           <td className="py-2.5 px-3 text-right font-mono font-bold text-[#0F172A] dark:text-[#FAFAFA]">
                             {formatCurrency(dayItem.volume, "IDR")}
                           </td>
                           <td className="py-2.5 px-4 text-right font-mono font-bold text-amber-600 dark:text-amber-400">
-                            {dayItem.duty > 0 ? formatCurrency(dayItem.duty, "IDR") : "Rp 10.000"}
+                            {dayItem.duty > 0
+                              ? formatCurrency(dayItem.duty, "IDR")
+                              : "Rp 10.000"}
                           </td>
                         </tr>
                       ))}
@@ -1344,7 +1521,9 @@ export function InvestmentsView({
           {/* Account Selector */}
           <div className="flex flex-col gap-1">
             <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
-              {language === "en" ? "Payment Account (RDN)" : "Akun Pembayaran (RDN)"}
+              {language === "en"
+                ? "Payment Account (RDN)"
+                : "Akun Pembayaran (RDN)"}
             </label>
             <Select
               value={buyAccountId || rdnAccounts[0]?.id}
@@ -1356,7 +1535,9 @@ export function InvestmentsView({
                     const cur = rdnAccounts.find(
                       (a) => a.id === (buyAccountId || rdnAccounts[0]?.id),
                     );
-                    return cur ? `${cur.name} (${cur.currency})` : "Pilih Akun RDN";
+                    return cur
+                      ? `${cur.name} (${cur.currency})`
+                      : "Pilih Akun RDN";
                   })()}
                 </SelectValue>
               </SelectTrigger>
@@ -1412,7 +1593,8 @@ export function InvestmentsView({
                 </span>
               </div>
               <span className="tnum font-bold text-xs sm:text-sm text-indigo-600 dark:text-indigo-400">
-                {formatCurrency(Math.round(estBuyPricePerShare), "IDR")} / {t.investments.stockShares}
+                {formatCurrency(Math.round(estBuyPricePerShare), "IDR")} /{" "}
+                {t.investments.stockShares}
               </span>
             </div>
           )}
@@ -1499,8 +1681,7 @@ export function InvestmentsView({
                 setSelectedHoldingForSell(hold || null);
                 if (hold) {
                   const holdLots =
-                    Number(hold.lots) ||
-                    (Number(hold.total_shares) / 100 || 1);
+                    Number(hold.lots) || Number(hold.total_shares) / 100 || 1;
                   setSellLots(String(holdLots));
                 }
               }}
@@ -1511,8 +1692,7 @@ export function InvestmentsView({
               <SelectContent>
                 {holdings.map((h) => {
                   const hLots =
-                    Number(h.lots) ||
-                    (Number(h.total_shares) / 100 || 1);
+                    Number(h.lots) || Number(h.total_shares) / 100 || 1;
                   return (
                     <SelectItem key={h.id} value={h.id}>
                       {h.ticker} ({hLots} Lot) • {t.investments.costBasisLabel}:{" "}
@@ -1531,19 +1711,28 @@ export function InvestmentsView({
           {activeSellHolding && (
             <div className="p-3 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-1.5 text-xs">
               <div className="flex items-center justify-between">
-                <span className="text-[#94A3B8]">{t.investments.totalHoldings}:</span>
+                <span className="text-[#94A3B8]">
+                  {t.investments.totalHoldings}:
+                </span>
                 <span className="tnum font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-                  {currentHoldingLots} Lot ({(currentHoldingLots * 100).toLocaleString()} {t.investments.stockShares})
+                  {currentHoldingLots} Lot (
+                  {(currentHoldingLots * 100).toLocaleString()}{" "}
+                  {t.investments.stockShares})
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[#94A3B8]">{t.investments.avgBuyPrice}:</span>
+                <span className="text-[#94A3B8]">
+                  {t.investments.avgBuyPrice}:
+                </span>
                 <span className="tnum font-bold text-indigo-600 dark:text-indigo-400">
-                  {formatCurrency(Math.round(currentHoldingAvgPrice), "IDR")} / {t.investments.stockShares}
+                  {formatCurrency(Math.round(currentHoldingAvgPrice), "IDR")} /{" "}
+                  {t.investments.stockShares}
                 </span>
               </div>
               <div className="flex items-center justify-between border-t border-[#E5E7EB] dark:border-[#27272A] pt-1.5">
-                <span className="text-[#94A3B8]">{t.investments.costBasisLabel}:</span>
+                <span className="text-[#94A3B8]">
+                  {t.investments.costBasisLabel}:
+                </span>
                 <span className="tnum font-bold text-[#0F172A] dark:text-[#F8FAFC]">
                   {formatCurrency(currentHoldingTotalCost, "IDR")}
                 </span>
@@ -1613,18 +1802,24 @@ export function InvestmentsView({
                     <ArrowDownRight className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0" />
                   )}
                   <span className="text-[11px] font-bold uppercase tracking-wider">
-                    {estRealizedPnl >= 0 ? t.investments.gainLabel : t.investments.lossLabel}
+                    {estRealizedPnl >= 0
+                      ? t.investments.gainLabel
+                      : t.investments.lossLabel}
                   </span>
                 </div>
                 <span className="tnum font-mono font-bold text-xs sm:text-sm">
                   {estRealizedPnl >= 0 ? "+" : ""}
-                  {formatCurrency(estRealizedPnl, "IDR")} ({estPnlPercent >= 0 ? "+" : ""}
+                  {formatCurrency(estRealizedPnl, "IDR")} (
+                  {estPnlPercent >= 0 ? "+" : ""}
                   {estPnlPercent.toFixed(2)}%)
                 </span>
               </div>
 
               <div className="text-[11px] opacity-80 flex items-center justify-between border-t border-current/10 pt-1">
-                <span>{t.investments.costBasisLabel}: {formatCurrency(Math.round(estSellCostBasis), "IDR")}</span>
+                <span>
+                  {t.investments.costBasisLabel}:{" "}
+                  {formatCurrency(Math.round(estSellCostBasis), "IDR")}
+                </span>
                 <span>
                   {isFullSell
                     ? t.investments.positionClosed
@@ -1690,7 +1885,10 @@ export function InvestmentsView({
         }}
         title={t.investments.modalEditTradeTitle}
       >
-        <form onSubmit={handleEditTradeSubmit} className="flex flex-col gap-3.5">
+        <form
+          onSubmit={handleEditTradeSubmit}
+          className="flex flex-col gap-3.5"
+        >
           {editTradeError && (
             <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 text-xs font-medium flex items-start gap-2">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
@@ -1711,7 +1909,13 @@ export function InvestmentsView({
                     : "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300",
                 )}
               >
-                {editingTrade.type === "buy" ? (language === "en" ? "BUY" : "BELI") : (language === "en" ? "SELL" : "JUAL")}
+                {editingTrade.type === "buy"
+                  ? language === "en"
+                    ? "BUY"
+                    : "BELI"
+                  : language === "en"
+                    ? "SELL"
+                    : "JUAL"}
               </span>
             </div>
           )}
@@ -1790,7 +1994,9 @@ export function InvestmentsView({
               disabled={isSubmittingEditTrade}
               className="px-4 py-2 rounded-xl bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] text-xs font-bold hover:opacity-90 active:scale-95 transition-all cursor-pointer"
             >
-              {isSubmittingEditTrade ? t.investments.saving : t.investments.updateTradeBtn}
+              {isSubmittingEditTrade
+                ? t.investments.saving
+                : t.investments.updateTradeBtn}
             </button>
           </div>
         </form>
@@ -1808,9 +2014,7 @@ export function InvestmentsView({
             const isBuy = dt.type === "buy";
             const pnl = Number(dt.realized_pnl) || 0;
             const isProfit = pnl >= 0;
-            const lots =
-              Number(dt.lots) ||
-              (Number(dt.shares) / 100 || 1);
+            const lots = Number(dt.lots) || Number(dt.shares) / 100 || 1;
             const pricePerShare =
               Number(dt.price_per_share) ||
               (lots > 0 ? Number(dt.net_amount) / (lots * 100) : 0);
@@ -1833,7 +2037,13 @@ export function InvestmentsView({
                             : "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300",
                         )}
                       >
-                        {isBuy ? (language === "en" ? "BUY" : "BELI") : (language === "en" ? "SELL" : "JUAL")}
+                        {isBuy
+                          ? language === "en"
+                            ? "BUY"
+                            : "BELI"
+                          : language === "en"
+                            ? "SELL"
+                            : "JUAL"}
                       </span>
                     </div>
                     <span className="text-[11px] text-[#64748B] dark:text-[#94A3B8]">
@@ -1876,30 +2086,46 @@ export function InvestmentsView({
                 {/* Detail Info List */}
                 <div className="flex flex-col gap-2">
                   <div className="p-2.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-between">
-                    <span className="text-[#94A3B8]">{t.investments.totalHoldings}:</span>
+                    <span className="text-[#94A3B8]">
+                      {t.investments.totalHoldings}:
+                    </span>
                     <span className="font-bold text-[#0F172A] dark:text-[#FAFAFA]">
-                      {lots} Lot ({(lots * 100).toLocaleString()} {t.investments.stockShares})
+                      {lots} Lot ({(lots * 100).toLocaleString()}{" "}
+                      {t.investments.stockShares})
                     </span>
                   </div>
 
                   <div className="p-2.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-between">
-                    <span className="text-[#94A3B8]">{t.investments.colAvgPrice}:</span>
+                    <span className="text-[#94A3B8]">
+                      {t.investments.colAvgPrice}:
+                    </span>
                     <span className="font-bold text-indigo-600 dark:text-indigo-400">
-                      {formatCurrency(Math.round(pricePerShare), dt.account?.currency || "IDR")} / {t.investments.stockShares}
+                      {formatCurrency(
+                        Math.round(pricePerShare),
+                        dt.account?.currency || "IDR",
+                      )}{" "}
+                      / {t.investments.stockShares}
                     </span>
                   </div>
 
                   <div className="p-2.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-between">
-                    <span className="text-[#94A3B8]">{t.investments.colAccount}:</span>
+                    <span className="text-[#94A3B8]">
+                      {t.investments.colAccount}:
+                    </span>
                     <span className="font-bold text-[#0F172A] dark:text-[#FAFAFA]">
-                      {dt.account?.name || "RDN"} ({dt.account?.currency || "IDR"})
+                      {dt.account?.name || "RDN"} (
+                      {dt.account?.currency || "IDR"})
                     </span>
                   </div>
 
                   <div className="p-2.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-between">
-                    <span className="text-[#94A3B8]">{t.investments.stampDutyFee}:</span>
+                    <span className="text-[#94A3B8]">
+                      {t.investments.stampDutyFee}:
+                    </span>
                     <span className="font-bold text-[#0F172A] dark:text-[#FAFAFA]">
-                      {stampDuty > 0 ? formatCurrency(stampDuty, "IDR") : "Rp 0 (Bebas)"}
+                      {stampDuty > 0
+                        ? formatCurrency(stampDuty, "IDR")
+                        : "Rp 0 (Bebas)"}
                     </span>
                   </div>
                 </div>
