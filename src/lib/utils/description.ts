@@ -14,6 +14,7 @@ export function getCleanDescription(rawDesc?: string | null): string {
     .replace(/\[Items:\s*[^\]]+\]/g, '')
     .replace(/\[Memo:\s*[^\]]+\]/g, '')
     .replace(/\[Tukar Valas:\s*[^\]]+\]/g, '')
+    .replace(/\[Ref:\s*[^\]]+\]/gi, '')
     .trim()
 
   if (clean) return clean
@@ -31,6 +32,7 @@ export function getCleanTransferDescription(rawDesc?: string | null): string {
     .replace(/\[Tukar Valas:\s*[^\]]+\]/g, '')
     .replace(/\[Items:\s*[^\]]+\]/g, '')
     .replace(/\[Memo:\s*[^\]]+\]/g, '')
+    .replace(/\[Ref:\s*[^\]]+\]/gi, '')
     .trim()
 
   if (userNote) return userNote

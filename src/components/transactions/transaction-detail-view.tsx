@@ -81,6 +81,7 @@ export function TransactionDetailView({
     .replace(/\[Memo:\s*[^\]]+\]/g, "")
     .replace(/\[Items:\s*[^\]]+\]/g, "")
     .replace(/\[Tukar Valas:\s*[^\]]+\]/g, "")
+    .replace(/\[Ref:\s*[^\]]+\]/gi, "")
     .replace(/#[a-zA-Z0-9_\-]+/g, "")
     .trim();
 

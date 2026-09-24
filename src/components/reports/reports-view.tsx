@@ -539,7 +539,15 @@ export function ReportsView({
         start: intervalStart,
         end: intervalEnd,
       });
-      const step = Math.max(1, Math.ceil(allDays.length / 14));
+
+      // If 1 month period (this_month / last_month) -> divide by 7 days (weekly: ~4-5 groups)
+      // For other custom intervals -> dynamically cap to maximum 8 groups (16 bars total)
+      const maxGroups = 8;
+      const step =
+        period === "this_month" || period === "last_month"
+          ? 7
+          : Math.max(1, Math.ceil(allDays.length / maxGroups));
+
       const chunks: { label: string; income: number; expense: number }[] = [];
 
       for (let i = 0; i < allDays.length; i += step) {
@@ -564,11 +572,19 @@ export function ReportsView({
           }
         });
 
-        chunks.push({
-          label:
-            chunkDays.length > 1
+        const isSameMonth =
+          cStart.getMonth() === cEnd.getMonth() &&
+          cStart.getFullYear() === cEnd.getFullYear();
+
+        const labelText =
+          chunkDays.length > 1
+            ? isSameMonth
               ? `${format(cStart, "d")}-${format(cEnd, "d MMM", { locale: dateFnsLocale })}`
-              : format(cStart, "d MMM", { locale: dateFnsLocale }),
+              : `${format(cStart, "d MMM", { locale: dateFnsLocale })}-${format(cEnd, "d MMM", { locale: dateFnsLocale })}`
+            : format(cStart, "d MMM", { locale: dateFnsLocale });
+
+        chunks.push({
+          label: labelText,
           income: inc,
           expense: exp,
         });
@@ -1181,7 +1197,7 @@ export function ReportsView({
                     key={idx}
                     className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end group min-w-0"
                   >
-                    <div className="w-full flex items-end justify-center gap-0.5 sm:gap-1 max-w-[28px] h-full">
+                    <div className="w-full flex items-end justify-center gap-0.5 sm:gap-1 max-w-[32px] sm:max-w-[42px] h-full">
                       {/* Income Bar */}
                       <div
                         style={{ height: `${incHeight}px` }}
@@ -1195,7 +1211,7 @@ export function ReportsView({
                         title={`Expense: ${formatCurrency(bar.expense, displayCurrency)}`}
                       />
                     </div>
-                    <span className="text-[9px] sm:text-[10px] font-mono text-[#94A3B8] truncate max-w-full text-center">
+                    <span className="text-[10px] sm:text-[11px] font-mono text-[#94A3B8] truncate max-w-full text-center">
                       {bar.label}
                     </span>
                   </div>

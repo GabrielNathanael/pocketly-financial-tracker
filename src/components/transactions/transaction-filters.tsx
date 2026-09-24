@@ -11,6 +11,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { DynamicIcon } from "@/components/ui/dynamic-icon";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { formatCategoryName } from "@/lib/utils/category-i18n";
@@ -242,27 +243,22 @@ export function TransactionFilters({
             <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
               {t.common.account}
             </label>
-            <Select
+            <SearchableSelect
               value={currentAccountId}
               onValueChange={(val) => updateFilters({ accountId: val })}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder={t.common.all} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t.common.all}</SelectItem>
-                {accounts.map((a) => (
-                  <SelectItem key={a.id} value={a.id}>
-                    <div className="flex items-center gap-2">
-                      <Wallet className="w-3.5 h-3.5 text-[#94A3B8]" />
-                      <span>
-                        {a.name} ({a.currency})
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              options={[
+                { value: "all", label: t.common.all },
+                ...accounts.map((a) => ({
+                  value: a.id,
+                  label: a.name,
+                  icon: a.icon || "Wallet",
+                  badge: `(${a.currency})`,
+                })),
+              ]}
+              placeholder={t.common.all}
+              searchPlaceholder={language === "en" ? "Search account..." : "Cari akun..."}
+              emptyText={language === "en" ? "No account found." : "Akun tidak ditemukan."}
+            />
           </div>
 
           {/* 2. Expense Category Filter */}
@@ -271,7 +267,7 @@ export function TransactionFilters({
               <ArrowDownRight className="w-3 h-3" />
               <span>{t.transactions.expenseCategoryFilter}</span>
             </label>
-            <Select
+            <SearchableSelect
               value={currentExpenseCategoryVal}
               onValueChange={(val) =>
                 updateFilters({
@@ -279,27 +275,19 @@ export function TransactionFilters({
                   type: currentType === "income" ? "all" : currentType,
                 })
               }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder={t.transactions.allExpenseCategories} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">
-                  {t.transactions.allExpenseCategories}
-                </SelectItem>
-                {expenseCategories.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    <div className="flex items-center gap-2">
-                      <DynamicIcon
-                        name={c.icon || "Tag"}
-                        className="w-3.5 h-3.5 text-[#E11D48]"
-                      />
-                      <span>{formatCategoryName(c.name, language)}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              options={[
+                { value: "all", label: t.transactions.allExpenseCategories },
+                ...expenseCategories.map((c) => ({
+                  value: c.id,
+                  label: formatCategoryName(c.name, language),
+                  icon: c.icon || "Tag",
+                  iconColor: "text-[#E11D48]",
+                })),
+              ]}
+              placeholder={t.transactions.allExpenseCategories}
+              searchPlaceholder={language === "en" ? "Search category..." : "Cari kategori..."}
+              emptyText={language === "en" ? "No category found." : "Kategori tidak ditemukan."}
+            />
           </div>
 
           {/* 3. Income Category Filter */}
@@ -308,7 +296,7 @@ export function TransactionFilters({
               <ArrowUpRight className="w-3 h-3" />
               <span>{t.transactions.incomeCategoryFilter}</span>
             </label>
-            <Select
+            <SearchableSelect
               value={currentIncomeCategoryVal}
               onValueChange={(val) =>
                 updateFilters({
@@ -316,27 +304,19 @@ export function TransactionFilters({
                   type: currentType === "expense" ? "all" : currentType,
                 })
               }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder={t.transactions.allIncomeCategories} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">
-                  {t.transactions.allIncomeCategories}
-                </SelectItem>
-                {incomeCategories.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    <div className="flex items-center gap-2">
-                      <DynamicIcon
-                        name={c.icon || "Tag"}
-                        className="w-3.5 h-3.5 text-[#0D9488]"
-                      />
-                      <span>{formatCategoryName(c.name, language)}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              options={[
+                { value: "all", label: t.transactions.allIncomeCategories },
+                ...incomeCategories.map((c) => ({
+                  value: c.id,
+                  label: formatCategoryName(c.name, language),
+                  icon: c.icon || "Tag",
+                  iconColor: "text-[#0D9488]",
+                })),
+              ]}
+              placeholder={t.transactions.allIncomeCategories}
+              searchPlaceholder={language === "en" ? "Search category..." : "Cari kategori..."}
+              emptyText={language === "en" ? "No category found." : "Kategori tidak ditemukan."}
+            />
           </div>
 
           {/* 4. Tagar (#tags) Filter */}
@@ -345,28 +325,20 @@ export function TransactionFilters({
               <Hash className="w-3 h-3 text-[#64748B]" />
               <span>{t.transactions.tagLabel}</span>
             </label>
-            <Select
+            <SearchableSelect
               value={currentTag}
               onValueChange={(val) => updateFilters({ tag: val })}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder={t.transactions.filterByTag} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t.transactions.allTags}</SelectItem>
-                {availableTags.length === 0 ? (
-                  <SelectItem value="none" disabled>
-                    <span className="text-[#94A3B8] italic">Belum ada tagar</span>
-                  </SelectItem>
-                ) : (
-                  availableTags.map((tag) => (
-                    <SelectItem key={tag} value={tag}>
-                      <span>#{tag}</span>
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
+              options={[
+                { value: "all", label: t.transactions.allTags },
+                ...availableTags.map((tag) => ({
+                  value: tag,
+                  label: `#${tag}`,
+                })),
+              ]}
+              placeholder={t.transactions.filterByTag}
+              searchPlaceholder={language === "en" ? "Search tag..." : "Cari tagar..."}
+              emptyText={language === "en" ? "No tags found." : "Tagar tidak ditemukan."}
+            />
           </div>
 
           {/* 5. Unified Date Range Filter */}

@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import * as PopoverPrimitive from "@radix-ui/react-popover";
 import {
   Account,
   Category,
@@ -12,8 +11,10 @@ import {
 import { createTransaction, updateTransaction } from "@/actions/transactions";
 import { DatePicker } from "@/components/ui/date-picker";
 import { DynamicIcon } from "@/components/ui/dynamic-icon";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useLanguage } from "@/lib/i18n/language-context";
 import { formatCurrency } from "@/lib/utils/currency";
+import { formatCategoryName } from "@/lib/utils/category-i18n";
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -33,14 +34,6 @@ import {
   Calculator,
   Search,
 } from "lucide-react";
-import {
-  Command,
-  CommandInput,
-  CommandList,
-  CommandEmpty,
-  CommandGroup,
-  CommandItem,
-} from "cmdk";
 import { cn } from "@/lib/utils/cn";
 import { toast } from "sonner";
 import { savePinnedTemplate } from "@/lib/storage/pinned-templates";
@@ -251,10 +244,6 @@ export function TransactionForm({
   const [ocrProgress, setOcrProgress] = useState<number>(0);
   const [ocrStatus, setOcrStatus] = useState<string>("");
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-
-  // Popover controls
-  const [isAccountPopoverOpen, setIsAccountPopoverOpen] = useState(false);
-  const [isCategoryPopoverOpen, setIsCategoryPopoverOpen] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -769,249 +758,76 @@ export function TransactionForm({
         </div>
       ) : (
         <>
-          {/* 3. Date Picker & Clear Shortcut */}
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <input
-                type="date"
-                value={txDate}
-                onChange={(e) => setTxDate(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs font-medium text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:border-[#0F172A] dark:focus:border-[#FAFAFA]"
-              />
-            </div>
-            {txDate !== getLocalDateString() && (
-              <button
-                type="button"
-                onClick={() => setTxDate(getLocalDateString())}
-                className="p-2 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]"
-                title="Set to today"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
+          {/* 3. Date Picker (Placed above Account & Category) */}
+          <DatePicker value={txDate} onChange={setTxDate} />
+
+          {/* 4. Account Selector */}
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+              {t.quickAdd.account}
+            </label>
+            <SearchableSelect
+              value={selectedAccountId}
+              onValueChange={(val) => {
+                setSelectedAccountId(val);
+
+                // Edit mode: never auto-suggest category on account change
+                if (!isEditing) {
+                  const matchingCats = categories.filter((c) => c.type === type);
+                  const suggestedId = mostUsedCategoryByAccount[`${val}_${type}`];
+                  const suggestedStillValid =
+                    suggestedId && matchingCats.some((c) => c.id === suggestedId);
+                  const defaultCategoryId = suggestedStillValid
+                    ? suggestedId
+                    : matchingCats[0]?.id;
+
+                  if (defaultCategoryId) {
+                    setSelectedCategoryId(defaultCategoryId);
+                  }
+                }
+              }}
+              options={accounts.map((acc) => ({
+                value: acc.id,
+                label: acc.name,
+                icon: acc.icon || "Wallet",
+                badge: `(${acc.currency})`,
+              }))}
+              placeholder={t.quickAdd.selectAccount}
+              searchPlaceholder={
+                language === "en" ? "Search account..." : "Cari akun..."
+              }
+              emptyText={
+                language === "en" ? "No account found." : "Akun tidak ditemukan."
+              }
+              triggerClassName="py-2.5 rounded-xl bg-white dark:bg-[#121215]"
+            />
           </div>
 
-          {/* 4. Account Picker */}
-          <PopoverPrimitive.Root
-            open={isAccountPopoverOpen}
-            onOpenChange={setIsAccountPopoverOpen}
-          >
-            <PopoverPrimitive.Trigger asChild>
-              <button
-                type="button"
-                className="w-full flex items-center justify-between p-3 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors cursor-pointer"
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-6 h-6 rounded bg-[#F1F3F5] dark:bg-[#1A1A20] text-[#0F172A] dark:text-[#FAFAFA] flex items-center justify-center shrink-0">
-                    <DynamicIcon
-                      name={activeAccount?.icon || "Wallet"}
-                      className="w-3.5 h-3.5"
-                    />
-                  </div>
-                  <div className="flex flex-col text-left min-w-0">
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-[#94A3B8]">
-                      {t.quickAdd.account}
-                    </span>
-                    <span className="font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate">
-                      {activeAccount?.name || t.quickAdd.selectAccount}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5 shrink-0 text-[#64748B] dark:text-[#94A3B8]">
-                  <span className="text-[10px] font-bold">
-                    ({activeAccount?.currency})
-                  </span>
-                  <ChevronDown className="w-4 h-4" />
-                </div>
-              </button>
-            </PopoverPrimitive.Trigger>
-
-            <PopoverPrimitive.Portal>
-              <PopoverPrimitive.Content
-                align="start"
-                sideOffset={4}
-                className="z-50 w-[calc(100vw-2.5rem)] max-w-sm p-0 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] shadow-xl overflow-hidden animate-in fade-in-0 zoom-in-95"
-              >
-                <Command
-                  className="flex flex-col bg-transparent"
-                  filter={(value, search) =>
-                    value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0
-                  }
-                >
-                  <div className="flex items-center gap-2 px-3 border-b border-[#E5E7EB] dark:border-[#27272A]">
-                    <Search className="w-4 h-4 text-[#94A3B8] shrink-0" />
-                    <CommandInput
-                      autoFocus
-                      placeholder={
-                        language === "en" ? "Search account..." : "Cari akun..."
-                      }
-                      className="flex-1 py-3 bg-transparent text-sm text-[#0F172A] dark:text-[#F8FAFC] placeholder:text-[#94A3B8] focus:outline-none"
-                    />
-                  </div>
-                  <CommandList className="max-h-64 overflow-y-auto p-1.5">
-                    <CommandEmpty className="py-6 text-center text-xs text-[#94A3B8]">
-                      {language === "en"
-                        ? "No account found."
-                        : "Akun tidak ditemukan."}
-                    </CommandEmpty>
-                    <CommandGroup>
-                      {accounts.map((acc) => (
-                        <CommandItem
-                          key={acc.id}
-                          value={acc.name}
-                          onSelect={() => {
-                            setSelectedAccountId(acc.id);
-
-                            // Edit mode: never auto-suggest category on account
-                            // change — user may just be moving the transaction
-                            // to a different account, category stays as-is.
-                            if (!isEditing) {
-                              const matchingCats = categories.filter(
-                                (c) => c.type === type,
-                              );
-                              const suggestedId =
-                                mostUsedCategoryByAccount[`${acc.id}_${type}`];
-                              const suggestedStillValid =
-                                suggestedId &&
-                                matchingCats.some((c) => c.id === suggestedId);
-                              const defaultCategoryId = suggestedStillValid
-                                ? suggestedId
-                                : matchingCats[0]?.id;
-
-                              if (defaultCategoryId) {
-                                setSelectedCategoryId(defaultCategoryId);
-                              }
-                            }
-
-                            setIsAccountPopoverOpen(false);
-                          }}
-                          className={cn(
-                            "flex items-center justify-between gap-2 p-3 rounded-lg text-sm font-medium cursor-pointer transition-colors",
-                            acc.id === selectedAccountId
-                              ? "bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A]"
-                              : "text-[#0F172A] dark:text-[#F8FAFC] data-[selected=true]:bg-[#F1F3F5] dark:data-[selected=true]:bg-[#1A1A20]",
-                          )}
-                        >
-                          <div className="flex items-center gap-2.5 truncate">
-                            <DynamicIcon
-                              name={acc.icon || "Wallet"}
-                              className="w-4 h-4 shrink-0"
-                            />
-                            <span className="truncate">{acc.name}</span>
-                          </div>
-                          <span className="text-xs font-mono opacity-80 shrink-0 ml-1">
-                            {acc.currency}
-                          </span>
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverPrimitive.Content>
-            </PopoverPrimitive.Portal>
-          </PopoverPrimitive.Root>
-
-          {/* 5. Category Picker */}
-          <PopoverPrimitive.Root
-            open={isCategoryPopoverOpen}
-            onOpenChange={setIsCategoryPopoverOpen}
-          >
-            <PopoverPrimitive.Trigger asChild>
-              <button
-                type="button"
-                className="w-full flex items-center justify-between p-3 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors cursor-pointer"
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div
-                    className="w-6 h-6 rounded flex items-center justify-center shrink-0 text-white"
-                    style={{
-                      backgroundColor: activeCategory?.color || "#3B82F6",
-                    }}
-                  >
-                    <DynamicIcon
-                      name={activeCategory?.icon || "Tag"}
-                      className="w-3.5 h-3.5"
-                    />
-                  </div>
-                  <div className="flex flex-col text-left min-w-0">
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-[#94A3B8]">
-                      {t.quickAdd.category}
-                    </span>
-                    <span className="font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate">
-                      {activeCategory?.name || t.quickAdd.selectCategory}
-                    </span>
-                  </div>
-                </div>
-                <ChevronDown className="w-4 h-4 text-[#64748B] dark:text-[#94A3B8] shrink-0" />
-              </button>
-            </PopoverPrimitive.Trigger>
-
-            <PopoverPrimitive.Portal>
-              <PopoverPrimitive.Content
-                align="start"
-                sideOffset={4}
-                className="z-50 w-[calc(100vw-2.5rem)] max-w-sm p-0 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] shadow-xl overflow-hidden animate-in fade-in-0 zoom-in-95"
-              >
-                <Command
-                  className="flex flex-col bg-transparent"
-                  filter={(value, search) =>
-                    value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0
-                  }
-                >
-                  <div className="flex items-center gap-2 px-3 border-b border-[#E5E7EB] dark:border-[#27272A]">
-                    <Search className="w-4 h-4 text-[#94A3B8] shrink-0" />
-                    <CommandInput
-                      autoFocus
-                      placeholder={
-                        language === "en"
-                          ? "Search category..."
-                          : "Cari kategori..."
-                      }
-                      className="flex-1 py-3 bg-transparent text-sm text-[#0F172A] dark:text-[#F8FAFC] placeholder:text-[#94A3B8] focus:outline-none"
-                    />
-                  </div>
-                  <CommandList className="max-h-64 overflow-y-auto p-1.5">
-                    <CommandEmpty className="py-6 text-center text-xs text-[#94A3B8]">
-                      {language === "en"
-                        ? "No category found."
-                        : "Kategori tidak ditemukan."}
-                    </CommandEmpty>
-                    <CommandGroup>
-                      {filteredCategories.map((c) => (
-                        <CommandItem
-                          key={c.id}
-                          value={c.name}
-                          onSelect={() => {
-                            setSelectedCategoryId(c.id);
-                            setIsCategoryPopoverOpen(false);
-                          }}
-                          className={cn(
-                            "flex items-center gap-2.5 p-3 rounded-lg text-sm font-medium cursor-pointer transition-colors",
-                            c.id === selectedCategoryId
-                              ? "bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A]"
-                              : "text-[#0F172A] dark:text-[#F8FAFC] data-[selected=true]:bg-[#F1F3F5] dark:data-[selected=true]:bg-[#1A1A20]",
-                          )}
-                        >
-                          <div
-                            className="w-5 h-5 rounded flex items-center justify-center shrink-0 text-white"
-                            style={{
-                              backgroundColor: c.color || "#3B82F6",
-                            }}
-                          >
-                            <DynamicIcon
-                              name={c.icon || "Tag"}
-                              className="w-3 h-3"
-                            />
-                          </div>
-                          <span className="truncate">{c.name}</span>
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverPrimitive.Content>
-            </PopoverPrimitive.Portal>
-          </PopoverPrimitive.Root>
+          {/* 5. Category Selector */}
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+              {t.quickAdd.category}
+            </label>
+            <SearchableSelect
+              value={selectedCategoryId}
+              onValueChange={setSelectedCategoryId}
+              options={filteredCategories.map((c) => ({
+                value: c.id,
+                label: formatCategoryName(c.name, language),
+                icon: c.icon || "Tag",
+                iconColor:
+                  type === "expense" ? "text-[#E11D48]" : "text-[#0D9488]",
+              }))}
+              placeholder={t.quickAdd.selectCategory}
+              searchPlaceholder={
+                language === "en" ? "Search category..." : "Cari kategori..."
+              }
+              emptyText={
+                language === "en" ? "No category found." : "Kategori tidak ditemukan."
+              }
+              triggerClassName="py-2.5 rounded-xl bg-white dark:bg-[#121215]"
+            />
+          </div>
 
           {/* 6. Base Description Input (Full Width) */}
           <div className="flex flex-col gap-2">
