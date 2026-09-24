@@ -86,10 +86,17 @@ export function GlobalAuditLogView({ initialLogs }: GlobalAuditLogViewProps) {
 
   const filteredLogs = useMemo(() => {
     return initialLogs.filter((log) => {
+      // 0. Always hide stock_holdings — derived state, auto-synced by system
+      if (log.table_name === "stock_holdings") return false;
+
       // 1. Module filter
       if (moduleFilter !== "all") {
         if (moduleFilter === "stock_trades") {
-          if (log.table_name !== "stock_trades" && log.table_name !== "stock_holdings") return false;
+          if (
+            log.table_name !== "stock_trades" &&
+            log.table_name !== "stock_holdings"
+          )
+            return false;
         } else if (log.table_name !== moduleFilter) {
           return false;
         }
@@ -309,7 +316,7 @@ export function GlobalAuditLogView({ initialLogs }: GlobalAuditLogViewProps) {
                   <span className="text-[11px] font-mono text-[#64748B] dark:text-[#94A3B8] shrink-0">
                     {formatDate(
                       log.changed_at,
-                      "EEEE, d MMM yyyy • HH:mm",
+                      "EEEE, d MMM yyyy - HH:mm",
                       language,
                     )}
                   </span>
@@ -326,22 +333,22 @@ export function GlobalAuditLogView({ initialLogs }: GlobalAuditLogViewProps) {
                     {h.changes.map((c, cIdx) => (
                       <div
                         key={cIdx}
-                        className="flex items-center justify-between gap-2 flex-wrap text-[11px]"
+                        className="flex items-start justify-between gap-2 flex-wrap text-[11px]"
                       >
-                        <span className="font-semibold text-[#64748B] dark:text-[#94A3B8]">
+                        <span className="font-semibold text-[#64748B] dark:text-[#94A3B8] shrink-0">
                           {c.field}:
                         </span>
-                        <div className="flex items-center gap-1.5 font-mono">
+                        <div className="flex items-center gap-2 font-mono flex-wrap justify-end">
                           {c.from && (
-                            <>
-                              <span className="text-[#E11D48] line-through">
-                                {c.from}
-                              </span>
-                              <ArrowRight className="w-3 h-3 text-[#94A3B8]" />
-                            </>
+                            <span className="px-1.5 py-0.5 rounded bg-[#FFF1F2] dark:bg-[#881337]/20 text-[#E11D48] line-through">
+                              {c.from}
+                            </span>
+                          )}
+                          {c.from && c.to && (
+                            <ArrowRight className="w-3 h-3 text-[#94A3B8] shrink-0" />
                           )}
                           {c.to && (
-                            <span className="font-bold text-[#0D9488]">
+                            <span className="px-1.5 py-0.5 rounded bg-[#ECFDF5] dark:bg-[#064E3B]/20 font-bold text-[#0D9488]">
                               {c.to}
                             </span>
                           )}

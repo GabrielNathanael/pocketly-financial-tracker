@@ -56,7 +56,7 @@ export function humanizeAuditLog(
     if (log.action === "INSERT") {
       return {
         moduleName: isId ? "Investasi Saham" : "Stock Trades",
-        title: `${ticker} • ${typeLabel} ${lots ? `${lots} Lot` : ""} (${formattedNet})`,
+        title: `${ticker} - ${typeLabel} ${lots ? `${lots} Lot` : ""} (${formattedNet})`,
         summary: isId
           ? `Mencatat transaksi ${typeLabel.toLowerCase()} ${ticker} sebanyak ${lots} lot senilai ${formattedNet}`
           : `Recorded ${typeLabel.toLowerCase()} of ${ticker} for ${lots} lots totaling ${formattedNet}`,
@@ -116,7 +116,7 @@ export function humanizeAuditLog(
     if (log.action === "DELETE") {
       return {
         moduleName: isId ? "Investasi Saham" : "Stock Trades",
-        title: `${ticker} • ${typeLabel} (${formattedNet})`,
+        title: `${ticker} - ${typeLabel} (${formattedNet})`,
         summary: isId
           ? `Menghapus catatan transaksi ${ticker} senilai ${formattedNet}`
           : `Deleted transaction record of ${ticker} worth ${formattedNet}`,
@@ -159,7 +159,7 @@ export function humanizeAuditLog(
 
       return {
         moduleName: isId ? "Investasi Saham" : "Stock Trades",
-        title: `${ticker} • ${typeLabel} (${formattedNet})`,
+        title: `${ticker} - ${typeLabel} (${formattedNet})`,
         summary: isId
           ? `Memperbarui data transaksi saham ${ticker}`
           : `Updated stock transaction details for ${ticker}`,
@@ -275,7 +275,7 @@ export function humanizeAuditLog(
 
       return {
         moduleName: isId ? "Transfer" : "Transfer",
-        title: `${formattedAmt} • ${fromName} → ${toName}`,
+        title: `${formattedAmt} - ${fromName} → ${toName}`,
         summary: isId
           ? `Mencatat transfer ${formattedAmt} dari ${fromName} ke ${toName}`
           : `Recorded transfer of ${formattedAmt} from ${fromName} to ${toName}`,
@@ -352,7 +352,7 @@ export function humanizeAuditLog(
     if (log.action === "INSERT") {
       return {
         moduleName: isId ? "Hutang Piutang" : "Debts & Loans",
-        title: `${person} • ${initAmt} (${typeText})`,
+        title: `${person} - ${initAmt} (${typeText})`,
         summary: isId
           ? `Mencatat ${typeText.toLowerCase()} ${person} sebesar ${initAmt}`
           : `Created ${typeText.toLowerCase()} with ${person} for ${initAmt}`,
@@ -376,7 +376,7 @@ export function humanizeAuditLog(
     if (log.action === "DELETE") {
       return {
         moduleName: isId ? "Hutang Piutang" : "Debts & Loans",
-        title: `${person} • ${initAmt} (${typeText})`,
+        title: `${person} - ${initAmt} (${typeText})`,
         summary: isId
           ? `Menghapus catatan ${typeText.toLowerCase()} ${person} (${initAmt})`
           : `Deleted ${typeText.toLowerCase()} record of ${person} (${initAmt})`,
@@ -444,7 +444,7 @@ export function humanizeAuditLog(
 
     return {
       moduleName: isId ? "Hutang Piutang" : "Debts & Loans",
-      title: `${person} • ${typeText}`,
+      title: `${person} - ${typeText}`,
       summary: isId
         ? `Memperbarui status / rincian ${typeText.toLowerCase()} ${person}`
         : `Updated ${typeText.toLowerCase()} details with ${person}`,
@@ -759,7 +759,7 @@ export function humanizeAuditLog(
     if (log.action === "INSERT") {
       return {
         moduleName: isId ? "Transaksi Rutin" : "Recurring",
-        title: `${name} • ${amt} (${freqLabel})`,
+        title: `${name} - ${amt} (${freqLabel})`,
         summary: isId
           ? `Mendaftarkan transaksi rutin "${name}" senilai ${amt} (${freqLabel})`
           : `Created recurring transaction "${name}" for ${amt} (${freqLabel})`,
@@ -784,7 +784,7 @@ export function humanizeAuditLog(
     if (log.action === "DELETE") {
       return {
         moduleName: isId ? "Transaksi Rutin" : "Recurring",
-        title: `${name} • ${amt}`,
+        title: `${name} - ${amt}`,
         summary: isId
           ? `Menghapus jadwal transaksi rutin "${name}" (${amt})`
           : `Deleted recurring transaction schedule "${name}" (${amt})`,
@@ -874,7 +874,7 @@ export function humanizeAuditLog(
     if (log.action === "INSERT") {
       return {
         moduleName: isId ? "Tabungan" : "Savings Goals",
-        title: `${name} • Target ${targetAmt}`,
+        title: `${name} - Target ${targetAmt}`,
         summary: isId
           ? `Membuat target tabungan "${name}" sebesar ${targetAmt}`
           : `Created savings goal "${name}" for ${targetAmt}`,
@@ -898,7 +898,7 @@ export function humanizeAuditLog(
     if (log.action === "DELETE") {
       return {
         moduleName: isId ? "Tabungan" : "Savings Goals",
-        title: `${name} • ${targetAmt}`,
+        title: `${name} - ${targetAmt}`,
         summary: isId
           ? `Menghapus target tabungan "${name}" (${targetAmt})`
           : `Deleted savings goal "${name}" (${targetAmt})`,
@@ -1057,197 +1057,7 @@ export function humanizeAuditLog(
   }
 
   // ==========================================
-  // 10. STOCK TRADES (Jual Beli Saham IDX)
-  // ==========================================
-  if (table === "stock_trades") {
-    const ticker = newVal.ticker || oldVal.ticker || "IDX";
-    const tradeType = newVal.type || oldVal.type || "buy";
-    const isBuy = tradeType === "buy";
-    const amt = formatCurrency(
-      Number(newVal.net_amount || oldVal.net_amount || 0),
-      "IDR",
-    );
-    const pnl = Number(newVal.realized_pnl || oldVal.realized_pnl || 0);
-
-    if (log.action === "INSERT") {
-      if (isBuy) {
-        return {
-          moduleName: isId ? "Investasi Saham" : "Stock Trades",
-          title: `${ticker} • ${amt} (Beli)`,
-          summary: isId
-            ? `Mencatat pembelian saham ${ticker} senilai ${amt} (terpotong dari RDN)`
-            : `Recorded ${ticker} stock purchase of ${amt}`,
-          changes: [
-            { field: isId ? "Kode Saham" : "Ticker", to: ticker },
-            { field: isId ? "Total Beli Bersih" : "Net Buy Amount", to: amt },
-            ...(newVal.notes
-              ? [{ field: isId ? "Catatan" : "Notes", to: newVal.notes }]
-              : []),
-            ...(newVal.trade_date
-              ? [
-                  {
-                    field: isId ? "Tanggal" : "Date",
-                    to: formatDate(newVal.trade_date, "d MMM yyyy", lang),
-                  },
-                ]
-              : []),
-          ],
-          badgeType: "create",
-          badgeLabel: isId ? "Beli" : "Buy",
-        };
-      } else {
-        const isProfit = pnl >= 0;
-        const pnlFormatted = `${isProfit ? "+" : ""}${formatCurrency(pnl, "IDR")}`;
-        return {
-          moduleName: isId ? "Investasi Saham" : "Stock Trades",
-          title: `${ticker} • ${amt} (${pnlFormatted} PnL)`,
-          summary: isId
-            ? `Mencatat penjualan saham ${ticker} senilai ${amt} (${pnlFormatted} PnL)`
-            : `Recorded ${ticker} sale of ${amt} (${pnlFormatted} PnL)`,
-          changes: [
-            { field: isId ? "Kode Saham" : "Ticker", to: ticker },
-            { field: isId ? "Total Jual Bersih" : "Net Proceeds", to: amt },
-            {
-              field: isId ? "Hasil Trading (PnL)" : "Realized PnL",
-              to: pnlFormatted,
-            },
-            ...(newVal.notes
-              ? [{ field: isId ? "Catatan" : "Notes", to: newVal.notes }]
-              : []),
-            ...(newVal.trade_date
-              ? [
-                  {
-                    field: isId ? "Tanggal" : "Date",
-                    to: formatDate(newVal.trade_date, "d MMM yyyy", lang),
-                  },
-                ]
-              : []),
-          ],
-          badgeType: isProfit ? "create" : "delete",
-          badgeLabel: isId ? "Jual" : "Sell",
-        };
-      }
-    }
-
-    if (log.action === "DELETE") {
-      return {
-        moduleName: isId ? "Investasi Saham" : "Stock Trades",
-        title: `${ticker} • ${amt}`,
-        summary: isId
-          ? `Menghapus catatan transaksi ${isBuy ? "beli" : "jual"} saham ${ticker} (${amt})`
-          : `Deleted ${isBuy ? "buy" : "sell"} trade of ${ticker} (${amt})`,
-        changes: [
-          { field: isId ? "Kode Saham" : "Ticker", from: ticker },
-          { field: isId ? "Nominal" : "Amount", from: amt },
-        ],
-        badgeType: "delete",
-        badgeLabel: isId ? "Dihapus" : "Deleted",
-      };
-    }
-
-    // UPDATE stock trade
-    const tradeChanges: Array<{ field: string; from?: string; to?: string }> =
-      [];
-    if (oldVal.ticker !== newVal.ticker && (oldVal.ticker || newVal.ticker)) {
-      tradeChanges.push({
-        field: isId ? "Kode Saham" : "Ticker",
-        from: oldVal.ticker || "-",
-        to: newVal.ticker || "-",
-      });
-    }
-    if (
-      oldVal.net_amount !== newVal.net_amount &&
-      (oldVal.net_amount || newVal.net_amount)
-    ) {
-      tradeChanges.push({
-        field: isId ? "Nominal Bersih" : "Net Amount",
-        from: oldVal.net_amount
-          ? formatCurrency(Number(oldVal.net_amount), "IDR")
-          : "-",
-        to: newVal.net_amount
-          ? formatCurrency(Number(newVal.net_amount), "IDR")
-          : "-",
-      });
-    }
-    if (
-      oldVal.trade_date !== newVal.trade_date &&
-      (oldVal.trade_date || newVal.trade_date)
-    ) {
-      tradeChanges.push({
-        field: isId ? "Tanggal Transaksi" : "Trade Date",
-        from: oldVal.trade_date
-          ? formatDate(oldVal.trade_date, "d MMM yyyy", lang)
-          : "-",
-        to: newVal.trade_date
-          ? formatDate(newVal.trade_date, "d MMM yyyy", lang)
-          : "-",
-      });
-    }
-    if (oldVal.notes !== newVal.notes && (oldVal.notes || newVal.notes)) {
-      tradeChanges.push({
-        field: isId ? "Catatan" : "Notes",
-        from: oldVal.notes || (isId ? "(Kosong)" : "(Empty)"),
-        to: newVal.notes || (isId ? "(Kosong)" : "(Empty)"),
-      });
-    }
-
-    return {
-      moduleName: isId ? "Investasi Saham" : "Stock Trades",
-      title: `${ticker} • ${amt}`,
-      summary: isId
-        ? `Memperbarui rincian transaksi saham ${ticker}`
-        : `Updated trade details for ${ticker}`,
-      changes: tradeChanges,
-      badgeType: "update",
-      badgeLabel: isId ? "Diubah" : "Updated",
-    };
-  }
-
-  // ==========================================
-  // 11. STOCK HOLDINGS (Posisi Kepemilikan Saham)
-  // ==========================================
-  if (table === "stock_holdings") {
-    const ticker = newVal.ticker || oldVal.ticker || "IDX";
-    const totalCost = formatCurrency(
-      Number(newVal.total_cost || oldVal.total_cost || 0),
-      "IDR",
-    );
-
-    if (log.action === "INSERT") {
-      return {
-        moduleName: isId ? "Portofolio Saham" : "Holdings",
-        title: `${ticker} • ${totalCost}`,
-        summary: isId
-          ? `Membuka posisi kepemilikan saham ${ticker} dengan modal ${totalCost}`
-          : `Opened new holding in ${ticker} with cost basis of ${totalCost}`,
-        changes: [
-          { field: isId ? "Kode Saham" : "Ticker", to: ticker },
-          {
-            field: isId ? "Modal Tertanam" : "Invested Capital",
-            to: totalCost,
-          },
-        ],
-        badgeType: "create",
-        badgeLabel: isId ? "Dibuat" : "Created",
-      };
-    }
-
-    if (log.action === "DELETE") {
-      return {
-        moduleName: isId ? "Portofolio Saham" : "Holdings",
-        title: `${ticker}`,
-        summary: isId
-          ? `Posisi kepemilikan saham ${ticker} telah selesai/ditutup`
-          : `Holding position in ${ticker} was closed/sold`,
-        changes: [{ field: isId ? "Kode Saham" : "Ticker", from: ticker }],
-        badgeType: "delete",
-        badgeLabel: isId ? "Ditutup" : "Closed",
-      };
-    }
-  }
-
-  // ==========================================
-  // 12. TRANSACTIONS (Default / Existing)
+  // 10. TRANSACTIONS (Default / Existing)
   // ==========================================
   if (log.action === "INSERT") {
     const amount = newVal.amount
@@ -1263,25 +1073,26 @@ export function humanizeAuditLog(
           : "Expense";
     const cleanDesc = getCleanDescription(newVal.description);
 
-    // Parse items and memo for structured display
+    // Parse items and memo for structured display — only these shown in changes
     const rawDesc = newVal.description || "";
     const itemsMatch = rawDesc.match(/\[Items:\s*([^\]]+)\]/);
     const memoMatch = rawDesc.match(/\[Memo:\s*([^\]]+)\]/);
-    const tagsArr = Array.isArray(newVal.tags) ? newVal.tags : [];
+
+    const txDateFormatted = newVal.transaction_date
+      ? formatDate(newVal.transaction_date.substring(0, 10), "d MMM yyyy", lang)
+      : "";
 
     return {
       moduleName: isId ? "Transaksi" : "Transactions",
-      title: `${cleanDesc || (isId ? "Transaksi Baru" : "Transaction")} • ${amount} (${typeLabel})`,
-      summary: isId
-        ? `Mencatat ${typeLabel.toLowerCase()} sebesar ${amount}${cleanDesc ? ` (${cleanDesc})` : ""}`
-        : `Recorded ${typeLabel.toLowerCase()} of ${amount}${cleanDesc ? ` (${cleanDesc})` : ""}`,
+      title: `${cleanDesc || (isId ? "Transaksi Baru" : "Transaction")} - ${amount} (${typeLabel})`,
+      summary: txDateFormatted
+        ? isId
+          ? `Tanggal transaksi: ${txDateFormatted}`
+          : `Transaction date: ${txDateFormatted}`
+        : isId
+          ? "Transaksi baru berhasil dicatat"
+          : "New transaction recorded",
       changes: [
-        ...(newVal.amount
-          ? [{ field: isId ? "Nominal" : "Amount", to: amount }]
-          : []),
-        ...(cleanDesc
-          ? [{ field: isId ? "Keterangan" : "Note", to: cleanDesc }]
-          : []),
         ...(memoMatch
           ? [{ field: isId ? "Catatan Memo" : "Memo", to: memoMatch[1].trim() }]
           : []),
@@ -1290,22 +1101,6 @@ export function humanizeAuditLog(
               {
                 field: isId ? "Rincian Item" : "Items Breakdown",
                 to: itemsMatch[1].trim(),
-              },
-            ]
-          : []),
-        ...(tagsArr.length > 0
-          ? [
-              {
-                field: isId ? "Tagar (#tags)" : "Tags",
-                to: tagsArr.map((t: string) => `#${t}`).join(", "),
-              },
-            ]
-          : []),
-        ...(newVal.transaction_date
-          ? [
-              {
-                field: isId ? "Tanggal" : "Date",
-                to: formatDate(newVal.transaction_date, "d MMM yyyy", lang),
               },
             ]
           : []),
@@ -1323,7 +1118,7 @@ export function humanizeAuditLog(
 
     return {
       moduleName: isId ? "Transaksi" : "Transactions",
-      title: `${cleanDesc || (isId ? "Transaksi" : "Transaction")} • ${amount}`,
+      title: `${cleanDesc || (isId ? "Transaksi" : "Transaction")} - ${amount}`,
       summary: isId
         ? `Menghapus transaksi senilai ${amount}${cleanDesc ? ` (${cleanDesc})` : ""}`
         : `Deleted transaction record of ${amount}${cleanDesc ? ` (${cleanDesc})` : ""}`,
@@ -1395,17 +1190,18 @@ export function humanizeAuditLog(
     });
   }
 
+  const normDate = (d?: string) => (d ? d.substring(0, 10) : "");
   if (
-    oldVal.transaction_date !== newVal.transaction_date &&
+    normDate(oldVal.transaction_date) !== normDate(newVal.transaction_date) &&
     (oldVal.transaction_date || newVal.transaction_date)
   ) {
     changes.push({
       field: isId ? "Tanggal Transaksi" : "Transaction Date",
       from: oldVal.transaction_date
-        ? formatDate(oldVal.transaction_date, "d MMM yyyy", lang)
+        ? formatDate(normDate(oldVal.transaction_date), "d MMM yyyy", lang)
         : "-",
       to: newVal.transaction_date
-        ? formatDate(newVal.transaction_date, "d MMM yyyy", lang)
+        ? formatDate(normDate(newVal.transaction_date), "d MMM yyyy", lang)
         : "-",
     });
   }
@@ -1431,12 +1227,19 @@ export function humanizeAuditLog(
     });
   }
 
+  const changedFieldLabels = changes.map((c) => c.field).join(", ");
+  const dynamicSummary = changedFieldLabels
+    ? isId
+      ? `Perubahan pada: ${changedFieldLabels}`
+      : `Changes to: ${changedFieldLabels}`
+    : isId
+      ? "Data transaksi diperbarui"
+      : "Transaction data updated";
+
   return {
     moduleName: isId ? "Transaksi" : "Transactions",
     title: `${newCleanDesc || oldCleanDesc || (isId ? "Transaksi" : "Transaction")}`,
-    summary: isId
-      ? `Memperbarui rincian data transaksi di buku kas`
-      : `Updated transaction details in ledger`,
+    summary: dynamicSummary,
     changes,
     badgeType: "update",
     badgeLabel: isId ? "Diubah" : "Updated",
