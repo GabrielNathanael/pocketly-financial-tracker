@@ -127,15 +127,15 @@ export async function setDefaultAccount(accountId: string | null) {
   if (!user) return { error: "Unauthorized" };
 
   // Reset semua dulu
-  await supabase
-    .from("accounts")
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase.from("accounts") as any)
     .update({ is_default: false })
     .eq("user_id", user.id);
 
   // Set yang baru kalau ada
   if (accountId) {
-    const { error } = await supabase
-      .from("accounts")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from("accounts") as any)
       .update({ is_default: true })
       .eq("id", accountId)
       .eq("user_id", user.id);

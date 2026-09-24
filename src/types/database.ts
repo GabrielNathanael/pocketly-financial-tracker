@@ -50,7 +50,7 @@ export interface Database {
           icon?: string | null;
           color?: string | null;
           is_active?: boolean;
-          is_default: boolean;
+          is_default?: boolean;
           created_at?: string;
         };
         Update: {
@@ -64,7 +64,7 @@ export interface Database {
           icon?: string | null;
           color?: string | null;
           is_active?: boolean;
-          is_default: boolean;
+          is_default?: boolean;
           created_at?: string;
         };
       };
