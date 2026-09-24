@@ -1,41 +1,49 @@
-'use client'
+"use client";
 
-import React, { useState, useEffect } from 'react'
-import { Modal } from '@/components/ui/modal'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { DatePicker } from '@/components/ui/date-picker'
+import React, { useState, useEffect } from "react";
+import { Modal } from "@/components/ui/modal";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Select,
   SelectTrigger,
   SelectValue,
   SelectContent,
   SelectItem,
-} from '@/components/ui/select'
-import { DynamicIcon } from '@/components/ui/dynamic-icon'
-import { Account, Category, CurrencyCode, RecurringFrequency, EnrichedRecurringTransaction } from '@/types/database'
-import { createRecurringTransaction, updateRecurringTransaction } from '@/actions/recurring'
-import { useLanguage } from '@/lib/i18n/language-context'
-import { formatCurrency } from '@/lib/utils/currency'
-import { cn } from '@/lib/utils/cn'
-import { format } from 'date-fns'
-import { AlertCircle, Wallet, AlignLeft } from 'lucide-react'
-import { getDefaultAccountId } from '@/lib/storage/default-account'
+} from "@/components/ui/select";
+import { DynamicIcon } from "@/components/ui/dynamic-icon";
+import {
+  Account,
+  Category,
+  CurrencyCode,
+  RecurringFrequency,
+  EnrichedRecurringTransaction,
+} from "@/types/database";
+import {
+  createRecurringTransaction,
+  updateRecurringTransaction,
+} from "@/actions/recurring";
+import { useLanguage } from "@/lib/i18n/language-context";
+import { formatCurrency } from "@/lib/utils/currency";
+import { cn } from "@/lib/utils/cn";
+import { format } from "date-fns";
+import { AlertCircle, Wallet, AlignLeft } from "lucide-react";
 
 interface RecurringFormModalProps {
-  isOpen: boolean
-  onClose: () => void
-  accounts: Account[]
-  categories: Category[]
-  editItem?: EnrichedRecurringTransaction | null
-  onSuccess?: () => void
+  isOpen: boolean;
+  onClose: () => void;
+  accounts: Account[];
+  categories: Category[];
+  editItem?: EnrichedRecurringTransaction | null;
+  onSuccess?: () => void;
 }
 
 const CURRENCY_LIST = [
-  { code: 'IDR', name: 'Rupiah Indonesia' },
-  { code: 'USD', name: 'US Dollar' },
-  { code: 'SGD', name: 'Singapore Dollar' },
-]
+  { code: "IDR", name: "Rupiah Indonesia" },
+  { code: "USD", name: "US Dollar" },
+  { code: "SGD", name: "Singapore Dollar" },
+];
 
 export function RecurringFormModal({
   isOpen,
@@ -45,99 +53,113 @@ export function RecurringFormModal({
   editItem,
   onSuccess,
 }: RecurringFormModalProps) {
-  const { t, language } = useLanguage()
+  const { t, language } = useLanguage();
 
-  const [name, setName] = useState('')
-  const [type, setType] = useState<'income' | 'expense'>('expense')
-  const [amount, setAmount] = useState('')
-  const [currency, setCurrency] = useState<CurrencyCode>('IDR')
-  const [accountId, setAccountId] = useState('')
-  const [categoryId, setCategoryId] = useState<string>('none')
-  const [frequency, setFrequency] = useState<RecurringFrequency>('monthly')
-  const [intervalCount, setIntervalCount] = useState(1)
-  const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'))
-  const [nextDueDate, setNextDueDate] = useState(format(new Date(), 'yyyy-MM-dd'))
-  const [endDate, setEndDate] = useState('')
-  const [autoProcess, setAutoProcess] = useState(false)
-  const [notes, setNotes] = useState('')
-  const [showMemo, setShowMemo] = useState(false)
+  const [name, setName] = useState("");
+  const [type, setType] = useState<"income" | "expense">("expense");
+  const [amount, setAmount] = useState("");
+  const [currency, setCurrency] = useState<CurrencyCode>("IDR");
+  const [accountId, setAccountId] = useState("");
+  const [categoryId, setCategoryId] = useState<string>("none");
+  const [frequency, setFrequency] = useState<RecurringFrequency>("monthly");
+  const [intervalCount, setIntervalCount] = useState(1);
+  const [startDate, setStartDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [nextDueDate, setNextDueDate] = useState(
+    format(new Date(), "yyyy-MM-dd"),
+  );
+  const [endDate, setEndDate] = useState("");
+  const [autoProcess, setAutoProcess] = useState(false);
+  const [notes, setNotes] = useState("");
+  const [showMemo, setShowMemo] = useState(false);
 
-  const [loading, setLoading] = useState(false)
-  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Initialize or reset form values
   useEffect(() => {
     if (editItem) {
-      setName(editItem.name)
-      setType(editItem.type)
-      setAmount(String(editItem.amount))
-      setCurrency(editItem.currency)
-      setAccountId(editItem.account_id)
-      setCategoryId(editItem.category_id || 'none')
-      setFrequency(editItem.frequency)
-      setIntervalCount(editItem.interval_count || 1)
-      setStartDate(editItem.start_date.split('T')[0])
-      setNextDueDate(editItem.next_due_date.split('T')[0])
-      setEndDate(editItem.end_date ? editItem.end_date.split('T')[0] : '')
-      setAutoProcess(editItem.auto_process || false)
-      setNotes(editItem.notes || '')
-      setShowMemo(!!editItem.notes)
+      setName(editItem.name);
+      setType(editItem.type);
+      setAmount(String(editItem.amount));
+      setCurrency(editItem.currency);
+      setAccountId(editItem.account_id);
+      setCategoryId(editItem.category_id || "none");
+      setFrequency(editItem.frequency);
+      setIntervalCount(editItem.interval_count || 1);
+      setStartDate(editItem.start_date.split("T")[0]);
+      setNextDueDate(editItem.next_due_date.split("T")[0]);
+      setEndDate(editItem.end_date ? editItem.end_date.split("T")[0] : "");
+      setAutoProcess(editItem.auto_process || false);
+      setNotes(editItem.notes || "");
+      setShowMemo(!!editItem.notes);
     } else {
-      setName('')
-      setType('expense')
-      setAmount('')
-      const defaultId = getDefaultAccountId()
-      const defaultAcc = accounts.find((a) => a.id === defaultId) || accounts[0]
-      setCurrency(defaultAcc?.currency || 'IDR')
-      setAccountId(defaultAcc?.id || '')
-      const defaultCat = categories.find((c) => c.type === 'expense')
-      setCategoryId(defaultCat?.id || 'none')
-      setFrequency('monthly')
-      setIntervalCount(1)
-      const today = format(new Date(), 'yyyy-MM-dd')
-      setStartDate(today)
-      setNextDueDate(today)
-      setEndDate('')
-      setAutoProcess(false)
-      setNotes('')
-      setShowMemo(false)
+      setName("");
+      setType("expense");
+      setAmount("");
+      const defaultAcc = accounts.find((a) => a.is_default) || accounts[0];
+      setCurrency(defaultAcc?.currency || "IDR");
+      setAccountId(defaultAcc?.id || "");
+      const defaultCat = categories.find((c) => c.type === "expense");
+      setCategoryId(defaultCat?.id || "none");
+      setFrequency("monthly");
+      setIntervalCount(1);
+      const today = format(new Date(), "yyyy-MM-dd");
+      setStartDate(today);
+      setNextDueDate(today);
+      setEndDate("");
+      setAutoProcess(false);
+      setNotes("");
+      setShowMemo(false);
     }
-    setErrorMsg(null)
-  }, [editItem, isOpen, accounts, categories])
+    setErrorMsg(null);
+  }, [editItem, isOpen, accounts, categories]);
 
   // Sync category options when type changes
-  const filteredCategories = categories.filter((c) => c.type === type)
+  const filteredCategories = categories.filter((c) => c.type === type);
 
   // Auto-switch currency when account is selected
   const handleAccountChange = (accId: string) => {
-    setAccountId(accId)
-    const selectedAcc = accounts.find((a) => a.id === accId)
+    setAccountId(accId);
+    const selectedAcc = accounts.find((a) => a.id === accId);
     if (selectedAcc?.currency) {
-      setCurrency(selectedAcc.currency)
+      setCurrency(selectedAcc.currency);
     }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setErrorMsg(null)
+    e.preventDefault();
+    setErrorMsg(null);
 
-    const numAmount = parseFloat(amount)
+    const numAmount = parseFloat(amount);
     if (!name.trim()) {
-      setErrorMsg(language === 'en' ? 'Please enter a name' : 'Nama jadwal tidak boleh kosong')
-      return
+      setErrorMsg(
+        language === "en"
+          ? "Please enter a name"
+          : "Nama jadwal tidak boleh kosong",
+      );
+      return;
     }
     if (isNaN(numAmount) || numAmount <= 0) {
-      setErrorMsg(language === 'en' ? 'Please enter a valid amount' : 'Nominal harus lebih besar dari 0')
-      return
+      setErrorMsg(
+        language === "en"
+          ? "Please enter a valid amount"
+          : "Nominal harus lebih besar dari 0",
+      );
+      return;
     }
     if (!accountId) {
-      setErrorMsg(language === 'en' ? 'Please select a source account' : 'Silakan pilih rekening sumber')
-      return
+      setErrorMsg(
+        language === "en"
+          ? "Please select a source account"
+          : "Silakan pilih rekening sumber",
+      );
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
     try {
-      const finalCatId = categoryId && categoryId !== 'none' ? categoryId : null
+      const finalCatId =
+        categoryId && categoryId !== "none" ? categoryId : null;
 
       if (editItem) {
         const res = await updateRecurringTransaction(editItem.id, {
@@ -154,10 +176,10 @@ export function RecurringFormModal({
           endDate: endDate || null,
           autoProcess,
           notes: showMemo && notes.trim() ? notes.trim() : null,
-        })
+        });
         if (res.error) {
-          setErrorMsg(res.error)
-          return
+          setErrorMsg(res.error);
+          return;
         }
       } else {
         const res = await createRecurringTransaction({
@@ -175,21 +197,25 @@ export function RecurringFormModal({
           isActive: true,
           autoProcess,
           notes: showMemo && notes.trim() ? notes.trim() : null,
-        })
+        });
         if (res.error) {
-          setErrorMsg(res.error)
-          return
+          setErrorMsg(res.error);
+          return;
         }
       }
 
-      onSuccess?.()
-      onClose()
+      onSuccess?.();
+      onClose();
     } catch {
-      setErrorMsg(language === 'en' ? 'An unexpected error occurred' : 'Terjadi kesalahan sistem')
+      setErrorMsg(
+        language === "en"
+          ? "An unexpected error occurred"
+          : "Terjadi kesalahan sistem",
+      );
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <Modal
@@ -212,15 +238,15 @@ export function RecurringFormModal({
           <button
             type="button"
             onClick={() => {
-              setType('expense')
-              const firstExp = categories.find((c) => c.type === 'expense')
-              setCategoryId(firstExp?.id || 'none')
+              setType("expense");
+              const firstExp = categories.find((c) => c.type === "expense");
+              setCategoryId(firstExp?.id || "none");
             }}
             className={cn(
-              'py-1.5 text-xs font-bold rounded-lg transition-all text-center cursor-pointer',
-              type === 'expense'
-                ? 'bg-white dark:bg-[#121215] text-[#E11D48] shadow-xs'
-                : 'text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8]'
+              "py-1.5 text-xs font-bold rounded-lg transition-all text-center cursor-pointer",
+              type === "expense"
+                ? "bg-white dark:bg-[#121215] text-[#E11D48] shadow-xs"
+                : "text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8]",
             )}
           >
             {t.quickAdd.expense}
@@ -228,15 +254,15 @@ export function RecurringFormModal({
           <button
             type="button"
             onClick={() => {
-              setType('income')
-              const firstInc = categories.find((c) => c.type === 'income')
-              setCategoryId(firstInc?.id || 'none')
+              setType("income");
+              const firstInc = categories.find((c) => c.type === "income");
+              setCategoryId(firstInc?.id || "none");
             }}
             className={cn(
-              'py-1.5 text-xs font-bold rounded-lg transition-all text-center cursor-pointer',
-              type === 'income'
-                ? 'bg-white dark:bg-[#121215] text-[#0D9488] shadow-xs'
-                : 'text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8]'
+              "py-1.5 text-xs font-bold rounded-lg transition-all text-center cursor-pointer",
+              type === "income"
+                ? "bg-white dark:bg-[#121215] text-[#0D9488] shadow-xs"
+                : "text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8]",
             )}
           >
             {t.quickAdd.income}
@@ -261,10 +287,10 @@ export function RecurringFormModal({
               onClick={() => setShowMemo(!showMemo)}
               title={t.quickAdd.memoTitle}
               className={cn(
-                'h-9 px-3 rounded-lg border transition-colors cursor-pointer shrink-0 flex items-center justify-center gap-1.5 text-xs font-medium',
+                "h-9 px-3 rounded-lg border transition-colors cursor-pointer shrink-0 flex items-center justify-center gap-1.5 text-xs font-medium",
                 showMemo
-                  ? 'bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A]'
-                  : 'bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]'
+                  ? "bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A]"
+                  : "bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]",
               )}
             >
               <AlignLeft className="w-3.5 h-3.5" />
@@ -280,7 +306,10 @@ export function RecurringFormModal({
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder={t.quickAdd.memoPlaceholder || 'Catatan tambahan / nomor pelanggan...'}
+              placeholder={
+                t.quickAdd.memoPlaceholder ||
+                "Catatan tambahan / nomor pelanggan..."
+              }
               className="w-full p-2 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs text-[#0F172A] dark:text-[#F8FAFC] placeholder:text-[#94A3B8] focus:outline-none"
             />
           </div>
@@ -307,7 +336,10 @@ export function RecurringFormModal({
             <label className="text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA]">
               {t.common.currency}
             </label>
-            <Select value={currency} onValueChange={(val) => setCurrency(val as CurrencyCode)}>
+            <Select
+              value={currency}
+              onValueChange={(val) => setCurrency(val as CurrencyCode)}
+            >
               <SelectTrigger className="w-full text-xs font-bold">
                 <SelectValue>{currency}</SelectValue>
               </SelectTrigger>
@@ -328,23 +360,25 @@ export function RecurringFormModal({
             {t.recurring.frequencyLabel}
           </label>
           <div className="grid grid-cols-4 gap-1 p-1 bg-[#F1F3F5] dark:bg-[#1A1A20] rounded-xl border border-[#E5E7EB] dark:border-[#27272A]">
-            {(['daily', 'weekly', 'monthly', 'yearly'] as RecurringFrequency[]).map((f) => (
+            {(
+              ["daily", "weekly", "monthly", "yearly"] as RecurringFrequency[]
+            ).map((f) => (
               <button
                 key={f}
                 type="button"
                 onClick={() => setFrequency(f)}
                 className={cn(
-                  'py-1.5 text-xs font-bold rounded-lg transition-all text-center cursor-pointer capitalize',
+                  "py-1.5 text-xs font-bold rounded-lg transition-all text-center cursor-pointer capitalize",
                   frequency === f
-                    ? 'bg-white dark:bg-[#121215] text-[#0F172A] dark:text-[#FAFAFA] shadow-xs'
-                    : 'text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8]'
+                    ? "bg-white dark:bg-[#121215] text-[#0F172A] dark:text-[#FAFAFA] shadow-xs"
+                    : "text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8]",
                 )}
               >
-                {f === 'daily'
+                {f === "daily"
                   ? t.recurring.frequencyDaily
-                  : f === 'weekly'
+                  : f === "weekly"
                     ? t.recurring.frequencyWeekly
-                    : f === 'monthly'
+                    : f === "monthly"
                       ? t.recurring.frequencyMonthly
                       : t.recurring.frequencyYearly}
               </button>
@@ -361,8 +395,10 @@ export function RecurringFormModal({
             <SelectTrigger className="w-full min-w-0 text-xs">
               <SelectValue placeholder={t.common.account}>
                 {(() => {
-                  const acc = accounts.find((a) => a.id === accountId)
-                  return acc ? `${acc.name} (${formatCurrency(acc.current_balance, acc.currency)})` : t.common.account
+                  const acc = accounts.find((a) => a.id === accountId);
+                  return acc
+                    ? `${acc.name} (${formatCurrency(acc.current_balance, acc.currency)})`
+                    : t.common.account;
                 })()}
               </SelectValue>
             </SelectTrigger>
@@ -393,8 +429,10 @@ export function RecurringFormModal({
             <SelectTrigger className="w-full min-w-0 text-xs">
               <SelectValue placeholder={t.common.category}>
                 {(() => {
-                  const cat = filteredCategories.find((c) => c.id === categoryId)
-                  return cat ? cat.name : t.common.custom
+                  const cat = filteredCategories.find(
+                    (c) => c.id === categoryId,
+                  );
+                  return cat ? cat.name : t.common.custom;
                 })()}
               </SelectValue>
             </SelectTrigger>
@@ -405,7 +443,10 @@ export function RecurringFormModal({
               {filteredCategories.map((cat) => (
                 <SelectItem key={cat.id} value={cat.id}>
                   <div className="flex items-center gap-2">
-                    <DynamicIcon name={cat.icon || 'Tag'} className="w-3.5 h-3.5 text-[#64748B]" />
+                    <DynamicIcon
+                      name={cat.icon || "Tag"}
+                      className="w-3.5 h-3.5 text-[#64748B]"
+                    />
                     <span>{cat.name}</span>
                   </div>
                 </SelectItem>
@@ -460,5 +501,5 @@ export function RecurringFormModal({
         </div>
       </form>
     </Modal>
-  )
+  );
 }

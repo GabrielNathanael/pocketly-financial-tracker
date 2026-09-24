@@ -16,7 +16,7 @@ import { Debt, Account } from "@/types/database";
 import { addDebtPayment } from "@/actions/debts";
 import { formatCurrency } from "@/lib/utils/currency";
 import { useLanguage } from "@/lib/i18n/language-context";
-import { getDefaultAccountId } from "@/lib/storage/default-account";
+
 import { Wallet, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { localDateToISO, getLocalDateString } from "@/lib/utils/date";
@@ -52,10 +52,7 @@ export function DebtPaymentModal({
   // Auto-select default or first matching account whenever modal opens
   useEffect(() => {
     if (isOpen && debt) {
-      const savedDefaultId = getDefaultAccountId();
-      const defaultMatch = matchingAccounts.find(
-        (a) => a.id === savedDefaultId,
-      );
+      const defaultMatch = matchingAccounts.find((a) => a.is_default);
       if (defaultMatch) {
         setSelectedAccountId(defaultMatch.id);
       } else if (matchingAccounts.length > 0) {
@@ -156,9 +153,6 @@ export function DebtPaymentModal({
     }
   };
 
-  const savedDefaultId =
-    typeof window !== "undefined" ? getDefaultAccountId() : null;
-
   return (
     <Modal
       isOpen={isOpen}
@@ -248,7 +242,7 @@ export function DebtPaymentModal({
               </SelectTrigger>
               <SelectContent>
                 {matchingAccounts.map((a) => {
-                  const isDef = a.id === savedDefaultId;
+                  const isDef = a.is_default;
                   return (
                     <SelectItem key={a.id} value={a.id}>
                       <div className="flex items-center justify-between gap-3 w-full">

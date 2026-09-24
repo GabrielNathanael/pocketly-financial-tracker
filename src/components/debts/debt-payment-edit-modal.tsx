@@ -16,7 +16,7 @@ import { Debt, Account } from "@/types/database";
 import { EnrichedDebtPayment, updateDebtPayment } from "@/actions/debts";
 import { formatCurrency } from "@/lib/utils/currency";
 import { useLanguage } from "@/lib/i18n/language-context";
-import { getDefaultAccountId } from "@/lib/storage/default-account";
+
 import { Wallet, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { localDateToISO, getLocalDateString } from "@/lib/utils/date";
@@ -79,15 +79,13 @@ function DebtPaymentEditForm({
   onSuccess,
 }: DebtPaymentEditFormProps) {
   const { language, t } = useLanguage();
-  const savedDefaultId =
-    typeof window !== "undefined" ? getDefaultAccountId() : null;
 
   // Strict currency filter
   const matchingAccounts = accounts.filter((a) => a.currency === debt.currency);
 
   const initialAccountId =
     payment.transaction?.account_id ||
-    matchingAccounts.find((a) => a.id === savedDefaultId)?.id ||
+    matchingAccounts.find((a) => a.is_default)?.id ||
     matchingAccounts[0]?.id ||
     "";
 
@@ -262,7 +260,7 @@ function DebtPaymentEditForm({
             </SelectTrigger>
             <SelectContent>
               {matchingAccounts.map((a) => {
-                const isDef = a.id === savedDefaultId;
+                const isDef = a.is_default;
                 return (
                   <SelectItem key={a.id} value={a.id}>
                     <div className="flex items-center justify-between gap-3 w-full">

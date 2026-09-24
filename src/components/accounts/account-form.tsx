@@ -1,60 +1,78 @@
-'use client'
+"use client";
 
-import React, { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { Account, AccountType, CurrencyCode } from '@/types/database'
-import { createAccount, updateAccount, deleteAccount } from '@/actions/accounts'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
-import { ConfirmDialog } from '@/components/ui/confirm-dialog'
-import { AVAILABLE_ICONS } from '@/lib/constants/default-categories'
-import { CURRENCY_LIST } from '@/lib/constants/currencies'
-import { DynamicIcon } from '@/components/ui/dynamic-icon'
-import { getDefaultAccountId, setDefaultAccountId } from '@/lib/storage/default-account'
-import { useLanguage } from '@/lib/i18n/language-context'
-import { toast } from 'sonner'
-import { Trash2, AlertCircle } from 'lucide-react'
-import { cn } from '@/lib/utils/cn'
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Account, AccountType, CurrencyCode } from "@/types/database";
+import {
+  createAccount,
+  updateAccount,
+  deleteAccount,
+} from "@/actions/accounts";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { AVAILABLE_ICONS } from "@/lib/constants/default-categories";
+import { CURRENCY_LIST } from "@/lib/constants/currencies";
+import { DynamicIcon } from "@/components/ui/dynamic-icon";
+import {
+  getDefaultAccountId,
+  setDefaultAccountId,
+} from "@/lib/storage/default-account";
+import { useLanguage } from "@/lib/i18n/language-context";
+import { toast } from "sonner";
+import { Trash2, AlertCircle } from "lucide-react";
+import { cn } from "@/lib/utils/cn";
+import { setDefaultAccount } from "@/actions/accounts";
 
 interface AccountFormProps {
-  initialData?: Account | null
-  onSuccess?: () => void
+  initialData?: Account | null;
+  onSuccess?: () => void;
 }
 
 export function AccountForm({ initialData, onSuccess }: AccountFormProps) {
-  const router = useRouter()
-  const { t, language } = useLanguage()
-  const isEditing = !!initialData
+  const router = useRouter();
+  const { t, language } = useLanguage();
+  const isEditing = !!initialData;
 
-  const [name, setName] = useState(initialData?.name || '')
-  const [type, setType] = useState<AccountType>(initialData?.type || 'bank')
-  const [currency, setCurrency] = useState<CurrencyCode>(initialData?.currency || 'IDR')
+  const [name, setName] = useState(initialData?.name || "");
+  const [type, setType] = useState<AccountType>(initialData?.type || "bank");
+  const [currency, setCurrency] = useState<CurrencyCode>(
+    initialData?.currency || "IDR",
+  );
   const [initialBalance, setInitialBalance] = useState<string>(
-    initialData?.initial_balance !== undefined ? String(initialData.initial_balance) : '0'
-  )
-  const [icon, setIcon] = useState<string>(initialData?.icon || 'Wallet')
+    initialData?.initial_balance !== undefined
+      ? String(initialData.initial_balance)
+      : "0",
+  );
+  const [icon, setIcon] = useState<string>(initialData?.icon || "Wallet");
   const [isDefault, setIsDefault] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false
-    return initialData ? getDefaultAccountId() === initialData.id : false
-  })
+    if (typeof window === "undefined") return false;
+    return initialData ? getDefaultAccountId() === initialData.id : false;
+  });
 
-  const [isLoading, setIsLoading] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (!name.trim()) {
-      setError(t.accounts.nameLabel + ' is required')
-      return
+      setError(t.accounts.nameLabel + " is required");
+      return;
     }
 
-    const numericInit = parseFloat(initialBalance) || 0
+    const numericInit = parseFloat(initialBalance) || 0;
 
-    setIsLoading(true)
-    setError(null)
+    setIsLoading(true);
+    setError(null);
 
     try {
       if (isEditing && initialData) {
@@ -64,16 +82,13 @@ export function AccountForm({ initialData, onSuccess }: AccountFormProps) {
           currency,
           initialBalance: numericInit,
           icon,
-        })
+        });
         if (res.error) {
-          setError(res.error)
-          return
+          setError(res.error);
+          return;
         }
-        if (isDefault) {
-          setDefaultAccountId(initialData.id)
-        } else if (getDefaultAccountId() === initialData.id) {
-          setDefaultAccountId(null)
-        }
+        await setDefaultAccount(isDefault ? initialData.id : null);
+        setDefaultAccountId(isDefault ? initialData.id : null);
       } else {
         const res = await createAccount({
           name,
@@ -81,60 +96,63 @@ export function AccountForm({ initialData, onSuccess }: AccountFormProps) {
           currency,
           initialBalance: numericInit,
           icon,
-        })
+        });
         if (res.error) {
-          setError(res.error)
-          return
+          setError(res.error);
+          return;
         }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const createdId = (res.data as any)?.id
+        const createdId = (res.data as any)?.id;
         if (isDefault && createdId) {
-          setDefaultAccountId(createdId)
+          await setDefaultAccount(createdId);
+          setDefaultAccountId(createdId); // sync cache lokal
         }
       }
 
       if (onSuccess) {
-        onSuccess()
+        onSuccess();
       } else {
-        router.push('/accounts')
+        router.push("/accounts");
       }
     } catch (err) {
-      setError((err as Error).message)
+      setError((err as Error).message);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleDelete = async () => {
-    if (!initialData) return
-    setIsDeleting(true)
-    setShowDeleteConfirm(false)
-    setError(null)
+    if (!initialData) return;
+    setIsDeleting(true);
+    setShowDeleteConfirm(false);
+    setError(null);
 
     try {
-      const res = await deleteAccount(initialData.id)
+      const res = await deleteAccount(initialData.id);
       if (res.error) {
-        setError(res.error)
+        setError(res.error);
       } else {
         if (getDefaultAccountId() === initialData.id) {
-          setDefaultAccountId(null)
+          setDefaultAccountId(null);
         }
         toast.success(
-          language === 'en' ? 'Account deleted successfully' : 'Akun berhasil dihapus'
-        )
+          language === "en"
+            ? "Account deleted successfully"
+            : "Akun berhasil dihapus",
+        );
         if (onSuccess) {
-          onSuccess()
+          onSuccess();
         } else {
-          router.push('/accounts')
+          router.push("/accounts");
         }
       }
     } catch (err) {
-      const msg = (err as Error).message
-      setError(msg)
+      const msg = (err as Error).message;
+      setError(msg);
     } finally {
-      setIsDeleting(false)
+      setIsDeleting(false);
     }
-  }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -159,16 +177,28 @@ export function AccountForm({ initialData, onSuccess }: AccountFormProps) {
           <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
             {t.accounts.typeLabel}
           </label>
-          <Select value={type} onValueChange={(val) => setType(val as AccountType)}>
+          <Select
+            value={type}
+            onValueChange={(val) => setType(val as AccountType)}
+          >
             <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="bank">{t.accounts.types.bank}</SelectItem>
               <SelectItem value="cash">{t.accounts.types.cash}</SelectItem>
-              <SelectItem value="ewallet">{t.accounts.types.ewallet}</SelectItem>
-              <SelectItem value="credit_card">{t.accounts.types.credit_card}</SelectItem>
-              <SelectItem value="investment">{t.accounts.types.investment || (language === 'en' ? 'Investment / Stocks' : 'Investasi / RDN')}</SelectItem>
+              <SelectItem value="ewallet">
+                {t.accounts.types.ewallet}
+              </SelectItem>
+              <SelectItem value="credit_card">
+                {t.accounts.types.credit_card}
+              </SelectItem>
+              <SelectItem value="investment">
+                {t.accounts.types.investment ||
+                  (language === "en"
+                    ? "Investment / Stocks"
+                    : "Investasi / RDN")}
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -178,7 +208,10 @@ export function AccountForm({ initialData, onSuccess }: AccountFormProps) {
           <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
             {t.accounts.currencyLabel}
           </label>
-          <Select value={currency} onValueChange={(val) => setCurrency(val as CurrencyCode)}>
+          <Select
+            value={currency}
+            onValueChange={(val) => setCurrency(val as CurrencyCode)}
+          >
             <SelectTrigger className="w-full">
               <SelectValue>{currency}</SelectValue>
             </SelectTrigger>
@@ -202,7 +235,11 @@ export function AccountForm({ initialData, onSuccess }: AccountFormProps) {
           value={initialBalance}
           onChange={(e) => setInitialBalance(e.target.value)}
           className="font-mono font-bold text-sm tnum"
-          rightIcon={<span className="text-xs font-mono font-bold text-[#94A3B8]">{currency}</span>}
+          rightIcon={
+            <span className="text-xs font-mono font-bold text-[#94A3B8]">
+              {currency}
+            </span>
+          }
         />
       )}
 
@@ -231,10 +268,10 @@ export function AccountForm({ initialData, onSuccess }: AccountFormProps) {
               type="button"
               onClick={() => setIcon(ic)}
               className={cn(
-                'p-2 rounded-lg border flex items-center justify-center transition-colors cursor-pointer',
+                "p-2 rounded-lg border flex items-center justify-center transition-colors cursor-pointer",
                 icon === ic
-                  ? 'border-[#0F172A] bg-[#0F172A] text-white dark:border-[#FAFAFA] dark:bg-[#FAFAFA] dark:text-[#0F172A]'
-                  : 'border-[#E5E7EB] dark:border-[#27272A] bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#0F172A] dark:text-[#F8FAFC] hover:bg-[#F1F3F5] dark:hover:bg-[#26262E]'
+                  ? "border-[#0F172A] bg-[#0F172A] text-white dark:border-[#FAFAFA] dark:bg-[#FAFAFA] dark:text-[#0F172A]"
+                  : "border-[#E5E7EB] dark:border-[#27272A] bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#0F172A] dark:text-[#F8FAFC] hover:bg-[#F1F3F5] dark:hover:bg-[#26262E]",
               )}
             >
               <DynamicIcon name={ic} className="w-4 h-4" />
@@ -272,5 +309,5 @@ export function AccountForm({ initialData, onSuccess }: AccountFormProps) {
         />
       )}
     </form>
-  )
+  );
 }

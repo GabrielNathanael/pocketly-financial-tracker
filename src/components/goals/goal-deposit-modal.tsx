@@ -29,7 +29,6 @@ import {
   ArrowDownRight,
   ArrowUpRight,
 } from "lucide-react";
-import { getDefaultAccountId } from "@/lib/storage/default-account";
 
 interface GoalDepositModalProps {
   isOpen: boolean;
@@ -64,15 +63,11 @@ export function GoalDepositModal({
       setType("deposit");
       setAmount("");
       // Prioritize default/primary account if currency matches, then default account, then first currency match, then accounts[0]
-      const defaultId = getDefaultAccountId();
-      const defaultMatch = accounts.find(
-        (a) => a.id === defaultId && a.currency === goal.currency,
-      );
-      const matching =
-        defaultMatch ||
-        accounts.find((a) => a.id === defaultId) ||
+      const defaultMatch =
+        accounts.find((a) => a.is_default && a.currency === goal.currency) ||
+        accounts.find((a) => a.is_default) ||
         accounts.find((a) => a.currency === goal.currency);
-      setAccountId(matching?.id || accounts[0]?.id || "");
+      setAccountId(defaultMatch?.id || accounts[0]?.id || "");
       setDepositDate(format(new Date(), "yyyy-MM-dd"));
       setNotes("");
       setErrorMsg(null);

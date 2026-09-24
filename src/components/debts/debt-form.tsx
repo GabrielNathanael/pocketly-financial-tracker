@@ -1,74 +1,86 @@
-'use client'
+"use client";
 
-import React, { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { Account, Debt, DebtType, CurrencyCode } from '@/types/database'
-import { createDebt, updateDebt, deleteDebt } from '@/actions/debts'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
-import { DatePicker } from '@/components/ui/date-picker'
-import { ConfirmDialog } from '@/components/ui/confirm-dialog'
-import { CURRENCY_LIST } from '@/lib/constants/currencies'
-import { formatCurrency } from '@/lib/utils/currency'
-import { useLanguage } from '@/lib/i18n/language-context'
-import { toast } from 'sonner'
-import { Trash2, AlertCircle } from 'lucide-react'
-import { cn } from '@/lib/utils/cn'
-import { getDefaultAccountId } from '@/lib/storage/default-account'
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Account, Debt, DebtType, CurrencyCode } from "@/types/database";
+import { createDebt, updateDebt, deleteDebt } from "@/actions/debts";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/date-picker";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { CURRENCY_LIST } from "@/lib/constants/currencies";
+import { formatCurrency } from "@/lib/utils/currency";
+import { useLanguage } from "@/lib/i18n/language-context";
+import { toast } from "sonner";
+import { Trash2, AlertCircle } from "lucide-react";
+import { cn } from "@/lib/utils/cn";
 
 interface DebtFormProps {
-  initialData?: Debt | null
-  accounts?: Account[]
-  onSuccess?: () => void
+  initialData?: Debt | null;
+  accounts?: Account[];
+  onSuccess?: () => void;
 }
 
-export function DebtForm({ initialData, accounts = [], onSuccess }: DebtFormProps) {
-  const router = useRouter()
-  const { t, language } = useLanguage()
-  const isEditing = !!initialData
+export function DebtForm({
+  initialData,
+  accounts = [],
+  onSuccess,
+}: DebtFormProps) {
+  const router = useRouter();
+  const { t, language } = useLanguage();
+  const isEditing = !!initialData;
 
-  const initCurrency = (initialData?.currency || 'IDR') as CurrencyCode
+  const initCurrency = (initialData?.currency || "IDR") as CurrencyCode;
 
   const getBestAccountId = (accs: Account[], curr: CurrencyCode) => {
-    const defaultId = getDefaultAccountId()
-    const defaultMatch = accs.find((a) => a.id === defaultId && a.currency === curr)
-    if (defaultMatch) return defaultMatch.id
-    const firstMatch = accs.find((a) => a.currency === curr)
-    return firstMatch ? firstMatch.id : (accs[0]?.id || '')
-  }
+    const defaultMatch = accs.find((a) => a.is_default && a.currency === curr);
+    if (defaultMatch) return defaultMatch.id;
+    const firstMatch = accs.find((a) => a.currency === curr);
+    return firstMatch ? firstMatch.id : accs[0]?.id || "";
+  };
 
-  const [type, setType] = useState<DebtType>(initialData?.type || 'debt')
-  const [counterpartyName, setCounterpartyName] = useState(initialData?.counterparty_name || '')
+  const [type, setType] = useState<DebtType>(initialData?.type || "debt");
+  const [counterpartyName, setCounterpartyName] = useState(
+    initialData?.counterparty_name || "",
+  );
   const [initialAmount, setInitialAmount] = useState<string>(
-    initialData?.initial_amount ? String(initialData.initial_amount) : ''
-  )
-  const [currency, setCurrency] = useState<CurrencyCode>(initCurrency)
-  const [dueDate, setDueDate] = useState<string>(initialData?.due_date || '')
-  const [notes, setNotes] = useState<string>(initialData?.notes || '')
-  const [accountId, setAccountId] = useState<string>(() => getBestAccountId(accounts, initCurrency))
-  const [recordTransaction, setRecordTransaction] = useState<boolean>(true)
+    initialData?.initial_amount ? String(initialData.initial_amount) : "",
+  );
+  const [currency, setCurrency] = useState<CurrencyCode>(initCurrency);
+  const [dueDate, setDueDate] = useState<string>(initialData?.due_date || "");
+  const [notes, setNotes] = useState<string>(initialData?.notes || "");
+  const [accountId, setAccountId] = useState<string>(() =>
+    getBestAccountId(accounts, initCurrency),
+  );
+  const [recordTransaction, setRecordTransaction] = useState<boolean>(true);
 
-  const [isLoading, setIsLoading] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (!counterpartyName.trim()) {
-      setError(t.debts.counterpartyLabel + ' is required')
-      return
+      setError(t.debts.counterpartyLabel + " is required");
+      return;
     }
 
-    const numericAmount = parseFloat(initialAmount)
+    const numericAmount = parseFloat(initialAmount);
     if (!isEditing && (isNaN(numericAmount) || numericAmount <= 0)) {
-      setError(t.debts.principalLabel + ' must be > 0')
-      return
+      setError(t.debts.principalLabel + " must be > 0");
+      return;
     }
 
-    setIsLoading(true)
-    setError(null)
+    setIsLoading(true);
+    setError(null);
 
     try {
       if (isEditing && initialData) {
@@ -76,10 +88,10 @@ export function DebtForm({ initialData, accounts = [], onSuccess }: DebtFormProp
           counterpartyName,
           dueDate: dueDate || null,
           notes: notes || null,
-        })
+        });
         if (res.error) {
-          setError(res.error)
-          return
+          setError(res.error);
+          return;
         }
       } else {
         const res = await createDebt({
@@ -91,59 +103,61 @@ export function DebtForm({ initialData, accounts = [], onSuccess }: DebtFormProp
           notes: notes || null,
           accountId: recordTransaction ? accountId : null,
           recordTransaction,
-        })
+        });
         if (res.error) {
-          setError(res.error)
-          return
+          setError(res.error);
+          return;
         }
       }
 
       if (onSuccess) {
-        onSuccess()
+        onSuccess();
       } else {
-        router.push('/debts')
+        router.push("/debts");
       }
     } catch (err) {
-      setError((err as Error).message)
+      setError((err as Error).message);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleDelete = async () => {
-    if (!initialData) return
-    setIsDeleting(true)
-    setShowDeleteConfirm(false)
-    setError(null)
+    if (!initialData) return;
+    setIsDeleting(true);
+    setShowDeleteConfirm(false);
+    setError(null);
 
     try {
-      const res = await deleteDebt(initialData.id)
+      const res = await deleteDebt(initialData.id);
       if (res.error) {
-        setError(res.error)
+        setError(res.error);
       } else {
         toast.success(
-          language === 'en' ? 'Debt record deleted successfully' : 'Catatan utang berhasil dihapus'
-        )
+          language === "en"
+            ? "Debt record deleted successfully"
+            : "Catatan utang berhasil dihapus",
+        );
         if (onSuccess) {
-          onSuccess()
+          onSuccess();
         } else {
-          router.push('/debts')
+          router.push("/debts");
         }
       }
     } catch (err) {
-      const msg = (err as Error).message
-      setError(msg)
+      const msg = (err as Error).message;
+      setError(msg);
     } finally {
-      setIsDeleting(false)
+      setIsDeleting(false);
     }
-  }
+  };
 
-  const matchingAccounts = accounts.filter((a) => a.currency === currency)
+  const matchingAccounts = accounts.filter((a) => a.currency === currency);
 
   const handleCurrencyChange = (newCurrency: CurrencyCode) => {
-    setCurrency(newCurrency)
-    setAccountId(getBestAccountId(accounts, newCurrency))
-  }
+    setCurrency(newCurrency);
+    setAccountId(getBestAccountId(accounts, newCurrency));
+  };
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -158,24 +172,24 @@ export function DebtForm({ initialData, accounts = [], onSuccess }: DebtFormProp
         <div className="grid grid-cols-2 p-1 bg-[#F1F3F5] dark:bg-[#1A1A20] rounded-lg border border-[#E5E7EB] dark:border-[#27272A]">
           <button
             type="button"
-            onClick={() => setType('debt')}
+            onClick={() => setType("debt")}
             className={cn(
-              'py-2 rounded-md font-bold text-xs transition-colors cursor-pointer text-center',
-              type === 'debt'
-                ? 'bg-[#E11D48] text-white'
-                : 'text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#F8FAFC]'
+              "py-2 rounded-md font-bold text-xs transition-colors cursor-pointer text-center",
+              type === "debt"
+                ? "bg-[#E11D48] text-white"
+                : "text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#F8FAFC]",
             )}
           >
             {t.debts.debtType}
           </button>
           <button
             type="button"
-            onClick={() => setType('receivable')}
+            onClick={() => setType("receivable")}
             className={cn(
-              'py-2 rounded-md font-bold text-xs transition-colors cursor-pointer text-center',
-              type === 'receivable'
-                ? 'bg-[#0D9488] text-white'
-                : 'text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#F8FAFC]'
+              "py-2 rounded-md font-bold text-xs transition-colors cursor-pointer text-center",
+              type === "receivable"
+                ? "bg-[#0D9488] text-white"
+                : "text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#F8FAFC]",
             )}
           >
             {t.debts.receivableType}
@@ -199,7 +213,10 @@ export function DebtForm({ initialData, accounts = [], onSuccess }: DebtFormProp
             <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
               {t.common.currency}
             </label>
-            <Select value={currency} onValueChange={(val) => handleCurrencyChange(val as CurrencyCode)}>
+            <Select
+              value={currency}
+              onValueChange={(val) => handleCurrencyChange(val as CurrencyCode)}
+            >
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
@@ -243,7 +260,7 @@ export function DebtForm({ initialData, accounts = [], onSuccess }: DebtFormProp
               </span>
               <span className="text-[11px] text-[#64748B] dark:text-[#94A3B8]">
                 {recordTransaction
-                  ? type === 'receivable'
+                  ? type === "receivable"
                     ? t.debts.disbursementDeductDesc
                     : t.debts.disbursementCreditDesc
                   : t.debts.skipDisbursementDesc}
@@ -263,8 +280,13 @@ export function DebtForm({ initialData, accounts = [], onSuccess }: DebtFormProp
                   </SelectTrigger>
                   <SelectContent>
                     {matchingAccounts.map((acc) => (
-                      <SelectItem key={acc.id} value={acc.id} className="text-xs">
-                        {acc.name} ({formatCurrency(acc.current_balance, acc.currency)})
+                      <SelectItem
+                        key={acc.id}
+                        value={acc.id}
+                        className="text-xs"
+                      >
+                        {acc.name} (
+                        {formatCurrency(acc.current_balance, acc.currency)})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -284,7 +306,11 @@ export function DebtForm({ initialData, accounts = [], onSuccess }: DebtFormProp
         <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
           {t.debts.dueDateLabel}
         </label>
-        <DatePicker value={dueDate} onChange={setDueDate} placeholder={t.debts.dueDatePlaceholder} />
+        <DatePicker
+          value={dueDate}
+          onChange={setDueDate}
+          placeholder={t.debts.dueDatePlaceholder}
+        />
       </div>
 
       {/* Free-Text Notes */}
@@ -330,5 +356,5 @@ export function DebtForm({ initialData, accounts = [], onSuccess }: DebtFormProp
         />
       )}
     </form>
-  )
+  );
 }

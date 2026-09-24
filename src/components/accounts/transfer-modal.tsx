@@ -24,7 +24,7 @@ import {
   DEFAULT_FALLBACK_RATES,
 } from "@/lib/utils/currency";
 import { useLanguage } from "@/lib/i18n/language-context";
-import { getDefaultAccountId } from "@/lib/storage/default-account";
+
 import { ArrowRightLeft, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { localDateToISO, getLocalDateString } from "@/lib/utils/date";
@@ -81,7 +81,7 @@ function TransferForm({
   const { language, t } = useLanguage();
   const initialFrom =
     defaultFromAccountId ||
-    accounts.find((a) => a.id === getDefaultAccountId())?.id ||
+    accounts.find((a) => a.is_default)?.id ||
     accounts[0]?.id ||
     "";
   const initialTo =

@@ -17,7 +17,7 @@ import {
   savePinnedTemplate,
   PinnedTemplate,
 } from "@/lib/storage/pinned-templates";
-import { getDefaultAccountId } from "@/lib/storage/default-account";
+
 import {
   Check,
   Delete,
@@ -199,8 +199,7 @@ function QuickAddSheetContent({
   // Initialize defaults
   React.useEffect(() => {
     if (true) {
-      const defaultId = getDefaultAccountId();
-      const primary = accounts.find((a) => a.id === defaultId) || accounts[0];
+      const primary = accounts.find((a) => a.is_default) || accounts[0];
       if (primary) setSelectedAccountId(primary.id);
 
       const defaultCategoryId = resolveDefaultCategory(

@@ -38,7 +38,7 @@ import { cn } from "@/lib/utils/cn";
 import { toast } from "sonner";
 import { savePinnedTemplate } from "@/lib/storage/pinned-templates";
 import { scanReceipt } from "@/lib/ocr/receipt-scanner";
-import { getDefaultAccountId } from "@/lib/storage/default-account";
+
 import { localDateToISO, getLocalDateString } from "@/lib/utils/date";
 
 interface ItemRow {
@@ -192,9 +192,9 @@ export function TransactionForm({
 
   const initialAccountId =
     initialData?.account_id ||
-    (accounts.find((a) => a.id === getDefaultAccountId())?.id ??
-      accounts[0]?.id ??
-      "");
+    accounts.find((a) => a.is_default)?.id ||
+    accounts[0]?.id ||
+    "";
 
   const [selectedAccountId, setSelectedAccountId] =
     useState<string>(initialAccountId);
@@ -773,10 +773,14 @@ export function TransactionForm({
 
                 // Edit mode: never auto-suggest category on account change
                 if (!isEditing) {
-                  const matchingCats = categories.filter((c) => c.type === type);
-                  const suggestedId = mostUsedCategoryByAccount[`${val}_${type}`];
+                  const matchingCats = categories.filter(
+                    (c) => c.type === type,
+                  );
+                  const suggestedId =
+                    mostUsedCategoryByAccount[`${val}_${type}`];
                   const suggestedStillValid =
-                    suggestedId && matchingCats.some((c) => c.id === suggestedId);
+                    suggestedId &&
+                    matchingCats.some((c) => c.id === suggestedId);
                   const defaultCategoryId = suggestedStillValid
                     ? suggestedId
                     : matchingCats[0]?.id;
@@ -797,7 +801,9 @@ export function TransactionForm({
                 language === "en" ? "Search account..." : "Cari akun..."
               }
               emptyText={
-                language === "en" ? "No account found." : "Akun tidak ditemukan."
+                language === "en"
+                  ? "No account found."
+                  : "Akun tidak ditemukan."
               }
               triggerClassName="py-2.5 rounded-xl bg-white dark:bg-[#121215]"
             />
@@ -823,7 +829,9 @@ export function TransactionForm({
                 language === "en" ? "Search category..." : "Cari kategori..."
               }
               emptyText={
-                language === "en" ? "No category found." : "Kategori tidak ditemukan."
+                language === "en"
+                  ? "No category found."
+                  : "Kategori tidak ditemukan."
               }
               triggerClassName="py-2.5 rounded-xl bg-white dark:bg-[#121215]"
             />
