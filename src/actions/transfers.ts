@@ -140,11 +140,13 @@ export async function createTransfer(input: {
     }
 
     if (expCat) {
-      const feeTxDate = input.transferDate
-        ? `${input.transferDateLocal}T12:00:00.000Z`
-        : new Date().toISOString();
+      // Pakai timestamp yang sama persis dengan transfernya (bukan jam 12.00 UTC
+      // yang dipatok), supaya biaya admin tercatat di waktu transfer sebenarnya.
+      const feeTxDate = data.transfer_date || new Date().toISOString();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase.from("transactions") as any).insert({
+      const { error: feeErr } = await (
+        supabase.from("transactions") as any
+      ).insert({
         user_id: user.id,
         account_id: input.fromAccountId,
         category_id: expCat.id,
@@ -154,6 +156,15 @@ export async function createTransfer(input: {
         description: `Biaya Admin Transfer ke ${toAcc.name}${input.description ? ` (${input.description})` : ""}`,
         transaction_date: feeTxDate,
       });
+
+      if (feeErr) {
+        // Jangan gagal diam-diam: transfer sudah tersimpan, tapi biayanya belum.
+        console.error("Failed to record transfer fee:", feeErr);
+      }
+    } else {
+      console.error(
+        "Transfer fee not recorded: no 'Transfer Fee' / 'Transfer' / 'Other Expense' expense category found",
+      );
     }
   }
 
