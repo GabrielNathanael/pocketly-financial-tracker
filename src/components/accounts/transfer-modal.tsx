@@ -14,7 +14,10 @@ import {
 import { DatePicker } from "@/components/ui/date-picker";
 import { Account } from "@/types/database";
 import { createTransfer } from "@/actions/transfers";
-import { getLatestForexRates } from "@/actions/exchange-rate";
+import {
+  getLatestForexRates,
+  fetchAndSaveForexRates,
+} from "@/actions/exchange-rate";
 import {
   formatCurrency,
   formatNaturalForexRate,
@@ -149,7 +152,7 @@ function TransferForm({
     [accounts],
   );
 
-  // Fetch forex rates on mount
+  // Fetch forex rates once on mount
   useEffect(() => {
     let isMounted = true;
     setIsFetchingRates(true);
@@ -166,7 +169,9 @@ function TransferForm({
     return () => {
       isMounted = false;
     };
-  }, [fromAccountId, toAccountId, recalculateAmounts, amount]);
+    // Hanya saat mount: fetch ulang tiap ngetik nominal akan menimpa kurs manual
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleFromChange = (id: string) => {
     setFromAccountId(id);
@@ -226,7 +231,7 @@ function TransferForm({
 
     setIsFetchingRates(true);
     try {
-      const live = await getLatestForexRates();
+      const live = await fetchAndSaveForexRates();
       setRates(live);
       setLastSyncTime(Date.now());
       recalculateAmounts(fromAccountId, toAccountId, amount, live);

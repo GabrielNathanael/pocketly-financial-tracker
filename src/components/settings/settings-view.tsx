@@ -1,79 +1,107 @@
-'use client'
+"use client";
 
-import React, { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { ThemeToggle } from '@/components/layout/theme-toggle'
-import { Button } from '@/components/ui/button'
-import { ExportDataCard } from '@/components/settings/export-data-card'
-import { logout } from '@/actions/auth'
-import { fetchAndSaveForexRates, getLatestForexRates } from '@/actions/exchange-rate'
-import { formatCurrency, ForexRatesMap, DEFAULT_FALLBACK_RATES, getCrossRate } from '@/lib/utils/currency'
-import { setPreferredCurrency, usePreferredCurrency } from '@/lib/storage/preferred-currency'
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
-import { CURRENCY_LIST, CurrencyCode } from '@/lib/constants/currencies'
-import { useLanguage } from '@/lib/i18n/language-context'
-import { RefreshCw, LogOut, Check, Shield, Globe, BookOpen, ArrowRight, History, Coins } from 'lucide-react'
-import { cn } from '@/lib/utils/cn'
-import { toast } from 'sonner'
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { Button } from "@/components/ui/button";
+import { ExportDataCard } from "@/components/settings/export-data-card";
+import { logout } from "@/actions/auth";
+import {
+  fetchAndSaveForexRates,
+  getLatestForexRates,
+} from "@/actions/exchange-rate";
+import {
+  formatCurrency,
+  ForexRatesMap,
+  DEFAULT_FALLBACK_RATES,
+  getCrossRate,
+} from "@/lib/utils/currency";
+import {
+  setPreferredCurrency,
+  usePreferredCurrency,
+} from "@/lib/storage/preferred-currency";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { CURRENCY_LIST, CurrencyCode } from "@/lib/constants/currencies";
+import { useLanguage } from "@/lib/i18n/language-context";
+import {
+  RefreshCw,
+  LogOut,
+  Check,
+  Shield,
+  Globe,
+  BookOpen,
+  ArrowRight,
+  History,
+  Coins,
+} from "lucide-react";
+import { cn } from "@/lib/utils/cn";
+import { toast } from "sonner";
 
 interface SettingsViewProps {
-  userEmail: string
-  currentExchangeRate: number
+  userEmail: string;
 }
 
 export function SettingsView({ userEmail }: SettingsViewProps) {
-  const router = useRouter()
-  const { language, setLanguage, t } = useLanguage()
-  const [forexRates, setForexRates] = useState<ForexRatesMap>(DEFAULT_FALLBACK_RATES)
-  const displayCurrency = usePreferredCurrency()
-  const [isSyncing, setIsSyncing] = useState(false)
-  const [syncSuccess, setSyncSuccess] = useState(false)
-  const [lastSyncTime, setLastSyncTime] = useState<number | null>(null)
+  const router = useRouter();
+  const { language, setLanguage, t } = useLanguage();
+  const [forexRates, setForexRates] = useState<ForexRatesMap>(
+    DEFAULT_FALLBACK_RATES,
+  );
+  const displayCurrency = usePreferredCurrency();
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncSuccess, setSyncSuccess] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
 
   useEffect(() => {
-    getLatestForexRates().then(setForexRates)
-  }, [])
+    getLatestForexRates().then(setForexRates);
+  }, []);
 
   const handleSelectDisplayCurrency = (code: CurrencyCode) => {
-    setPreferredCurrency(code)
-  }
+    setPreferredCurrency(code);
+  };
 
   const handleSyncRate = async () => {
     if (lastSyncTime && Date.now() - lastSyncTime < 30000) {
       toast.success(
-        language === 'en'
-          ? 'Exchange rates are already up to date'
-          : 'Kurs mata uang sudah yang paling terbaru'
-      )
-      return
+        language === "en"
+          ? "Exchange rates are already up to date"
+          : "Kurs mata uang sudah yang paling terbaru",
+      );
+      return;
     }
 
-    setIsSyncing(true)
-    setSyncSuccess(false)
+    setIsSyncing(true);
+    setSyncSuccess(false);
     try {
-      const newRates = await fetchAndSaveForexRates()
-      setForexRates(newRates)
-      setLastSyncTime(Date.now())
-      setSyncSuccess(true)
+      const newRates = await fetchAndSaveForexRates();
+      setForexRates(newRates);
+      setLastSyncTime(Date.now());
+      setSyncSuccess(true);
       toast.success(
-        language === 'en'
-          ? 'Currency exchange rates updated successfully'
-          : 'Kurs mata uang berhasil diperbarui'
-      )
-      setTimeout(() => setSyncSuccess(false), 3000)
+        language === "en"
+          ? "Currency exchange rates updated successfully"
+          : "Kurs mata uang berhasil diperbarui",
+      );
+      setTimeout(() => setSyncSuccess(false), 3000);
     } catch {
       toast.error(
-        language === 'en'
-          ? 'Failed to fetch exchange rates'
-          : 'Gagal memperbarui kurs mata uang'
-      )
+        language === "en"
+          ? "Failed to fetch exchange rates"
+          : "Gagal memperbarui kurs mata uang",
+      );
     } finally {
-      setIsSyncing(false)
+      setIsSyncing(false);
     }
-  }
+  };
 
-  const sgdToIdr = getCrossRate('SGD', 'IDR', forexRates)
+  const sgdToIdr = getCrossRate("SGD", "IDR", forexRates);
 
   return (
     <div className="flex flex-col gap-4">
@@ -98,7 +126,9 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
               {t.settings.sessionTitle}
             </h3>
             <span className="text-xs font-mono text-[#64748B] dark:text-[#94A3B8] truncate">
-              {userEmail || t.settings.authenticatedUser || 'Pengguna Terautentikasi'}
+              {userEmail ||
+                t.settings.authenticatedUser ||
+                "Pengguna Terautentikasi"}
             </span>
           </div>
         </div>
@@ -148,7 +178,9 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
         <div className="w-full sm:w-48 shrink-0">
           <Select
             value={displayCurrency}
-            onValueChange={(val) => handleSelectDisplayCurrency(val as CurrencyCode)}
+            onValueChange={(val) =>
+              handleSelectDisplayCurrency(val as CurrencyCode)
+            }
           >
             <SelectTrigger className="w-full">
               <SelectValue />
@@ -205,23 +237,29 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
         {/* Live Forex Matrix Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-[#E5E7EB] dark:border-[#27272A] font-mono text-xs">
           <div className="p-2.5 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col">
-            <span className="text-[10px] font-sans font-bold text-[#94A3B8]">USD / IDR</span>
+            <span className="text-[10px] font-sans font-bold text-[#94A3B8]">
+              USD / IDR
+            </span>
             <span className="font-bold text-[#0F172A] dark:text-[#FAFAFA] mt-0.5">
-              1 USD = {formatCurrency(forexRates.IDR || 16200, 'IDR')}
+              1 USD = {formatCurrency(forexRates.IDR || 16200, "IDR")}
             </span>
           </div>
 
           <div className="p-2.5 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col">
-            <span className="text-[10px] font-sans font-bold text-[#94A3B8]">USD / SGD</span>
+            <span className="text-[10px] font-sans font-bold text-[#94A3B8]">
+              USD / SGD
+            </span>
             <span className="font-bold text-[#0F172A] dark:text-[#FAFAFA] mt-0.5">
-              1 USD = {formatCurrency(forexRates.SGD || 1.34, 'SGD')}
+              1 USD = {formatCurrency(forexRates.SGD || 1.34, "SGD")}
             </span>
           </div>
 
           <div className="p-2.5 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col">
-            <span className="text-[10px] font-sans font-bold text-[#94A3B8]">SGD / IDR (Cross)</span>
+            <span className="text-[10px] font-sans font-bold text-[#94A3B8]">
+              SGD / IDR (Cross)
+            </span>
             <span className="font-bold text-[#0D9488] mt-0.5">
-              1 SGD = {formatCurrency(sgdToIdr, 'IDR')}
+              1 SGD = {formatCurrency(sgdToIdr, "IDR")}
             </span>
           </div>
         </div>
@@ -246,24 +284,24 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
         <div className="grid grid-cols-2 w-full sm:w-auto p-1 bg-[#F1F3F5] dark:bg-[#1A1A20] rounded-lg border border-[#E5E7EB] dark:border-[#27272A] shrink-0">
           <button
             type="button"
-            onClick={() => setLanguage('id')}
+            onClick={() => setLanguage("id")}
             className={cn(
-              'px-3.5 py-1.5 rounded-md text-xs whitespace-nowrap transition-all cursor-pointer font-medium text-center',
-              language === 'id'
-                ? 'bg-white dark:bg-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] border border-[#E5E7EB] dark:border-transparent font-bold shadow-xs'
-                : 'text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
+              "px-3.5 py-1.5 rounded-md text-xs whitespace-nowrap transition-all cursor-pointer font-medium text-center",
+              language === "id"
+                ? "bg-white dark:bg-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] border border-[#E5E7EB] dark:border-transparent font-bold shadow-xs"
+                : "text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]",
             )}
           >
             Bahasa Indonesia
           </button>
           <button
             type="button"
-            onClick={() => setLanguage('en')}
+            onClick={() => setLanguage("en")}
             className={cn(
-              'px-3.5 py-1.5 rounded-md text-xs whitespace-nowrap transition-all cursor-pointer font-medium text-center',
-              language === 'en'
-                ? 'bg-[#0F172A] text-white dark:bg-[#27272A] dark:text-[#FAFAFA] font-bold shadow-xs'
-                : 'text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
+              "px-3.5 py-1.5 rounded-md text-xs whitespace-nowrap transition-all cursor-pointer font-medium text-center",
+              language === "en"
+                ? "bg-[#0F172A] text-white dark:bg-[#27272A] dark:text-[#FAFAFA] font-bold shadow-xs"
+                : "text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]",
             )}
           >
             English
@@ -313,19 +351,19 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
       <ExportDataCard />
 
       {/* Demo Account Reset Helper */}
-      {userEmail?.toLowerCase() === 'demo@pocketly.app' && (
+      {userEmail?.toLowerCase() === "demo@pocketly.app" && (
         <div className="p-4 sm:p-5 rounded-xl bg-amber-500/10 dark:bg-amber-500/5 border border-amber-500/30 dark:border-amber-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
               <RefreshCw className="w-4 h-4 text-amber-600 dark:text-amber-400" />
               <h3 className="text-xs font-bold uppercase tracking-wider text-amber-900 dark:text-amber-300">
-                {language === 'id' ? 'Reset Data Demo Awal' : 'Reset Demo Data'}
+                {language === "id" ? "Reset Data Demo Awal" : "Reset Demo Data"}
               </h3>
             </div>
             <p className="text-xs text-amber-800/80 dark:text-amber-300/70 max-w-md">
-              {language === 'id'
-                ? 'Kembalikan data akun bank, transaksi multi-valas, target tabungan, dan portofolio demo ke kondisi awal yang bersih.'
-                : 'Restore clean initial sample accounts, multi-currency transactions, savings goals, and portfolio holdings.'}
+              {language === "id"
+                ? "Kembalikan data akun bank, transaksi multi-valas, target tabungan, dan portofolio demo ke kondisi awal yang bersih."
+                : "Restore clean initial sample accounts, multi-currency transactions, savings goals, and portfolio holdings."}
             </p>
           </div>
 
@@ -334,20 +372,28 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
             variant="secondary"
             size="sm"
             onClick={async () => {
-              toast.loading(language === 'id' ? 'Mereset data demo...' : 'Resetting demo data...')
-              const { seedDemoData } = await import('@/actions/seed-demo')
-              const res = await seedDemoData()
-              toast.dismiss()
+              toast.loading(
+                language === "id"
+                  ? "Mereset data demo..."
+                  : "Resetting demo data...",
+              );
+              const { seedDemoData } = await import("@/actions/seed-demo");
+              const res = await seedDemoData();
+              toast.dismiss();
               if (res.success) {
-                toast.success(language === 'id' ? 'Data demo berhasil direset ke kondisi awal!' : 'Demo data reset successfully!')
-                window.location.reload()
+                toast.success(
+                  language === "id"
+                    ? "Data demo berhasil direset ke kondisi awal!"
+                    : "Demo data reset successfully!",
+                );
+                window.location.reload();
               } else {
-                toast.error(res.error || 'Gagal mereset data demo')
+                toast.error(res.error || "Gagal mereset data demo");
               }
             }}
             className="border-amber-500/40 text-amber-900 dark:text-amber-200 hover:bg-amber-500/20 shrink-0 font-bold"
           >
-            {language === 'id' ? 'Reset Data Demo' : 'Reset Demo'}
+            {language === "id" ? "Reset Data Demo" : "Reset Demo"}
           </Button>
         </div>
       )}
@@ -364,12 +410,17 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
         </div>
 
         <form action={logout}>
-          <Button type="submit" variant="danger" size="sm" className="gap-1.5 cursor-pointer whitespace-nowrap">
+          <Button
+            type="submit"
+            variant="danger"
+            size="sm"
+            className="gap-1.5 cursor-pointer whitespace-nowrap"
+          >
             <LogOut className="w-3.5 h-3.5" />
             {t.settings.signOutBtn}
           </Button>
         </form>
       </div>
     </div>
-  )
+  );
 }
