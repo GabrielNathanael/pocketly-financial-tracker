@@ -54,7 +54,12 @@ import {
   Scale,
   Hash,
   X,
+  SlidersHorizontal,
+  Search,
+  Check,
+  RotateCcw,
 } from "lucide-react";
+import { BottomSheet } from "@/components/ui/bottom-sheet";
 
 interface ReportsViewProps {
   transactions: EnrichedTransaction[];
@@ -105,6 +110,12 @@ export function ReportsView({
     start: format(startOfMonth(new Date()), "yyyy-MM-dd"),
     end: format(endOfMonth(new Date()), "yyyy-MM-dd"),
   });
+  const [excludedCategoryIds, setExcludedCategoryIds] = useState<string[]>([]);
+  const [isExcludeSheetOpen, setIsExcludeSheetOpen] = useState<boolean>(false);
+  const [sheetCategoryType, setSheetCategoryType] = useState<
+    "expense" | "income"
+  >("expense");
+  const [categorySearchQuery, setCategorySearchQuery] = useState<string>("");
 
   // Extract unique available tags across transactions
   const availableTags = useMemo(() => {
@@ -247,6 +258,12 @@ export function ReportsView({
     );
   };
 
+  // Helper to identify if transaction belongs to an excluded category
+  const isExcludedTx = (tx: { category_id?: string | null }) => {
+    const catId = tx.category_id || "uncategorized";
+    return excludedCategoryIds.includes(catId);
+  };
+
   // Aggregate Current Period Totals Normalized to Display Currency
   const {
     totalIncome,
@@ -262,6 +279,9 @@ export function ReportsView({
     currentPeriodTx.forEach((tx) => {
       // Exclude savings goal deposits/withdrawals from operational burn/revenue
       if (isSavingsTransfer(tx)) {
+        return;
+      }
+      if (isExcludedTx(tx)) {
         return;
       }
 
@@ -294,7 +314,14 @@ export function ReportsView({
       dailyBurnRate: burnRate,
       elapsedDays: days,
     };
-  }, [currentPeriodTx, displayCurrency, rates, intervalStart, intervalEnd]);
+  }, [
+    currentPeriodTx,
+    displayCurrency,
+    rates,
+    intervalStart,
+    intervalEnd,
+    excludedCategoryIds,
+  ]);
 
   // Aggregate Prior Period Totals for Side-by-Side Comparison
   const {
@@ -308,6 +335,9 @@ export function ReportsView({
 
     priorPeriodTx.forEach((tx) => {
       if (isSavingsTransfer(tx)) {
+        return;
+      }
+      if (isExcludedTx(tx)) {
         return;
       }
 
@@ -333,7 +363,7 @@ export function ReportsView({
       priorNetSavings: net,
       priorSavingsRate: sRate,
     };
-  }, [priorPeriodTx, displayCurrency, rates]);
+  }, [priorPeriodTx, displayCurrency, rates, excludedCategoryIds]);
 
   const expenseGrowthPct = useMemo(() => {
     if (priorTotalExpense === 0) return totalExpense > 0 ? 100 : 0;
@@ -345,14 +375,18 @@ export function ReportsView({
     return ((totalIncome - priorTotalIncome) / priorTotalIncome) * 100;
   }, [totalIncome, priorTotalIncome]);
 
-  // Expense Categories Breakdown (Always full for print & screen, excludes savings transfers)
+  // Expense Categories Breakdown (Always full for print & screen, excludes savings transfers & excluded categories)
   const allExpenseCategories = useMemo(() => {
     const map = new Map<
       string,
       { id: string; category: Category | null; total: number; count: number }
     >();
     currentPeriodTx.forEach((tx) => {
-      if (tx.type === "expense" && !isSavingsTransfer(tx)) {
+      if (
+        tx.type === "expense" &&
+        !isSavingsTransfer(tx) &&
+        !isExcludedTx(tx)
+      ) {
         const catId = tx.category_id || "uncategorized";
         const existing = map.get(catId) || {
           id: catId,
@@ -378,16 +412,22 @@ export function ReportsView({
       color: DONUT_COLORS[index % DONUT_COLORS.length],
       percentage: totalExpense > 0 ? (item.total / totalExpense) * 100 : 0,
     }));
-  }, [currentPeriodTx, totalExpense, displayCurrency, rates]);
+  }, [
+    currentPeriodTx,
+    totalExpense,
+    displayCurrency,
+    rates,
+    excludedCategoryIds,
+  ]);
 
-  // Income Categories Breakdown (Always full for print & screen, excludes savings withdrawals)
+  // Income Categories Breakdown (Always full for print & screen, excludes savings withdrawals & excluded categories)
   const allIncomeCategories = useMemo(() => {
     const map = new Map<
       string,
       { id: string; category: Category | null; total: number; count: number }
     >();
     currentPeriodTx.forEach((tx) => {
-      if (tx.type === "income" && !isSavingsTransfer(tx)) {
+      if (tx.type === "income" && !isSavingsTransfer(tx) && !isExcludedTx(tx)) {
         const catId = tx.category_id || "uncategorized";
         const existing = map.get(catId) || {
           id: catId,
@@ -413,7 +453,13 @@ export function ReportsView({
       color: DONUT_COLORS[index % DONUT_COLORS.length],
       percentage: totalIncome > 0 ? (item.total / totalIncome) * 100 : 0,
     }));
-  }, [currentPeriodTx, totalIncome, displayCurrency, rates]);
+  }, [
+    currentPeriodTx,
+    totalIncome,
+    displayCurrency,
+    rates,
+    excludedCategoryIds,
+  ]);
 
   // Active Category Breakdown for interactive Donut / List
   const categoryBreakdown = useMemo(() => {
@@ -421,6 +467,148 @@ export function ReportsView({
       ? allExpenseCategories
       : allIncomeCategories;
   }, [categoryTab, allExpenseCategories, allIncomeCategories]);
+
+  // Raw Category Breakdown for Bottom Sheet Category Exclude Modal (unfiltered by exclusion)
+  const rawCategorySummary = useMemo(() => {
+    const expenseMap = new Map<
+      string,
+      {
+        id: string;
+        name: string;
+        category: Category | null;
+        total: number;
+        count: number;
+      }
+    >();
+    const incomeMap = new Map<
+      string,
+      {
+        id: string;
+        name: string;
+        category: Category | null;
+        total: number;
+        count: number;
+      }
+    >();
+
+    currentPeriodTx.forEach((tx) => {
+      if (isSavingsTransfer(tx)) return;
+      const catId = tx.category_id || "uncategorized";
+      const catName = tx.category?.name || t.reports.uncategorized;
+
+      const converted = convertAmount(
+        tx.amount,
+        tx.currency || tx.account?.currency || "IDR",
+        displayCurrency,
+        rates,
+      );
+
+      const targetMap = tx.type === "expense" ? expenseMap : incomeMap;
+      const existing = targetMap.get(catId) || {
+        id: catId,
+        name: catName,
+        category: tx.category || null,
+        total: 0,
+        count: 0,
+      };
+      existing.total += converted;
+      existing.count += 1;
+      targetMap.set(catId, existing);
+    });
+
+    return {
+      expense: Array.from(expenseMap.values()).sort(
+        (a, b) => b.total - a.total,
+      ),
+      income: Array.from(incomeMap.values()).sort((a, b) => b.total - a.total),
+    };
+  }, [currentPeriodTx, displayCurrency, rates, t.reports.uncategorized]);
+
+  // Aggregate Excluded Totals and Meta Info for Banners and Quick Insights
+  const {
+    totalExcludedExpense,
+    totalExcludedIncome,
+    excludedExpenseCount,
+    excludedIncomeCount,
+    excludedCategoryNames,
+  } = useMemo(() => {
+    let expSum = 0;
+    let incSum = 0;
+    const expCats = new Set<string>();
+    const incCats = new Set<string>();
+    const catNames: string[] = [];
+
+    currentPeriodTx.forEach((tx) => {
+      if (isSavingsTransfer(tx)) return;
+      const catId = tx.category_id || "uncategorized";
+      if (excludedCategoryIds.includes(catId)) {
+        const val = convertAmount(
+          tx.amount,
+          tx.currency || tx.account?.currency || "IDR",
+          displayCurrency,
+          rates,
+        );
+        const name = tx.category?.name || t.reports.uncategorized;
+        if (!catNames.includes(name)) catNames.push(name);
+
+        if (tx.type === "expense") {
+          expSum += val;
+          expCats.add(catId);
+        } else {
+          incSum += val;
+          incCats.add(catId);
+        }
+      }
+    });
+
+    excludedCategoryIds.forEach((id) => {
+      if (id === "uncategorized") {
+        const name = t.reports.uncategorized;
+        if (!catNames.includes(name)) catNames.push(name);
+      } else {
+        const found = categories.find((c) => c.id === id);
+        if (found && !catNames.includes(found.name)) {
+          catNames.push(found.name);
+        }
+      }
+    });
+
+    return {
+      totalExcludedExpense: expSum,
+      totalExcludedIncome: incSum,
+      excludedExpenseCount: expCats.size,
+      excludedIncomeCount: incCats.size,
+      excludedCategoryNames: catNames,
+    };
+  }, [
+    currentPeriodTx,
+    excludedCategoryIds,
+    displayCurrency,
+    rates,
+    categories,
+    t.reports.uncategorized,
+  ]);
+
+  const filteredSheetCategories = useMemo(() => {
+    const list =
+      sheetCategoryType === "expense"
+        ? rawCategorySummary.expense
+        : rawCategorySummary.income;
+    if (!categorySearchQuery.trim()) return list;
+    const q = categorySearchQuery.toLowerCase();
+    return list.filter((item) => item.name.toLowerCase().includes(q));
+  }, [sheetCategoryType, rawCategorySummary, categorySearchQuery]);
+
+  const toggleExcludeCategory = (catId: string) => {
+    setExcludedCategoryIds((prev) =>
+      prev.includes(catId)
+        ? prev.filter((id) => id !== catId)
+        : [...prev, catId],
+    );
+    if (selectedCategoryFilter === catId) {
+      setSelectedCategoryFilter(null);
+    }
+  };
 
   // Account Breakdown Aggregation
   const accountBreakdown = useMemo(() => {
@@ -430,7 +618,11 @@ export function ReportsView({
     >();
 
     currentPeriodTx.forEach((tx) => {
-      if (tx.type === "expense" && !isSavingsTransfer(tx)) {
+      if (
+        tx.type === "expense" &&
+        !isSavingsTransfer(tx) &&
+        !isExcludedTx(tx)
+      ) {
         const accId = tx.account_id || "unknown";
         const existing = map.get(accId) || {
           account: tx.account || null,
@@ -454,16 +646,27 @@ export function ReportsView({
       ...item,
       percentage: totalExpense > 0 ? (item.total / totalExpense) * 100 : 0,
     }));
-  }, [currentPeriodTx, totalExpense, displayCurrency, rates]);
+  }, [
+    currentPeriodTx,
+    totalExpense,
+    displayCurrency,
+    rates,
+    excludedCategoryIds,
+  ]);
 
   // Filtered Transactions (By Selected Category from Donut)
   const displayedCategoryTransactions = useMemo(() => {
-    if (!selectedCategoryFilter) return [];
+    if (
+      !selectedCategoryFilter ||
+      excludedCategoryIds.includes(selectedCategoryFilter)
+    )
+      return [];
     return currentPeriodTx
       .filter(
         (tx) =>
           (tx.category_id || "uncategorized") === selectedCategoryFilter &&
-          tx.type === categoryTab,
+          tx.type === categoryTab &&
+          !isExcludedTx(tx),
       )
       .map((tx) => ({
         ...tx,
@@ -481,12 +684,16 @@ export function ReportsView({
     categoryTab,
     displayCurrency,
     rates,
+    excludedCategoryIds,
   ]);
 
   // Top 5 / Top 10 Expenses
   const topExpenses = useMemo(() => {
     return [...currentPeriodTx]
-      .filter((tx) => tx.type === "expense" && !isSavingsTransfer(tx))
+      .filter(
+        (tx) =>
+          tx.type === "expense" && !isSavingsTransfer(tx) && !isExcludedTx(tx),
+      )
       .map((tx) => ({
         ...tx,
         convertedAmount: convertAmount(
@@ -498,7 +705,7 @@ export function ReportsView({
       }))
       .sort((a, b) => b.convertedAmount - a.convertedAmount)
       .slice(0, 10);
-  }, [currentPeriodTx, displayCurrency, rates]);
+  }, [currentPeriodTx, displayCurrency, rates, excludedCategoryIds]);
 
   // Timeline Trajectory
   const timelineData = useMemo(() => {
@@ -514,7 +721,7 @@ export function ReportsView({
         let exp = 0;
 
         currentPeriodTx.forEach((tx) => {
-          if (isSavingsTransfer(tx)) return;
+          if (isSavingsTransfer(tx) || isExcludedTx(tx)) return;
           const tDate = parseISO(tx.transaction_date);
           if (isWithinInterval(tDate, { start: mStart, end: mEnd })) {
             const val = convertAmount(
@@ -558,7 +765,7 @@ export function ReportsView({
         let exp = 0;
 
         currentPeriodTx.forEach((tx) => {
-          if (isSavingsTransfer(tx)) return;
+          if (isSavingsTransfer(tx) || isExcludedTx(tx)) return;
           const tDate = parseISO(tx.transaction_date);
           if (isWithinInterval(tDate, { start: cStart, end: cEnd })) {
             const val = convertAmount(
@@ -600,6 +807,7 @@ export function ReportsView({
     displayCurrency,
     rates,
     dateFnsLocale,
+    excludedCategoryIds,
   ]);
 
   const maxTimelineVal = useMemo(() => {
@@ -650,34 +858,36 @@ export function ReportsView({
   // Export CSV
   const handleExportCSV = () => {
     const headers = [
-      "Date",
-      "Type",
-      "Category",
-      "Account",
-      "Amount",
-      "Currency",
-      "Normalized Amount",
-      "Display Currency",
-      "Tags",
-      "Description",
+      t.reports.csvDate,
+      t.reports.csvType,
+      t.reports.csvCategory,
+      t.reports.csvAccount,
+      t.reports.csvAmount,
+      t.reports.csvCurrency,
+      t.reports.csvNormalizedAmount,
+      t.reports.csvDisplayCurrency,
+      t.reports.csvTags,
+      t.reports.csvDescription,
     ];
-    const rows = currentPeriodTx.map((tx) => [
-      format(parseISO(tx.transaction_date), "yyyy-MM-dd HH:mm"),
-      tx.type,
-      tx.category?.name || "Uncategorized",
-      tx.account?.name || "Unknown",
-      tx.amount,
-      tx.currency || tx.account?.currency || "IDR",
-      convertAmount(
+    const rows = currentPeriodTx
+      .filter((tx) => !isExcludedTx(tx))
+      .map((tx) => [
+        format(parseISO(tx.transaction_date), "yyyy-MM-dd HH:mm"),
+        tx.type,
+        tx.category?.name || t.reports.uncategorized,
+        tx.account?.name || t.reports.unknown,
         tx.amount,
         tx.currency || tx.account?.currency || "IDR",
+        convertAmount(
+          tx.amount,
+          tx.currency || tx.account?.currency || "IDR",
+          displayCurrency,
+          rates,
+        ),
         displayCurrency,
-        rates,
-      ),
-      displayCurrency,
-      `"${(tx.tags || []).join("; ")}"`,
-      `"${(getCleanDescription(tx.description) || tx.category?.name || "").replace(/"/g, '""')}"`,
-    ]);
+        `"${(tx.tags || []).join("; ")}"`,
+        `"${(getCleanDescription(tx.description) || tx.category?.name || "").replace(/"/g, '""')}"`,
+      ]);
 
     const csvContent = [
       headers.join(","),
@@ -817,39 +1027,61 @@ export function ReportsView({
               </button>
             </div>
 
-            {/* Tag Dropdown Select Filter */}
-            {availableTags.length > 0 && (
-              <div className="w-full sm:w-44 shrink-0">
-                <Select
-                  value={selectedTag}
-                  onValueChange={(val) => {
-                    setSelectedTag(val);
-                    setSelectedCategoryFilter(null);
-                  }}
-                >
-                  <SelectTrigger className="h-[40px] text-xs font-semibold bg-white dark:bg-[#121215] border-[#E5E7EB] dark:border-[#27272A] rounded-xl px-3">
-                    <div className="flex items-center gap-1.5 truncate">
-                      <Hash className="w-3.5 h-3.5 text-[#64748B] shrink-0" />
-                      <SelectValue
-                        placeholder={
-                          language === "en" ? "All Tags" : "Semua Tagar"
-                        }
-                      />
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">
-                      {language === "en" ? "All Tags" : "Semua Tagar"}
-                    </SelectItem>
-                    {availableTags.map((tag) => (
-                      <SelectItem key={tag} value={tag}>
-                        #{tag}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+              {/* Tag Dropdown Select Filter */}
+              {availableTags.length > 0 && (
+                <div className="flex-1 sm:w-44 shrink-0">
+                  <Select
+                    value={selectedTag}
+                    onValueChange={(val) => {
+                      setSelectedTag(val);
+                      setSelectedCategoryFilter(null);
+                    }}
+                  >
+                    <SelectTrigger className="h-[40px] text-xs font-semibold bg-white dark:bg-[#121215] border-[#E5E7EB] dark:border-[#27272A] rounded-xl px-3">
+                      <div className="flex items-center gap-1.5 truncate">
+                        <Hash className="w-3.5 h-3.5 text-[#64748B] shrink-0" />
+                        <SelectValue placeholder={t.reports.allTags} />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{t.reports.allTags}</SelectItem>
+                      {availableTags.map((tag) => (
+                        <SelectItem key={tag} value={tag}>
+                          #{tag}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Exclude Categories Trigger Button */}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setSheetCategoryType(categoryTab);
+                  setIsExcludeSheetOpen(true);
+                }}
+                className={cn(
+                  "h-[40px] px-3 text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 shrink-0 cursor-pointer transition-colors",
+                  availableTags.length === 0 ? "w-full sm:w-auto" : "",
+                  excludedCategoryIds.length > 0
+                    ? "bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-400 font-bold"
+                    : "bg-white dark:bg-[#121215] border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA]",
+                )}
+                title={t.reports.excludeCategoriesTitle}
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                <span>{t.reports.exclude}</span>
+                {excludedCategoryIds.length > 0 && (
+                  <span className="ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-amber-500 text-white font-bold">
+                    {excludedCategoryIds.length}
+                  </span>
+                )}
+              </Button>
+            </div>
           </div>
 
           {/* Custom Range Picker */}
@@ -872,9 +1104,7 @@ export function ReportsView({
           {selectedTag !== "all" && (
             <div className="flex items-center gap-2 pt-0.5">
               <span className="text-[11px] text-[#64748B] dark:text-[#94A3B8] font-medium">
-                {language === "en"
-                  ? "Filtered by tag:"
-                  : "Difilter berdasarkan tagar:"}
+                {t.reports.filteredByTag}
               </span>
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A] text-xs font-bold font-mono">
                 #{selectedTag}
@@ -891,6 +1121,51 @@ export function ReportsView({
                   <X className="w-3 h-3" />
                 </button>
               </span>
+            </div>
+          )}
+
+          {/* Active Category Exclusion Warning Banner */}
+          {excludedCategoryIds.length > 0 && (
+            <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="flex items-start sm:items-center gap-2.5 text-amber-900 dark:text-amber-200 min-w-0">
+                <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5 sm:mt-0" />
+                <div className="truncate">
+                  <span className="font-bold">
+                    {excludedCategoryIds.length} {t.reports.categoriesExcluded}
+                  </span>
+                  <span className="mx-1.5 opacity-60">•</span>
+                  <span className="text-[11px] text-amber-700 dark:text-amber-300">
+                    {categoryTab === "expense"
+                      ? `${t.reports.hiddenExpense}: ${maskCurrency(formatCurrency(totalExcludedExpense, displayCurrency), isPrivate)}`
+                      : `${t.reports.hiddenIncome}: ${maskCurrency(formatCurrency(totalExcludedIncome, displayCurrency), isPrivate)}`}
+                  </span>
+                  {excludedCategoryNames.length > 0 && (
+                    <span className="hidden md:inline text-[11px] text-amber-600/80 dark:text-amber-400/80 ml-1.5 truncate">
+                      ({excludedCategoryNames.slice(0, 3).join(", ")}
+                      {excludedCategoryNames.length > 3 ? "..." : ""})
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSheetCategoryType(categoryTab);
+                    setIsExcludeSheetOpen(true);
+                  }}
+                  className="text-xs font-semibold text-amber-800 dark:text-amber-300 underline hover:opacity-80 cursor-pointer"
+                >
+                  {t.reports.adjust}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setExcludedCategoryIds([])}
+                  className="text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-200 dark:bg-amber-900/60 text-amber-900 dark:text-amber-100 hover:bg-amber-300 dark:hover:bg-amber-900 cursor-pointer transition-colors"
+                >
+                  {t.reports.resetAll}
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -1039,7 +1314,7 @@ export function ReportsView({
                   isPrivate,
                 )}
                 <span className="text-[10px] font-normal text-[#94A3B8]">
-                  /{language === "en" ? "day" : "hari"}
+                  {t.reports.perDay}
                 </span>
               </h3>
               <span className="text-[10px] font-mono text-[#94A3B8] mt-1 block">
@@ -1059,9 +1334,7 @@ export function ReportsView({
             <div className="flex items-center gap-2">
               <Scale className="w-4 h-4 text-[#0F172A] dark:text-[#FAFAFA]" />
               <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#FAFAFA]">
-                {language === "en"
-                  ? "Side-by-Side Period Comparison"
-                  : "Komparasi Kinerja Antar Periode"}
+                {t.reports.periodComparison}
               </h2>
             </div>
             <span className="text-[10px] font-bold font-mono text-[#64748B] dark:text-[#94A3B8]">
@@ -1119,7 +1392,7 @@ export function ReportsView({
             {/* Net Surplus comparison */}
             <div className="p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-1">
               <span className="text-[10px] font-sans font-bold text-[#64748B] dark:text-[#94A3B8] uppercase">
-                {language === "en" ? "Net Surplus" : "Surplus Bersih"}
+                {t.reports.netSavings}
               </span>
               <span
                 className={cn(
@@ -1202,13 +1475,13 @@ export function ReportsView({
                       <div
                         style={{ height: `${incHeight}px` }}
                         className="w-1/2 bg-[#0D9488] rounded-t-xs hover:brightness-110 transition-all relative"
-                        title={`Income: ${formatCurrency(bar.income, displayCurrency)}`}
+                        title={`${t.quickAdd.income}: ${formatCurrency(bar.income, displayCurrency)}`}
                       />
                       {/* Expense Bar */}
                       <div
                         style={{ height: `${expHeight}px` }}
                         className="w-1/2 bg-[#E11D48] rounded-t-xs hover:brightness-110 transition-all relative"
-                        title={`Expense: ${formatCurrency(bar.expense, displayCurrency)}`}
+                        title={`${t.quickAdd.expense}: ${formatCurrency(bar.expense, displayCurrency)}`}
                       />
                     </div>
                     <span className="text-[10px] sm:text-[11px] font-mono text-[#94A3B8] truncate max-w-full text-center">
@@ -1230,20 +1503,16 @@ export function ReportsView({
                 <PieChartIcon className="w-4 h-4 text-[#0F172A] dark:text-[#FAFAFA]" />
                 <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#FAFAFA]">
                   {categoryTab === "expense"
-                    ? language === "en"
-                      ? "Expense Composition"
-                      : "Komposisi Pengeluaran"
-                    : language === "en"
-                      ? "Income Composition"
-                      : "Komposisi Pemasukan"}
+                    ? t.reports.expenseComposition
+                    : t.reports.incomeComposition}
                 </h2>
               </div>
               {selectedCategoryFilter && (
                 <button
                   onClick={() => setSelectedCategoryFilter(null)}
-                  className="text-[10px] font-bold text-amber-500 hover:underline cursor-pointer shrink-0"
+                  className="text-[10px] font-bold text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8] dark:hover:text-[#FAFAFA] hover:underline cursor-pointer shrink-0"
                 >
-                  {language === "en" ? "Reset" : "Reset"}
+                  {t.reports.reset}
                 </button>
               )}
             </div>
@@ -1307,7 +1576,7 @@ export function ReportsView({
                       className={cn(
                         "cursor-pointer transition-all duration-200 hover:opacity-80",
                         selectedCategoryFilter === slice.id
-                          ? "stroke-2 stroke-amber-400 brightness-110"
+                          ? "stroke-2 stroke-[#0F172A] dark:stroke-[#FAFAFA] brightness-110"
                           : "",
                       )}
                     />
@@ -1320,12 +1589,8 @@ export function ReportsView({
                           (c) => c.id === selectedCategoryFilter,
                         )?.category?.name || "Kategori"
                       : categoryTab === "expense"
-                        ? language === "en"
-                          ? "Total Expense"
-                          : "Pengeluaran"
-                        : language === "en"
-                          ? "Total Income"
-                          : "Pemasukan"}
+                        ? t.reports.totalExpenseShort
+                        : t.reports.totalIncomeShort}
                   </span>
                   <span
                     className={cn(
@@ -1357,7 +1622,7 @@ export function ReportsView({
                         )}
                   </span>
                   {selectedCategoryFilter && (
-                    <span className="text-[9px] font-bold text-amber-500 font-mono mt-0.5">
+                    <span className="text-[9px] font-bold text-[#0F172A] dark:text-[#FAFAFA] font-mono mt-0.5">
                       {categoryBreakdown
                         .find((c) => c.id === selectedCategoryFilter)
                         ?.percentage.toFixed(1)}
@@ -1369,9 +1634,7 @@ export function ReportsView({
             )}
 
             <p className="text-[10px] text-[#64748B] dark:text-[#94A3B8] text-center">
-              {language === "en"
-                ? "Click a category arc to view transaction details."
-                : "Klik segmen donat untuk melihat rincian transaksinya."}
+              {t.reports.clickCategoryArc}
             </p>
           </div>
 
@@ -1381,13 +1644,10 @@ export function ReportsView({
               <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#FAFAFA]">
                 {categoryTab === "expense"
                   ? t.reports.categoryBreakdownTitle
-                  : language === "en"
-                    ? "Income Category Breakdown"
-                    : "Distribusi Sumber Pemasukan"}
+                  : t.reports.incomeCategoryBreakdownPrint}
               </h2>
               <span className="text-[10px] font-mono text-[#94A3B8]">
-                {categoryBreakdown.length}{" "}
-                {language === "en" ? "active categories" : "kategori aktif"}
+                {categoryBreakdown.length} {t.reports.activeCategories}
               </span>
             </div>
 
@@ -1463,19 +1723,36 @@ export function ReportsView({
                 })}
               </div>
             )}
+
+            {/* Excluded categories count indicator at bottom of category list */}
+            {excludedCategoryIds.length > 0 && (
+              <div className="pt-2 border-t border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-between text-[11px] text-[#64748B] dark:text-[#94A3B8]">
+                <span>
+                  {excludedCategoryIds.length} {t.reports.categoriesExcluded}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSheetCategoryType(categoryTab);
+                    setIsExcludeSheetOpen(true);
+                  }}
+                  className="text-amber-600 dark:text-amber-400 font-bold hover:underline cursor-pointer"
+                >
+                  {t.common.actions}
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Drill-down Section when a Category is Selected */}
         {selectedCategoryFilter && (
-          <div className="p-5 rounded-xl bg-white dark:bg-[#121215] border border-amber-300 dark:border-amber-700/60 flex flex-col gap-3 shadow-xs">
+          <div className="p-5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-3 shadow-2xs">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5" />
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#FAFAFA] flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#0D9488]" />
                 <span>
-                  {language === "en"
-                    ? "Drilldown Transactions:"
-                    : "Rincian Transaksi Kategori:"}{" "}
+                  {t.reports.drilldownTransactions}{" "}
                   {categoryBreakdown.find(
                     (c) => c.id === selectedCategoryFilter,
                   )?.category?.name || t.common.custom}
@@ -1483,7 +1760,7 @@ export function ReportsView({
               </h3>
               <button
                 onClick={() => setSelectedCategoryFilter(null)}
-                className="text-xs text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] cursor-pointer inline-flex items-center gap-1"
+                className="text-xs text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8] dark:hover:text-[#FAFAFA] cursor-pointer inline-flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] transition-colors"
               >
                 <X className="w-3.5 h-3.5" />
                 <span>{t.common.close}</span>
@@ -1551,8 +1828,7 @@ export function ReportsView({
                 {t.reports.accountBreakdownTitle}
               </h2>
               <span className="text-[10px] font-mono text-[#94A3B8]">
-                {accountBreakdown.length}{" "}
-                {language === "en" ? "accounts" : "rekening"}
+                {accountBreakdown.length} {t.reports.accounts}
               </span>
             </div>
 
@@ -1570,7 +1846,7 @@ export function ReportsView({
                           <Wallet className="w-3.5 h-3.5 text-[#0F172A] dark:text-[#FAFAFA]" />
                         </div>
                         <span className="font-bold text-[#0F172A] dark:text-[#FAFAFA] truncate">
-                          {acc.account?.name || "Account"} (
+                          {acc.account?.name || t.reports.accountFallback} (
                           {acc.account?.currency})
                         </span>
                       </div>
@@ -1679,9 +1955,7 @@ export function ReportsView({
                 POCKETLY
               </h1>
               <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mt-0.5">
-                {language === "en"
-                  ? "Personal Financial Statement & Cashflow Report"
-                  : "Laporan Keuangan Pribadi & Arus Kas"}
+                {t.reports.statementHeader}
               </p>
             </div>
             <div className="text-right font-mono text-xs text-slate-600">
@@ -1698,7 +1972,7 @@ export function ReportsView({
                 {format(new Date(), "dd MMM yyyy, HH:mm")}
               </div>
               <div className="mt-0.5">
-                <strong>Mata Uang Basis:</strong> {displayCurrency}
+                <strong>{t.common.currency}:</strong> {displayCurrency}
               </div>
             </div>
           </div>
@@ -1707,46 +1981,48 @@ export function ReportsView({
         {/* Section 1: Executive Summary */}
         <div className="print-section">
           <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-2 border-b pb-1">
-            1.{" "}
-            {language === "en"
-              ? "Executive Financial Summary"
-              : "Ringkasan Eksekutif Keuangan"}
+            1. {t.reports.summarySection}
           </h2>
           <table className="text-xs">
             <thead>
               <tr className="bg-slate-100 font-bold text-slate-800">
-                <th className="text-left">Metrik Finansial</th>
-                <th className="text-right">Nominal ({displayCurrency})</th>
-                <th className="text-left">Keterangan / Status</th>
+                <th className="text-left">{t.reports.printHeaderMetric}</th>
+                <th className="text-right">
+                  {t.reports.printHeaderAmount.replace(
+                    "{currency}",
+                    displayCurrency,
+                  )}
+                </th>
+                <th className="text-left">{t.reports.printHeaderStatus}</th>
               </tr>
             </thead>
             <tbody>
               <tr>
                 <td className="font-semibold text-emerald-800">
-                  Total Pemasukan (Inflow)
+                  {t.reports.inflowLabel}
                 </td>
                 <td className="text-right font-mono font-bold text-emerald-800 tnum">
                   +{formatCurrency(totalIncome, displayCurrency)}
                 </td>
                 <td>
                   {currentPeriodTx.filter((t) => t.type === "income").length}{" "}
-                  transaksi pemasukan tercatat
+                  {t.reports.income} {t.reports.transactionCount} tercatat
                 </td>
               </tr>
               <tr>
                 <td className="font-semibold text-rose-800">
-                  Total Pengeluaran (Outflow)
+                  {t.reports.outflowLabel}
                 </td>
                 <td className="text-right font-mono font-bold text-rose-800 tnum">
                   -{formatCurrency(totalExpense, displayCurrency)}
                 </td>
                 <td>
                   {currentPeriodTx.filter((t) => t.type === "expense").length}{" "}
-                  transaksi pengeluaran tercatat
+                  {t.reports.expenses} {t.reports.transactionCount} tercatat
                 </td>
               </tr>
               <tr className="bg-slate-50 font-bold">
-                <td>Surplus Bersih (Net Savings)</td>
+                <td>{t.reports.netSavingsLabel}</td>
                 <td
                   className={cn(
                     "text-right font-mono tnum",
@@ -1758,30 +2034,50 @@ export function ReportsView({
                 </td>
                 <td>
                   {netSavings >= 0
-                    ? "Surplus (Pemasukan melebihi pengeluaran)"
-                    : "Defisit (Pengeluaran melebihi pemasukan)"}
+                    ? t.reports.surplusStatus
+                    : t.reports.deficitStatus}
                 </td>
               </tr>
               <tr>
-                <td className="font-semibold">Rasio Tabungan (Savings Rate)</td>
+                <td className="font-semibold">{t.reports.savingsRate}</td>
                 <td className="text-right font-mono font-bold tnum">
                   {savingsRate.toFixed(1)}%
                 </td>
                 <td>
                   {savingsRate >= 30
-                    ? "Sangat Sehat (>30%)"
+                    ? t.reports.healthyStatus
                     : savingsRate >= 10
-                      ? "Waspada (10-30%)"
-                      : "Defisit (<0%)"}
+                      ? t.reports.warningStatus
+                      : t.reports.deficitRateStatus}
                 </td>
               </tr>
               <tr>
-                <td className="font-semibold">Rata-rata Pengeluaran Harian</td>
-                <td className="text-right font-mono tnum">
-                  {formatCurrency(dailyBurnRate, displayCurrency)} / hari
+                <td className="font-semibold">
+                  {t.reports.dailyAverageExpense}
                 </td>
-                <td>Dihitung selama {elapsedDays} hari pada periode aktif</td>
+                <td className="text-right font-mono tnum">
+                  {formatCurrency(dailyBurnRate, displayCurrency)}{" "}
+                  {t.reports.perDay}
+                </td>
+                <td>
+                  {t.reports.calculatedForDays.replace(
+                    "{days}",
+                    String(elapsedDays),
+                  )}
+                </td>
               </tr>
+              {excludedCategoryIds.length > 0 && (
+                <tr className="bg-slate-50">
+                  <td colSpan={3} className="text-slate-600 text-[11px] italic">
+                    {t.reports.noteExcluded
+                      .replace("{count}", String(excludedCategoryIds.length))
+                      .replace(
+                        "{categories}",
+                        excludedCategoryNames.join(", "),
+                      )}
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -1789,24 +2085,25 @@ export function ReportsView({
         {/* Section 2: Side-by-Side Period Comparison */}
         <div className="print-section">
           <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-2 border-b pb-1">
-            2.{" "}
-            {language === "en"
-              ? "Period Performance Comparison"
-              : "Komparasi Kinerja Antar Periode"}{" "}
-            ({currentPeriodLabel} vs {priorPeriodLabel})
+            2. {t.reports.periodComparison} ({currentPeriodLabel} vs{" "}
+            {priorPeriodLabel})
           </h2>
           <table className="text-xs">
             <thead>
               <tr className="bg-slate-100 font-bold text-slate-800">
-                <th className="text-left">Pos Finansial</th>
-                <th className="text-right">{currentPeriodLabel} (Aktif)</th>
-                <th className="text-right">{priorPeriodLabel} (Lalu)</th>
-                <th className="text-right">Pertumbuhan (%)</th>
+                <th className="text-left">{t.reports.financialPosition}</th>
+                <th className="text-right">
+                  {currentPeriodLabel} ({t.reports.activePeriod})
+                </th>
+                <th className="text-right">
+                  {priorPeriodLabel} ({t.reports.previousPeriod})
+                </th>
+                <th className="text-right">{t.reports.growth}</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td>Total Pemasukan</td>
+                <td>{t.reports.totalIncome}</td>
                 <td className="text-right font-mono font-bold text-emerald-800 tnum">
                   +{formatCurrency(totalIncome, displayCurrency)}
                 </td>
@@ -1820,7 +2117,7 @@ export function ReportsView({
                 </td>
               </tr>
               <tr>
-                <td>Total Pengeluaran</td>
+                <td>{t.reports.totalExpense}</td>
                 <td className="text-right font-mono font-bold text-rose-800 tnum">
                   -{formatCurrency(totalExpense, displayCurrency)}
                 </td>
@@ -1834,7 +2131,7 @@ export function ReportsView({
                 </td>
               </tr>
               <tr className="bg-slate-50 font-bold">
-                <td>Surplus Bersih</td>
+                <td>{t.reports.netSavings}</td>
                 <td className="text-right font-mono tnum">
                   {formatCurrency(netSavings, displayCurrency)}
                 </td>
@@ -1844,7 +2141,7 @@ export function ReportsView({
                 <td className="text-right font-mono tnum">-</td>
               </tr>
               <tr>
-                <td>Rasio Tabungan</td>
+                <td>{t.reports.savingsRate}</td>
                 <td className="text-right font-mono tnum">
                   {savingsRate.toFixed(1)}%
                 </td>
@@ -1862,27 +2159,28 @@ export function ReportsView({
         {/* Section 3: Expense Category Breakdown Table */}
         <div className="print-section">
           <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-2 border-b pb-1">
-            3.{" "}
-            {language === "en"
-              ? "Expense Category Breakdown"
-              : "Rincian Distribusi Pengeluaran per Kategori"}{" "}
-            ({allExpenseCategories.length} Kategori)
+            3. {t.reports.expenseCategoryBreakdownPrint} (
+            {allExpenseCategories.length} {t.reports.categoryCount})
           </h2>
           <table className="text-xs">
             <thead>
               <tr className="bg-slate-100 font-bold text-slate-800">
-                <th className="text-left w-8">No</th>
-                <th className="text-left">Nama Kategori</th>
-                <th className="text-center w-24">Jumlah Transaksi</th>
-                <th className="text-right w-36">Total Pengeluaran</th>
-                <th className="text-right w-24">Porsi (%)</th>
+                <th className="text-left w-8">{t.reports.number}</th>
+                <th className="text-left">{t.reports.categoryName}</th>
+                <th className="text-center w-24">
+                  {t.reports.transactionCountLabel}
+                </th>
+                <th className="text-right w-36">
+                  {t.reports.totalExpenseLabel}
+                </th>
+                <th className="text-right w-24">{t.reports.share}</th>
               </tr>
             </thead>
             <tbody>
               {allExpenseCategories.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="text-center text-slate-400 py-4">
-                    Tidak ada data pengeluaran
+                    {t.reports.noExpenseData}
                   </td>
                 </tr>
               ) : (
@@ -1909,27 +2207,28 @@ export function ReportsView({
         {/* Section 4: Income Category Breakdown Table */}
         <div className="print-section">
           <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-2 border-b pb-1">
-            4.{" "}
-            {language === "en"
-              ? "Income Category Breakdown"
-              : "Rincian Sumber Pemasukan per Kategori"}{" "}
-            ({allIncomeCategories.length} Kategori)
+            4. {t.reports.incomeCategoryBreakdownPrint} (
+            {allIncomeCategories.length} {t.reports.categoryCount})
           </h2>
           <table className="text-xs">
             <thead>
               <tr className="bg-slate-100 font-bold text-slate-800">
-                <th className="text-left w-8">No</th>
-                <th className="text-left">Sumber Pendapatan</th>
-                <th className="text-center w-24">Jumlah Transaksi</th>
-                <th className="text-right w-36">Total Pemasukan</th>
-                <th className="text-right w-24">Porsi (%)</th>
+                <th className="text-left w-8">{t.reports.number}</th>
+                <th className="text-left">{t.reports.incomeSource}</th>
+                <th className="text-center w-24">
+                  {t.reports.transactionCountLabel}
+                </th>
+                <th className="text-right w-36">
+                  {t.reports.totalIncomeLabel}
+                </th>
+                <th className="text-right w-24">{t.reports.share}</th>
               </tr>
             </thead>
             <tbody>
               {allIncomeCategories.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="text-center text-slate-400 py-4">
-                    Tidak ada data pemasukan
+                    {t.reports.noIncomeData}
                   </td>
                 </tr>
               ) : (
@@ -1956,26 +2255,23 @@ export function ReportsView({
         {/* Section 5: Top 10 Largest Outflows */}
         <div className="print-section">
           <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-2 border-b pb-1">
-            5.{" "}
-            {language === "en"
-              ? "Top 10 Largest Outflows"
-              : "Daftar 10 Pengeluaran Terbesar Periode Ini"}
+            5. {t.reports.topOutflowsPrint}
           </h2>
           <table className="text-xs">
             <thead>
               <tr className="bg-slate-100 font-bold text-slate-800">
-                <th className="text-left w-24">Tanggal</th>
-                <th className="text-left">Keterangan / Pos</th>
-                <th className="text-left">Kategori</th>
-                <th className="text-left">Rekening</th>
-                <th className="text-right w-36">Nominal</th>
+                <th className="text-left w-24">{t.reports.date}</th>
+                <th className="text-left">{t.reports.descriptionPosition}</th>
+                <th className="text-left">{t.common.category}</th>
+                <th className="text-left">{t.reports.accountLabel}</th>
+                <th className="text-right w-36">{t.reports.nominal}</th>
               </tr>
             </thead>
             <tbody>
               {topExpenses.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="text-center text-slate-400 py-4">
-                    Tidak ada transaksi
+                    {t.reports.noTransactions}
                   </td>
                 </tr>
               ) : (
@@ -2006,10 +2302,209 @@ export function ReportsView({
 
         {/* Formal Footer */}
         <div className="print-section mt-8 pt-4 border-t text-center font-mono text-[9px] text-slate-400">
-          Laporan ini dicetak secara otomatis oleh Pocketly Personal Financial
-          Tracker • Rahasia & Khusus Pemilik Rekening
+          {t.reports.footer}
         </div>
       </div>
+
+      {/* Exclude Categories Bottom Sheet / Modal (Responsive Mobile Drawer & Desktop Dialog) */}
+      <BottomSheet
+        isOpen={isExcludeSheetOpen}
+        onClose={() => {
+          setIsExcludeSheetOpen(false);
+          setCategorySearchQuery("");
+        }}
+        title={t.reports.excludeCategoriesTitle}
+      >
+        <div className="flex flex-col gap-3">
+          <p className="text-xs text-[#64748B] dark:text-[#94A3B8] leading-relaxed">
+            {t.reports.excludeCategoriesDesc}
+          </p>
+
+          {/* Type Switcher (Pengeluaran / Pemasukan) */}
+          <div className="flex items-center p-1 bg-[#F1F3F5] dark:bg-[#1A1A20] rounded-xl border border-[#E5E7EB] dark:border-[#27272A] w-full">
+            <button
+              type="button"
+              onClick={() => setSheetCategoryType("expense")}
+              className={cn(
+                "flex-1 py-1.5 text-xs font-bold rounded-lg transition-all text-center cursor-pointer flex items-center justify-center gap-1.5",
+                sheetCategoryType === "expense"
+                  ? "bg-white dark:bg-[#121215] text-[#E11D48] shadow-xs"
+                  : "text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8]",
+              )}
+            >
+              <span>{t.reports.expenses}</span>
+              {excludedExpenseCount > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-[#E11D48] text-white">
+                  {excludedExpenseCount}
+                </span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setSheetCategoryType("income")}
+              className={cn(
+                "flex-1 py-1.5 text-xs font-bold rounded-lg transition-all text-center cursor-pointer flex items-center justify-center gap-1.5",
+                sheetCategoryType === "income"
+                  ? "bg-white dark:bg-[#121215] text-[#0D9488] shadow-xs"
+                  : "text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8]",
+              )}
+            >
+              <span>{t.reports.income}</span>
+              {excludedIncomeCount > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-[#0D9488] text-white">
+                  {excludedIncomeCount}
+                </span>
+              )}
+            </button>
+          </div>
+
+          {/* Search Box */}
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
+            <input
+              type="text"
+              placeholder={t.reports.searchCategoryPlaceholder}
+              value={categorySearchQuery}
+              onChange={(e) => setCategorySearchQuery(e.target.value)}
+              className="w-full pl-9 pr-8 py-2 text-xs rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] focus:outline-none focus:ring-1 focus:ring-[#0F172A] dark:focus:ring-[#FAFAFA] text-[#0F172A] dark:text-[#FAFAFA]"
+            />
+            {categorySearchQuery && (
+              <button
+                type="button"
+                onClick={() => setCategorySearchQuery("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+
+          {/* List Meta & Quick Action */}
+          <div className="flex items-center justify-between text-[11px] text-[#64748B] dark:text-[#94A3B8] px-0.5 pt-1">
+            <span>
+              {filteredSheetCategories.length} {t.reports.activeCategories}
+            </span>
+            {excludedCategoryIds.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setExcludedCategoryIds([])}
+                className="text-amber-600 dark:text-amber-400 font-bold hover:underline cursor-pointer flex items-center gap-1"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>{t.reports.resetAll}</span>
+              </button>
+            )}
+          </div>
+
+          {/* Scrollable Categories List */}
+          <div className="max-h-[300px] overflow-y-auto space-y-2 pr-1">
+            {filteredSheetCategories.length === 0 ? (
+              <div className="py-8 text-center text-xs text-[#94A3B8]">
+                {t.reports.noDataDesc}
+              </div>
+            ) : (
+              filteredSheetCategories.map((cat) => {
+                const isExcluded = excludedCategoryIds.includes(cat.id);
+                return (
+                  <div
+                    key={cat.id}
+                    onClick={() => toggleExcludeCategory(cat.id)}
+                    className={cn(
+                      "flex items-center justify-between p-2.5 rounded-xl border transition-all cursor-pointer select-none",
+                      isExcluded
+                        ? "bg-rose-50/70 dark:bg-rose-950/25 border-rose-200 dark:border-rose-900/60"
+                        : "bg-white dark:bg-[#121215] border-[#E5E7EB] dark:border-[#27272A] hover:bg-[#F8F9FA] dark:hover:bg-[#1A1A20]",
+                    )}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      {/* Checkbox */}
+                      <div
+                        className={cn(
+                          "w-4 h-4 rounded-md flex items-center justify-center border transition-colors shrink-0",
+                          isExcluded
+                            ? "bg-[#E11D48] border-[#E11D48] text-white"
+                            : "border-[#CBD5E1] dark:border-[#475569] bg-transparent",
+                        )}
+                      >
+                        {isExcluded && <Check className="w-3 h-3 stroke-[3]" />}
+                      </div>
+
+                      {/* Icon */}
+                      <div className="w-7 h-7 rounded-lg bg-[#F1F3F5] dark:bg-[#1A1A20] flex items-center justify-center shrink-0 border border-[#E5E7EB] dark:border-[#27272A]">
+                        <DynamicIcon
+                          name={
+                            cat.category?.icon ||
+                            (sheetCategoryType === "income"
+                              ? "TrendingUp"
+                              : "Tag")
+                          }
+                          className="w-3.5 h-3.5 text-[#0F172A] dark:text-[#FAFAFA]"
+                        />
+                      </div>
+
+                      {/* Name & Count */}
+                      <div className="flex flex-col min-w-0">
+                        <span
+                          className={cn(
+                            "text-xs font-bold truncate",
+                            isExcluded
+                              ? "line-through text-[#64748B] dark:text-[#94A3B8]"
+                              : "text-[#0F172A] dark:text-[#FAFAFA]",
+                          )}
+                        >
+                          {cat.name}
+                        </span>
+                        <span className="text-[10px] text-[#94A3B8] font-mono">
+                          {cat.count} {t.reports.transactionCount}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Amount & Status Badge */}
+                    <div className="flex flex-col items-end shrink-0 pl-2">
+                      <span
+                        className={cn(
+                          "text-xs font-bold font-mono tnum",
+                          isExcluded
+                            ? "text-rose-600 dark:text-rose-400"
+                            : "text-[#0F172A] dark:text-[#FAFAFA]",
+                        )}
+                      >
+                        {maskCurrency(
+                          formatCurrency(cat.total, displayCurrency),
+                          isPrivate,
+                        )}
+                      </span>
+                      {isExcluded && (
+                        <span className="text-[9px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider">
+                          {t.reports.excluded}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Sticky Bottom Apply Button */}
+          <div className="pt-2 mt-1 border-t border-[#E5E7EB] dark:border-[#27272A]">
+            <Button
+              type="button"
+              onClick={() => {
+                setIsExcludeSheetOpen(false);
+                setCategorySearchQuery("");
+              }}
+              className="w-full py-2.5 rounded-xl font-bold text-xs bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] cursor-pointer"
+            >
+              {t.reports.applyFilter.replace(
+                "{count}",
+                String(excludedCategoryIds.length),
+              )}
+            </Button>
+          </div>
+        </div>
+      </BottomSheet>
     </div>
   );
 }

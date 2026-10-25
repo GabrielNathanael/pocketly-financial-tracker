@@ -25,6 +25,7 @@ export interface Database {
   public: {
     Tables: {
       accounts: {
+        Relationships: [];
         Row: {
           id: string;
           user_id: string;
@@ -69,6 +70,7 @@ export interface Database {
         };
       };
       categories: {
+        Relationships: [];
         Row: {
           id: string;
           user_id: string;
@@ -104,6 +106,7 @@ export interface Database {
         };
       };
       transactions: {
+        Relationships: [];
         Row: {
           id: string;
           user_id: string;
@@ -148,6 +151,7 @@ export interface Database {
         };
       };
       transfers: {
+        Relationships: [];
         Row: {
           id: string;
           user_id: string;
@@ -189,6 +193,7 @@ export interface Database {
         };
       };
       budgets: {
+        Relationships: [];
         Row: {
           id: string;
           user_id: string;
@@ -218,6 +223,7 @@ export interface Database {
         };
       };
       debts: {
+        Relationships: [];
         Row: {
           id: string;
           user_id: string;
@@ -259,6 +265,7 @@ export interface Database {
         };
       };
       debt_payments: {
+        Relationships: [];
         Row: {
           id: string;
           debt_id: string;
@@ -285,6 +292,7 @@ export interface Database {
         };
       };
       audit_logs: {
+        Relationships: [];
         Row: {
           id: string;
           user_id: string;
@@ -317,6 +325,7 @@ export interface Database {
         };
       };
       exchange_rates: {
+        Relationships: [];
         Row: {
           id: string;
           base_currency: string;
@@ -340,6 +349,7 @@ export interface Database {
         };
       };
       recurring_transactions: {
+        Relationships: [];
         Row: {
           id: string;
           user_id: string;
@@ -405,6 +415,7 @@ export interface Database {
         };
       };
       savings_goals: {
+        Relationships: [];
         Row: {
           id: string;
           user_id: string;
@@ -455,6 +466,7 @@ export interface Database {
         };
       };
       savings_goal_deposits: {
+        Relationships: [];
         Row: {
           id: string;
           user_id: string;
@@ -493,6 +505,7 @@ export interface Database {
         };
       };
       stock_holdings: {
+        Relationships: [];
         Row: {
           id: string;
           user_id: string;
@@ -534,6 +547,7 @@ export interface Database {
         };
       };
       stock_trades: {
+        Relationships: [];
         Row: {
           id: string;
           user_id: string;
@@ -590,6 +604,7 @@ export interface Database {
         };
       };
       pinned_templates: {
+        Relationships: [];
         Row: {
           id: string;
           user_id: string;
@@ -628,6 +643,8 @@ export interface Database {
         };
       };
     };
+    Views: {};
+    Functions: {};
   };
 }
 
