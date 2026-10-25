@@ -1050,6 +1050,45 @@ export const translations = {
       csvDisplayCurrency: "Mata Uang Tampilan",
       csvTags: "Tagar",
       csvDescription: "Deskripsi",
+      smartInsightsTitle: "Analisis Pintar & Sorotan Keuangan",
+      smartInsightsSubtitle:
+        "Pola pengeluaran, perbandingan tren, dan anomali arus kas periode ini",
+      smartInsightsPrintTitle: "Catatan Analisis Pintar & Tren Finansial",
+      insightDominantCategoryTitle: "Kategori Dominan",
+      insightDominantCategoryDesc:
+        "Kategori {category} menyerap {pct}% ({amount}) dari total belanja periode ini.",
+      insightSpikeTitle: "Lonjakan Pengeluaran",
+      insightSpikeDesc:
+        "Belanja {category} melonjak +{growth}% (+{diff}) dibanding periode sebelumnya.",
+      insightWeekendTitle: "Pola Akhir Pekan",
+      insightWeekendDesc:
+        "Rata-rata belanja di akhir pekan (Sabtu-Minggu) tercatat {multiplier}x lipat lebih tinggi dari hari kerja.",
+      insightBurnRateImprovementTitle: "Efisiensi Belanja Harian",
+      insightBurnRateImprovementDesc:
+        "Laju belanja harian Anda lebih hemat {amount}/hari (-{pct}%) dibanding periode lalu.",
+      insightBurnRateSpikeTitle: "Peningkatan Belanja Harian",
+      insightBurnRateSpikeDesc:
+        "Laju belanja harian meningkat +{amount}/hari (+{pct}%) dibanding periode lalu.",
+      insightBigTicketTitle: "Transaksi Terbesar",
+      insightBigTicketDesc:
+        'Transaksi terbesar periode ini adalah "{desc}" senilai {amount} ({pct}% dari seluruh belanja).',
+      insightNoSpendDaysTitle: "Hari Hemat (No-Spend)",
+      insightNoSpendDaysDesc:
+        "Anda berhasil mencatatkan {count} hari tanpa pengeluaran sama sekali di periode ini!",
+      insightSavingsRateHealthTitle: "Kesehatan Tabungan",
+      insightSavingsRateHealthyDesc:
+        "Rasio tabungan Anda sangat sehat di angka {rate}%, melampaui standar anjuran 20%.",
+      insightSavingsRateDeficitDesc:
+        "Arus kas mengalami defisit {amount}. Pengeluaran Anda melebihi total pendapatan periode ini.",
+      insightSavingsRateWarningDesc:
+        "Rasio tabungan Anda {rate}%. Masih ada potensi penghematan untuk mencapai rasio ideal 20-30%.",
+      insightBalancedTitle: "Arus Kas Seimbang",
+      insightBalancedDesc:
+        "Pola pengeluaran dan pemasukan Anda relatif stabil dengan fluktuasi minimal.",
+      insightWeekendBadge: "{multiplier}x Akhir Pekan",
+      insightNoSpendBadge: "{count} Hari Hemat",
+      noInsightsDesc:
+        "Belum cukup data transaksi untuk membentuk analisis pola cerdas.",
     },
     // Landing Page
     landing: {
@@ -2032,6 +2071,45 @@ export const translations = {
       csvDisplayCurrency: "Display Currency",
       csvTags: "Tags",
       csvDescription: "Description",
+      smartInsightsTitle: "Smart Insights & Highlights",
+      smartInsightsSubtitle:
+        "Spending patterns, trend comparisons, and cashflow highlights for this period",
+      smartInsightsPrintTitle: "Smart Analysis & Financial Trend Notes",
+      insightDominantCategoryTitle: "Dominant Category",
+      insightDominantCategoryDesc:
+        "{category} accounts for {pct}% ({amount}) of your total expenditures this period.",
+      insightSpikeTitle: "Category Spike",
+      insightSpikeDesc:
+        "Outflow in {category} surged by +{growth}% (+{diff}) compared to the prior period.",
+      insightWeekendTitle: "Weekend Spending Pattern",
+      insightWeekendDesc:
+        "Daily average expenditure on weekends (Sat-Sun) is {multiplier}x higher than weekdays.",
+      insightBurnRateImprovementTitle: "Daily Burn Rate Efficiency",
+      insightBurnRateImprovementDesc:
+        "Your daily burn rate is {amount}/day leaner (-{pct}%) compared to the prior period.",
+      insightBurnRateSpikeTitle: "Daily Burn Rate Increase",
+      insightBurnRateSpikeDesc:
+        "Your daily burn rate increased by +{amount}/day (+{pct}%) compared to the prior period.",
+      insightBigTicketTitle: "Largest Outflow Event",
+      insightBigTicketDesc:
+        'The single largest outflow was "{desc}" at {amount} ({pct}% of total spending).',
+      insightNoSpendDaysTitle: "No-Spend Days",
+      insightNoSpendDaysDesc:
+        "You maintained financial discipline with {count} zero-expense days during this period!",
+      insightSavingsRateHealthTitle: "Savings Health",
+      insightSavingsRateHealthyDesc:
+        "Your savings rate is in great shape at {rate}%, exceeding the benchmark of 20%.",
+      insightSavingsRateDeficitDesc:
+        "Cashflow is in deficit by {amount}. Outflows exceeded inflows during this period.",
+      insightSavingsRateWarningDesc:
+        "Your savings rate is {rate}%. Consider reviewing discretionary expenses to reach 20-30%.",
+      insightBalancedTitle: "Balanced Cashflow",
+      insightBalancedDesc:
+        "Your cashflow and expenses remained relatively stable with minimal variance.",
+      insightWeekendBadge: "{multiplier}x Weekend",
+      insightNoSpendBadge: "{count} No-Spend Days",
+      noInsightsDesc:
+        "Not enough transaction data yet to generate smart pattern insights.",
     },
     // Goals & Wishlist
     goals: {

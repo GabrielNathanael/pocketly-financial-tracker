@@ -35,6 +35,7 @@ import {
   eachDayOfInterval,
   eachMonthOfInterval,
   endOfDay,
+  isWeekend,
 } from "date-fns";
 import { id as idLocale, enUS } from "date-fns/locale";
 import {
@@ -825,8 +826,11 @@ export function ReportsView({
     const center = 120;
     const outerR = 104;
     const innerR = 82;
+    const slices: ((typeof categoryBreakdown)[number] & { pathData: string })[] =
+      [];
 
-    return categoryBreakdown.map((cat) => {
+    for (let i = 0; i < categoryBreakdown.length; i++) {
+      const cat = categoryBreakdown[i];
       const startAngle = (cumulative / 100) * 360;
       cumulative += cat.percentage;
       const endAngle = (cumulative / 100) * 360;
@@ -848,11 +852,13 @@ export function ReportsView({
 
       const pathData = `M ${x1} ${y1} A ${outerR} ${outerR} 0 ${largeArc} 1 ${x2} ${y2} L ${ix2} ${iy2} A ${innerR} ${innerR} 0 ${largeArc} 0 ${ix1} ${iy1} Z`;
 
-      return {
+      slices.push({
         ...cat,
         pathData,
-      };
-    });
+      });
+    }
+
+    return slices;
   }, [categoryBreakdown]);
 
   // Export CSV
@@ -905,6 +911,395 @@ export function ReportsView({
     link.click();
     document.body.removeChild(link);
   };
+
+  // Smart Financial Insights & Highlights Heuristics
+  const smartInsights = useMemo(() => {
+    interface SmartInsightItem {
+      id: string;
+      type: "positive" | "warning" | "danger" | "highlight" | "neutral";
+      icon: React.ReactNode;
+      title: string;
+      badge: string;
+      description: string;
+      containerClassName: string;
+      iconBoxClassName: string;
+      badgeClassName: string;
+    }
+
+    const insights: SmartInsightItem[] = [];
+
+    const getStyles = () => ({
+      containerClassName:
+        "bg-[#F8F9FA] dark:bg-[#1A1A20] border-[#E5E7EB] dark:border-[#27272A]",
+      iconBoxClassName:
+        "bg-white dark:bg-[#121215] text-[#0F172A] dark:text-[#FAFAFA] border border-[#E5E7EB] dark:border-[#27272A]",
+      badgeClassName:
+        "bg-white dark:bg-[#121215] text-[#0F172A] dark:text-[#FAFAFA] border border-[#E5E7EB] dark:border-[#27272A]",
+    });
+
+    // 1. Savings Rate / Buffer Health Evaluation
+    if (totalIncome > 0 || totalExpense > 0) {
+      if (savingsRate >= 30) {
+        insights.push({
+          id: "savings-health-positive",
+          type: "positive",
+          icon: <CheckCircle2 className="w-3.5 h-3.5" />,
+          title: t.reports.insightSavingsRateHealthTitle,
+          badge: t.reports.savingsRateHealthy,
+          description: t.reports.insightSavingsRateHealthyDesc.replace(
+            "{rate}",
+            savingsRate.toFixed(1)
+          ),
+          ...getStyles(),
+        });
+      } else if (savingsRate < 0 && totalExpense > 0) {
+        insights.push({
+          id: "savings-health-deficit",
+          type: "danger",
+          icon: <AlertTriangle className="w-3.5 h-3.5" />,
+          title: t.reports.insightSavingsRateHealthTitle,
+          badge: t.reports.savingsRateDeficit,
+          description: t.reports.insightSavingsRateDeficitDesc.replace(
+            "{amount}",
+            maskCurrency(
+              formatCurrency(Math.abs(netSavings), displayCurrency),
+              isPrivate
+            )
+          ),
+          ...getStyles(),
+        });
+      } else if (savingsRate >= 0 && savingsRate < 15 && totalIncome > 0) {
+        insights.push({
+          id: "savings-health-warning",
+          type: "warning",
+          icon: <AlertTriangle className="w-3.5 h-3.5" />,
+          title: t.reports.insightSavingsRateHealthTitle,
+          badge: t.reports.savingsRateWarning,
+          description: t.reports.insightSavingsRateWarningDesc.replace(
+            "{rate}",
+            savingsRate.toFixed(1)
+          ),
+          ...getStyles(),
+        });
+      }
+    }
+
+    // 2. Category Outflow Surge / Spike vs Prior Period
+    const priorExpenseMap = new Map<string, number>();
+    priorPeriodTx.forEach((tx) => {
+      if (tx.type === "expense" && !isSavingsTransfer(tx) && !isExcludedTx(tx)) {
+        const catId = tx.category_id || "uncategorized";
+        const val = convertAmount(
+          tx.amount,
+          tx.currency || tx.account?.currency || "IDR",
+          displayCurrency,
+          rates
+        );
+        priorExpenseMap.set(catId, (priorExpenseMap.get(catId) || 0) + val);
+      }
+    });
+
+    const categorySpikes: {
+      name: string;
+      growth: number;
+      diff: number;
+    }[] = [];
+
+    allExpenseCategories.forEach((cat) => {
+      const priorVal = priorExpenseMap.get(cat.id) || 0;
+      if (priorVal > 0 && cat.total > priorVal) {
+        const growth = ((cat.total - priorVal) / priorVal) * 100;
+        const diff = cat.total - priorVal;
+        if (growth >= 25 && diff >= totalExpense * 0.05) {
+          categorySpikes.push({
+            name: cat.category?.name || t.reports.uncategorized,
+            growth,
+            diff,
+          });
+        }
+      }
+    });
+
+    if (categorySpikes.length > 0) {
+      categorySpikes.sort((a, b) => b.diff - a.diff);
+      const topSpike = categorySpikes[0];
+      insights.push({
+        id: "category-spike",
+        type: "warning",
+        icon: <TrendingUp className="w-3.5 h-3.5" />,
+        title: t.reports.insightSpikeTitle,
+        badge: `+${topSpike.growth.toFixed(0)}%`,
+        description: t.reports.insightSpikeDesc
+          .replace("{category}", topSpike.name)
+          .replace("{growth}", topSpike.growth.toFixed(1))
+          .replace(
+            "{diff}",
+            maskCurrency(
+              formatCurrency(topSpike.diff, displayCurrency),
+              isPrivate
+            )
+          ),
+        ...getStyles(),
+      });
+    }
+
+    // 3. Dominant Expense Category (>35% of total outflow)
+    if (allExpenseCategories.length > 0 && totalExpense > 0) {
+      const topCat = allExpenseCategories[0];
+      if (topCat.percentage >= 35) {
+        insights.push({
+          id: "dominant-category",
+          type: "highlight",
+          icon: <PieChartIcon className="w-3.5 h-3.5" />,
+          title: t.reports.insightDominantCategoryTitle,
+          badge: `${topCat.percentage.toFixed(0)}% Total`,
+          description: t.reports.insightDominantCategoryDesc
+            .replace(
+              "{category}",
+              topCat.category?.name || t.reports.uncategorized
+            )
+            .replace("{pct}", topCat.percentage.toFixed(1))
+            .replace(
+              "{amount}",
+              maskCurrency(
+                formatCurrency(topCat.total, displayCurrency),
+                isPrivate
+              )
+            ),
+          ...getStyles(),
+        });
+      }
+    }
+
+    // 4. Weekend vs Weekday Spending Pattern
+    const daysInInterval = eachDayOfInterval({
+      start: intervalStart,
+      end: intervalEnd,
+    });
+    let weekendDaysCount = 0;
+    let weekdayDaysCount = 0;
+    daysInInterval.forEach((d) => {
+      if (isWeekend(d)) weekendDaysCount++;
+      else weekdayDaysCount++;
+    });
+
+    if (weekendDaysCount >= 2 && weekdayDaysCount >= 3 && totalExpense > 0) {
+      let weekendExpense = 0;
+      let weekdayExpense = 0;
+
+      currentPeriodTx.forEach((tx) => {
+        if (
+          tx.type === "expense" &&
+          !isSavingsTransfer(tx) &&
+          !isExcludedTx(tx)
+        ) {
+          const d = parseISO(tx.transaction_date);
+          const val = convertAmount(
+            tx.amount,
+            tx.currency || tx.account?.currency || "IDR",
+            displayCurrency,
+            rates
+          );
+          if (isWeekend(d)) {
+            weekendExpense += val;
+          } else {
+            weekdayExpense += val;
+          }
+        }
+      });
+
+      const avgWeekend = weekendExpense / weekendDaysCount;
+      const avgWeekday = weekdayExpense / weekdayDaysCount;
+
+      if (avgWeekday > 0 && avgWeekend > 0) {
+        const multiplier = avgWeekend / avgWeekday;
+        if (multiplier >= 1.5 && weekendExpense >= totalExpense * 0.25) {
+          insights.push({
+            id: "weekend-spending-pattern",
+            type: "warning",
+            icon: <Calendar className="w-3.5 h-3.5" />,
+            title: t.reports.insightWeekendTitle,
+            badge: t.reports.insightWeekendBadge.replace(
+              "{multiplier}",
+              multiplier.toFixed(1)
+            ),
+            description: t.reports.insightWeekendDesc.replace(
+              "{multiplier}",
+              multiplier.toFixed(1)
+            ),
+            ...getStyles(),
+          });
+        }
+      }
+    }
+
+    // 5. Daily Burn Rate Trend vs Prior Period
+    const priorDays = Math.max(
+      1,
+      differenceInCalendarDays(priorIntervalEnd, priorIntervalStart) + 1
+    );
+    const priorBurnRate = priorTotalExpense / priorDays;
+
+    if (priorBurnRate > 0 && dailyBurnRate > 0) {
+      const burnDiff = dailyBurnRate - priorBurnRate;
+      const burnPct = (burnDiff / priorBurnRate) * 100;
+
+      if (burnPct <= -10) {
+        insights.push({
+          id: "burn-rate-improvement",
+          type: "positive",
+          icon: <CheckCircle2 className="w-3.5 h-3.5" />,
+          title: t.reports.insightBurnRateImprovementTitle,
+          badge: `${burnPct.toFixed(0)}% ${t.reports.perDay}`,
+          description: t.reports.insightBurnRateImprovementDesc
+            .replace(
+              "{amount}",
+              maskCurrency(
+                formatCurrency(Math.abs(burnDiff), displayCurrency),
+                isPrivate
+              )
+            )
+            .replace("{pct}", Math.abs(burnPct).toFixed(1)),
+          ...getStyles(),
+        });
+      } else if (burnPct >= 20 && Math.abs(burnDiff) >= 10000) {
+        insights.push({
+          id: "burn-rate-spike",
+          type: "warning",
+          icon: <TrendingUp className="w-3.5 h-3.5" />,
+          title: t.reports.insightBurnRateSpikeTitle,
+          badge: `+${burnPct.toFixed(0)}% ${t.reports.perDay}`,
+          description: t.reports.insightBurnRateSpikeDesc
+            .replace(
+              "{amount}",
+              maskCurrency(
+                formatCurrency(Math.abs(burnDiff), displayCurrency),
+                isPrivate
+              )
+            )
+            .replace("{pct}", burnPct.toFixed(1)),
+          ...getStyles(),
+        });
+      }
+    }
+
+    // 6. Single Big Ticket Outflow Event
+    if (topExpenses.length > 0 && totalExpense > 0) {
+      const topTx = topExpenses[0];
+      const bigTicketPct = (topTx.convertedAmount / totalExpense) * 100;
+      if (bigTicketPct >= 28 && topExpenses.length > 1) {
+        const cleanDesc =
+          getCleanDescription(topTx.description) ||
+          topTx.category?.name ||
+          t.common.custom;
+        insights.push({
+          id: "big-ticket-outflow",
+          type: "highlight",
+          icon: <Wallet className="w-3.5 h-3.5" />,
+          title: t.reports.insightBigTicketTitle,
+          badge: `${bigTicketPct.toFixed(0)}% Total`,
+          description: t.reports.insightBigTicketDesc
+            .replace("{desc}", cleanDesc)
+            .replace(
+              "{amount}",
+              maskCurrency(
+                formatCurrency(topTx.convertedAmount, displayCurrency),
+                isPrivate
+              )
+            )
+            .replace("{pct}", bigTicketPct.toFixed(1)),
+          ...getStyles(),
+        });
+      }
+    }
+
+    // 7. No-Spend Days Discipline
+    const effectiveEnd = intervalEnd > now ? now : intervalEnd;
+    if (intervalStart <= effectiveEnd) {
+      const elapsedDaysInterval = eachDayOfInterval({
+        start: intervalStart,
+        end: effectiveEnd,
+      });
+      if (elapsedDaysInterval.length >= 7) {
+        const daysWithExpense = new Set<string>();
+        currentPeriodTx.forEach((tx) => {
+          if (
+            tx.type === "expense" &&
+            !isSavingsTransfer(tx) &&
+            !isExcludedTx(tx)
+          ) {
+            daysWithExpense.add(
+              format(parseISO(tx.transaction_date), "yyyy-MM-dd")
+            );
+          }
+        });
+
+        let noSpendCount = 0;
+        elapsedDaysInterval.forEach((d) => {
+          const formatted = format(d, "yyyy-MM-dd");
+          if (!daysWithExpense.has(formatted)) {
+            noSpendCount++;
+          }
+        });
+
+        if (noSpendCount >= 3) {
+          insights.push({
+            id: "no-spend-days",
+            type: "positive",
+            icon: <Calendar className="w-3.5 h-3.5" />,
+            title: t.reports.insightNoSpendDaysTitle,
+            badge: t.reports.insightNoSpendBadge.replace(
+              "{count}",
+              String(noSpendCount)
+            ),
+            description: t.reports.insightNoSpendDaysDesc.replace(
+              "{count}",
+              String(noSpendCount)
+            ),
+            ...getStyles(),
+          });
+        }
+      }
+    }
+
+    // Fallback if no specific condition met, provide a balanced summary if there are transactions
+    if (insights.length === 0 && (totalIncome > 0 || totalExpense > 0)) {
+      insights.push({
+        id: "balanced-insight",
+        type: "neutral",
+        icon: <CheckCircle2 className="w-3.5 h-3.5" />,
+        title: t.reports.insightBalancedTitle,
+        badge: t.reports.activePeriod,
+        description: t.reports.insightBalancedDesc,
+        ...getStyles(),
+      });
+    }
+
+    return insights.slice(0, 4);
+
+    return insights.slice(0, 4);
+  }, [
+    totalIncome,
+    totalExpense,
+    netSavings,
+    savingsRate,
+    dailyBurnRate,
+    priorTotalExpense,
+    priorIntervalStart,
+    priorIntervalEnd,
+    allExpenseCategories,
+    priorPeriodTx,
+    currentPeriodTx,
+    displayCurrency,
+    rates,
+    isPrivate,
+    intervalStart,
+    intervalEnd,
+    topExpenses,
+    now,
+    t,
+    isExcludedTx,
+  ]);
 
   // Handle Clean Print PDF Trigger
   const handlePrint = () => {
@@ -1326,6 +1721,69 @@ export function ReportsView({
               </span>
             </div>
           </div>
+        </div>
+
+        {/* Smart Financial Insights & Highlights Section */}
+        <div className="p-5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-3.5 shadow-2xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-md bg-[#F1F3F5] dark:bg-[#1A1A20] flex items-center justify-center text-[#0F172A] dark:text-[#FAFAFA] border border-[#E5E7EB] dark:border-[#27272A] shrink-0">
+                <TrendingUp className="w-3.5 h-3.5" />
+              </div>
+              <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#FAFAFA]">
+                {t.reports.smartInsightsTitle}
+              </h2>
+            </div>
+            <span className="text-[10px] text-[#64748B] dark:text-[#94A3B8] font-mono">
+              {t.reports.smartInsightsSubtitle}
+            </span>
+          </div>
+
+          {smartInsights.length === 0 ? (
+            <div className="py-6 text-center text-xs text-[#94A3B8]">
+              {t.reports.noInsightsDesc}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {smartInsights.map((insight) => (
+                <div
+                  key={insight.id}
+                  className={cn(
+                    "p-3.5 rounded-xl border flex flex-col justify-between gap-2.5 transition-all",
+                    insight.containerClassName
+                  )}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div
+                        className={cn(
+                          "w-6 h-6 rounded-lg flex items-center justify-center shrink-0",
+                          insight.iconBoxClassName
+                        )}
+                      >
+                        {insight.icon}
+                      </div>
+                      <h3 className="text-xs font-bold text-[#0F172A] dark:text-[#FAFAFA] truncate">
+                        {insight.title}
+                      </h3>
+                    </div>
+                    <span
+                      className={cn(
+                        "text-[10px] font-bold font-mono px-2 py-0.5 rounded-md shrink-0 uppercase tracking-wider",
+                        insight.badgeClassName
+                      )}
+                    >
+                      {insight.badge}
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-[#475569] dark:text-[#CBD5E1] leading-relaxed">
+                    {insight.description}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Side-by-Side Period Comparison Matrix */}
@@ -2082,10 +2540,37 @@ export function ReportsView({
           </table>
         </div>
 
-        {/* Section 2: Side-by-Side Period Comparison */}
+        {/* Section 2: Smart Financial Insights */}
+        {smartInsights.length > 0 && (
+          <div className="print-section">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-2 border-b pb-1">
+              2. {t.reports.smartInsightsPrintTitle}
+            </h2>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              {smartInsights.map((insight) => (
+                <div
+                  key={insight.id}
+                  className="p-2.5 border border-slate-300 rounded-lg bg-slate-50 flex flex-col justify-between gap-1"
+                >
+                  <div className="font-bold text-slate-900 flex justify-between items-center">
+                    <span>{insight.title}</span>
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 border border-slate-400 rounded uppercase font-semibold">
+                      {insight.badge}
+                    </span>
+                  </div>
+                  <div className="text-slate-700 text-[11px] leading-relaxed">
+                    {insight.description}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Section 3: Side-by-Side Period Comparison */}
         <div className="print-section">
           <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-2 border-b pb-1">
-            2. {t.reports.periodComparison} ({currentPeriodLabel} vs{" "}
+            3. {t.reports.periodComparison} ({currentPeriodLabel} vs{" "}
             {priorPeriodLabel})
           </h2>
           <table className="text-xs">
@@ -2156,10 +2641,10 @@ export function ReportsView({
           </table>
         </div>
 
-        {/* Section 3: Expense Category Breakdown Table */}
+        {/* Section 4: Expense Category Breakdown Table */}
         <div className="print-section">
           <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-2 border-b pb-1">
-            3. {t.reports.expenseCategoryBreakdownPrint} (
+            4. {t.reports.expenseCategoryBreakdownPrint} (
             {allExpenseCategories.length} {t.reports.categoryCount})
           </h2>
           <table className="text-xs">
@@ -2204,10 +2689,10 @@ export function ReportsView({
           </table>
         </div>
 
-        {/* Section 4: Income Category Breakdown Table */}
+        {/* Section 5: Income Category Breakdown Table */}
         <div className="print-section">
           <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-2 border-b pb-1">
-            4. {t.reports.incomeCategoryBreakdownPrint} (
+            5. {t.reports.incomeCategoryBreakdownPrint} (
             {allIncomeCategories.length} {t.reports.categoryCount})
           </h2>
           <table className="text-xs">
@@ -2252,10 +2737,10 @@ export function ReportsView({
           </table>
         </div>
 
-        {/* Section 5: Top 10 Largest Outflows */}
+        {/* Section 6: Top 10 Largest Outflows */}
         <div className="print-section">
           <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-2 border-b pb-1">
-            5. {t.reports.topOutflowsPrint}
+            6. {t.reports.topOutflowsPrint}
           </h2>
           <table className="text-xs">
             <thead>
