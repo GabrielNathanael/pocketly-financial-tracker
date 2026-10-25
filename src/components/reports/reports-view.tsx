@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useCallback } from "react";
 import { EnrichedTransaction, Account, Category } from "@/types/database";
 import {
   formatCurrency,
@@ -129,7 +129,8 @@ export function ReportsView({
     return Array.from(tagSet).sort();
   }, [transactions]);
 
-  const now = new Date();
+  const nowRef = useRef(new Date());
+  const now = nowRef.current;
 
   // Calculate Active Interval Date Range
   const { intervalStart, intervalEnd, priorIntervalStart, priorIntervalEnd } =
@@ -260,10 +261,13 @@ export function ReportsView({
   };
 
   // Helper to identify if transaction belongs to an excluded category
-  const isExcludedTx = (tx: { category_id?: string | null }) => {
-    const catId = tx.category_id || "uncategorized";
-    return excludedCategoryIds.includes(catId);
-  };
+  const isExcludedTx = useCallback(
+    (tx: { category_id?: string | null }) => {
+      const catId = tx.category_id || "uncategorized";
+      return excludedCategoryIds.includes(catId);
+    },
+    [excludedCategoryIds],
+  );
 
   // Aggregate Current Period Totals Normalized to Display Currency
   const {
@@ -321,7 +325,7 @@ export function ReportsView({
     rates,
     intervalStart,
     intervalEnd,
-    excludedCategoryIds,
+    isExcludedTx,
   ]);
 
   // Aggregate Prior Period Totals for Side-by-Side Comparison
@@ -364,7 +368,7 @@ export function ReportsView({
       priorNetSavings: net,
       priorSavingsRate: sRate,
     };
-  }, [priorPeriodTx, displayCurrency, rates, excludedCategoryIds]);
+  }, [priorPeriodTx, displayCurrency, rates, isExcludedTx]);
 
   const expenseGrowthPct = useMemo(() => {
     if (priorTotalExpense === 0) return totalExpense > 0 ? 100 : 0;
@@ -418,7 +422,7 @@ export function ReportsView({
     totalExpense,
     displayCurrency,
     rates,
-    excludedCategoryIds,
+    isExcludedTx,
   ]);
 
   // Income Categories Breakdown (Always full for print & screen, excludes savings withdrawals & excluded categories)
@@ -459,7 +463,7 @@ export function ReportsView({
     totalIncome,
     displayCurrency,
     rates,
-    excludedCategoryIds,
+    isExcludedTx,
   ]);
 
   // Active Category Breakdown for interactive Donut / List
@@ -652,7 +656,7 @@ export function ReportsView({
     totalExpense,
     displayCurrency,
     rates,
-    excludedCategoryIds,
+    isExcludedTx,
   ]);
 
   // Filtered Transactions (By Selected Category from Donut)
@@ -685,7 +689,7 @@ export function ReportsView({
     categoryTab,
     displayCurrency,
     rates,
-    excludedCategoryIds,
+    isExcludedTx,
   ]);
 
   // Top 5 / Top 10 Expenses
@@ -706,7 +710,7 @@ export function ReportsView({
       }))
       .sort((a, b) => b.convertedAmount - a.convertedAmount)
       .slice(0, 10);
-  }, [currentPeriodTx, displayCurrency, rates, excludedCategoryIds]);
+  }, [currentPeriodTx, displayCurrency, rates, isExcludedTx]);
 
   // Timeline Trajectory
   const timelineData = useMemo(() => {
@@ -808,7 +812,7 @@ export function ReportsView({
     displayCurrency,
     rates,
     dateFnsLocale,
-    excludedCategoryIds,
+    isExcludedTx,
   ]);
 
   const maxTimelineVal = useMemo(() => {
@@ -1274,8 +1278,6 @@ export function ReportsView({
         ...getStyles(),
       });
     }
-
-    return insights.slice(0, 4);
 
     return insights.slice(0, 4);
   }, [

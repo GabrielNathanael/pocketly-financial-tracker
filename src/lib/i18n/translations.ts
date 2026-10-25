@@ -1050,10 +1050,10 @@ export const translations = {
       csvDisplayCurrency: "Mata Uang Tampilan",
       csvTags: "Tagar",
       csvDescription: "Deskripsi",
-      smartInsightsTitle: "Analisis Pintar & Sorotan Keuangan",
+      smartInsightsTitle: "Temuan Menarik",
       smartInsightsSubtitle:
-        "Pola pengeluaran, perbandingan tren, dan anomali arus kas periode ini",
-      smartInsightsPrintTitle: "Catatan Analisis Pintar & Tren Finansial",
+        "Sinyal pengeluaran dan pola arus kas periode ini",
+      smartInsightsPrintTitle: "Temuan & Pola Arus Kas",
       insightDominantCategoryTitle: "Kategori Dominan",
       insightDominantCategoryDesc:
         "Kategori {category} menyerap {pct}% ({amount}) dari total belanja periode ini.",
@@ -2071,10 +2071,10 @@ export const translations = {
       csvDisplayCurrency: "Display Currency",
       csvTags: "Tags",
       csvDescription: "Description",
-      smartInsightsTitle: "Smart Insights & Highlights",
+      smartInsightsTitle: "Notable Findings",
       smartInsightsSubtitle:
-        "Spending patterns, trend comparisons, and cashflow highlights for this period",
-      smartInsightsPrintTitle: "Smart Analysis & Financial Trend Notes",
+        "Spending signals and cashflow patterns for this period",
+      smartInsightsPrintTitle: "Notable Findings & Cashflow Patterns",
       insightDominantCategoryTitle: "Dominant Category",
       insightDominantCategoryDesc:
         "{category} accounts for {pct}% ({amount}) of your total expenditures this period.",
