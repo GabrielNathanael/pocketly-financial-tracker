@@ -1,0 +1,412 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import {
+  EnrichedCryptoHolding,
+  EnrichedCryptoTrade,
+  CurrencyCode,
+} from "@/types/database";
+
+const cleanSymbol = (value: string) => value.trim().toUpperCase();
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function getCryptoFeeCategory(supabase: any, userId: string) {
+  const { data } = await supabase
+    .from("categories")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("type", "expense")
+    .in("name", ["Crypto Trading Fee", "Biaya Trading Kripto", "Investment"])
+    .limit(1)
+    .maybeSingle();
+  if (data) return data;
+  const { data: created, error } = await supabase
+    .from("categories")
+    .insert({
+      user_id: userId,
+      name: "Crypto Trading Fee",
+      type: "expense",
+      icon: "Coins",
+      color: "#F97316",
+      is_default: false,
+    })
+    .select("id")
+    .single();
+  if (error) throw new Error(`Gagal membuat kategori biaya kripto: ${error.message}`);
+  return created;
+}
+
+async function syncCryptoHolding(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  userId: string,
+  accountId: string,
+  symbol: string,
+) {
+  const { data: trades, error } = await supabase
+    .from("crypto_trades")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("account_id", accountId)
+    .eq("symbol", symbol)
+    .order("trade_date", { ascending: true })
+    .order("created_at", { ascending: true });
+
+  if (error) throw new Error(error.message);
+
+  let quantity = 0;
+  let costBasis = 0;
+  const latestTradePrice = trades?.length
+    ? Number(trades[trades.length - 1].price_per_unit) || 0
+    : 0;
+  for (const trade of trades || []) {
+    const qty = Number(trade.quantity);
+    if (trade.type === "buy") {
+      quantity += qty;
+      costBasis += Number(trade.gross_amount) + Number(trade.fee_amount || 0);
+    } else {
+      const currentCost = quantity > 0 ? (qty / quantity) * costBasis : 0;
+      quantity = Math.max(0, quantity - qty);
+      costBasis = Math.max(0, costBasis - currentCost);
+    }
+  }
+
+  const { data: current } = await supabase
+    .from("crypto_holdings")
+    .select("id, manual_price, price_currency, name, notes")
+    .eq("user_id", userId)
+    .eq("account_id", accountId)
+    .eq("symbol", symbol)
+    .maybeSingle();
+
+  if (quantity <= 0.000000000001) {
+    if (current) {
+      const { error: deleteError } = await supabase
+        .from("crypto_holdings")
+        .delete()
+        .eq("id", current.id);
+      if (deleteError) throw new Error(deleteError.message);
+    }
+    return;
+  }
+
+  const payload = {
+    user_id: userId,
+    account_id: accountId,
+    symbol,
+    name: current?.name || symbol,
+    quantity,
+    cost_basis: costBasis,
+    average_buy_price: costBasis / quantity,
+    manual_price: Number(current?.manual_price || latestTradePrice),
+    price_currency: current?.price_currency || "IDR",
+    notes: current?.notes || null,
+    updated_at: new Date().toISOString(),
+  };
+  const query = current
+    ? supabase.from("crypto_holdings").update(payload).eq("id", current.id)
+    : supabase.from("crypto_holdings").insert(payload);
+  const { error: saveError } = await query;
+  if (saveError) throw new Error(saveError.message);
+}
+
+export async function getCryptoHoldings(): Promise<EnrichedCryptoHolding[]> {
+  const supabase = await createServerSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data, error } = await supabase
+    .from("crypto_holdings")
+    .select("*, account:accounts(*)")
+    .eq("user_id", user.id)
+    .order("symbol", { ascending: true });
+  if (error) {
+    console.error("Error fetching crypto holdings:", error);
+    return [];
+  }
+  return (data || []) as unknown as EnrichedCryptoHolding[];
+}
+
+export async function getCryptoTrades(): Promise<EnrichedCryptoTrade[]> {
+  const supabase = await createServerSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data, error } = await supabase
+    .from("crypto_trades")
+    .select("*, account:accounts(*)")
+    .eq("user_id", user.id)
+    .order("trade_date", { ascending: false });
+  if (error) {
+    console.error("Error fetching crypto trades:", error);
+    return [];
+  }
+  return (data || []) as unknown as EnrichedCryptoTrade[];
+}
+
+export async function recordCryptoBuy(input: {
+  accountId: string;
+  symbol: string;
+  name?: string;
+  quantity: number;
+  grossAmount: number;
+  feeAmount?: number;
+  pricePerUnit: number;
+  notes?: string | null;
+  tradeDate?: string;
+}) {
+  return recordCryptoTrade({ ...input, type: "buy" });
+}
+
+export async function recordCryptoSell(input: {
+  holdingId: string;
+  quantity: number;
+  grossAmount: number;
+  feeAmount?: number;
+  pricePerUnit: number;
+  notes?: string | null;
+  tradeDate?: string;
+}) {
+  const supabase = await createServerSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+  const { data: holding, error } = await supabase
+    .from("crypto_holdings")
+    .select("*")
+    .eq("id", input.holdingId)
+    .eq("user_id", user.id)
+    .single();
+  if (error || !holding) return { error: "Aset kripto tidak ditemukan" };
+  if (input.quantity <= 0 || input.quantity > Number(holding.quantity)) {
+    return { error: "Jumlah kripto yang dijual melebihi kepemilikan" };
+  }
+  return recordCryptoTrade({
+    accountId: holding.account_id,
+    symbol: holding.symbol,
+    name: holding.name,
+    quantity: input.quantity,
+    grossAmount: input.grossAmount,
+    feeAmount: input.feeAmount,
+    pricePerUnit: input.pricePerUnit,
+    notes: input.notes,
+    tradeDate: input.tradeDate,
+    type: "sell",
+    holdingId: holding.id,
+  });
+}
+
+async function recordCryptoTrade(input: {
+  accountId: string;
+  symbol: string;
+  name?: string;
+  quantity: number;
+  grossAmount: number;
+  feeAmount?: number;
+  pricePerUnit: number;
+  notes?: string | null;
+  tradeDate?: string;
+  type: "buy" | "sell";
+  holdingId?: string;
+}) {
+  const supabase = await createServerSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+  const symbol = cleanSymbol(input.symbol);
+  const quantity = Number(input.quantity);
+  const grossAmount = Number(input.grossAmount);
+  const feeAmount = Number(input.feeAmount || 0);
+  const pricePerUnit = Number(input.pricePerUnit);
+  if (!symbol || quantity <= 0 || grossAmount <= 0 || pricePerUnit <= 0 || feeAmount < 0) {
+    return { error: "Jumlah, nominal, harga, dan biaya harus valid" };
+  }
+
+  const { data: account, error: accountError } = await supabase
+    .from("accounts")
+    .select("id, name, currency, current_balance")
+    .eq("id", input.accountId)
+    .eq("user_id", user.id)
+    .single();
+  if (accountError || !account) return { error: "Akun Floq tidak ditemukan" };
+
+  const balance = Number(account.current_balance);
+  const cashEffect = input.type === "buy" ? grossAmount + feeAmount : grossAmount - feeAmount;
+  if (input.type === "buy" && balance < cashEffect) {
+    return { error: `Saldo ${account.name} tidak mencukupi untuk nominal dan biaya` };
+  }
+  if (input.type === "sell" && feeAmount > grossAmount) {
+    return { error: "Biaya penjualan tidak boleh melebihi hasil penjualan" };
+  }
+
+  const { data: existing } = await supabase
+    .from("crypto_holdings")
+    .select("cost_basis, quantity")
+    .eq("id", input.holdingId || "")
+    .maybeSingle();
+  const costBasis = input.type === "sell" && existing
+    ? (quantity / Number(existing.quantity)) * Number(existing.cost_basis)
+    : input.type === "buy"
+      ? grossAmount + feeAmount
+      : 0;
+  const realizedPnl = input.type === "sell"
+    ? grossAmount - feeAmount - costBasis
+    : 0;
+
+  const { error: balanceError } = await supabase
+    .from("accounts")
+    .update({ current_balance: input.type === "buy" ? balance - cashEffect : balance + cashEffect })
+    .eq("id", account.id)
+    .eq("user_id", user.id);
+  if (balanceError) return { error: balanceError.message };
+
+  const tradeDate = input.tradeDate ? `${input.tradeDate}T12:00:00.000Z` : new Date().toISOString();
+  const { error: tradeError } = await supabase.from("crypto_trades").insert({
+    user_id: user.id,
+    account_id: account.id,
+    holding_id: input.holdingId || null,
+    symbol,
+    type: input.type,
+    quantity,
+    gross_amount: grossAmount,
+    fee_amount: feeAmount,
+    fee_currency: account.currency as CurrencyCode,
+    price_per_unit: pricePerUnit,
+    cost_basis: costBasis,
+    realized_pnl: realizedPnl,
+    notes: input.notes?.trim() || null,
+    trade_date: tradeDate,
+  });
+  if (tradeError) {
+    await supabase.from("accounts").update({ current_balance: balance }).eq("id", account.id);
+    return { error: tradeError.message };
+  }
+
+  if (feeAmount > 0) {
+    const category = await getCryptoFeeCategory(supabase, user.id);
+    if (category) {
+      const { error: feeError } = await supabase.from("transactions").insert({
+        user_id: user.id,
+        account_id: account.id,
+        category_id: category.id,
+        type: "expense",
+        amount: feeAmount,
+        currency: account.currency,
+        description: `Biaya trading kripto ${symbol} (${account.name})`,
+        transaction_date: tradeDate,
+      });
+      if (feeError) console.error("Failed to record crypto fee:", feeError);
+    }
+  }
+
+  try {
+    await syncCryptoHolding(supabase, user.id, account.id, symbol);
+  } catch (syncError) {
+    console.error("Failed to sync crypto holding:", syncError);
+    return { error: syncError instanceof Error ? syncError.message : "Gagal menyinkronkan aset kripto" };
+  }
+  revalidatePath("/investments");
+  revalidatePath("/accounts");
+  revalidatePath("/dashboard");
+  revalidatePath("/net-worth");
+  revalidatePath("/transactions");
+  return { success: true, realizedPnl };
+}
+
+export async function updateCryptoManualPrice(input: {
+  holdingId: string;
+  manualPrice: number;
+}) {
+  const supabase = await createServerSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+  if (input.manualPrice < 0) return { error: "Harga manual tidak boleh negatif" };
+  const { error } = await supabase
+    .from("crypto_holdings")
+    .update({ manual_price: input.manualPrice, price_updated_at: new Date().toISOString() })
+    .eq("id", input.holdingId)
+    .eq("user_id", user.id);
+  if (error) return { error: error.message };
+  revalidatePath("/investments");
+  revalidatePath("/net-worth");
+  return { success: true };
+}
+
+export async function createFloqWithdrawal(input: {
+  fromAccountId: string;
+  toAccountId: string;
+  grossAmount: number;
+  feeAmount?: number;
+  description?: string | null;
+  transferDate?: string;
+}) {
+  const supabase = await createServerSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+  const grossAmount = Number(input.grossAmount);
+  const feeAmount = Number(input.feeAmount || 0);
+  if (input.fromAccountId === input.toAccountId) return { error: "Akun sumber dan tujuan harus berbeda" };
+  if (grossAmount <= 0 || feeAmount < 0 || feeAmount >= grossAmount) {
+    return { error: "Nominal bruto dan biaya withdrawal tidak valid" };
+  }
+
+  const [{ data: from }, { data: to }] = await Promise.all([
+    supabase.from("accounts").select("*").eq("id", input.fromAccountId).eq("user_id", user.id).single(),
+    supabase.from("accounts").select("*").eq("id", input.toAccountId).eq("user_id", user.id).single(),
+  ]);
+  if (!from || !to) return { error: "Akun Floq atau akun tujuan tidak ditemukan" };
+  if (from.currency !== to.currency) return { error: "Withdrawal Floq saat ini harus menggunakan mata uang yang sama" };
+  if (Number(from.current_balance) < grossAmount) return { error: "Saldo Floq tidak mencukupi" };
+
+  const netAmount = grossAmount - feeAmount;
+  const transferDate = input.transferDate || new Date().toISOString();
+  const { error: transferError } = await supabase.from("transfers").insert({
+    user_id: user.id,
+    from_account_id: from.id,
+    to_account_id: to.id,
+    amount: grossAmount,
+    from_currency: from.currency,
+    to_currency: to.currency,
+    exchange_rate_used: netAmount / grossAmount,
+    fee_amount: feeAmount,
+    fee_mode: "deducted_from_amount",
+    net_amount: netAmount,
+    description: input.description?.trim() || "Penarikan saldo Floq",
+    transfer_date: transferDate,
+  });
+  if (transferError) return { error: transferError.message };
+
+  const { error: fromBalanceError } = await supabase
+    .from("accounts")
+    .update({ current_balance: Number(from.current_balance) - grossAmount })
+    .eq("id", from.id)
+    .eq("user_id", user.id);
+  const { error: toBalanceError } = await supabase
+    .from("accounts")
+    .update({ current_balance: Number(to.current_balance) + netAmount })
+    .eq("id", to.id)
+    .eq("user_id", user.id);
+  if (fromBalanceError || toBalanceError) {
+    console.error("Failed to update balances for Floq withdrawal:", fromBalanceError || toBalanceError);
+    return { error: "Withdrawal tersimpan tetapi saldo akun gagal diperbarui. Periksa dan sesuaikan saldo akun." };
+  }
+
+  if (feeAmount > 0) {
+    const category = await getCryptoFeeCategory(supabase, user.id);
+    if (category) {
+      const { error: feeError } = await supabase.from("transactions").insert({
+        user_id: user.id,
+        account_id: from.id,
+        category_id: category.id,
+        type: "expense",
+        amount: feeAmount,
+        currency: from.currency,
+        description: `Biaya withdrawal Floq ke ${to.name}`,
+        transaction_date: transferDate,
+      });
+      if (feeError) console.error("Failed to record Floq withdrawal fee:", feeError);
+    }
+  }
+  revalidatePath("/accounts");
+  revalidatePath("/dashboard");
+  revalidatePath("/net-worth");
+  revalidatePath("/transactions");
+  return { success: true, netAmount, feeAmount };
+}

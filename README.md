@@ -58,6 +58,8 @@ Built with **Next.js 16 App Router**, **Supabase (PostgreSQL with Row Level Secu
 ### 4. Investment Portfolio & Stock Trades
 * **Holdings Tracking**: Track equities, mutual funds, and crypto balances with average buy price and realized gains.
 * **Integrated Cash Accounts**: Buy/Sell transactions directly debited or credited to dedicated RDN / bank wallets.
+* **Floq Crypto Ledger**: Record decimal crypto quantities, manual per-unit prices, trading fees, realized P&L, and platform cash movements without treating asset purchases as consumption expenses.
+* **Fee-Aware Floq Withdrawals**: Enter the gross amount debited from Floq and the actual withdrawal fee; Pocketly records the net amount received by the destination account and the fee separately.
 
 ### 5. Savings Goals & Deposit Allocation
 * **Milestone Tracking**: Set target amounts and target dates for dream purchases, emergency funds, or vacations.

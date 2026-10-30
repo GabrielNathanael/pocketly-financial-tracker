@@ -44,3 +44,5 @@ next-env.d.ts
 *.sql
 migration*
 scratch/
+!supabase/migrations/
+!supabase/migrations/*.sql

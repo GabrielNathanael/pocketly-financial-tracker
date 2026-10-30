@@ -4,14 +4,14 @@ import { redirect } from 'next/navigation'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { getAccounts } from '@/actions/accounts'
 import { getInvestmentHoldings, getInvestmentTradesHistory } from '@/actions/investments'
-import { getLatestExchangeRate } from '@/actions/exchange-rate'
-import { InvestmentsView } from '@/components/investments/investments-view'
+import { getCryptoHoldings, getCryptoTrades } from '@/actions/crypto'
+import { PortfolioInvestmentView } from '@/components/investments/portfolio-investment-view'
 
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: 'Investments & Stocks | Pocketly',
-  description: 'Manage IDX stock holdings, RDN cash balance, and trading performance',
+  title: 'Investment Portfolio | Pocketly',
+  description: 'Manage stocks, crypto assets, platform balances, and investment performance',
 }
 
 export default async function InvestmentsPage() {
@@ -24,19 +24,21 @@ export default async function InvestmentsPage() {
     redirect('/login')
   }
 
-  const [accounts, holdings, trades, exchangeRate] = await Promise.all([
+  const [accounts, holdings, trades, cryptoHoldings, cryptoTrades] = await Promise.all([
     getAccounts(),
     getInvestmentHoldings(),
     getInvestmentTradesHistory(),
-    getLatestExchangeRate('USD', 'IDR'),
+    getCryptoHoldings(),
+    getCryptoTrades(),
   ])
 
   return (
-    <InvestmentsView
-      holdings={holdings}
-      trades={trades}
+    <PortfolioInvestmentView
+      stocks={holdings}
+      stockTrades={trades}
+      cryptos={cryptoHoldings}
+      cryptoTrades={cryptoTrades}
       accounts={accounts}
-      exchangeRate={exchangeRate}
     />
   )
 }

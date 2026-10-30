@@ -20,6 +20,7 @@ export type AuditAction = "INSERT" | "UPDATE" | "DELETE";
 export type RecurringFrequency = "daily" | "weekly" | "monthly" | "yearly";
 export type GoalStatus = "in_progress" | "completed" | "paused";
 export type GoalDepositType = "deposit" | "withdraw";
+export type CryptoTradeType = "buy" | "sell";
 
 export interface Database {
   public: {
@@ -161,6 +162,9 @@ export interface Database {
           from_currency: CurrencyCode;
           to_currency: CurrencyCode;
           exchange_rate_used: number;
+          fee_amount: number;
+          fee_mode: "added_to_source" | "deducted_from_amount";
+          net_amount: number;
           description: string | null;
           transfer_date: string;
           created_at: string;
@@ -174,6 +178,9 @@ export interface Database {
           from_currency?: CurrencyCode;
           to_currency?: CurrencyCode;
           exchange_rate_used?: number;
+          fee_amount?: number;
+          fee_mode?: "added_to_source" | "deducted_from_amount";
+          net_amount?: number;
           description?: string | null;
           transfer_date?: string;
           created_at?: string;
@@ -187,6 +194,9 @@ export interface Database {
           from_currency?: CurrencyCode;
           to_currency?: CurrencyCode;
           exchange_rate_used?: number;
+          fee_amount?: number;
+          fee_mode?: "added_to_source" | "deducted_from_amount";
+          net_amount?: number;
           description?: string | null;
           transfer_date?: string;
           created_at?: string;
@@ -603,6 +613,114 @@ export interface Database {
           created_at?: string;
         };
       };
+      crypto_holdings: {
+        Relationships: [];
+        Row: {
+          id: string;
+          user_id: string;
+          account_id: string;
+          symbol: string;
+          name: string;
+          quantity: number;
+          cost_basis: number;
+          average_buy_price: number;
+          manual_price: number;
+          price_currency: CurrencyCode;
+          price_updated_at: string | null;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          account_id: string;
+          symbol: string;
+          name: string;
+          quantity?: number;
+          cost_basis?: number;
+          average_buy_price?: number;
+          manual_price?: number;
+          price_currency?: CurrencyCode;
+          price_updated_at?: string | null;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          account_id?: string;
+          symbol?: string;
+          name?: string;
+          quantity?: number;
+          cost_basis?: number;
+          average_buy_price?: number;
+          manual_price?: number;
+          price_currency?: CurrencyCode;
+          price_updated_at?: string | null;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      crypto_trades: {
+        Relationships: [];
+        Row: {
+          id: string;
+          user_id: string;
+          account_id: string;
+          holding_id: string | null;
+          symbol: string;
+          type: CryptoTradeType;
+          quantity: number;
+          gross_amount: number;
+          fee_amount: number;
+          fee_currency: CurrencyCode;
+          price_per_unit: number;
+          cost_basis: number;
+          realized_pnl: number;
+          notes: string | null;
+          trade_date: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          account_id: string;
+          holding_id?: string | null;
+          symbol: string;
+          type: CryptoTradeType;
+          quantity: number;
+          gross_amount: number;
+          fee_amount?: number;
+          fee_currency?: CurrencyCode;
+          price_per_unit: number;
+          cost_basis?: number;
+          realized_pnl?: number;
+          notes?: string | null;
+          trade_date?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          account_id?: string;
+          holding_id?: string | null;
+          symbol?: string;
+          type?: CryptoTradeType;
+          quantity?: number;
+          gross_amount?: number;
+          fee_amount?: number;
+          fee_currency?: CurrencyCode;
+          price_per_unit?: number;
+          cost_basis?: number;
+          realized_pnl?: number;
+          notes?: string | null;
+          trade_date?: string;
+          created_at?: string;
+        };
+      };
       pinned_templates: {
         Relationships: [];
         Row: {
@@ -666,6 +784,8 @@ export type SavingsGoal = Tables<"savings_goals">;
 export type SavingsGoalDeposit = Tables<"savings_goal_deposits">;
 export type StockHolding = Tables<"stock_holdings">;
 export type StockTrade = Tables<"stock_trades">;
+export type CryptoHolding = Tables<"crypto_holdings">;
+export type CryptoTrade = Tables<"crypto_trades">;
 export type PinnedTemplateDB = Tables<"pinned_templates">;
 
 // Joined / enriched view types
@@ -707,5 +827,11 @@ export interface EnrichedStockHolding extends StockHolding {
 }
 
 export interface EnrichedStockTrade extends StockTrade {
+  account?: Account;
+}
+export interface EnrichedCryptoHolding extends CryptoHolding {
+  account?: Account;
+}
+export interface EnrichedCryptoTrade extends CryptoTrade {
   account?: Account;
 }

@@ -158,8 +158,7 @@ export function BottomNav({
           isActive: pathname.startsWith("/due-center"),
         },
         {
-          label:
-            language === "en" ? "Investments & Stocks" : "Investasi & Saham",
+          label: t.investments.title,
           href: "/investments",
           icon: TrendingUp,
           isActive: pathname.startsWith("/investments"),
@@ -230,13 +229,13 @@ export function BottomNav({
 
   const moreLinks = [
     {
-      label: language === "en" ? "Investments & Stocks" : "Investasi & Saham",
+      label: t.investments.title,
       href: "/investments",
       icon: TrendingUp,
       desc:
         language === "en"
-          ? "Track IDX stocks, RDN balance, and trading P&L"
-          : "Kelola portofolio saham IDX & mutasi RDN",
+          ? "Track stocks, crypto, platform balances, and P&L"
+          : "Kelola saham, kripto, saldo platform, dan performa",
     },
     {
       label: language === "en" ? "Due Dates & Bills" : "Pusat Tagihan",

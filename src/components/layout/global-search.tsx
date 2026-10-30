@@ -75,7 +75,7 @@ function GlobalSearchContent({
       { name: t.nav.transactions, href: '/transactions', icon: 'Receipt' },
       { name: t.nav.budget, href: '/budget', icon: 'PieChart' },
       { name: t.dueCenter?.title || 'Pusat Tagihan', href: '/due-center', icon: 'CalendarClock' },
-      { name: t.investments?.title || 'Investasi & Saham', href: '/investments', icon: 'TrendingUp' },
+      { name: t.investments?.title || 'Portofolio Investasi', href: '/investments', icon: 'TrendingUp' },
       { name: t.nav.reports, href: '/reports', icon: 'BarChart3' },
       { name: t.nav.goals, href: '/goals', icon: 'Target' },
       { name: t.nav.recurring, href: '/recurring', icon: 'RefreshCw' },
