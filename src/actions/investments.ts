@@ -45,9 +45,19 @@ async function syncStockHolding(
   let runningCost = 0;
 
   for (const tr of trades) {
-    const trLots = Number(tr.lots) || Number(tr.shares) / 100 || 0;
-    const trShares = Number(tr.shares) || Math.round(trLots * 100);
+    let trLots = Number(tr.lots) || Number(tr.shares) / 100 || 0;
+    let trShares = Number(tr.shares) || Math.round(trLots * 100);
     const trAmount = Number(tr.net_amount) || 0;
+
+    if (trLots <= 0 && trShares <= 0 && trAmount > 0) {
+      if (Number(tr.price_per_share) > 0) {
+        trShares = Math.round(trAmount / Number(tr.price_per_share));
+        trLots = trShares / 100;
+      } else {
+        trLots = Math.max(1, Math.round(trAmount / 1_000_000));
+        trShares = trLots * 100;
+      }
+    }
 
     if (tr.type === "buy") {
       runningLots += trLots;
@@ -308,7 +318,7 @@ export async function recordStockBuy(input: {
   // Deduct RDN Balance
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error: updBalErr } = await (supabase.from("accounts") as any)
-    .update({ current_balance: currentBal - totalDeduction })
+    .update({ current_balance: currentBal - netAmount })
     .eq("id", acc.id);
 
   if (updBalErr) {
@@ -321,27 +331,35 @@ export async function recordStockBuy(input: {
   const txDate = normalizeISODate(input.tradeDate);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error: tradeErr } = await (
+  const { data: trade, error: tradeErr } = await (
     supabase.from("stock_trades") as any
-  ).insert({
-    user_id: user.id,
-    account_id: acc.id,
-    holding_id: null,
-    ticker: cleanTicker,
-    type: "buy",
-    net_amount: netAmount,
-    buy_cost: netAmount,
-    realized_pnl: 0,
-    lots: lots,
-    shares: sharesToAdd,
-    price_per_share: pricePerShare,
-    stamp_duty: stampDutyToApply,
-    notes: input.notes?.trim() || null,
-    trade_date: txDate,
-  });
+  )
+    .insert({
+      user_id: user.id,
+      account_id: acc.id,
+      holding_id: null,
+      ticker: cleanTicker,
+      type: "buy",
+      net_amount: netAmount,
+      buy_cost: netAmount,
+      realized_pnl: 0,
+      lots: lots,
+      shares: sharesToAdd,
+      price_per_share: pricePerShare,
+      stamp_duty: stampDutyToApply,
+      notes: input.notes?.trim() || null,
+      trade_date: txDate,
+    })
+    .select("id")
+    .single();
 
   if (tradeErr) {
     console.error("Error inserting stock trade:", tradeErr);
+    await (supabase.from("accounts") as any)
+      .update({ current_balance: currentBal })
+      .eq("id", acc.id)
+      .eq("user_id", user.id);
+    return { error: "Gagal mencatat transaksi saham; saldo dikembalikan." };
   }
 
   // 4. Record Stamp Duty as Expense Transaction if applied
@@ -362,16 +380,30 @@ export async function recordStockBuy(input: {
         : `Bea Materai Transaksi Saham (${acc.name})`;
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase.from("transactions") as any).insert({
+      const { error: stampError } = await (
+        supabase.from("transactions") as any
+      ).insert({
         user_id: user.id,
         account_id: acc.id,
         category_id: stampCat.id,
+        stock_trade_id: trade.id,
         type: "expense",
         amount: stampDutyToApply,
         currency: acc.currency,
         description: stampDesc,
         transaction_date: txDate,
       });
+      if (stampError) {
+        await (supabase.from("stock_trades") as any)
+          .delete()
+          .eq("id", trade.id)
+          .eq("user_id", user.id);
+        await (supabase.from("accounts") as any)
+          .update({ current_balance: currentBal })
+          .eq("id", acc.id)
+          .eq("user_id", user.id);
+        return { error: "Gagal mencatat biaya materai; transaksi dibatalkan." };
+      }
     }
   }
 
@@ -471,11 +503,9 @@ export async function recordStockSell(input: {
 
   // 3. Credit RDN balance with net sell proceeds (minus stamp duty if triggered)
   const currentBal = Number(acc.current_balance) || 0;
-  const netCredit = netAmount - stampDutyToApply;
-
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error: updBalErr } = await (supabase.from("accounts") as any)
-    .update({ current_balance: currentBal + netCredit })
+    .update({ current_balance: currentBal + netAmount })
     .eq("id", acc.id);
 
   if (updBalErr) {
@@ -485,27 +515,35 @@ export async function recordStockSell(input: {
   // 4. Record Trade Log
   const txDate = normalizeISODate(input.tradeDate);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error: tradeErr } = await (
+  const { data: trade, error: tradeErr } = await (
     supabase.from("stock_trades") as any
-  ).insert({
-    user_id: user.id,
-    account_id: acc.id,
-    holding_id: null,
-    ticker: holding.ticker,
-    type: "sell",
-    net_amount: netAmount,
-    buy_cost: proportionalBuyCost,
-    realized_pnl: realizedPnl,
-    lots: lotsToSell,
-    shares: sharesSold,
-    price_per_share: sellPricePerShare,
-    stamp_duty: stampDutyToApply,
-    notes: input.notes?.trim() || null,
-    trade_date: txDate,
-  });
+  )
+    .insert({
+      user_id: user.id,
+      account_id: acc.id,
+      holding_id: null,
+      ticker: holding.ticker,
+      type: "sell",
+      net_amount: netAmount,
+      buy_cost: proportionalBuyCost,
+      realized_pnl: realizedPnl,
+      lots: lotsToSell,
+      shares: sharesSold,
+      price_per_share: sellPricePerShare,
+      stamp_duty: stampDutyToApply,
+      notes: input.notes?.trim() || null,
+      trade_date: txDate,
+    })
+    .select("id")
+    .single();
 
   if (tradeErr) {
     console.error("Error inserting stock trade:", tradeErr);
+    await (supabase.from("accounts") as any)
+      .update({ current_balance: currentBal })
+      .eq("id", acc.id)
+      .eq("user_id", user.id);
+    return { error: "Gagal mencatat transaksi saham; saldo dikembalikan." };
   }
 
   // 5. Record Stamp Duty as Expense Transaction if applied
@@ -526,16 +564,30 @@ export async function recordStockSell(input: {
         : `Bea Materai Transaksi Saham (${acc.name})`;
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase.from("transactions") as any).insert({
+      const { error: stampError } = await (
+        supabase.from("transactions") as any
+      ).insert({
         user_id: user.id,
         account_id: acc.id,
         category_id: stampCat.id,
+        stock_trade_id: trade.id,
         type: "expense",
         amount: stampDutyToApply,
         currency: acc.currency,
         description: stampDesc,
         transaction_date: txDate,
       });
+      if (stampError) {
+        await (supabase.from("stock_trades") as any)
+          .delete()
+          .eq("id", trade.id)
+          .eq("user_id", user.id);
+        await (supabase.from("accounts") as any)
+          .update({ current_balance: currentBal })
+          .eq("id", acc.id)
+          .eq("user_id", user.id);
+        return { error: "Gagal mencatat biaya materai; transaksi dibatalkan." };
+      }
     }
   }
 
@@ -589,14 +641,13 @@ export async function deleteStockTrade(id: string) {
       // Revert buy by returning funds + stamp duty back to RDN
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (supabase.from("accounts") as any)
-        .update({ current_balance: curBal + tradeAmount + stampDuty })
+        .update({ current_balance: curBal + tradeAmount })
         .eq("id", acc.id);
     } else {
       // Revert sell by deducting proceeds
-      const netSellProceeds = tradeAmount - stampDuty;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (supabase.from("accounts") as any)
-        .update({ current_balance: curBal - netSellProceeds })
+        .update({ current_balance: curBal - tradeAmount })
         .eq("id", acc.id);
     }
   }

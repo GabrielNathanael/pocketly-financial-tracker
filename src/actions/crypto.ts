@@ -226,11 +226,11 @@ async function recordCryptoTrade(input: {
     .eq("id", input.accountId)
     .eq("user_id", user.id)
     .single();
-  if (accountError || !account) return { error: "Akun Floq tidak ditemukan" };
+  if (accountError || !account) return { error: "Akun investasi tidak ditemukan" };
 
   const balance = Number(account.current_balance);
-  const cashEffect = input.type === "buy" ? grossAmount + feeAmount : grossAmount - feeAmount;
-  if (input.type === "buy" && balance < cashEffect) {
+  const cashEffect = grossAmount;
+  if (input.type === "buy" && balance < grossAmount + feeAmount) {
     return { error: `Saldo ${account.name} tidak mencukupi untuk nominal dan biaya` };
   }
   if (input.type === "sell" && feeAmount > grossAmount) {
@@ -294,7 +294,12 @@ async function recordCryptoTrade(input: {
         description: `Biaya trading kripto ${symbol} (${account.name})`,
         transaction_date: tradeDate,
       });
-      if (feeError) console.error("Failed to record crypto fee:", feeError);
+      if (feeError) {
+        console.error("Failed to record crypto fee:", feeError);
+        await supabase.from("crypto_trades").delete().eq("id", trade.id).eq("user_id", user.id);
+        await supabase.from("accounts").update({ current_balance: balance }).eq("id", account.id).eq("user_id", user.id);
+        return { error: "Gagal mencatat biaya trading kripto; transaksi dibatalkan." };
+      }
     }
   }
 
@@ -326,9 +331,7 @@ export async function deleteCryptoTrade(id: string) {
   if (fetchError || !trade) return { error: "Transaksi kripto tidak ditemukan" };
 
   const account = trade.account as unknown as { id: string; current_balance: number } | null;
-  const cashEffect = trade.type === "buy"
-    ? Number(trade.gross_amount) + Number(trade.fee_amount || 0)
-    : Number(trade.gross_amount) - Number(trade.fee_amount || 0);
+  const cashEffect = Number(trade.gross_amount);
 
   if (account) {
     const balance = Number(account.current_balance) || 0;
@@ -391,10 +394,8 @@ export async function updateCryptoTrade(input: {
   }
 
   const account = trade.account as unknown as { id: string; current_balance: number } | null;
-  const oldCashEffect = trade.type === "buy"
-    ? Number(trade.gross_amount) + Number(trade.fee_amount || 0)
-    : Number(trade.gross_amount) - Number(trade.fee_amount || 0);
-  const newCashEffect = trade.type === "buy" ? grossAmount + feeAmount : grossAmount - feeAmount;
+  const oldCashEffect = Number(trade.gross_amount);
+  const newCashEffect = grossAmount;
   if (account) {
     const balance = Number(account.current_balance) || 0;
     const nextBalance = trade.type === "buy"
@@ -479,7 +480,7 @@ export async function updateCryptoManualPrice(input: {
   return { success: true };
 }
 
-export async function createFloqWithdrawal(input: {
+export async function createInvestmentCashTransfer(input: {
   fromAccountId: string;
   toAccountId: string;
   grossAmount: number;
@@ -501,9 +502,9 @@ export async function createFloqWithdrawal(input: {
     supabase.from("accounts").select("*").eq("id", input.fromAccountId).eq("user_id", user.id).single(),
     supabase.from("accounts").select("*").eq("id", input.toAccountId).eq("user_id", user.id).single(),
   ]);
-  if (!from || !to) return { error: "Akun Floq atau akun tujuan tidak ditemukan" };
-  if (from.currency !== to.currency) return { error: "Withdrawal Floq saat ini harus menggunakan mata uang yang sama" };
-  if (Number(from.current_balance) < grossAmount) return { error: "Saldo Floq tidak mencukupi" };
+  if (!from || !to) return { error: "Akun investasi atau akun tujuan tidak ditemukan" };
+  if (from.currency !== to.currency) return { error: "Transfer saldo akun investasi saat ini harus menggunakan mata uang yang sama" };
+  if (Number(from.current_balance) < grossAmount + feeAmount) return { error: "Saldo akun investasi tidak mencukupi untuk nominal dan biaya" };
 
   const netAmount = grossAmount;
   const transferDate = input.transferDate || new Date().toISOString();
@@ -518,7 +519,7 @@ export async function createFloqWithdrawal(input: {
     fee_amount: feeAmount,
     fee_mode: "added_to_source",
     net_amount: netAmount,
-    description: input.description?.trim() || "Penarikan saldo Floq",
+    description: input.description?.trim() || "Penarikan saldo akun investasi",
     transfer_date: transferDate,
   }).select("id").single();
   if (transferError) return { error: transferError.message };
@@ -534,10 +535,10 @@ export async function createFloqWithdrawal(input: {
         type: "expense",
         amount: feeAmount,
         currency: from.currency,
-        description: `Biaya withdrawal Floq ke ${to.name}`,
+        description: `Biaya withdrawal akun investasi ke ${to.name}`,
         transaction_date: transferDate,
       });
-      if (feeError) console.error("Failed to record Floq withdrawal fee:", feeError);
+      if (feeError) console.error("Failed to record investment cash transfer fee:", feeError);
     }
   }
   revalidatePath("/accounts");
