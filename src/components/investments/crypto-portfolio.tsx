@@ -129,7 +129,7 @@ export function CryptoPortfolio({
           grossAmount: Number(amount),
           feeAmount: Number(fee || 0),
           pricePerUnit: Number(price),
-          tradeDate: localDateToISO(date),
+          tradeDate: date,
         });
       } else if (modal === "sell") {
         result = selectedHolding
@@ -139,7 +139,7 @@ export function CryptoPortfolio({
               grossAmount: Number(amount),
               feeAmount: Number(fee || 0),
               pricePerUnit: Number(price),
-              tradeDate: localDateToISO(date),
+              tradeDate: date,
             })
           : { error: language === "en" ? "Select an asset first" : "Pilih aset terlebih dahulu" };
       } else if (modal === "price") {
@@ -153,7 +153,7 @@ export function CryptoPortfolio({
           toAccountId,
           grossAmount: Number(amount),
           feeAmount: Number(fee || 0),
-          transferDate: localDateToISO(date),
+          transferDate: date,
         });
       }
 

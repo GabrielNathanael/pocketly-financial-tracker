@@ -114,6 +114,7 @@ export interface Database {
           account_id: string;
           category_id: string;
           transfer_id: string | null;
+          crypto_trade_id: string | null;
           type: TransactionType;
           amount: number;
           currency: CurrencyCode;
@@ -129,6 +130,7 @@ export interface Database {
           account_id: string;
           category_id: string;
           transfer_id?: string | null;
+          crypto_trade_id?: string | null;
           type: TransactionType;
           amount: number;
           currency?: CurrencyCode;
@@ -144,6 +146,7 @@ export interface Database {
           account_id?: string;
           category_id?: string;
           transfer_id?: string | null;
+          crypto_trade_id?: string | null;
           type?: TransactionType;
           amount?: number;
           currency?: CurrencyCode;

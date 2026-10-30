@@ -147,6 +147,24 @@ export function localDateToISO(dateStr: string): string {
   ).toISOString();
 }
 
+export function normalizeISODate(dateInput?: string): string {
+  if (!dateInput) return new Date().toISOString();
+
+  const trimmed = dateInput.trim();
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    const [year, month, day] = trimmed.split("-").map(Number);
+    return new Date(Date.UTC(year, month - 1, day, 12, 0, 0, 0)).toISOString();
+  }
+
+  const parsed = new Date(trimmed);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toISOString();
+  }
+
+  return new Date().toISOString();
+}
+
 /**
  * Convert a Date or ISO timestamp string to a "yyyy-MM-dd" string,
  * using the device's local timezone (not UTC).

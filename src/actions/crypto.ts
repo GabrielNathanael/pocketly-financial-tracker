@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { normalizeISODate } from "@/lib/utils/date";
 import {
   EnrichedCryptoHolding,
   EnrichedCryptoTrade,
@@ -49,7 +50,7 @@ async function syncCryptoHolding(
     .select("*")
     .eq("user_id", userId)
     .eq("account_id", accountId)
-    .eq("symbol", symbol)
+    .ilike("symbol", symbol)
     .order("trade_date", { ascending: true })
     .order("created_at", { ascending: true });
 
@@ -77,7 +78,7 @@ async function syncCryptoHolding(
     .select("id, manual_price, price_currency, name, notes")
     .eq("user_id", userId)
     .eq("account_id", accountId)
-    .eq("symbol", symbol)
+    .ilike("symbol", symbol)
     .maybeSingle();
 
   if (quantity <= 0.000000000001) {
@@ -257,8 +258,8 @@ async function recordCryptoTrade(input: {
     .eq("user_id", user.id);
   if (balanceError) return { error: balanceError.message };
 
-  const tradeDate = input.tradeDate ? `${input.tradeDate}T12:00:00.000Z` : new Date().toISOString();
-  const { error: tradeError } = await supabase.from("crypto_trades").insert({
+  const tradeDate = normalizeISODate(input.tradeDate);
+  const { data: trade, error: tradeError } = await supabase.from("crypto_trades").insert({
     user_id: user.id,
     account_id: account.id,
     holding_id: input.holdingId || null,
@@ -273,19 +274,20 @@ async function recordCryptoTrade(input: {
     realized_pnl: realizedPnl,
     notes: input.notes?.trim() || null,
     trade_date: tradeDate,
-  });
+  }).select("id").single();
   if (tradeError) {
     await supabase.from("accounts").update({ current_balance: balance }).eq("id", account.id);
     return { error: tradeError.message };
   }
 
-  if (feeAmount > 0) {
+  if (feeAmount > 0 && trade) {
     const category = await getCryptoFeeCategory(supabase, user.id);
     if (category) {
       const { error: feeError } = await supabase.from("transactions").insert({
         user_id: user.id,
         account_id: account.id,
         category_id: category.id,
+        crypto_trade_id: trade.id,
         type: "expense",
         amount: feeAmount,
         currency: account.currency,
@@ -306,6 +308,154 @@ async function recordCryptoTrade(input: {
   revalidatePath("/accounts");
   revalidatePath("/dashboard");
   revalidatePath("/net-worth");
+  revalidatePath("/transactions");
+  return { success: true, realizedPnl };
+}
+
+export async function deleteCryptoTrade(id: string) {
+  const supabase = await createServerSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const { data: trade, error: fetchError } = await supabase
+    .from("crypto_trades")
+    .select("*, account:accounts(*)")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single();
+  if (fetchError || !trade) return { error: "Transaksi kripto tidak ditemukan" };
+
+  const account = trade.account as unknown as { id: string; current_balance: number } | null;
+  const cashEffect = trade.type === "buy"
+    ? Number(trade.gross_amount) + Number(trade.fee_amount || 0)
+    : Number(trade.gross_amount) - Number(trade.fee_amount || 0);
+
+  if (account) {
+    const balance = Number(account.current_balance) || 0;
+    const nextBalance = trade.type === "buy" ? balance + cashEffect : balance - cashEffect;
+    if (nextBalance < 0) return { error: "Saldo akun tidak cukup untuk membatalkan transaksi jual ini" };
+    const { error: balanceError } = await supabase
+      .from("accounts")
+      .update({ current_balance: nextBalance })
+      .eq("id", account.id)
+      .eq("user_id", user.id);
+    if (balanceError) return { error: balanceError.message };
+  }
+
+  const { error: deleteError } = await supabase
+    .from("crypto_trades")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id);
+  if (deleteError) return { error: deleteError.message };
+
+  await syncCryptoHolding(supabase, user.id, trade.account_id, cleanSymbol(trade.symbol));
+  revalidatePath("/investments");
+  revalidatePath("/accounts");
+  revalidatePath("/net-worth");
+  revalidatePath("/dashboard");
+  revalidatePath("/transactions");
+  return { success: true };
+}
+
+export async function updateCryptoTrade(input: {
+  id: string;
+  quantity: number;
+  grossAmount: number;
+  feeAmount?: number;
+  pricePerUnit: number;
+  notes?: string | null;
+  tradeDate?: string;
+}) {
+  const supabase = await createServerSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const quantity = Number(input.quantity);
+  const grossAmount = Number(input.grossAmount);
+  const feeAmount = Number(input.feeAmount || 0);
+  const pricePerUnit = Number(input.pricePerUnit);
+  if (quantity <= 0 || grossAmount <= 0 || feeAmount < 0 || pricePerUnit <= 0) {
+    return { error: "Jumlah, nominal, harga, dan biaya harus valid" };
+  }
+
+  const { data: trade, error: fetchError } = await supabase
+    .from("crypto_trades")
+    .select("*, account:accounts(*)")
+    .eq("id", input.id)
+    .eq("user_id", user.id)
+    .single();
+  if (fetchError || !trade) return { error: "Transaksi kripto tidak ditemukan" };
+  if (trade.type === "sell" && feeAmount > grossAmount) {
+    return { error: "Biaya penjualan tidak boleh melebihi hasil penjualan" };
+  }
+
+  const account = trade.account as unknown as { id: string; current_balance: number } | null;
+  const oldCashEffect = trade.type === "buy"
+    ? Number(trade.gross_amount) + Number(trade.fee_amount || 0)
+    : Number(trade.gross_amount) - Number(trade.fee_amount || 0);
+  const newCashEffect = trade.type === "buy" ? grossAmount + feeAmount : grossAmount - feeAmount;
+  if (account) {
+    const balance = Number(account.current_balance) || 0;
+    const nextBalance = trade.type === "buy"
+      ? balance + oldCashEffect - newCashEffect
+      : balance - oldCashEffect + newCashEffect;
+    if (nextBalance < 0) return { error: "Saldo akun tidak mencukupi untuk perubahan ini" };
+    const { error: balanceError } = await supabase
+      .from("accounts")
+      .update({ current_balance: nextBalance })
+      .eq("id", account.id)
+      .eq("user_id", user.id);
+    if (balanceError) return { error: balanceError.message };
+  }
+
+  const newCostBasis = trade.type === "buy"
+    ? grossAmount + feeAmount
+    : Number(trade.cost_basis || 0) * (quantity / Number(trade.quantity));
+  const realizedPnl = trade.type === "sell"
+    ? grossAmount - feeAmount - newCostBasis
+    : 0;
+  const tradeDate = normalizeISODate(input.tradeDate || trade.trade_date);
+
+  const { error: updateError } = await supabase
+    .from("crypto_trades")
+    .update({
+      quantity,
+      gross_amount: grossAmount,
+      fee_amount: feeAmount,
+      price_per_unit: pricePerUnit,
+      cost_basis: newCostBasis,
+      realized_pnl: realizedPnl,
+      notes: input.notes?.trim() || null,
+      trade_date: tradeDate,
+    })
+    .eq("id", input.id)
+    .eq("user_id", user.id);
+  if (updateError) return { error: updateError.message };
+
+  await supabase.from("transactions").delete().eq("crypto_trade_id", input.id);
+  if (feeAmount > 0) {
+    const category = await getCryptoFeeCategory(supabase, user.id);
+    if (category) {
+      await supabase.from("transactions").insert({
+        user_id: user.id,
+        account_id: trade.account_id,
+        category_id: category.id,
+        crypto_trade_id: input.id,
+        type: "expense",
+        amount: feeAmount,
+        currency: trade.fee_currency,
+        description: `Biaya trading kripto ${trade.symbol}`,
+        transaction_date: tradeDate,
+      });
+    }
+  }
+
+  await syncCryptoHolding(supabase, user.id, trade.account_id, cleanSymbol(trade.symbol));
+  revalidatePath("/investments");
+  revalidatePath("/accounts");
+  revalidatePath("/net-worth");
+  revalidatePath("/dashboard");
   revalidatePath("/transactions");
   return { success: true, realizedPnl };
 }

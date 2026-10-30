@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { EnrichedStockHolding, EnrichedStockTrade } from "@/types/database";
 import { formatCurrency } from "@/lib/utils/currency";
+import { normalizeISODate } from "@/lib/utils/date";
 
 /**
  * Automatically recalculate and synchronize a stock holding's lots, total_shares,
@@ -317,9 +318,7 @@ export async function recordStockBuy(input: {
   // 3. Record Trade Log
   const sharesToAdd = Math.round(lots * 100);
   const pricePerShare = netAmount / sharesToAdd;
-  const txDate = input.tradeDate
-    ? `${input.tradeDate}T12:00:00.000Z`
-    : new Date().toISOString();
+  const txDate = normalizeISODate(input.tradeDate);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error: tradeErr } = await (
@@ -484,9 +483,7 @@ export async function recordStockSell(input: {
   }
 
   // 4. Record Trade Log
-  const txDate = input.tradeDate
-    ? `${input.tradeDate}T12:00:00.000Z`
-    : new Date().toISOString();
+  const txDate = normalizeISODate(input.tradeDate);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error: tradeErr } = await (
     supabase.from("stock_trades") as any

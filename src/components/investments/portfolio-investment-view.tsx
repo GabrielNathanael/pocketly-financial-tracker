@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import {
   ArrowDownRight,
   ArrowUpRight,
+  Coins,
   Edit2,
   History,
   Plus,
@@ -30,9 +31,12 @@ import {
 import {
   recordCryptoBuy,
   recordCryptoSell,
+  updateCryptoTrade,
+  deleteCryptoTrade,
 } from "@/actions/crypto";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Select,
   SelectContent,
@@ -41,8 +45,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Modal } from "@/components/ui/modal";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { formatCurrency } from "@/lib/utils/currency";
-import { getLocalDateString, localDateToISO } from "@/lib/utils/date";
+import { getLocalDateString } from "@/lib/utils/date";
 import { useLanguage } from "@/lib/i18n/language-context";
 import { cn } from "@/lib/utils/cn";
 
@@ -75,6 +80,7 @@ export function PortfolioInvestmentView({
   );
   const [tab, setTab] = useState<"portfolio" | "activity" | "fees">("portfolio");
   const [modal, setModal] = useState<"buy" | "sell" | "edit" | null>(null);
+  const [editTradeType, setEditTradeType] = useState<"buy" | "sell" | null>(null);
   const [assetKind, setAssetKind] = useState<AssetKind>("crypto");
   const [accountId, setAccountId] = useState(investmentAccounts[0]?.id || "");
   const [selectedId, setSelectedId] = useState("");
@@ -88,6 +94,8 @@ export function PortfolioInvestmentView({
   const [date, setDate] = useState(getLocalDateString());
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Activity | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const stockValue = stocks.reduce((total, holding) => total + Number(holding.total_cost), 0);
   const cryptoCost = cryptos.reduce((total, holding) => total + Number(holding.cost_basis), 0);
@@ -118,6 +126,40 @@ export function PortfolioInvestmentView({
     0,
   );
   const totalRecordedFees = totalFees + transferFees;
+  const feeDetails = useMemo(
+    () => [
+      ...stockTrades
+        .filter((trade) => Number(trade.stamp_duty) > 0)
+        .map((trade) => ({
+          id: `stock-${trade.id}`,
+          date: trade.trade_date,
+          type: i18n.feesStock,
+          reference: `${trade.ticker} · ${trade.type === "buy" ? i18n.buy : i18n.sell}`,
+          amount: Number(trade.stamp_duty),
+        })),
+      ...cryptoTrades
+        .filter((trade) => Number(trade.fee_amount) > 0)
+        .map((trade) => ({
+          id: `crypto-${trade.id}`,
+          date: trade.trade_date,
+          type: i18n.feesCrypto,
+          reference: `${trade.symbol} · ${trade.type === "buy" ? i18n.buy : i18n.sell}`,
+          amount: Number(trade.fee_amount),
+        })),
+      ...transfers
+        .filter((transfer) => Number(transfer.fee_amount) > 0)
+        .map((transfer) => ({
+          id: `transfer-${transfer.id}`,
+          date: transfer.transfer_date,
+          type: i18n.feesTransfer,
+          reference:
+            transfer.description ||
+            `${transfer.from_account?.name || "—"} → ${transfer.to_account?.name || "—"}`,
+          amount: Number(transfer.fee_amount),
+        })),
+    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+    [cryptoTrades, i18n, stockTrades, transfers],
+  );
   const activities = useMemo<Activity[]>(
     () =>
       [...stockTrades, ...cryptoTrades].sort(
@@ -127,12 +169,23 @@ export function PortfolioInvestmentView({
     [stockTrades, cryptoTrades],
   );
   const cryptoQuantity =
-    Number(amount) > 0 && Number(price) > 0 ? Number(amount) / Number(price) : 0;
+    Number(amount) > 0 && Number(price) > 0
+      ? Math.floor((Number(amount) / Number(price)) * 100_000_000) / 100_000_000
+      : 0;
+  const cryptoSellGrossAmount =
+    Number(quantity) > 0 && Number(price) > 0
+      ? Number(quantity) * Number(price)
+      : 0;
+  const stockSellGrossAmount =
+    Number(lots) > 0 && Number(price) > 0
+      ? Number(lots) * 100 * Number(price)
+      : 0;
   const selectedStock = stocks.find((holding) => holding.id === selectedId);
   const selectedCrypto = cryptos.find((holding) => holding.id === selectedId);
 
   const closeModal = () => {
     setModal(null);
+    setEditTradeType(null);
     setSelectedId("");
     setTicker("");
     setSymbol("BTC");
@@ -147,10 +200,15 @@ export function PortfolioInvestmentView({
 
   const openBuy = (kind: AssetKind, holding?: EnrichedStockHolding | EnrichedCryptoHolding) => {
     setAssetKind(kind);
+    setSelectedId(holding?.id || "");
     if (holding) {
-      setSelectedId(holding.id);
-      if (kind === "stock") setTicker((holding as EnrichedStockHolding).ticker);
-      else setSymbol((holding as EnrichedCryptoHolding).symbol);
+      if (kind === "stock") {
+        setTicker((holding as EnrichedStockHolding).ticker);
+        setLots(String(Number((holding as EnrichedStockHolding).lots) || Number((holding as EnrichedStockHolding).total_shares) / 100 || 1));
+      } else {
+        setSymbol((holding as EnrichedCryptoHolding).symbol);
+        setPrice(String((holding as EnrichedCryptoHolding).manual_price || (holding as EnrichedCryptoHolding).average_buy_price || ""));
+      }
       setAccountId(holding.account_id);
     }
     setModal("buy");
@@ -158,18 +216,19 @@ export function PortfolioInvestmentView({
 
   const openSell = (kind: AssetKind, holding?: EnrichedStockHolding | EnrichedCryptoHolding) => {
     setAssetKind(kind);
+    setSelectedId(holding?.id || "");
     if (holding) {
-      setSelectedId(holding.id);
       setAccountId(holding.account_id);
       if (kind === "stock") {
         const stock = holding as EnrichedStockHolding;
         setTicker(stock.ticker);
         setLots(String(Number(stock.lots) || Number(stock.total_shares) / 100 || 1));
+        setPrice("");
       } else {
         const crypto = holding as EnrichedCryptoHolding;
         setSymbol(crypto.symbol);
         setQuantity(String(crypto.quantity));
-        setPrice(String(crypto.manual_price || crypto.average_buy_price));
+        setPrice("");
       }
     }
     setModal("sell");
@@ -195,7 +254,7 @@ export function PortfolioInvestmentView({
           ? await recordStockSell({
               holdingId: selectedStock.id,
               lots: Number(lots),
-              netAmount: Number(amount),
+              netAmount: stockSellGrossAmount,
               notes: notes || null,
               tradeDate: date,
               language,
@@ -210,20 +269,30 @@ export function PortfolioInvestmentView({
           feeAmount: Number(fee || 0),
           pricePerUnit: Number(price),
           notes: notes || null,
-          tradeDate: localDateToISO(date),
+          tradeDate: date,
         });
       } else if (assetKind === "crypto" && modal === "sell") {
         result = selectedCrypto
           ? await recordCryptoSell({
               holdingId: selectedCrypto.id,
               quantity: Number(quantity),
-              grossAmount: Number(amount),
+              grossAmount: cryptoSellGrossAmount,
               feeAmount: Number(fee || 0),
               pricePerUnit: Number(price),
               notes: notes || null,
-              tradeDate: localDateToISO(date),
+              tradeDate: date,
             })
           : { error: language === "en" ? "Select an asset first" : "Pilih aset terlebih dahulu" };
+      } else if (assetKind === "crypto" && modal === "edit" && selectedId) {
+        result = await updateCryptoTrade({
+          id: selectedId,
+          quantity: Number(editTradeType === "buy" ? cryptoQuantity : quantity),
+          grossAmount: editTradeType === "buy" ? Number(amount) : cryptoSellGrossAmount,
+          feeAmount: Number(fee || 0),
+          pricePerUnit: Number(price),
+          notes: notes || null,
+          tradeDate: date,
+        });
       } else if (modal === "edit" && selectedId) {
         result = await updateStockTrade({
           id: selectedId,
@@ -252,14 +321,33 @@ export function PortfolioInvestmentView({
     }
   };
 
-  const handleDelete = async (trade: EnrichedStockTrade) => {
-    if (!confirm(i18n.deleteConfirm)) return;
-    const result = await deleteStockTrade(trade.id);
-    if (result.error) toast.error(result.error);
-    else {
-      toast.success(i18n.deleteSuccess);
+  const handleDelete = (trade: EnrichedStockTrade) => {
+    setDeleteTarget(trade);
+  };
+
+  const handleDeleteCrypto = (trade: EnrichedCryptoTrade) => {
+    setDeleteTarget(trade);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    const isCrypto = "symbol" in deleteTarget;
+    const result = isCrypto
+      ? await deleteCryptoTrade(deleteTarget.id)
+      : await deleteStockTrade(deleteTarget.id);
+    if (result.error) {
+      toast.error(result.error);
+    } else {
+      toast.success(
+        isCrypto
+        ? i18n.deleteCryptoSuccess
+          : i18n.deleteSuccess,
+      );
       router.refresh();
     }
+    setIsDeleting(false);
+    setDeleteTarget(null);
   };
 
   return (
@@ -290,9 +378,9 @@ export function PortfolioInvestmentView({
 
       <div className="flex gap-1 overflow-x-auto border-b border-[#E5E7EB] dark:border-[#27272A]">
         {([
-          ["portfolio", language === "en" ? "Portfolio" : "Portofolio", TrendingUp],
-          ["activity", language === "en" ? "Activity" : "Aktivitas", History],
-          ["fees", language === "en" ? "Fees & stamp duty" : "Biaya & Bea Materai", ReceiptText],
+          ["portfolio", i18n.holdingsTab, TrendingUp],
+          ["activity", i18n.tradesTab, History],
+          ["fees", i18n.feesTab, ReceiptText],
         ] as const).map(([value, label, Icon]) => (
           <button key={value} type="button" onClick={() => setTab(value)} className={cn("inline-flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2.5 text-xs font-bold transition-colors", tab === value ? "border-[#0F172A] text-[#0F172A] dark:border-[#FAFAFA] dark:text-[#FAFAFA]" : "border-transparent text-[#94A3B8] hover:text-[#475569]")}>
             <Icon className="h-3.5 w-3.5" /> {label}
@@ -302,34 +390,17 @@ export function PortfolioInvestmentView({
 
       {tab === "portfolio" && (
         <section className="overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-2xs dark:border-[#27272A] dark:bg-[#121215]">
-          <div className="flex items-center justify-between border-b border-[#E5E7EB] px-4 py-3 dark:border-[#27272A] sm:px-5">
-            <div>
-              <h2 className="text-sm font-bold">{language === "en" ? "Your assets" : "Aset yang kamu miliki"}</h2>
-              <p className="text-[11px] text-[#64748B]">{stocks.length + cryptos.length} {language === "en" ? "active assets" : "aset aktif"}</p>
-            </div>
+          <div className="grid gap-3 p-3 sm:grid-cols-2 sm:p-4">
+            {stocks.map((holding) => <StockCard key={holding.id} holding={holding} onBuy={() => openBuy("stock", holding)} onSell={() => openSell("stock", holding)} />)}
+            {cryptos.map((holding) => <CryptoCard key={holding.id} holding={holding} onBuy={() => openBuy("crypto", holding)} onSell={() => openSell("crypto", holding)} />)}
           </div>
-          <div className="hidden overflow-x-auto md:block">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-[#F8F9FA] text-[10px] uppercase tracking-wider text-[#94A3B8] dark:bg-[#1A1A20]">
-                <tr><th className="px-5 py-3">{language === "en" ? "Asset" : "Aset"}</th><th className="px-3 py-3">{language === "en" ? "Amount" : "Jumlah"}</th><th className="px-3 py-3 text-right">{language === "en" ? "Cost basis" : "Modal"}</th><th className="px-3 py-3 text-right">{language === "en" ? "Current value" : "Nilai saat ini"}</th><th className="px-5 py-3 text-right">{language === "en" ? "Actions" : "Aksi"}</th></tr>
-              </thead>
-              <tbody className="divide-y divide-[#E5E7EB] dark:divide-[#27272A]">
-                {stocks.map((holding) => <StockRow key={holding.id} holding={holding} onBuy={() => openBuy("stock", holding)} onSell={() => openSell("stock", holding)} />)}
-                {cryptos.map((holding) => <CryptoRow key={holding.id} holding={holding} onBuy={() => openBuy("crypto", holding)} onSell={() => openSell("crypto", holding)} />)}
-              </tbody>
-            </table>
-          </div>
-          <div className="grid gap-2 p-3 md:hidden">
-            {stocks.map((holding) => <MobileStockCard key={holding.id} holding={holding} onBuy={() => openBuy("stock", holding)} onSell={() => openSell("stock", holding)} />)}
-            {cryptos.map((holding) => <MobileCryptoCard key={holding.id} holding={holding} onBuy={() => openBuy("crypto", holding)} onSell={() => openSell("crypto", holding)} />)}
-          </div>
-          {stocks.length + cryptos.length === 0 && <div className="p-10 text-center text-xs text-[#64748B]">{language === "en" ? "No assets recorded yet." : "Belum ada aset yang dicatat."}</div>}
+          {stocks.length + cryptos.length === 0 && <div className="p-10 text-center text-xs text-[#64748B]">{i18n.emptyHoldingsTitle}</div>}
         </section>
       )}
 
       {tab === "activity" && (
         <section className="rounded-2xl border border-[#E5E7EB] bg-white shadow-2xs dark:border-[#27272A] dark:bg-[#121215]">
-          <div className="border-b border-[#E5E7EB] px-4 py-3 dark:border-[#27272A]"><h2 className="text-sm font-bold">{language === "en" ? "Transaction history" : "Riwayat transaksi"}</h2><p className="text-[11px] text-[#64748B]">{language === "en" ? "Review, correct, or remove records when needed." : "Cek, koreksi, atau hapus pencatatan saat diperlukan."}</p></div>
+          <div className="border-b border-[#E5E7EB] px-4 py-3 dark:border-[#27272A]"><h2 className="text-sm font-bold">{i18n.tradesTitle}</h2><p className="text-[11px] text-[#64748B]">{i18n.emptyTradesDesc}</p></div>
           <div className="divide-y divide-[#E5E7EB] dark:divide-[#27272A]">
             {activities.map((activity) => {
               const isStock = "ticker" in activity;
@@ -342,54 +413,204 @@ export function PortfolioInvestmentView({
                   : cryptoI18n.sell;
               const realizedTradePnl = Number(activity.realized_pnl) || 0;
               const hasRealizedPnl = activity.type === "sell";
-              return <div key={activity.id} className="flex items-center justify-between gap-3 px-4 py-3 sm:px-5"><div className="flex min-w-0 items-center gap-2.5"><div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg", activity.type === "buy" ? "bg-rose-50 text-rose-600" : "bg-emerald-50 text-emerald-600")}>{activity.type === "buy" ? <ArrowDownRight className="h-4 w-4" /> : <ArrowUpRight className="h-4 w-4" />}</div><div className="min-w-0"><p className="truncate text-xs font-bold">{isStock ? (activity as EnrichedStockTrade).ticker : (activity as EnrichedCryptoTrade).symbol} · {actionLabel}</p><p className="text-[10px] text-[#64748B]">{new Date(activity.trade_date).toLocaleDateString(language === "en" ? "en-US" : "id-ID")} · {activity.account?.name || "Investment account"}</p>{hasRealizedPnl ? <p className={cn("text-[10px] font-bold", realizedTradePnl >= 0 ? "text-emerald-600" : "text-rose-600")}>{language === "en" ? "P&L" : "P&L"}: {realizedTradePnl >= 0 ? "+" : ""}{formatCurrency(realizedTradePnl, activity.account?.currency || "IDR")}</p> : <p className="text-[10px] text-[#94A3B8]">{language === "en" ? "P&L not realized" : "P&L belum terealisasi"}</p>}</div></div><div className="flex items-center gap-1.5"><span className="hidden font-mono text-xs font-bold sm:block">{formatCurrency(Number(isStock ? (activity as EnrichedStockTrade).net_amount : (activity as EnrichedCryptoTrade).gross_amount), activity.account?.currency || "IDR")}</span>{isStock && <><button type="button" onClick={() => { const trade = activity as EnrichedStockTrade; setSelectedId(trade.id); setTicker(trade.ticker); setLots(String(trade.lots || 1)); setAmount(String(trade.net_amount)); setDate(trade.trade_date.slice(0, 10)); setNotes(trade.notes || ""); setAssetKind("stock"); setModal("edit"); }} className="rounded-lg p-1.5 text-[#94A3B8] hover:bg-slate-100 hover:text-slate-900"><Edit2 className="h-3.5 w-3.5" /></button><button type="button" onClick={() => handleDelete(activity as EnrichedStockTrade)} className="rounded-lg p-1.5 text-[#94A3B8] hover:bg-rose-50 hover:text-rose-600"><Trash2 className="h-3.5 w-3.5" /></button></>}</div></div>;
+              return <div key={activity.id} className="flex items-center justify-between gap-3 px-4 py-3 sm:px-5"><div className="flex min-w-0 items-center gap-2.5"><div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg", activity.type === "buy" ? "bg-rose-50 text-rose-600" : "bg-emerald-50 text-emerald-600")}>{activity.type === "buy" ? <ArrowDownRight className="h-4 w-4" /> : <ArrowUpRight className="h-4 w-4" />}</div><div className="min-w-0"><p className="truncate text-xs font-bold">{isStock ? (activity as EnrichedStockTrade).ticker : (activity as EnrichedCryptoTrade).symbol} · {actionLabel}</p><p className="text-[10px] text-[#64748B]">{new Date(activity.trade_date).toLocaleDateString(language === "en" ? "en-US" : "id-ID")} · {activity.account?.name || "Investment account"}</p>{hasRealizedPnl ? <p className={cn("text-[10px] font-bold", realizedTradePnl >= 0 ? "text-emerald-600" : "text-rose-600")}>{language === "en" ? "P&L" : "P&L"}: {realizedTradePnl >= 0 ? "+" : ""}{formatCurrency(realizedTradePnl, activity.account?.currency || "IDR")}</p> : <p className="text-[10px] text-[#94A3B8]">{language === "en" ? "P&L not realized" : "P&L belum terealisasi"}</p>}</div></div><div className="flex items-center gap-1.5"><span className="hidden font-mono text-xs font-bold sm:block">{formatCurrency(Number(isStock ? (activity as EnrichedStockTrade).net_amount : (activity as EnrichedCryptoTrade).gross_amount), activity.account?.currency || "IDR")}</span><button type="button" onClick={() => { if (isStock) { const trade = activity as EnrichedStockTrade; setTicker(trade.ticker); setLots(String(trade.lots || 1)); setAmount(String(trade.net_amount)); setDate(trade.trade_date.slice(0, 10)); setNotes(trade.notes || ""); setAssetKind("stock"); } else { const trade = activity as EnrichedCryptoTrade; setSymbol(trade.symbol); setQuantity(String(trade.quantity)); setAmount(String(trade.gross_amount)); setPrice(String(trade.price_per_unit)); setFee(String(trade.fee_amount || 0)); setDate(trade.trade_date.slice(0, 10)); setNotes(trade.notes || ""); setAssetKind("crypto"); } setSelectedId(activity.id); setEditTradeType(activity.type); setModal("edit"); }} className="rounded-lg p-1.5 text-[#94A3B8] hover:bg-slate-100 hover:text-slate-900"><Edit2 className="h-3.5 w-3.5" /></button><button type="button" onClick={() => isStock ? handleDelete(activity as EnrichedStockTrade) : handleDeleteCrypto(activity as EnrichedCryptoTrade)} className="rounded-lg p-1.5 text-[#94A3B8] hover:bg-rose-50 hover:text-rose-600"><Trash2 className="h-3.5 w-3.5" /></button></div></div>;
             })}
             {activities.length === 0 && <div className="p-10 text-center text-xs text-[#64748B]">{language === "en" ? "No transactions recorded yet." : "Belum ada riwayat transaksi."}</div>}
           </div>
         </section>
       )}
 
-      {tab === "fees" && <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Summary label={language === "en" ? "Total fees" : "Total biaya"} value={formatCurrency(totalRecordedFees, "IDR")} />
-        <Summary label={language === "en" ? "Stock stamp duty" : "Bea materai saham"} value={formatCurrency(stockTrades.reduce((sum, trade) => sum + Number(trade.stamp_duty || 0), 0), "IDR")} />
-        <Summary label={language === "en" ? "Crypto trading fees" : "Fee trading kripto"} value={formatCurrency(cryptoTrades.reduce((sum, trade) => sum + Number(trade.fee_amount || 0), 0), "IDR")} />
-        <Summary label={language === "en" ? "Transfer / withdrawal fees" : "Biaya transfer / withdrawal"} value={formatCurrency(transferFees, "IDR")} />
-      </section>}
+      {tab === "fees" && (
+        <section className="flex flex-col gap-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Summary label={i18n.feesTotal} value={formatCurrency(totalRecordedFees, "IDR")} />
+            <Summary label={i18n.feesStock} value={formatCurrency(stockTrades.reduce((sum, trade) => sum + Number(trade.stamp_duty || 0), 0), "IDR")} />
+            <Summary label={i18n.feesCrypto} value={formatCurrency(cryptoTrades.reduce((sum, trade) => sum + Number(trade.fee_amount || 0), 0), "IDR")} />
+            <Summary label={i18n.feesTransfer} value={formatCurrency(transferFees, "IDR")} />
+          </div>
+          <div className="overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white dark:border-[#27272A] dark:bg-[#121215]">
+            <div className="border-b border-[#E5E7EB] px-4 py-3 dark:border-[#27272A]">
+              <h2 className="text-sm font-bold">{i18n.feesDetailTitle}</h2>
+            </div>
+            {feeDetails.length > 0 ? (
+              <div className="divide-y divide-[#E5E7EB] dark:divide-[#27272A]">
+                {feeDetails.map((detail) => (
+                  <div key={detail.id} className="grid gap-2 px-4 py-3 sm:grid-cols-[110px_1fr_auto] sm:items-center">
+                    <span className="text-[11px] text-[#64748B]">
+                      {new Date(detail.date).toLocaleDateString(language === "en" ? "en-US" : "id-ID")}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-bold">{detail.type}</p>
+                      <p className="truncate text-[10px] text-[#64748B]">{detail.reference}</p>
+                    </div>
+                    <span className="font-mono text-xs font-bold text-rose-600">
+                      {formatCurrency(detail.amount, "IDR")}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="p-6 text-center text-xs text-[#64748B]">{i18n.feesEmpty}</p>
+            )}
+          </div>
+        </section>
+      )}
 
-      <Modal isOpen={modal !== null} onClose={closeModal} title={modal === "edit" ? i18n.modalEditTradeTitle : modal === "buy" ? (assetKind === "stock" ? i18n.modalBuyTitle : cryptoI18n.buyTitle) : assetKind === "stock" ? i18n.modalSellTitle : cryptoI18n.sellTitle}>
+      <Modal isOpen={modal !== null} onClose={closeModal} title={
+        modal === "edit"
+          ? assetKind === "crypto"
+            ? `${i18n.editCryptoTrade} · ${editTradeType === "buy" ? i18n.buy : i18n.sell}`
+            : i18n.modalEditTradeTitle
+          : modal === "buy"
+            ? (assetKind === "stock" ? i18n.modalBuyTitle : cryptoI18n.buyTitle)
+            : assetKind === "stock" ? i18n.modalSellTitle : cryptoI18n.sellTitle
+      }>
         <form onSubmit={submitTransaction} className="flex flex-col gap-3.5">
-          {modal !== "edit" && <div className="grid grid-cols-2 gap-2 rounded-xl bg-[#F8F9FA] p-1.5 dark:bg-[#1A1A20]">
-            <button type="button" onClick={() => setAssetKind("stock")} className={cn("rounded-lg px-3 py-2 text-xs font-bold", assetKind === "stock" ? "bg-white shadow-sm dark:bg-[#27272A]" : "text-[#64748B]")}>Saham</button>
-            <button type="button" onClick={() => setAssetKind("crypto")} className={cn("rounded-lg px-3 py-2 text-xs font-bold", assetKind === "crypto" ? "bg-white shadow-sm dark:bg-[#27272A]" : "text-[#64748B]")}>Kripto</button>
+          {modal !== "edit" && !selectedId && <div className="grid grid-cols-2 gap-2 rounded-xl bg-[#F8F9FA] p-1.5 dark:bg-[#1A1A20]">
+            <button type="button" onClick={() => setAssetKind("stock")} className={cn("rounded-lg px-3 py-2 text-xs font-bold", assetKind === "stock" ? "bg-white shadow-sm dark:bg-[#27272A]" : "text-[#64748B]")}>{i18n.stock}</button>
+            <button type="button" onClick={() => setAssetKind("crypto")} className={cn("rounded-lg px-3 py-2 text-xs font-bold", assetKind === "crypto" ? "bg-white shadow-sm dark:bg-[#27272A]" : "text-[#64748B]")}>{i18n.cryptoAsset}</button>
           </div>}
-          <Select value={accountId} onValueChange={setAccountId}><SelectTrigger><SelectValue placeholder={language === "en" ? "Investment account" : "Akun investasi"} /></SelectTrigger><SelectContent>{investmentAccounts.map((account) => <SelectItem key={account.id} value={account.id}>{account.name} · {formatCurrency(account.current_balance, account.currency)}</SelectItem>)}</SelectContent></Select>
-          {assetKind === "stock" ? <><Input label={i18n.tickerLabel} value={ticker} onChange={(event) => setTicker(event.target.value.toUpperCase())} placeholder={i18n.tickerPlaceholder} required /><Input label={i18n.lotsLabel} type="number" step="any" min="0.01" value={lots} onChange={(event) => setLots(event.target.value)} required /><Input label={modal === "buy" ? i18n.netBuyAmountLabel : i18n.netSellAmountLabel} type="number" value={amount} onChange={(event) => setAmount(event.target.value)} required />{Number(amount) > 10_000_000 && <p className="rounded-xl bg-amber-50 p-3 text-xs text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">{i18n.stampDutyNotice}</p>}</> : <><Input label={cryptoI18n.symbol} value={symbol} onChange={(event) => setSymbol(event.target.value.toUpperCase())} required /><Input label={cryptoI18n.grossAmount} type="number" step="any" value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="Contoh: 5000000" required /><Input label={cryptoI18n.pricePerUnit} type="number" step="any" value={price} onChange={(event) => setPrice(event.target.value)} required />{modal === "buy" ? <p className="rounded-xl bg-emerald-50 p-3 font-mono text-sm font-bold text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200">{cryptoI18n.quantityCalculated}: {cryptoQuantity > 0 ? cryptoQuantity.toFixed(8) : "—"} {symbol}</p> : <Input label={cryptoI18n.quantity} type="number" step="any" value={quantity} onChange={(event) => setQuantity(event.target.value)} required />}<Input label={cryptoI18n.fee} type="number" step="any" value={fee} onChange={(event) => setFee(event.target.value)} placeholder="0" /></>}
-          <Input label={i18n.tradeDateLabel} type="date" value={date} onChange={(event) => setDate(event.target.value)} required />
+          {modal !== "edit" && selectedId && <div className="rounded-xl bg-emerald-50 p-2.5 text-[11px] font-bold text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200">{assetKind === "stock" ? (ticker || i18n.stock) : (symbol || "BTC")} · {modal === "buy" ? i18n.addPosition : i18n.sellPosition}</div>}
+          <Select value={accountId} onValueChange={setAccountId}><SelectTrigger><SelectValue placeholder={i18n.accountFallback} /></SelectTrigger><SelectContent>{investmentAccounts.map((account) => <SelectItem key={account.id} value={account.id}>{account.name} · {formatCurrency(account.current_balance, account.currency)}</SelectItem>)}</SelectContent></Select>
+          {assetKind === "stock" ? <>{selectedId ? <div className="rounded-xl border border-[#E5E7EB] px-3 py-2 text-xs font-bold dark:border-[#27272A]">{ticker}</div> : <Input label={i18n.tickerLabel} value={ticker} onChange={(event) => setTicker(event.target.value.toUpperCase())} placeholder={i18n.tickerPlaceholder} required />}<Input label={i18n.lotsLabel} type="number" step="any" min="0.01" max={modal === "sell" && selectedStock ? String(Number(selectedStock.lots) || Number(selectedStock.total_shares) / 100) : undefined} value={lots} onChange={(event) => setLots(event.target.value)} required />{modal === "buy" ? <Input label={i18n.netBuyAmountLabel} type="number" value={amount} onChange={(event) => setAmount(event.target.value)} required /> : <><Input label={language === "en" ? "Sell price per share" : "Harga jual per saham"} type="number" step="any" min="0.01" value={price} onChange={(event) => setPrice(event.target.value)} required /><CalculatedAmount label={language === "en" ? "Gross sale proceeds" : "Hasil jual bruto"} value={stockSellGrossAmount} /></>}{modal === "buy" && Number(amount) > 10_000_000 && <p className="rounded-xl bg-amber-50 p-3 text-xs text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">{i18n.stampDutyNotice}</p>}</> : <>{selectedId ? <div className="rounded-xl border border-[#E5E7EB] px-3 py-2 text-xs font-bold dark:border-[#27272A]">{symbol}</div> : <Input label={cryptoI18n.symbol} value={symbol} onChange={(event) => setSymbol(event.target.value.toUpperCase())} required />}{modal === "buy" || (modal === "edit" && editTradeType === "buy") ? <Input label={language === "en" ? "Gross buy amount" : "Nominal bruto pembelian"} type="number" step="any" value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="Contoh: 5000000" required /> : <Input label={`${cryptoI18n.quantity} (${symbol})`} type="number" step="any" min="0.00000001" value={quantity} onChange={(event) => setQuantity(event.target.value)} required />}<Input label={`${language === "en" ? "Price per" : "Harga per"} ${symbol || "asset"} (${modal === "buy" || (modal === "edit" && editTradeType === "buy") ? (language === "en" ? "buy" : "beli") : (language === "en" ? "sell" : "jual")})`} type="number" step="any" min="0.01" value={price} onChange={(event) => setPrice(event.target.value)} required />{modal === "buy" || (modal === "edit" && editTradeType === "buy") ? <p className="rounded-xl bg-emerald-50 p-3 font-mono text-sm font-bold text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200">{language === "en" ? `Quantity ${symbol} calculated automatically` : `Jumlah ${symbol} dihitung otomatis`}: {cryptoQuantity > 0 ? cryptoQuantity.toFixed(18).replace(/\.?0+$/, "") : "—"} {symbol}</p> : <CalculatedAmount label={language === "en" ? "Gross sale proceeds (calculated)" : "Hasil jual bruto (dihitung otomatis)"} value={cryptoSellGrossAmount} />}<Input label={cryptoI18n.fee} type="number" step="any" min="0" value={fee} onChange={(event) => setFee(event.target.value)} placeholder="0" /></>}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+              {i18n.tradeDateLabel}
+            </label>
+            <DatePicker value={date} onChange={setDate} clearable={false} />
+          </div>
           <Input label={i18n.notesLabel} value={notes} onChange={(event) => setNotes(event.target.value)} placeholder={i18n.notesPlaceholder} />
           <Button type="submit" disabled={busy}>{busy ? i18n.saving : modal === "edit" ? i18n.updateTradeBtn : i18n.saveSuccess}</Button>
         </form>
       </Modal>
+      <ConfirmDialog
+        isOpen={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeleting}
+        title={language === "en" ? "Delete investment transaction" : "Hapus transaksi investasi"}
+        message={
+          language === "en"
+            ? "This will delete the record and recalculate the related balance and holding. Continue?"
+            : "Catatan ini akan dihapus dan saldo serta kepemilikan terkait akan dihitung ulang. Lanjutkan?"
+        }
+      />
     </div>
   );
+}
+
+function CalculatedAmount({ label, value }: { label: string; value: number }) {
+ return (
+   <div className="rounded-xl bg-emerald-50 p-3 dark:bg-emerald-950/30">
+     <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
+       {label}
+     </p>
+     <p className="mt-1 font-mono text-sm font-bold text-emerald-800 dark:text-emerald-200">
+       {value > 0 ? formatCurrency(value, "IDR") : "—"}
+     </p>
+   </div>
+ );
+}
+
+function formatCryptoQuantity(value: number | string): string {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) return "—";
+  return numericValue.toFixed(8).replace(/\.?0+$/, "");
 }
 
 function Summary({ label, value, tone = "neutral" }: { label: string; value: string; tone?: "neutral" | "positive" | "negative" }) {
   return <div className="rounded-xl border border-[#E5E7EB] bg-[#F8F9FA] p-3.5 dark:border-[#27272A] dark:bg-[#1A1A20]"><p className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">{label}</p><p title={value} className={cn("mt-1 break-all font-mono text-sm leading-tight font-black sm:text-base", tone === "positive" ? "text-emerald-600" : tone === "negative" ? "text-rose-600" : "text-[#0F172A] dark:text-[#F8FAFC]")}>{value}</p></div>;
 }
 
-function StockRow({ holding, onBuy, onSell }: { holding: EnrichedStockHolding; onBuy: () => void; onSell: () => void }) {
+function StockCard({ holding, onBuy, onSell }: { holding: EnrichedStockHolding; onBuy: () => void; onSell: () => void }) {
+  const { t } = useLanguage();
+  const i18n = t.investments;
   const lots = Number(holding.lots) || Number(holding.total_shares) / 100;
-  return <tr><td className="px-5 py-3"><p className="font-bold">{holding.ticker}</p><p className="text-[10px] text-[#64748B]">{holding.account?.name || "RDN"} · Saham</p></td><td className="px-3 py-3 font-mono">{lots} lot</td><td className="px-3 py-3 text-right font-mono">{formatCurrency(Number(holding.total_cost), holding.account?.currency)}</td><td className="px-3 py-3 text-right font-mono">{formatCurrency(Number(holding.total_cost), holding.account?.currency)}</td><td className="px-5 py-3 text-right"><span className="inline-flex gap-1.5">{<button type="button" onClick={onBuy} className="rounded-lg p-1.5 text-indigo-600 hover:bg-indigo-50"><Plus className="h-3.5 w-3.5" /></button>}<button type="button" onClick={onSell} className="rounded-lg p-1.5 text-emerald-600 hover:bg-emerald-50"><ArrowUpRight className="h-3.5 w-3.5" /></button></span></td></tr>;
+  return <div className="overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white dark:border-[#27272A] dark:bg-[#121215]">
+    <div className="flex items-center justify-between gap-3 bg-indigo-100 px-5 py-4 dark:bg-indigo-950/40">
+      <div className="flex min-w-0 items-center gap-3">
+        <AssetLogo kind="stock" symbol={holding.ticker} />
+        <div className="min-w-0">
+          <p className="font-black">{holding.ticker}</p>
+          <p className="truncate text-[10px] text-indigo-800/70 dark:text-indigo-200/70">{i18n.stock}</p>
+        </div>
+      </div>
+      <span className="truncate text-right text-xs font-medium text-indigo-900 dark:text-indigo-100">{holding.account?.name || "RDN"}</span>
+    </div>
+    <div className="p-5">
+      <div className="grid grid-cols-2 gap-3">
+        <AssetMetric label={i18n.quantityLabel} value={`${lots} lot`} />
+        <AssetMetric label={i18n.capitalLabel} value={formatCurrency(Number(holding.total_cost), holding.account?.currency)} />
+      </div>
+    <AssetActions onBuy={onBuy} onSell={onSell} />
+    </div>
+  </div>;
 }
 
-function CryptoRow({ holding, onBuy, onSell }: { holding: EnrichedCryptoHolding; onBuy: () => void; onSell: () => void }) {
-  return <tr><td className="px-5 py-3"><p className="font-bold">{holding.symbol}</p><p className="text-[10px] text-[#64748B]">{holding.account?.name || "Investment"} · Kripto</p></td><td className="px-3 py-3 font-mono">{Number(holding.quantity).toFixed(8)} {holding.symbol}</td><td className="px-3 py-3 text-right font-mono">{formatCurrency(Number(holding.cost_basis), holding.price_currency)}</td><td className="px-3 py-3 text-right font-mono">{formatCurrency(Number(holding.quantity) * Number(holding.manual_price), holding.price_currency)}</td><td className="px-5 py-3 text-right"><span className="inline-flex gap-1.5"><button type="button" onClick={onBuy} className="rounded-lg p-1.5 text-indigo-600 hover:bg-indigo-50"><Plus className="h-3.5 w-3.5" /></button><button type="button" onClick={onSell} className="rounded-lg p-1.5 text-emerald-600 hover:bg-emerald-50"><ArrowUpRight className="h-3.5 w-3.5" /></button></span></td></tr>;
+function CryptoCard({ holding, onBuy, onSell }: { holding: EnrichedCryptoHolding; onBuy: () => void; onSell: () => void }) {
+  const { t } = useLanguage();
+  const i18n = t.investments;
+  return <div className="overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white dark:border-[#27272A] dark:bg-[#121215]">
+    <div className="flex items-center justify-between gap-3 bg-[#F9DFA6] px-5 py-4 dark:bg-[#5A431D]">
+      <div className="flex min-w-0 items-center gap-3">
+        <AssetLogo kind="crypto" symbol={holding.symbol} />
+        <div className="min-w-0">
+          <p className="font-black">{holding.symbol}</p>
+          <p className="truncate text-[10px] text-[#704500]/75 dark:text-[#FFE9B0]/75">{i18n.cryptoAsset}</p>
+        </div>
+      </div>
+      <span className="truncate text-right text-xs font-medium text-[#704500] dark:text-[#FFE9B0]">{holding.account?.name || i18n.accountFallback}</span>
+    </div>
+    <div className="p-5">
+      <div className="grid grid-cols-2 gap-3">
+        <AssetMetric label={i18n.quantityLabel} value={`${formatCryptoQuantity(holding.quantity)} ${holding.symbol}`} valueClassName="break-all" />
+        <AssetMetric label={i18n.capitalLabel} value={formatCurrency(Number(holding.cost_basis), holding.price_currency)} />
+      </div>
+    <AssetActions onBuy={onBuy} onSell={onSell} />
+    </div>
+  </div>;
 }
 
-function MobileStockCard({ holding, onBuy, onSell }: { holding: EnrichedStockHolding; onBuy: () => void; onSell: () => void }) {
-  return <div className="rounded-xl border border-[#E5E7EB] p-3 dark:border-[#27272A]"><div className="flex items-center justify-between"><div><p className="font-bold">{holding.ticker}</p><p className="text-[10px] text-[#64748B]">Saham · {Number(holding.lots) || Number(holding.total_shares) / 100} lot</p></div><p className="font-mono text-xs font-bold">{formatCurrency(Number(holding.total_cost), holding.account?.currency)}</p></div><div className="mt-2 flex gap-2">{<Button size="sm" variant="outline" onClick={onBuy} className="h-7 text-[11px]"><Plus className="mr-1 h-3 w-3" /> Beli</Button>}<Button size="sm" variant="outline" onClick={onSell} className="h-7 text-[11px]"><ArrowUpRight className="mr-1 h-3 w-3" /> Jual</Button></div></div>;
+function AssetLogo({ kind, symbol }: { kind: "stock" | "crypto"; symbol: string }) {
+  const [hasError, setHasError] = useState(false);
+  const normalizedSymbol = symbol.trim().toLowerCase();
+  const publishableKey = process.env.NEXT_PUBLIC_LOGO_DEV_PUBLISHABLE_KEY;
+  const identifier = kind === "stock"
+    ? `${normalizedSymbol}.jk`
+    : normalizedSymbol;
+  const logoUrl = publishableKey
+    ? `https://img.logo.dev/${kind === "stock" ? "ticker" : "crypto"}/${encodeURIComponent(identifier)}?token=${encodeURIComponent(publishableKey)}`
+    : null;
+
+  return (
+    <div className={cn(
+      "flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/80 shadow-sm",
+      kind === "stock"
+        ? "text-indigo-700 dark:bg-indigo-100 dark:text-indigo-800"
+        : "text-orange-700 dark:bg-orange-100 dark:text-orange-800",
+    )}>
+      {!hasError && logoUrl ? (
+        <img
+          src={logoUrl}
+          alt=""
+          className="h-full w-full object-cover"
+          onError={() => setHasError(true)}
+        />
+      ) : (
+        <Coins className="h-5 w-5" />
+      )}
+    </div>
+  );
 }
 
-function MobileCryptoCard({ holding, onBuy, onSell }: { holding: EnrichedCryptoHolding; onBuy: () => void; onSell: () => void }) {
-  return <div className="rounded-xl border border-[#E5E7EB] p-3 dark:border-[#27272A]"><div className="flex items-center justify-between"><div><p className="font-bold">{holding.symbol}</p><p className="text-[10px] text-[#64748B]">Kripto · {Number(holding.quantity).toFixed(8)}</p></div><p className="font-mono text-xs font-bold">{formatCurrency(Number(holding.quantity) * Number(holding.manual_price), holding.price_currency)}</p></div><div className="mt-2 flex gap-2"><Button size="sm" variant="outline" onClick={onBuy} className="h-7 text-[11px]"><Plus className="mr-1 h-3 w-3" /> Beli</Button><Button size="sm" variant="outline" onClick={onSell} className="h-7 text-[11px]"><ArrowUpRight className="mr-1 h-3 w-3" /> Jual</Button></div></div>;
+function AssetMetric({ label, value, valueClassName = "" }: { label: string; value: string; valueClassName?: string }) {
+  return <div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">{label}</p><p className={cn("mt-1 font-mono text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]", valueClassName)}>{value}</p></div>;
+}
+
+function AssetActions({ onBuy, onSell }: { onBuy: () => void; onSell: () => void }) {
+  const { t } = useLanguage();
+  return <div className="mt-4 flex gap-2 border-t border-[#E5E7EB] pt-3 dark:border-[#27272A]">
+    <button type="button" onClick={onBuy} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[#D1D5DB] bg-white px-3 py-2 text-xs font-bold text-[#0F172A] hover:bg-[#F8F9FA] dark:border-[#3F3F46] dark:bg-[#121215] dark:text-[#F8FAFC] dark:hover:bg-[#1A1A20]"><Plus className="h-3.5 w-3.5" />{t.investments.buy}</button>
+    <button type="button" onClick={onSell} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[#D1D5DB] bg-white px-3 py-2 text-xs font-bold text-[#0F172A] hover:bg-[#F8F9FA] dark:border-[#3F3F46] dark:bg-[#121215] dark:text-[#F8FAFC] dark:hover:bg-[#1A1A20]"><ArrowUpRight className="h-3.5 w-3.5" />{t.investments.sell}</button>
+  </div>;
 }

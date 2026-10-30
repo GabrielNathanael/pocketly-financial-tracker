@@ -30,6 +30,7 @@ type ModuleFilter =
   | "transactions"
   | "transfers"
   | "stock_trades"
+  | "crypto_trades"
   | "recurring_transactions"
   | "savings_goals"
   | "savings_goal_deposits"
@@ -44,8 +45,6 @@ const BATCH_SIZE = 50;
 
 export function GlobalAuditLogView({ initialLogs }: GlobalAuditLogViewProps) {
   const { language, t } = useLanguage();
-  const isId = language === "id";
-
   const [moduleFilter, setModuleFilter] = useState<ModuleFilter>("all");
   const [actionFilter, setActionFilter] = useState<ActionFilter>("all");
   const [startDate, setStartDate] = useState("");
@@ -54,40 +53,32 @@ export function GlobalAuditLogView({ initialLogs }: GlobalAuditLogViewProps) {
   const [displayLimit, setDisplayLimit] = useState(BATCH_SIZE);
 
   const moduleOptions: Array<{ label: string; value: ModuleFilter }> = [
-    { label: isId ? "Semua Modul" : "All Modules", value: "all" },
-    { label: isId ? "Transaksi" : "Transactions", value: "transactions" },
-    { label: isId ? "Transfer" : "Transfers", value: "transfers" },
-    { label: isId ? "Investasi Saham" : "Stock Trades", value: "stock_trades" },
-    {
-      label: isId ? "Transaksi Rutin" : "Recurring Transactions",
-      value: "recurring_transactions",
-    },
-    {
-      label: isId ? "Target Tabungan" : "Savings Goals",
-      value: "savings_goals",
-    },
-    {
-      label: isId ? "Setoran Tabungan" : "Goal Deposits",
-      value: "savings_goal_deposits",
-    },
-    { label: isId ? "Hutang & Piutang" : "Debts & Loans", value: "debts" },
-    { label: isId ? "Cicilan" : "Payments", value: "debt_payments" },
-    { label: isId ? "Rekening" : "Accounts", value: "accounts" },
-    { label: isId ? "Kategori" : "Categories", value: "categories" },
-    { label: isId ? "Anggaran" : "Budgets", value: "budgets" },
+    { label: t.auditLog.modules.all, value: "all" },
+    { label: t.auditLog.modules.transactions, value: "transactions" },
+    { label: t.auditLog.modules.transfers, value: "transfers" },
+    { label: t.auditLog.modules.stockTrades, value: "stock_trades" },
+    { label: t.auditLog.modules.cryptoTrades, value: "crypto_trades" },
+    { label: t.auditLog.modules.recurringTransactions, value: "recurring_transactions" },
+    { label: t.auditLog.modules.savingsGoals, value: "savings_goals" },
+    { label: t.auditLog.modules.goalDeposits, value: "savings_goal_deposits" },
+    { label: t.auditLog.modules.debts, value: "debts" },
+    { label: t.auditLog.modules.debtPayments, value: "debt_payments" },
+    { label: t.auditLog.modules.accounts, value: "accounts" },
+    { label: t.auditLog.modules.categories, value: "categories" },
+    { label: t.auditLog.modules.budgets, value: "budgets" },
   ];
 
   const actionOptions: Array<{ label: string; value: ActionFilter }> = [
-    { label: isId ? "Semua Aksi" : "All Actions", value: "all" },
-    { label: isId ? "Dibuat (Baru)" : "Created", value: "INSERT" },
-    { label: isId ? "Diubah" : "Updated", value: "UPDATE" },
-    { label: isId ? "Dihapus" : "Deleted", value: "DELETE" },
+    { label: t.auditLog.actions.all, value: "all" },
+    { label: t.auditLog.actions.created, value: "INSERT" },
+    { label: t.auditLog.actions.updated, value: "UPDATE" },
+    { label: t.auditLog.actions.deleted, value: "DELETE" },
   ];
 
   const filteredLogs = useMemo(() => {
     return initialLogs.filter((log) => {
       // 0. Always hide stock_holdings — derived state, auto-synced by system
-      if (log.table_name === "stock_holdings") return false;
+      if (log.table_name === "stock_holdings" || log.table_name === "crypto_holdings") return false;
 
       // 1. Module filter
       if (moduleFilter !== "all") {
@@ -160,7 +151,7 @@ export function GlobalAuditLogView({ initialLogs }: GlobalAuditLogViewProps) {
           <span>{t.auditLog.backToSettings}</span>
         </Link>
         <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded bg-[#F1F3F5] dark:bg-[#1A1A20] text-[#64748B] dark:text-[#94A3B8] border border-[#E5E7EB] dark:border-[#27272A]">
-          {language === "en" ? "Activity Log" : "Riwayat Aktivitas"}
+          {t.auditLog.title}
         </span>
       </div>
 
@@ -205,7 +196,7 @@ export function GlobalAuditLogView({ initialLogs }: GlobalAuditLogViewProps) {
                 setStartDate(s);
                 setEndDate(e);
               }}
-              placeholder={isId ? "Rentang Tanggal" : "Date Range"}
+              placeholder={t.auditLog.dateRange}
             />
           </div>
         </div>
@@ -214,7 +205,7 @@ export function GlobalAuditLogView({ initialLogs }: GlobalAuditLogViewProps) {
         <div className="flex flex-col gap-1 pt-1 border-t border-[#E5E7EB] dark:border-[#27272A]">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
-              {isId ? "Modul / Fitur" : "Module / Feature"}
+              {t.auditLog.moduleLabel}
             </span>
             {hasActiveFilters && (
               <button
@@ -223,7 +214,7 @@ export function GlobalAuditLogView({ initialLogs }: GlobalAuditLogViewProps) {
                 className="text-xs text-[#E11D48] hover:underline flex items-center gap-1 cursor-pointer font-semibold"
               >
                 <X className="w-3.5 h-3.5" />
-                <span>{isId ? "Reset Filter" : "Reset Filters"}</span>
+                <span>{t.auditLog.resetFilters}</span>
               </button>
             )}
           </div>
