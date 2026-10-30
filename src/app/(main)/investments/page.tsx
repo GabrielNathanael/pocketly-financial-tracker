@@ -5,6 +5,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { getAccounts } from '@/actions/accounts'
 import { getInvestmentHoldings, getInvestmentTradesHistory } from '@/actions/investments'
 import { getCryptoHoldings, getCryptoTrades } from '@/actions/crypto'
+import { getTransfers } from '@/actions/transfers'
 import { PortfolioInvestmentView } from '@/components/investments/portfolio-investment-view'
 
 export const dynamic = 'force-dynamic'
@@ -24,12 +25,13 @@ export default async function InvestmentsPage() {
     redirect('/login')
   }
 
-  const [accounts, holdings, trades, cryptoHoldings, cryptoTrades] = await Promise.all([
+  const [accounts, holdings, trades, cryptoHoldings, cryptoTrades, transfers] = await Promise.all([
     getAccounts(),
     getInvestmentHoldings(),
     getInvestmentTradesHistory(),
     getCryptoHoldings(),
     getCryptoTrades(),
+    getTransfers(),
   ])
 
   return (
@@ -39,6 +41,7 @@ export default async function InvestmentsPage() {
       cryptos={cryptoHoldings}
       cryptoTrades={cryptoTrades}
       accounts={accounts}
+      transfers={transfers}
     />
   )
 }

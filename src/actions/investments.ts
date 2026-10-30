@@ -454,7 +454,6 @@ export async function recordStockSell(input: {
   }
 
   const proportionalBuyCost = (lotsToSell / currentLots) * currentTotalCost;
-  const realizedPnl = netAmount - proportionalBuyCost;
   const sharesSold = Math.round(lotsToSell * 100);
   const sellPricePerShare = sharesSold > 0 ? netAmount / sharesSold : 0;
 
@@ -469,6 +468,7 @@ export async function recordStockSell(input: {
   if (stampDutyCharged === 0 && dailyVolume + netAmount > 10_000_000) {
     stampDutyToApply = 10_000;
   }
+  const realizedPnl = netAmount - stampDutyToApply - proportionalBuyCost;
 
   // 3. Credit RDN balance with net sell proceeds (minus stamp duty if triggered)
   const currentBal = Number(acc.current_balance) || 0;

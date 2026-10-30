@@ -8,6 +8,8 @@ import { formatCurrency } from "@/lib/utils/currency";
 
 export async function getTransfers(): Promise<EnrichedTransfer[]> {
   const supabase = await createServerSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase.from("transfers") as any)
     .select(
@@ -17,6 +19,7 @@ export async function getTransfers(): Promise<EnrichedTransfer[]> {
       to_account:accounts!transfers_to_account_id_fkey(*)
     `,
     )
+    .eq("user_id", user.id)
     .order("transfer_date", { ascending: false });
 
   if (error) {
@@ -61,12 +64,14 @@ export async function createTransfer(input: {
   )
     .select("id, name, currency, current_balance")
     .eq("id", input.fromAccountId)
+    .eq("user_id", user.id)
     .single();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: toAcc, error: toErr } = await (supabase.from("accounts") as any)
     .select("id, name, currency, current_balance")
     .eq("id", input.toAccountId)
+    .eq("user_id", user.id)
     .single();
 
   if (fromErr || !fromAcc || toErr || !toAcc) {
@@ -102,6 +107,9 @@ export async function createTransfer(input: {
       from_currency: fromCurrency,
       to_currency: toCurrency,
       exchange_rate_used: rate,
+      fee_amount: fee,
+      fee_mode: "added_to_source",
+      net_amount: input.amount * rate,
       description: input.description?.trim() || null,
       transfer_date: input.transferDate || new Date().toISOString(),
     })
@@ -150,6 +158,7 @@ export async function createTransfer(input: {
         user_id: user.id,
         account_id: input.fromAccountId,
         category_id: expCat.id,
+        transfer_id: data.id,
         type: "expense",
         amount: fee,
         currency: fromCurrency,
@@ -179,6 +188,8 @@ export async function createTransfer(input: {
 
 export async function deleteTransfer(id: string) {
   const supabase = await createServerSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
 
   // 1. Fetch Transfer before delete to check receiver balance
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -187,6 +198,7 @@ export async function deleteTransfer(id: string) {
   )
     .select("*, to_account:accounts!transfers_to_account_id_fkey(*)")
     .eq("id", id)
+    .eq("user_id", user.id)
     .single();
 
   if (tErr || !transfer) {
@@ -195,8 +207,10 @@ export async function deleteTransfer(id: string) {
 
   if (transfer.to_account) {
     const toBal = Number(transfer.to_account.current_balance) || 0;
-    const inAmount =
-      Number(transfer.amount) * (Number(transfer.exchange_rate_used) || 1);
+    const inAmount = Number(
+      transfer.net_amount ??
+        Number(transfer.amount) * (Number(transfer.exchange_rate_used) || 1),
+    );
     if (toBal - inAmount < 0) {
       return {
         error: `Gagal membatalkan transfer: Saldo akun penerima (${transfer.to_account.name}) saat ini tidak mencukupi untuk menarik kembali dana sebesar ${formatCurrency(inAmount, transfer.to_currency)}.`,
@@ -204,7 +218,11 @@ export async function deleteTransfer(id: string) {
     }
   }
 
-  const { error } = await supabase.from("transfers").delete().eq("id", id);
+  const { error } = await supabase
+    .from("transfers")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id);
 
   if (error) {
     return { error: error.message };

@@ -355,38 +355,23 @@ export async function createFloqWithdrawal(input: {
   if (from.currency !== to.currency) return { error: "Withdrawal Floq saat ini harus menggunakan mata uang yang sama" };
   if (Number(from.current_balance) < grossAmount) return { error: "Saldo Floq tidak mencukupi" };
 
-  const netAmount = grossAmount - feeAmount;
+  const netAmount = grossAmount;
   const transferDate = input.transferDate || new Date().toISOString();
-  const { error: transferError } = await supabase.from("transfers").insert({
+  const { data: transfer, error: transferError } = await supabase.from("transfers").insert({
     user_id: user.id,
     from_account_id: from.id,
     to_account_id: to.id,
     amount: grossAmount,
     from_currency: from.currency,
     to_currency: to.currency,
-    exchange_rate_used: netAmount / grossAmount,
+    exchange_rate_used: 1,
     fee_amount: feeAmount,
-    fee_mode: "deducted_from_amount",
+    fee_mode: "added_to_source",
     net_amount: netAmount,
     description: input.description?.trim() || "Penarikan saldo Floq",
     transfer_date: transferDate,
-  });
+  }).select("id").single();
   if (transferError) return { error: transferError.message };
-
-  const { error: fromBalanceError } = await supabase
-    .from("accounts")
-    .update({ current_balance: Number(from.current_balance) - grossAmount })
-    .eq("id", from.id)
-    .eq("user_id", user.id);
-  const { error: toBalanceError } = await supabase
-    .from("accounts")
-    .update({ current_balance: Number(to.current_balance) + netAmount })
-    .eq("id", to.id)
-    .eq("user_id", user.id);
-  if (fromBalanceError || toBalanceError) {
-    console.error("Failed to update balances for Floq withdrawal:", fromBalanceError || toBalanceError);
-    return { error: "Withdrawal tersimpan tetapi saldo akun gagal diperbarui. Periksa dan sesuaikan saldo akun." };
-  }
 
   if (feeAmount > 0) {
     const category = await getCryptoFeeCategory(supabase, user.id);
@@ -395,6 +380,7 @@ export async function createFloqWithdrawal(input: {
         user_id: user.id,
         account_id: from.id,
         category_id: category.id,
+        transfer_id: transfer.id,
         type: "expense",
         amount: feeAmount,
         currency: from.currency,

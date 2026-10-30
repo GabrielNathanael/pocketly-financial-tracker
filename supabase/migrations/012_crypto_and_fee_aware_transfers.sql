@@ -13,6 +13,11 @@ WHERE net_amount IS NULL;
 ALTER TABLE public.transfers
     ALTER COLUMN net_amount SET DEFAULT 0;
 
+ALTER TABLE public.transactions
+    ADD COLUMN IF NOT EXISTS transfer_id UUID REFERENCES public.transfers(id) ON DELETE CASCADE;
+
+CREATE INDEX IF NOT EXISTS idx_transactions_transfer ON public.transactions(transfer_id);
+
 CREATE TABLE IF NOT EXISTS public.crypto_holdings (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,

@@ -19,6 +19,7 @@ import {
   EnrichedCryptoTrade,
   EnrichedStockHolding,
   EnrichedStockTrade,
+  EnrichedTransfer,
 } from "@/types/database";
 import {
   recordStockBuy,
@@ -54,6 +55,7 @@ interface PortfolioInvestmentViewProps {
   cryptos: EnrichedCryptoHolding[];
   cryptoTrades: EnrichedCryptoTrade[];
   accounts: Account[];
+  transfers: EnrichedTransfer[];
 }
 
 export function PortfolioInvestmentView({
@@ -62,6 +64,7 @@ export function PortfolioInvestmentView({
   cryptos,
   cryptoTrades,
   accounts,
+  transfers,
 }: PortfolioInvestmentViewProps) {
   const { t, language } = useLanguage();
   const router = useRouter();
@@ -110,6 +113,11 @@ export function PortfolioInvestmentView({
     (total, trade) => total + (Number(trade.fee_amount) || 0),
     0,
   );
+  const transferFees = transfers.reduce(
+    (total, transfer) => total + (Number(transfer.fee_amount) || 0),
+    0,
+  );
+  const totalRecordedFees = totalFees + transferFees;
   const activities = useMemo<Activity[]>(
     () =>
       [...stockTrades, ...cryptoTrades].sort(
@@ -276,7 +284,7 @@ export function PortfolioInvestmentView({
           <Summary label={i18n.totalPortfolio} value={formatCurrency(stockValue + cryptoValue + cashValue, "IDR")} />
           <Summary label={i18n.totalInvested} value={formatCurrency(stockValue + cryptoCost, "IDR")} />
           <Summary label={i18n.netPnl} value={`${realizedPnl >= 0 ? "+" : ""}${formatCurrency(realizedPnl, "IDR")}`} tone={realizedPnl >= 0 ? "positive" : "negative"} />
-          <Summary label={language === "en" ? "Investment costs" : "Biaya investasi"} value={formatCurrency(totalFees, "IDR")} />
+          <Summary label={language === "en" ? "Total fees" : "Total biaya"} value={formatCurrency(totalRecordedFees, "IDR")} />
         </div>
       </section>
 
@@ -332,14 +340,21 @@ export function PortfolioInvestmentView({
                 : activity.type === "buy"
                   ? cryptoI18n.buy
                   : cryptoI18n.sell;
-              return <div key={activity.id} className="flex items-center justify-between gap-3 px-4 py-3 sm:px-5"><div className="flex min-w-0 items-center gap-2.5"><div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg", activity.type === "buy" ? "bg-rose-50 text-rose-600" : "bg-emerald-50 text-emerald-600")}>{activity.type === "buy" ? <ArrowDownRight className="h-4 w-4" /> : <ArrowUpRight className="h-4 w-4" />}</div><div className="min-w-0"><p className="truncate text-xs font-bold">{isStock ? activity.ticker : activity.symbol} · {actionLabel}</p><p className="text-[10px] text-[#64748B]">{new Date(activity.trade_date).toLocaleDateString(language === "en" ? "en-US" : "id-ID")} · {activity.account?.name || "Investment account"}</p></div></div><div className="flex items-center gap-1.5"><span className="hidden font-mono text-xs font-bold sm:block">{formatCurrency(Number(isStock ? activity.net_amount : activity.gross_amount), activity.account?.currency || "IDR")}</span>{isStock && <><button type="button" onClick={() => { const trade = activity as EnrichedStockTrade; setSelectedId(trade.id); setTicker(trade.ticker); setLots(String(trade.lots || 1)); setAmount(String(trade.net_amount)); setDate(trade.trade_date.slice(0, 10)); setNotes(trade.notes || ""); setAssetKind("stock"); setModal("edit"); }} className="rounded-lg p-1.5 text-[#94A3B8] hover:bg-slate-100 hover:text-slate-900"><Edit2 className="h-3.5 w-3.5" /></button><button type="button" onClick={() => handleDelete(activity as EnrichedStockTrade)} className="rounded-lg p-1.5 text-[#94A3B8] hover:bg-rose-50 hover:text-rose-600"><Trash2 className="h-3.5 w-3.5" /></button></>}</div></div>;
+              const realizedTradePnl = Number(activity.realized_pnl) || 0;
+              const hasRealizedPnl = activity.type === "sell";
+              return <div key={activity.id} className="flex items-center justify-between gap-3 px-4 py-3 sm:px-5"><div className="flex min-w-0 items-center gap-2.5"><div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg", activity.type === "buy" ? "bg-rose-50 text-rose-600" : "bg-emerald-50 text-emerald-600")}>{activity.type === "buy" ? <ArrowDownRight className="h-4 w-4" /> : <ArrowUpRight className="h-4 w-4" />}</div><div className="min-w-0"><p className="truncate text-xs font-bold">{isStock ? (activity as EnrichedStockTrade).ticker : (activity as EnrichedCryptoTrade).symbol} · {actionLabel}</p><p className="text-[10px] text-[#64748B]">{new Date(activity.trade_date).toLocaleDateString(language === "en" ? "en-US" : "id-ID")} · {activity.account?.name || "Investment account"}</p>{hasRealizedPnl ? <p className={cn("text-[10px] font-bold", realizedTradePnl >= 0 ? "text-emerald-600" : "text-rose-600")}>{language === "en" ? "P&L" : "P&L"}: {realizedTradePnl >= 0 ? "+" : ""}{formatCurrency(realizedTradePnl, activity.account?.currency || "IDR")}</p> : <p className="text-[10px] text-[#94A3B8]">{language === "en" ? "P&L not realized" : "P&L belum terealisasi"}</p>}</div></div><div className="flex items-center gap-1.5"><span className="hidden font-mono text-xs font-bold sm:block">{formatCurrency(Number(isStock ? (activity as EnrichedStockTrade).net_amount : (activity as EnrichedCryptoTrade).gross_amount), activity.account?.currency || "IDR")}</span>{isStock && <><button type="button" onClick={() => { const trade = activity as EnrichedStockTrade; setSelectedId(trade.id); setTicker(trade.ticker); setLots(String(trade.lots || 1)); setAmount(String(trade.net_amount)); setDate(trade.trade_date.slice(0, 10)); setNotes(trade.notes || ""); setAssetKind("stock"); setModal("edit"); }} className="rounded-lg p-1.5 text-[#94A3B8] hover:bg-slate-100 hover:text-slate-900"><Edit2 className="h-3.5 w-3.5" /></button><button type="button" onClick={() => handleDelete(activity as EnrichedStockTrade)} className="rounded-lg p-1.5 text-[#94A3B8] hover:bg-rose-50 hover:text-rose-600"><Trash2 className="h-3.5 w-3.5" /></button></>}</div></div>;
             })}
             {activities.length === 0 && <div className="p-10 text-center text-xs text-[#64748B]">{language === "en" ? "No transactions recorded yet." : "Belum ada riwayat transaksi."}</div>}
           </div>
         </section>
       )}
 
-      {tab === "fees" && <section className="grid gap-3 sm:grid-cols-2"><Summary label={language === "en" ? "Total fees recorded" : "Total biaya tercatat"} value={formatCurrency(totalFees, "IDR")} /><Summary label={i18n.dailyStampDuty} value={formatCurrency(stockTrades.reduce((sum, trade) => sum + Number(trade.stamp_duty || 0), 0), "IDR")} /></section>}
+      {tab === "fees" && <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Summary label={language === "en" ? "Total fees" : "Total biaya"} value={formatCurrency(totalRecordedFees, "IDR")} />
+        <Summary label={language === "en" ? "Stock stamp duty" : "Bea materai saham"} value={formatCurrency(stockTrades.reduce((sum, trade) => sum + Number(trade.stamp_duty || 0), 0), "IDR")} />
+        <Summary label={language === "en" ? "Crypto trading fees" : "Fee trading kripto"} value={formatCurrency(cryptoTrades.reduce((sum, trade) => sum + Number(trade.fee_amount || 0), 0), "IDR")} />
+        <Summary label={language === "en" ? "Transfer / withdrawal fees" : "Biaya transfer / withdrawal"} value={formatCurrency(transferFees, "IDR")} />
+      </section>}
 
       <Modal isOpen={modal !== null} onClose={closeModal} title={modal === "edit" ? i18n.modalEditTradeTitle : modal === "buy" ? (assetKind === "stock" ? i18n.modalBuyTitle : cryptoI18n.buyTitle) : assetKind === "stock" ? i18n.modalSellTitle : cryptoI18n.sellTitle}>
         <form onSubmit={submitTransaction} className="flex flex-col gap-3.5">
