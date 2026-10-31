@@ -86,10 +86,6 @@ export function PinnedTransactionsWidget() {
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
-
-          <span className="text-[11px] text-[#64748B] dark:text-[#94A3B8]">
-            {t.dashboard.pinnedTapToLog}
-          </span>
         </div>
       </div>
 
