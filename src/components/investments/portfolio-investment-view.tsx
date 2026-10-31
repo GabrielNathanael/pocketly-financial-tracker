@@ -624,15 +624,21 @@ export function PortfolioInvestmentView({
     try {
       let result: { error?: string } = {};
       if (assetKind === "stock" && modal === "buy") {
-        result = await recordStockBuy({
-          accountId,
-          ticker,
-          lots: Number(lots),
-          netAmount: Number(amount),
-          notes: notes || null,
-          tradeDate: date,
-          language,
-        });
+        result = !accountId
+          ? {
+              error: isEn
+                ? "Select an account first"
+                : "Pilih akun terlebih dahulu",
+            }
+          : await recordStockBuy({
+              accountId,
+              ticker,
+              lots: Number(lots),
+              netAmount: Number(amount),
+              notes: notes || null,
+              tradeDate: date,
+              language,
+            });
       } else if (assetKind === "stock" && modal === "sell") {
         result = selectedStock
           ? await recordStockSell({
@@ -649,16 +655,22 @@ export function PortfolioInvestmentView({
                 : "Pilih saham terlebih dahulu",
             };
       } else if (assetKind === "crypto" && modal === "buy") {
-        result = await recordCryptoBuy({
-          accountId,
-          symbol,
-          quantity: cryptoQuantity,
-          grossAmount: Number(amount),
-          feeAmount: Number(fee || 0),
-          pricePerUnit: Number(price),
-          notes: notes || null,
-          tradeDate: date,
-        });
+        result = !accountId
+          ? {
+              error: isEn
+                ? "Select an account first"
+                : "Pilih akun terlebih dahulu",
+            }
+          : await recordCryptoBuy({
+              accountId,
+              symbol,
+              quantity: cryptoQuantity,
+              grossAmount: Number(amount),
+              feeAmount: Number(fee || 0),
+              pricePerUnit: Number(price),
+              notes: notes || null,
+              tradeDate: date,
+            });
       } else if (assetKind === "crypto" && modal === "sell") {
         result = selectedCrypto
           ? await recordCryptoSell({
@@ -1392,8 +1404,8 @@ export function PortfolioInvestmentView({
                         ))}
                       </Pie>
                       <Tooltip
-                        formatter={(value: number) =>
-                          formatCurrency(value, "IDR")
+                        formatter={(value) =>
+                          formatCurrency(Number(value ?? 0), "IDR")
                         }
                         contentStyle={{
                           fontSize: 11,
@@ -1468,8 +1480,8 @@ export function PortfolioInvestmentView({
                       width={40}
                     />
                     <Tooltip
-                      formatter={(value: number) => [
-                        `${value >= 0 ? "+" : ""}${formatCurrency(value, "IDR")}`,
+                      formatter={(value) => [
+                        `${Number(value ?? 0) >= 0 ? "+" : ""}${formatCurrency(Number(value ?? 0), "IDR")}`,
                         "P&L",
                       ]}
                       contentStyle={{
@@ -1531,16 +1543,19 @@ export function PortfolioInvestmentView({
                     }}
                   />
                   <Tooltip
-                    formatter={(value: number) => [
-                      `${value >= 0 ? "+" : ""}${formatCurrency(value, "IDR")}`,
+                    formatter={(value) => [
+                      `${Number(value ?? 0) >= 0 ? "+" : ""}${formatCurrency(Number(value ?? 0), "IDR")}`,
                       isEn ? "Cumulative P&L" : "P&L Kumulatif",
                     ]}
                     labelFormatter={(d) =>
-                      new Date(d).toLocaleDateString(isEn ? "en-US" : "id-ID", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      })
+                      new Date(String(d)).toLocaleDateString(
+                        isEn ? "en-US" : "id-ID",
+                        {
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                        },
+                      )
                     }
                     contentStyle={{
                       fontSize: 11,
@@ -1762,7 +1777,10 @@ export function PortfolioInvestmentView({
             </div>
           )}
 
-          <Select value={accountId} onValueChange={handleAccountChange}>
+          <Select
+            value={accountId ?? undefined}
+            onValueChange={handleAccountChange}
+          >
             <SelectTrigger>
               <SelectValue placeholder={i18n.accountFallback} />
             </SelectTrigger>

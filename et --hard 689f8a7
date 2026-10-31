@@ -1,0 +1,375 @@
+[33mcommit 0732feec177efebe9c9322d10060f53d9aad899c[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Sat Oct 31 17:04:34 2026 +0700
+
+    fix global audit
+
+[33mcommit 689f8a78337e3dc1e73c878d0a32499c556857d6[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Sat Oct 31 16:48:18 2026 +0700
+
+    fix audit global and fix skeleton loader in investment module
+
+[33mcommit 8552c325a83225d1bb623786a62493c88c19d5cd[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Sat Oct 31 11:37:44 2026 +0700
+
+    fix type error in investment module
+
+[33mcommit a2130894cf8e4c091848ac61756db2108db165be[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Sat Oct 31 10:20:27 2026 +0700
+
+    create adaptive header color for asset card
+
+[33mcommit a1f63779c5cabb4f60b475867f70928d1d833f17[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Sat Oct 31 09:45:02 2026 +0700
+
+    fix slider in form crypto
+
+[33mcommit 905f1ad6a395a20721500dcde374f9ca90d35d3d[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Sat Oct 31 09:32:07 2026 +0700
+
+    Add visual chart in report in investment module
+
+[33mcommit e214086ae90ea00b0da0161f6776c8bf6320c8d8[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Sat Oct 31 08:59:08 2026 +0700
+
+    add tooltip in total portfolio
+
+[33mcommit 69346c82ce469399d6381cc83c4197477e73207b[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Sat Oct 31 08:50:15 2026 +0700
+
+    fix edit stock transaction
+
+[33mcommit 11e1da2cbca5d3faf5e44a826eb95e6f172f6606[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Sat Oct 31 08:40:57 2026 +0700
+
+    fix crypto module pnl
+
+[33mcommit 400a048d078a717b6fe4b269dc32871a43a063a3[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Sat Oct 31 00:53:44 2026 +0700
+
+    refactor investment module, fix error on investment module
+
+[33mcommit 4e146a117de1d7b3bb7482e3816c5c87e5365d5d[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Fri Oct 30 23:02:39 2026 +0700
+
+    fix investment module, and refactor investment module ui
+
+[33mcommit 7ee831e39b80c030d1c03ed64685005a18518fb6[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Fri Oct 30 18:46:30 2026 +0700
+
+    fix investment module
+
+[33mcommit 1501f2d67c57d957129bc7f249f2d530164d5a78[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Fri Oct 30 16:52:10 2026 +0700
+
+    add crypto module in invest module
+
+[33mcommit ec6ba4ece931eaebb113f4f0472930e55b64bdc2[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Sun Oct 25 15:57:41 2026 +0700
+
+    restyle smart insight and fix perfomance bug
+
+[33mcommit fae63735ce3261a94ac9e6b212875997423720e1[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Sun Oct 25 15:44:26 2026 +0700
+
+    add smart insight in report page
+
+[33mcommit 172dabc1ac358673de8a7b68cc79699e5e58a2f8[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Sun Oct 25 15:23:45 2026 +0700
+
+    add exclude category in report page, and fix eslint
+
+[33mcommit c6343d50216fa555af40ea2893a43604906fc46e[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Wed Oct 7 17:45:00 2026 +0700
+
+    remove cron file
+
+[33mcommit e8a1c646ce6f0ed86037437206e328b7d4fd1102[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Wed Oct 7 17:38:08 2026 +0700
+
+    fix fetch rate
+
+[33mcommit 83032237c7af440a0df2c6d7d573d1f774bd1172[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Sun Oct 4 16:57:02 2026 +0700
+
+    fix export data and fix transfer fee creation
+
+[33mcommit 7ce9f83f7049a65a8218a5d6ffd9ec77e7094649[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Thu Sep 24 19:59:24 2026 +0700
+
+    fix type
+
+[33mcommit 9a3cbc9cf19545d8c127f60666fb83a2d7faf834[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Thu Sep 24 18:15:13 2026 +0700
+
+    refactor audit log
+
+[33mcommit 5c367ed311ad833c815e664ec5d75ae572365939[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Thu Sep 24 17:26:55 2026 +0700
+
+    fix default account from localstorage to db
+
+[33mcommit 6bed2af50353bf0ee97772ae6ece592d2ea81b9e[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Thu Sep 24 16:17:40 2026 +0700
+
+    refactor category and account select, refine description in reports, and refine ui in reports
+
+[33mcommit 5db3e51254a6f8594a0972ea8d2db8e076649583[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Wed Sep 16 19:38:37 2026 +0700
+
+    fix log
+
+[33mcommit 411886c3283a64d4df2d224cfe51f6f194207f16[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Wed Sep 16 19:23:32 2026 +0700
+
+    fix stamp duty
+
+[33mcommit e0fb8e0f1e2fbc1dc34ea528b72c40e040782c51[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Wed Sep 16 17:25:15 2026 +0700
+
+    fix export and filter date on export
+
+[33mcommit 4816f7a8c8d6c80bb6fe9f02776abc7f91740be7[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Tue Sep 8 10:16:56 2026 +0700
+
+    fix edit stock transaction
+
+[33mcommit 27418aa4f4b9f766e9dad0e0b4891b719871c6ec[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Tue Sep 8 10:11:55 2026 +0700
+
+    fix text
+
+[33mcommit 895f8418f442ea18ea7bf6b9feb05b750b8a8c15[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Tue Sep 8 08:39:34 2026 +0700
+
+    feat(investment) : add DCA workflow, add partial sell, refactor layout
+
+[33mcommit 834a774ff850961d7ae5531a6f34066b0a570f98[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Mon Sep 7 22:23:45 2026 +0700
+
+    fix currency format on edit transaction list and fix back on transaction detail
+
+[33mcommit 2fa21cfb1ac51c303ddd3fd44bf8ebe3281c6211[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Mon Aug 31 19:45:03 2026 +0700
+
+    add search for account and category on create and edit transaction, refactor layout transaction form
+
+[33mcommit 8433f41b2fc3538c76e9d479e9c45a809a34ae28[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Sat Aug 29 14:58:14 2026 +0700
+
+    fix error type
+
+[33mcommit c897de8ed3b696928ca7aa9cf592c78dfb685a2a[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Sat Aug 29 14:43:53 2026 +0700
+
+    fix date, fix report , and fix pinned template
+
+[33mcommit 322abb887dc79ab645191edf151a19b8cc390454[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Fri Aug 28 15:24:22 2026 +0700
+
+    fix timezone to locale date
+
+[33mcommit 3f55269fec431b069bf11274fd1c8032a87d4990[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Fri Aug 28 14:41:25 2026 +0700
+
+    fix quick add form, and fix debt modal
+
+[33mcommit eb595440a3a5c9ef445f734a308df7da530db2fa[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Fri Aug 28 11:37:33 2026 +0700
+
+    fix budget and add search icon on create category
+
+[33mcommit 9de9f752c9376e2680ca59e278527502c8eec26e[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Fri Aug 28 09:49:30 2026 +0700
+
+    fix analysis, fix debts, fix pinned transaction
+
+[33mcommit f850a0e918ce0a58ec3474e9d411f2c441d5dad6[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Thu Aug 27 19:45:18 2026 +0700
+
+    fix PWA, add drag handle on quick add, and change main menu in mobile
+
+[33mcommit a1852ab0eea225e9b63050c54ad356c739a89971[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Thu Aug 27 14:31:32 2026 +0700
+
+    fix if removing debts and goals will remove transactions, and fix log
+
+[33mcommit bd6d92f5dd3be5eea50482e92edb7517e37fb391[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Thu Aug 27 14:15:22 2026 +0700
+
+    fix guide
+
+[33mcommit c7b16eaff6ebbd295771a1250bf9be15077c764b[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Thu Aug 27 14:03:23 2026 +0700
+
+    fix demo, and fix form to use default account
+
+[33mcommit efe0dbb8cd234dd98b9af5410af86db604f04087[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Thu Aug 27 13:02:22 2026 +0700
+
+    refactor landing page
+
+[33mcommit facb37c09893e0e1d96b77be9dd7b0f0000d17ca[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Thu Aug 27 13:01:32 2026 +0700
+
+    fix debt feature, fix skeleton loader, refactor landing and user guide page
+
+[33mcommit 823ef6d1ee06a4497f68cdc9fd3c4aded4ad08d4[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Thu Aug 27 08:20:49 2026 +0700
+
+    fix bug on debts, transfer, guide, and change default language
+
+[33mcommit 8c7c45890aa70d0a95ddaafc65566bf3506f9622[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Wed Aug 26 22:56:58 2026 +0700
+
+    create demo account, create skeleton loader, refactor ui, refactor landing page, create vercel config
+
+[33mcommit bf896f89359a42519a7e8fe8f61987bada34d94e[m
+Merge: cd7fb6e 192ee05
+Author: Gabriel Nathanael Purba <gabriel@student.undiksha.ac.id>
+Date:   Wed Aug 26 17:42:22 2026 +0700
+
+    Merge pull request #1 from GabrielNathanael/vercel/install-vercel-web-analytics-w-ogt4zh
+    
+    Install Vercel Web Analytics with latest docs
+
+[33mcommit 192ee05a0c64470d60bca4c7b8c1eb9562c83e61[m[33m ([m[1;31morigin/vercel/install-vercel-web-analytics-w-ogt4zh[m[33m)[m
+Author: Vercel <vercel[bot]@users.noreply.github.com>
+Date:   Wed Aug 26 10:41:29 2026 +0000
+
+    Install Vercel Web Analytics with latest docs
+    
+    ## Vercel Web Analytics Configuration Update
+    
+    ### Summary
+    Updated Vercel Web Analytics implementation to use the latest recommended Next.js-specific import path as per official Vercel documentation.
+    
+    ### What Was Changed
+    
+    **Modified:**
+    - `src/app/layout.tsx` - Updated Analytics import to use framework-specific path
+    
+    ### Implementation Details
+    
+    The project already had `@vercel/analytics` v2.0.1 installed and the Analytics component was already added to the root layout. However, the import was using the generic React path (`@vercel/analytics/react`) instead of the Next.js-specific path.
+    
+    **Change made:**
+    ```typescript
+    // Before:
+    import { Analytics } from "@vercel/analytics/react";
+    
+    // After:
+    import { Analytics } from "@vercel/analytics/next";
+    ```
+    
+    ### Why This Change
+    
+    According to the latest Vercel Web Analytics Quickstart documentation (fetched from https://vercel.com/docs/analytics/quickstart), the recommended import for Next.js App Router projects is `@vercel/analytics/next` rather than the generic React import.
+    
+    Using the framework-specific import ensures:
+    - Optimal performance for Next.js applications
+    - Better integration with Next.js features
+    - Following current best practices
+    
+    ### Verification
+    
+    ✅ Dependencies installed successfully (npm install)
+    ✅ Build completed successfully (npm run build)
+    ✅ No linting errors introduced in layout.tsx
+    ✅ TypeScript compilation successful
+    ✅ All existing functionality preserved
+    
+    ### Additional Notes
+    
+    - The Analytics component is correctly positioned at the end of the `<body>` tag in the root layout
+    - The package `@vercel/analytics` was already at the latest version (2.0.1)
+    - No additional configuration files were needed
+    - The implementation follows Next.js App Router conventions
+    
+    ### Files Modified
+    - src/app/layout.tsx (1 line changed)
+    
+    ### Lock Files Updated
+    - package-lock.json (refreshed during npm install)
+    
+    Co-authored-by: Vercel <vercel[bot]@users.noreply.github.com>
+
+[33mcommit cd7fb6e14e1d1837dbcb944b1b5520eb8475605b[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Wed Aug 26 17:29:47 2026 +0700
+
+    feat: add vercel analytics
+
+[33mcommit 60d38de4d54fee64285a2f40b2fc174dd42baf13[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Wed Aug 26 17:25:54 2026 +0700
+
+    fix readme
+
+[33mcommit 92fa9932c71170b21cc29221b6b21fabdbde70b0[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Wed Aug 26 17:24:34 2026 +0700
+
+    pocketly v3
+
+[33mcommit 9bbd077b2eacc39ef9dd7ca1865c2d1c1407834c[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Tue Aug 25 18:47:00 2026 +0700
+
+    pocketly v2
+
+[33mcommit a0c5407c4ae1b56ede119bdf71f2ceecc3081e04[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Tue Aug 25 11:54:55 2026 +0700
+
+    pocketly v1
+
+[33mcommit 74526a326fd8f87f6943fe0ebee027d38b2d2b36[m
+Author: GabrielNathanael <gabriel@student.undiksha.ac.id>
+Date:   Mon Aug 24 19:24:05 2026 +0700
+
+    Initial commit from Create Next App
