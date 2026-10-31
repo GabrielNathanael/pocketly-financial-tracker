@@ -139,7 +139,7 @@ export function PortfolioInvestmentView({
   const [busy, setBusy] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Activity | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-
+  const [showCashBreakdown, setShowCashBreakdown] = useState(false);
   // Percentage slider state for crypto trading
   const [cryptoPercent, setCryptoPercent] = useState<number>(100);
 
@@ -688,13 +688,98 @@ export function PortfolioInvestmentView({
 
           {/* Equal-height (h-11) Metric Box & Action Button */}
           <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-2.5">
-            <div className="flex h-11 flex-col justify-center rounded-xl border border-[#E5E7EB] bg-[#F8F9FA] px-3 dark:border-[#27272A] dark:bg-[#1A1A20]">
-              <span className="text-[9px] font-bold uppercase tracking-wider text-[#94A3B8] leading-none">
-                {i18n.totalPortfolio}
-              </span>
-              <span className="mt-1 truncate font-mono text-xs font-black leading-none text-[#0F172A] dark:text-[#F8FAFC] sm:text-sm">
-                {formatCurrency(totalPortfolioValue, "IDR")}
-              </span>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowCashBreakdown((prev) => !prev)}
+                className="flex h-11 flex-col justify-center rounded-xl border border-[#E5E7EB] bg-[#F8F9FA] px-3 text-left transition-colors hover:bg-[#F1F3F5] dark:border-[#27272A] dark:bg-[#1A1A20] dark:hover:bg-[#222228]"
+              >
+                <span className="text-[9px] font-bold uppercase tracking-wider text-[#94A3B8] leading-none">
+                  {i18n.totalPortfolio}
+                </span>
+                <span className="mt-1 truncate font-mono text-xs font-black leading-none text-[#0F172A] dark:text-[#F8FAFC] sm:text-sm">
+                  {formatCurrency(totalPortfolioValue, "IDR")}
+                </span>
+              </button>
+
+              {showCashBreakdown && (
+                <>
+                  {/* Backdrop */}
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setShowCashBreakdown(false)}
+                  />
+
+                  {/* Popover */}
+                  <div className="absolute left-0 top-full z-20 mt-2 w-64 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-lg dark:border-[#27272A] dark:bg-[#121215]">
+                    {/* Kas per akun */}
+                    <div className="border-b border-[#E5E7EB] px-4 py-3 dark:border-[#27272A]">
+                      <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
+                        <Wallet className="h-3 w-3" />
+                        {isEn ? "Liquid Cash" : "Kas Liquid"}
+                      </div>
+                      <div className="mt-2 flex flex-col gap-1.5">
+                        {investmentAccounts.map((account) => (
+                          <div
+                            key={account.id}
+                            className="flex items-center justify-between gap-3"
+                          >
+                            <span className="truncate text-xs text-[#64748B] dark:text-[#94A3B8]">
+                              {account.name}
+                            </span>
+                            <span className="shrink-0 font-mono text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                              {formatCurrency(
+                                Number(account.current_balance),
+                                account.currency,
+                              )}
+                            </span>
+                          </div>
+                        ))}
+                        <div className="mt-1 flex items-center justify-between gap-3 border-t border-[#E5E7EB] pt-1.5 dark:border-[#27272A]">
+                          <span className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                            {isEn ? "Total Cash" : "Total Kas"}
+                          </span>
+                          <span className="font-mono text-xs font-black text-[#0F172A] dark:text-[#F8FAFC]">
+                            {formatCurrency(cashValue, "IDR")}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Saham & Kripto */}
+                    <div className="flex flex-col gap-1.5 px-4 py-3">
+                      <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
+                        <BarChart3 className="h-3 w-3" />
+                        {isEn ? "Investments" : "Investasi"}
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">
+                          {i18n.stock}
+                        </span>
+                        <span className="font-mono text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                          {formatCurrency(stockValue, "IDR")}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">
+                          {i18n.cryptoAsset}
+                        </span>
+                        <span className="font-mono text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                          {formatCurrency(cryptoValue, "IDR")}
+                        </span>
+                      </div>
+                      <div className="mt-1 flex items-center justify-between gap-3 border-t border-[#E5E7EB] pt-1.5 dark:border-[#27272A]">
+                        <span className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                          {i18n.totalPortfolio}
+                        </span>
+                        <span className="font-mono text-xs font-black text-[#0F172A] dark:text-[#F8FAFC]">
+                          {formatCurrency(totalPortfolioValue, "IDR")}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             <Button
