@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AuditLog } from "@/types/database";
 import { formatDate, getLocalDateString } from "@/lib/utils/date";
 import { humanizeAuditLog } from "@/lib/utils/audit-humanizer";
@@ -23,6 +24,8 @@ import { cn } from "@/lib/utils/cn";
 
 interface GlobalAuditLogViewProps {
   initialLogs: AuditLog[];
+  initialStart?: string;
+  initialEnd?: string;
 }
 
 type ModuleFilter =
@@ -43,14 +46,42 @@ type ActionFilter = "all" | "INSERT" | "UPDATE" | "DELETE";
 
 const BATCH_SIZE = 50;
 
-export function GlobalAuditLogView({ initialLogs }: GlobalAuditLogViewProps) {
+export function GlobalAuditLogView({
+  initialLogs,
+  initialStart,
+  initialEnd,
+}: GlobalAuditLogViewProps) {
   const { language, t } = useLanguage();
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+
   const [moduleFilter, setModuleFilter] = useState<ModuleFilter>("all");
   const [actionFilter, setActionFilter] = useState<ActionFilter>("all");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [startDate, setStartDateLocal] = useState(initialStart || "");
+  const [endDate, setEndDateLocal] = useState(initialEnd || "");
   const [search, setSearch] = useState("");
   const [displayLimit, setDisplayLimit] = useState(BATCH_SIZE);
+
+  const pushDateParams = (start: string, end: string) => {
+    const params = new URLSearchParams();
+    if (start) params.set("start", start);
+    if (end) params.set("end", end);
+    startTransition(() => {
+      router.push(`?${params.toString()}`);
+    });
+  };
+
+  const setStartDate = (val: string) => {
+    setStartDateLocal(val);
+    setDisplayLimit(BATCH_SIZE);
+    pushDateParams(val, endDate);
+  };
+
+  const setEndDate = (val: string) => {
+    setEndDateLocal(val);
+    setDisplayLimit(BATCH_SIZE);
+    pushDateParams(startDate, val);
+  };
 
   const moduleOptions: Array<{ label: string; value: ModuleFilter }> = [
     { label: t.auditLog.modules.all, value: "all" },
@@ -58,7 +89,10 @@ export function GlobalAuditLogView({ initialLogs }: GlobalAuditLogViewProps) {
     { label: t.auditLog.modules.transfers, value: "transfers" },
     { label: t.auditLog.modules.stockTrades, value: "stock_trades" },
     { label: t.auditLog.modules.cryptoTrades, value: "crypto_trades" },
-    { label: t.auditLog.modules.recurringTransactions, value: "recurring_transactions" },
+    {
+      label: t.auditLog.modules.recurringTransactions,
+      value: "recurring_transactions",
+    },
     { label: t.auditLog.modules.savingsGoals, value: "savings_goals" },
     { label: t.auditLog.modules.goalDeposits, value: "savings_goal_deposits" },
     { label: t.auditLog.modules.debts, value: "debts" },
@@ -77,8 +111,12 @@ export function GlobalAuditLogView({ initialLogs }: GlobalAuditLogViewProps) {
 
   const filteredLogs = useMemo(() => {
     return initialLogs.filter((log) => {
-      // 0. Always hide stock_holdings — derived state, auto-synced by system
-      if (log.table_name === "stock_holdings" || log.table_name === "crypto_holdings") return false;
+      // 0. Always hide stock_holdings & crypto_holdings — derived state
+      if (
+        log.table_name === "stock_holdings" ||
+        log.table_name === "crypto_holdings"
+      )
+        return false;
 
       // 1. Module filter
       if (moduleFilter !== "all") {
@@ -96,17 +134,7 @@ export function GlobalAuditLogView({ initialLogs }: GlobalAuditLogViewProps) {
       // 2. Action filter
       if (actionFilter !== "all" && log.action !== actionFilter) return false;
 
-      // 3. Date range filter
-      if (startDate) {
-        const logDate = getLocalDateString(log.changed_at);
-        if (logDate < startDate) return false;
-      }
-      if (endDate) {
-        const logDate = getLocalDateString(log.changed_at);
-        if (logDate > endDate) return false;
-      }
-
-      // 4. Search query
+      // 3. Search query (date filter sudah dihandle server via URL params)
       if (search.trim()) {
         const q = search.toLowerCase();
         const matchTable = log.table_name.toLowerCase().includes(q);
@@ -122,7 +150,7 @@ export function GlobalAuditLogView({ initialLogs }: GlobalAuditLogViewProps) {
 
       return true;
     });
-  }, [initialLogs, moduleFilter, actionFilter, startDate, endDate, search]);
+  }, [initialLogs, moduleFilter, actionFilter, search]);
 
   const hasActiveFilters =
     moduleFilter !== "all" ||
@@ -134,9 +162,13 @@ export function GlobalAuditLogView({ initialLogs }: GlobalAuditLogViewProps) {
   const handleResetFilters = () => {
     setModuleFilter("all");
     setActionFilter("all");
-    setStartDate("");
-    setEndDate("");
+    setStartDateLocal("");
+    setEndDateLocal("");
     setSearch("");
+    setDisplayLimit(BATCH_SIZE);
+    startTransition(() => {
+      router.push("?");
+    });
   };
 
   return (
@@ -171,7 +203,12 @@ export function GlobalAuditLogView({ initialLogs }: GlobalAuditLogViewProps) {
       </div>
 
       {/* Advanced Filter Panel */}
-      <div className="p-4 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-3">
+      <div
+        className={cn(
+          "p-4 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-3 transition-opacity",
+          isPending && "opacity-60 pointer-events-none",
+        )}
+      >
         {/* Row 1: Search & Date Range */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
           <div className="relative sm:col-span-2">
@@ -257,6 +294,13 @@ export function GlobalAuditLogView({ initialLogs }: GlobalAuditLogViewProps) {
           ))}
         </div>
       </div>
+
+      {/* Loading indicator */}
+      {isPending && (
+        <div className="text-center text-xs text-[#94A3B8] py-2 animate-pulse">
+          {language === "id" ? "Memuat data..." : "Loading..."}
+        </div>
+      )}
 
       {/* Logs Timeline List */}
       {filteredLogs.length === 0 ? (

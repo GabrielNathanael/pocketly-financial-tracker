@@ -135,21 +135,115 @@ export function humanizeAuditLog(
     if (log.action === "UPDATE") {
       const tradeChanges: Array<{ field: string; from?: string; to?: string }> =
         [];
-      if (oldVal.net_amount !== newVal.net_amount) {
+
+      if (oldVal.ticker !== newVal.ticker && (oldVal.ticker || newVal.ticker)) {
         tradeChanges.push({
-          field: isId ? "Nominal Transaksi" : "Net Amount",
-          from: formatCurrency(Number(oldVal.net_amount || 0), "IDR"),
-          to: formatCurrency(Number(newVal.net_amount || 0), "IDR"),
+          field: isId ? "Kode Saham" : "Ticker",
+          from: oldVal.ticker || "-",
+          to: newVal.ticker || "-",
         });
       }
-      if (oldVal.lots !== newVal.lots) {
+      if (oldVal.type !== newVal.type && (oldVal.type || newVal.type)) {
+        tradeChanges.push({
+          field: isId ? "Tipe Transaksi" : "Transaction Type",
+          from:
+            oldVal.type === "buy"
+              ? isId
+                ? "Beli Saham"
+                : "Buy Stock"
+              : isId
+                ? "Jual Saham"
+                : "Sell Stock",
+          to:
+            newVal.type === "buy"
+              ? isId
+                ? "Beli Saham"
+                : "Buy Stock"
+              : isId
+                ? "Jual Saham"
+                : "Sell Stock",
+        });
+      }
+      if (
+        oldVal.lots !== newVal.lots &&
+        (oldVal.lots !== undefined || newVal.lots !== undefined)
+      ) {
         tradeChanges.push({
           field: isId ? "Jumlah Lot" : "Lots",
           from: `${oldVal.lots || 0} Lot`,
           to: `${newVal.lots || 0} Lot`,
         });
       }
-      if (oldVal.notes !== newVal.notes) {
+      if (
+        oldVal.shares !== newVal.shares &&
+        (oldVal.shares !== undefined || newVal.shares !== undefined)
+      ) {
+        tradeChanges.push({
+          field: isId ? "Jumlah Lembar" : "Shares",
+          from: `${Number(oldVal.shares || 0).toLocaleString()} lbr`,
+          to: `${Number(newVal.shares || 0).toLocaleString()} lbr`,
+        });
+      }
+      if (
+        oldVal.price_per_share !== newVal.price_per_share &&
+        (oldVal.price_per_share !== undefined ||
+          newVal.price_per_share !== undefined)
+      ) {
+        tradeChanges.push({
+          field: isId ? "Harga per Lembar" : "Price / Share",
+          from: formatCurrency(Number(oldVal.price_per_share || 0), "IDR"),
+          to: formatCurrency(Number(newVal.price_per_share || 0), "IDR"),
+        });
+      }
+      if (
+        oldVal.net_amount !== newVal.net_amount &&
+        (oldVal.net_amount !== undefined || newVal.net_amount !== undefined)
+      ) {
+        tradeChanges.push({
+          field: isId ? "Nominal Bersih" : "Net Amount",
+          from: formatCurrency(Number(oldVal.net_amount || 0), "IDR"),
+          to: formatCurrency(Number(newVal.net_amount || 0), "IDR"),
+        });
+      }
+      if (
+        oldVal.stamp_duty !== newVal.stamp_duty &&
+        (oldVal.stamp_duty !== undefined || newVal.stamp_duty !== undefined)
+      ) {
+        tradeChanges.push({
+          field: isId ? "Bea Materai" : "Stamp Duty",
+          from: formatCurrency(Number(oldVal.stamp_duty || 0), "IDR"),
+          to: formatCurrency(Number(newVal.stamp_duty || 0), "IDR"),
+        });
+      }
+      if (
+        oldVal.realized_pnl !== newVal.realized_pnl &&
+        (oldVal.realized_pnl !== undefined || newVal.realized_pnl !== undefined)
+      ) {
+        tradeChanges.push({
+          field: isId ? "Realized PnL" : "Realized P&L",
+          from: `${Number(oldVal.realized_pnl || 0) >= 0 ? "+" : ""}${formatCurrency(Number(oldVal.realized_pnl || 0), "IDR")}`,
+          to: `${Number(newVal.realized_pnl || 0) >= 0 ? "+" : ""}${formatCurrency(Number(newVal.realized_pnl || 0), "IDR")}`,
+        });
+      }
+      const normDate = (d?: string) => (d ? d.substring(0, 10) : "");
+      if (
+        normDate(oldVal.trade_date) !== normDate(newVal.trade_date) &&
+        (oldVal.trade_date || newVal.trade_date)
+      ) {
+        tradeChanges.push({
+          field: isId ? "Tanggal Transaksi" : "Trade Date",
+          from: oldVal.trade_date
+            ? formatDate(normDate(oldVal.trade_date), "d MMM yyyy", lang)
+            : "-",
+          to: newVal.trade_date
+            ? formatDate(normDate(newVal.trade_date), "d MMM yyyy", lang)
+            : "-",
+        });
+      }
+      if (
+        oldVal.notes !== newVal.notes &&
+        (oldVal.notes !== undefined || newVal.notes !== undefined)
+      ) {
         tradeChanges.push({
           field: isId ? "Catatan" : "Notes",
           from: oldVal.notes || (isId ? "(Kosong)" : "(Empty)"),
@@ -246,6 +340,161 @@ export function humanizeAuditLog(
             to: `${avgPrice} / lbr`,
           },
         ],
+        badgeType: "update",
+        badgeLabel: isId ? "Diubah" : "Updated",
+      };
+    }
+  }
+
+  // ==========================================
+  // 0b. CRYPTO TRADES
+  // ==========================================
+  if (table === "crypto_trades") {
+    const symbol = (newVal.symbol || oldVal.symbol || "CRYPTO").toUpperCase();
+    const type = newVal.type || oldVal.type || "buy";
+    const isBuy = type === "buy";
+    const typeLabel = isBuy
+      ? isId
+        ? "Beli Kripto"
+        : "Buy Crypto"
+      : isId
+        ? "Jual Kripto"
+        : "Sell Crypto";
+    const currency = newVal.price_currency || oldVal.price_currency || "IDR";
+    const quantity = Number(newVal.quantity || oldVal.quantity || 0);
+    const pricePerUnit = Number(
+      newVal.price_per_unit || oldVal.price_per_unit || 0,
+    );
+    const totalAmount = Number(
+      newVal.total_amount ||
+        oldVal.total_amount ||
+        (quantity > 0 && pricePerUnit > 0 ? quantity * pricePerUnit : 0),
+    );
+    const formattedTotal = formatCurrency(totalAmount, currency);
+    const formattedPrice = formatCurrency(pricePerUnit, currency);
+    const realizedPnl = Number(newVal.realized_pnl || oldVal.realized_pnl || 0);
+
+    const formatQty = (qty: number) => {
+      if (qty === 0) return "0";
+      if (qty < 0.0001) return qty.toFixed(8);
+      if (qty < 1) return qty.toFixed(6);
+      return qty.toLocaleString("en-US", { maximumFractionDigits: 4 });
+    };
+
+    if (log.action === "INSERT") {
+      return {
+        moduleName: isId ? "Transaksi Kripto" : "Crypto Trades",
+        title: `${symbol} · ${typeLabel} — ${formattedTotal}`,
+        summary: isId
+          ? `Mencatat ${typeLabel.toLowerCase()} ${formatQty(quantity)} ${symbol} senilai ${formattedTotal}`
+          : `Recorded ${typeLabel.toLowerCase()} of ${formatQty(quantity)} ${symbol} worth ${formattedTotal}`,
+        changes: [
+          { field: isId ? "Aset" : "Asset", to: symbol },
+          { field: isId ? "Tipe" : "Type", to: typeLabel },
+          {
+            field: isId ? "Jumlah" : "Quantity",
+            to: `${formatQty(quantity)} ${symbol}`,
+          },
+          ...(pricePerUnit > 0
+            ? [
+                {
+                  field: isId ? "Harga per Unit" : "Price / Unit",
+                  to: `${formattedPrice}`,
+                },
+              ]
+            : []),
+          { field: isId ? "Total" : "Total Amount", to: formattedTotal },
+          ...(!isBuy && realizedPnl !== 0
+            ? [
+                {
+                  field: isId ? "Realized PnL" : "Realized P&L",
+                  to: `${realizedPnl >= 0 ? "+" : ""}${formatCurrency(realizedPnl, currency)}`,
+                },
+              ]
+            : []),
+          ...(newVal.trade_date
+            ? [
+                {
+                  field: isId ? "Tanggal" : "Trade Date",
+                  to: formatDate(newVal.trade_date, "d MMM yyyy", lang),
+                },
+              ]
+            : []),
+          ...(newVal.notes
+            ? [{ field: isId ? "Catatan" : "Notes", to: newVal.notes }]
+            : []),
+        ],
+        badgeType: "create",
+        badgeLabel: isId ? "Dibuat" : "Created",
+      };
+    }
+
+    if (log.action === "DELETE") {
+      return {
+        moduleName: isId ? "Transaksi Kripto" : "Crypto Trades",
+        title: `${symbol} · ${typeLabel} — ${formattedTotal}`,
+        summary: isId
+          ? `Menghapus catatan transaksi ${symbol} senilai ${formattedTotal}`
+          : `Deleted ${symbol} trade record worth ${formattedTotal}`,
+        changes: [
+          { field: isId ? "Aset" : "Asset", from: symbol },
+          {
+            field: isId ? "Jumlah" : "Quantity",
+            from: `${formatQty(quantity)} ${symbol}`,
+          },
+          {
+            field: isId ? "Total Dihapus" : "Deleted Amount",
+            from: formattedTotal,
+          },
+        ],
+        badgeType: "delete",
+        badgeLabel: isId ? "Dihapus" : "Deleted",
+      };
+    }
+
+    if (log.action === "UPDATE") {
+      const cryptoChanges: Array<{
+        field: string;
+        from?: string;
+        to?: string;
+      }> = [];
+
+      if (oldVal.quantity !== newVal.quantity) {
+        cryptoChanges.push({
+          field: isId ? "Jumlah" : "Quantity",
+          from: `${formatQty(Number(oldVal.quantity || 0))} ${symbol}`,
+          to: `${formatQty(Number(newVal.quantity || 0))} ${symbol}`,
+        });
+      }
+      if (oldVal.price_per_unit !== newVal.price_per_unit) {
+        cryptoChanges.push({
+          field: isId ? "Harga per Unit" : "Price / Unit",
+          from: formatCurrency(Number(oldVal.price_per_unit || 0), currency),
+          to: formatCurrency(Number(newVal.price_per_unit || 0), currency),
+        });
+      }
+      if (oldVal.total_amount !== newVal.total_amount) {
+        cryptoChanges.push({
+          field: isId ? "Total" : "Total Amount",
+          from: formatCurrency(Number(oldVal.total_amount || 0), currency),
+          to: formatCurrency(Number(newVal.total_amount || 0), currency),
+        });
+      }
+      if (oldVal.notes !== newVal.notes) {
+        cryptoChanges.push({
+          field: isId ? "Catatan" : "Notes",
+          from: oldVal.notes || (isId ? "(Kosong)" : "(Empty)"),
+          to: newVal.notes || (isId ? "(Kosong)" : "(Empty)"),
+        });
+      }
+
+      return {
+        moduleName: isId ? "Transaksi Kripto" : "Crypto Trades",
+        title: `${symbol} · ${typeLabel} — ${formattedTotal}`,
+        summary: isId
+          ? `Memperbarui data transaksi kripto ${symbol}`
+          : `Updated crypto trade details for ${symbol}`,
+        changes: cryptoChanges,
         badgeType: "update",
         badgeLabel: isId ? "Diubah" : "Updated",
       };

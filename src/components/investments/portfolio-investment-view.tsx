@@ -139,7 +139,12 @@ export function PortfolioInvestmentView({
     null,
   );
   const [assetKind, setAssetKind] = useState<AssetKind>("crypto");
-  const [accountId, setAccountId] = useState(investmentAccounts[0]?.id || "");
+  const [accountId, setAccountId] = useState(() => {
+    if (typeof window === "undefined") return investmentAccounts[0]?.id || "";
+    const saved = localStorage.getItem("investment_last_account_id");
+    const isValid = investmentAccounts.some((a) => a.id === saved);
+    return isValid ? saved : investmentAccounts[0]?.id || "";
+  });
   const [selectedId, setSelectedId] = useState("");
   const [ticker, setTicker] = useState("");
   const [symbol, setSymbol] = useState("BTC");
@@ -515,6 +520,7 @@ export function PortfolioInvestmentView({
     setCryptoPercent(pct);
     const balance = Number(selectedAccount?.current_balance || 0);
     if (balance > 0) {
+      // ← kalau balance 0 atau account undefined, stop di sini
       const targetAmount = Math.max(0, Math.floor(balance * (pct / 100)));
       setAmount(String(targetAmount));
     }
@@ -528,6 +534,13 @@ export function PortfolioInvestmentView({
         const targetQty = maxQty * (pct / 100);
         setQuantity(targetQty.toFixed(8).replace(/\.?0+$/, ""));
       }
+    }
+  };
+
+  const handleAccountChange = (id: string) => {
+    setAccountId(id);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("investment_last_account_id", id);
     }
   };
 
@@ -999,9 +1012,6 @@ export function PortfolioInvestmentView({
                   : Number((activity as EnrichedCryptoTrade).quantity) *
                       Number((activity as EnrichedCryptoTrade).price_per_unit),
               );
-              const feeAmount = isStock
-                ? Number((activity as EnrichedStockTrade).stamp_duty || 0)
-                : Number((activity as EnrichedCryptoTrade).fee_amount || 0);
               const pnl = Number(activity.realized_pnl) || 0;
               const hasPnl = !isBuy;
 
@@ -1112,7 +1122,14 @@ export function PortfolioInvestmentView({
                   </div>
 
                   {/* Execution Details Row */}
-                  <div className="grid grid-cols-2 gap-2 rounded-xl bg-[#F8F9FA] p-2.5 text-xs dark:bg-[#1A1A20] sm:grid-cols-4">
+                  <div
+                    className={cn(
+                      "grid gap-2 rounded-xl bg-[#F8F9FA] p-2.5 text-xs dark:bg-[#1A1A20]",
+                      hasPnl
+                        ? "grid-cols-2 sm:grid-cols-4"
+                        : "grid-cols-2 sm:grid-cols-3",
+                    )}
+                  >
                     <div>
                       <span className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
                         {isEn ? "Volume" : "Volume"}
@@ -1141,7 +1158,7 @@ export function PortfolioInvestmentView({
                       </p>
                     </div>
 
-                    <div>
+                    <div className={cn(!hasPnl && "col-span-2 sm:col-span-1")}>
                       <span className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
                         {isEn ? "Total Settlement" : "Total Eksekusi"}
                       </span>
@@ -1153,11 +1170,11 @@ export function PortfolioInvestmentView({
                       </p>
                     </div>
 
-                    <div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
-                        {hasPnl ? "Realized P&L" : isEn ? "Fee" : "Biaya"}
-                      </span>
-                      {hasPnl ? (
+                    {hasPnl && (
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
+                          Realized P&L
+                        </span>
                         <p
                           className={cn(
                             "font-mono text-xs font-black",
@@ -1172,14 +1189,8 @@ export function PortfolioInvestmentView({
                             activity.account?.currency || "IDR",
                           )}
                         </p>
-                      ) : feeAmount > 0 ? (
-                        <p className="font-mono text-xs font-bold text-rose-600 dark:text-rose-400">
-                          -{formatCurrency(feeAmount, "IDR")}
-                        </p>
-                      ) : (
-                        <p className="text-xs text-[#94A3B8]">—</p>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Notes if any */}
@@ -1381,8 +1392,8 @@ export function PortfolioInvestmentView({
                         ))}
                       </Pie>
                       <Tooltip
-                        formatter={(value: unknown) =>
-                          formatCurrency(Number(value), "IDR")
+                        formatter={(value: number) =>
+                          formatCurrency(value, "IDR")
                         }
                         contentStyle={{
                           fontSize: 11,
@@ -1457,13 +1468,10 @@ export function PortfolioInvestmentView({
                       width={40}
                     />
                     <Tooltip
-                      formatter={(value: unknown) => {
-                        const v = Number(value);
-                        return [
-                          `${v >= 0 ? "+" : ""}${formatCurrency(v, "IDR")}`,
-                          "P&L",
-                        ] as [string, string];
-                      }}
+                      formatter={(value: number) => [
+                        `${value >= 0 ? "+" : ""}${formatCurrency(value, "IDR")}`,
+                        "P&L",
+                      ]}
                       contentStyle={{
                         fontSize: 11,
                         borderRadius: 12,
@@ -1523,22 +1531,16 @@ export function PortfolioInvestmentView({
                     }}
                   />
                   <Tooltip
-                    formatter={(value: unknown) => {
-                      const v = Number(value);
-                      return [
-                        `${v >= 0 ? "+" : ""}${formatCurrency(v, "IDR")}`,
-                        isEn ? "Cumulative P&L" : "P&L Kumulatif",
-                      ] as [string, string];
-                    }}
-                    labelFormatter={(d: unknown) =>
-                      new Date(String(d)).toLocaleDateString(
-                        isEn ? "en-US" : "id-ID",
-                        {
-                          day: "numeric",
-                          month: "long",
-                          year: "numeric",
-                        },
-                      )
+                    formatter={(value: number) => [
+                      `${value >= 0 ? "+" : ""}${formatCurrency(value, "IDR")}`,
+                      isEn ? "Cumulative P&L" : "P&L Kumulatif",
+                    ]}
+                    labelFormatter={(d) =>
+                      new Date(d).toLocaleDateString(isEn ? "en-US" : "id-ID", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })
                     }
                     contentStyle={{
                       fontSize: 11,
@@ -1760,7 +1762,7 @@ export function PortfolioInvestmentView({
             </div>
           )}
 
-          <Select value={accountId} onValueChange={setAccountId}>
+          <Select value={accountId} onValueChange={handleAccountChange}>
             <SelectTrigger>
               <SelectValue placeholder={i18n.accountFallback} />
             </SelectTrigger>
@@ -1866,6 +1868,20 @@ export function PortfolioInvestmentView({
               {(modal === "buy" || modal === "sell") && (
                 <PercentageSlider
                   value={cryptoPercent}
+                  disabled={
+                    modal === "buy"
+                      ? Number(selectedAccount?.current_balance || 0) <= 0
+                      : Number(selectedCrypto?.quantity || 0) <= 0
+                  }
+                  hint={
+                    modal === "buy"
+                      ? isEn
+                        ? "Account balance is empty"
+                        : "Saldo akun kosong"
+                      : isEn
+                        ? "No asset available"
+                        : "Tidak ada aset"
+                  }
                   onChange={(val) => {
                     if (modal === "buy") {
                       handleCryptoBuyPercentChange(val);
@@ -2036,15 +2052,24 @@ export function PortfolioInvestmentView({
 function PercentageSlider({
   value,
   onChange,
+  disabled = false,
+  hint,
 }: {
   value: number;
   onChange: (val: number) => void;
+  disabled?: boolean;
+  hint?: string;
 }) {
   const dots = [0, 25, 50, 75, 100];
   const safeValue = Math.min(100, Math.max(0, value));
 
   return (
-    <div className="w-full pt-6 pb-1">
+    <div
+      className={cn(
+        "w-full pt-6 pb-1",
+        disabled && "opacity-40 pointer-events-none",
+      )}
+    >
       <div className="relative w-full">
         {/* Floating tooltip above thumb */}
         <div
@@ -2110,20 +2135,24 @@ function PercentageSlider({
 
       {/* Label row */}
       <div className="relative mt-2 h-4 text-[9px] font-bold text-[#94A3B8]">
-        {dots.map((dot) => (
-          <button
-            key={dot}
-            type="button"
-            onClick={() => onChange(dot)}
-            className="absolute cursor-pointer transition-colors hover:text-[#0F172A] dark:hover:text-[#FAFAFA]"
-            style={{
-              left: `${dot}%`,
-              transform: `translateX(${dot === 0 ? "0%" : dot === 100 ? "-100%" : "-50%"})`,
-            }}
-          >
-            {dot}%
-          </button>
-        ))}
+        {disabled && hint ? (
+          <span className="italic">{hint}</span>
+        ) : (
+          dots.map((dot) => (
+            <button
+              key={dot}
+              type="button"
+              onClick={() => onChange(dot)}
+              className="absolute cursor-pointer transition-colors hover:text-[#0F172A] dark:hover:text-[#FAFAFA]"
+              style={{
+                left: `${dot}%`,
+                transform: `translateX(${dot === 0 ? "0%" : dot === 100 ? "-100%" : "-50%"})`,
+              }}
+            >
+              {dot}%
+            </button>
+          ))
+        )}
       </div>
     </div>
   );

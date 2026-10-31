@@ -468,13 +468,25 @@ export async function getTransactionAuditLogs(
 
 export async function getGlobalAuditLogs(
   limit: number = 100,
+  startDate?: string,
+  endDate?: string,
 ): Promise<AuditLog[]> {
   const supabase = await createServerSupabaseClient();
-  const { data, error } = await supabase
+
+  let query = supabase
     .from("audit_logs")
     .select("*")
     .order("changed_at", { ascending: false })
     .limit(limit);
+
+  if (startDate) {
+    query = query.gte("changed_at", `${startDate}T00:00:00.000Z`);
+  }
+  if (endDate) {
+    query = query.lte("changed_at", `${endDate}T23:59:59.999Z`);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("Error fetching global audit logs:", error);
