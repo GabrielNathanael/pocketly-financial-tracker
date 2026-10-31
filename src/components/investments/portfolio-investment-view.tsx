@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import * as Slider from "@radix-ui/react-slider";
+
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -155,7 +155,7 @@ export function PortfolioInvestmentView({
   const [isDeleting, setIsDeleting] = useState(false);
   const [showCashBreakdown, setShowCashBreakdown] = useState(false);
   // Percentage slider state for crypto trading
-  const [cryptoPercent, setCryptoPercent] = useState<number>(100);
+  const [cryptoPercent, setCryptoPercent] = useState<number>(0);
 
   // Filter states for Buku Transaksi (Activity Tab)
   const [activityKindFilter, setActivityKindFilter] = useState<
@@ -544,7 +544,7 @@ export function PortfolioInvestmentView({
     setFee("");
     setNotes("");
     setDate(getLocalDateString());
-    setCryptoPercent(100);
+    setCryptoPercent(0);
   };
 
   const openBuy = (
@@ -553,7 +553,7 @@ export function PortfolioInvestmentView({
   ) => {
     setAssetKind(kind);
     setSelectedId(holding?.id || "");
-    setCryptoPercent(100);
+    setCryptoPercent(0);
     if (holding) {
       if (kind === "stock") {
         setTicker((holding as EnrichedStockHolding).ticker);
@@ -585,7 +585,7 @@ export function PortfolioInvestmentView({
   ) => {
     setAssetKind(kind);
     setSelectedId(holding?.id || "");
-    setCryptoPercent(100);
+    setCryptoPercent(0);
     if (holding) {
       setAccountId(holding.account_id);
       if (kind === "stock") {
@@ -2036,19 +2036,28 @@ function PercentageSlider({
 
   return (
     <div className="w-full pt-6 pb-1">
-      <Slider.Root
-        className="relative flex items-center select-none touch-none w-full h-5 cursor-pointer"
-        value={[safeValue]}
-        onValueChange={(val) => onChange(val[0])}
-        max={100}
-        min={0}
-        step={1}
-      >
-        <Slider.Track className="relative h-1.5 grow rounded-full bg-[#E5E7EB] dark:bg-[#27272A]">
-          <Slider.Range className="absolute h-full rounded-full bg-emerald-600 dark:bg-emerald-500" />
-        </Slider.Track>
+      <div className="relative w-full">
+        {/* Floating tooltip above thumb */}
+        <div
+          className="pointer-events-none absolute -top-7 whitespace-nowrap rounded-md bg-[#0F172A] px-1.5 py-0.5 font-mono text-[10px] font-black text-white shadow-xs dark:bg-[#FAFAFA] dark:text-[#0F172A]"
+          style={{
+            left: `${safeValue}%`,
+            transform: `translateX(${safeValue === 0 ? "0%" : safeValue === 100 ? "-100%" : "-50%"})`,
+          }}
+        >
+          {safeValue}%
+        </div>
 
-        {/* 5 Dots at multiples of 25 (0, 25, 50, 75, 100) */}
+        {/* Track background */}
+        <div className="relative h-1.5 w-full rounded-full bg-[#E5E7EB] dark:bg-[#27272A]">
+          {/* Filled range */}
+          <div
+            className="absolute h-full rounded-full bg-emerald-600 dark:bg-emerald-500"
+            style={{ width: `${safeValue}%` }}
+          />
+        </div>
+
+        {/* Dot markers (decorative, clickable) */}
         {dots.map((dot) => (
           <button
             key={dot}
@@ -2058,36 +2067,50 @@ function PercentageSlider({
               onChange(dot);
             }}
             className={cn(
-              "absolute top-1/2 -translate-x-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full border-2 transition-all cursor-pointer z-10",
+              "absolute top-0 -translate-y-1/4 h-2.5 w-2.5 rounded-full border-2 transition-all cursor-pointer z-10",
               safeValue >= dot
                 ? "border-emerald-600 bg-white dark:border-emerald-400 dark:bg-[#121215]"
                 : "border-[#D1D5DB] bg-white dark:border-[#3F3F46] dark:bg-[#1A1A20]",
             )}
-            style={{ left: `${dot}%` }}
+            style={{
+              left: `calc(${dot}% - ${dot === 0 ? "0px" : dot === 100 ? "10px" : "5px"})`,
+            }}
             title={`${dot}%`}
           />
         ))}
 
-        {/* Radix Thumb with Floating Tooltip directly attached */}
-        <Slider.Thumb
-          className="relative z-20 block h-4 w-4 rounded-full border-2 border-white bg-emerald-600 shadow-md transition-transform focus:outline-none hover:scale-110 active:scale-95 cursor-grab active:cursor-grabbing dark:border-[#121215] dark:bg-emerald-400"
-          aria-label="Persentase transaksi"
-        >
-          {/* Tooltip locked 100% on top of the thumb */}
-          <div className="pointer-events-none absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-[#0F172A] px-1.5 py-0.5 font-mono text-[10px] font-black text-white shadow-xs dark:bg-[#FAFAFA] dark:text-[#0F172A]">
-            {safeValue}%
-          </div>
-        </Slider.Thumb>
-      </Slider.Root>
+        {/* Native range input — sits on top, invisible, handles drag */}
+        <input
+          type="range"
+          min={0}
+          max={100}
+          step={1}
+          value={safeValue}
+          onChange={(e) => onChange(Number(e.target.value))}
+          className="absolute inset-0 w-full opacity-0 cursor-grab active:cursor-grabbing z-20 h-full"
+          style={{ margin: 0 }}
+        />
 
-      {/* Dot Percentage Markers */}
-      <div className="relative mt-2 flex justify-between text-[9px] font-bold text-[#94A3B8]">
+        <div
+          className="absolute top-0 -translate-y-1/4 z-10 h-4 w-4 rounded-full border-2 border-white bg-emerald-600 shadow-md pointer-events-none dark:border-[#121215] dark:bg-emerald-400"
+          style={{
+            left: `calc(${safeValue}% - ${safeValue === 0 ? "0px" : safeValue === 100 ? "16px" : "8px"})`,
+          }}
+        />
+      </div>
+
+      {/* Label row */}
+      <div className="relative mt-2 h-4 text-[9px] font-bold text-[#94A3B8]">
         {dots.map((dot) => (
           <button
             key={dot}
             type="button"
             onClick={() => onChange(dot)}
-            className="cursor-pointer transition-colors hover:text-[#0F172A] dark:hover:text-[#FAFAFA]"
+            className="absolute cursor-pointer transition-colors hover:text-[#0F172A] dark:hover:text-[#FAFAFA]"
+            style={{
+              left: `${dot}%`,
+              transform: `translateX(${dot === 0 ? "0%" : dot === 100 ? "-100%" : "-50%"})`,
+            }}
           >
             {dot}%
           </button>
