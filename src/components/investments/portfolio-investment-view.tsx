@@ -67,6 +67,20 @@ import { formatCurrency } from "@/lib/utils/currency";
 import { getLocalDateString } from "@/lib/utils/date";
 import { useLanguage } from "@/lib/i18n/language-context";
 import { cn } from "@/lib/utils/cn";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  CartesianGrid,
+} from "recharts";
 
 type AssetKind = "stock" | "crypto";
 type Activity = EnrichedStockTrade | EnrichedCryptoTrade;
@@ -431,7 +445,52 @@ export function PortfolioInvestmentView({
     };
   }, [reportStockTrades, reportCryptoTrades, reportTransfers, i18n]);
 
-  // Real-time calculation helpers for modals
+  // Donut chart data
+  const allocationData = useMemo(
+    () =>
+      [
+        { name: isEn ? "Cash" : "Kas", value: cashValue },
+        { name: isEn ? "Stocks" : "Saham", value: stockValue },
+        { name: isEn ? "Crypto" : "Kripto", value: cryptoValue },
+      ].filter((d) => d.value > 0),
+    [cashValue, stockValue, cryptoValue, isEn],
+  );
+
+  const ALLOCATION_COLORS = ["#6366F1", "#10B981", "#F59E0B"];
+
+  // Bar chart data — P&L per aset (dari reportingStats yang sudah ada)
+  const pnlBarData = useMemo(
+    () =>
+      reportingStats.assetPerformance.map((a) => ({
+        symbol: a.symbol,
+        pnl: a.netPnl,
+      })),
+    [reportingStats.assetPerformance],
+  );
+
+  // Line chart — kumulatif P&L over time (ikut filter periode)
+  const cumulativePnlData = useMemo(() => {
+    const allSells = [
+      ...reportStockTrades
+        .filter((t) => t.type === "sell")
+        .map((t) => ({
+          date: t.trade_date.slice(0, 10),
+          pnl: Number(t.realized_pnl) || 0,
+        })),
+      ...reportCryptoTrades
+        .filter((t) => t.type === "sell")
+        .map((t) => ({
+          date: t.trade_date.slice(0, 10),
+          pnl: Number(t.realized_pnl) || 0,
+        })),
+    ].sort((a, b) => a.date.localeCompare(b.date));
+
+    let cumulative = 0;
+    return allSells.map((t) => {
+      cumulative += t.pnl;
+      return { date: t.date, cumulative };
+    });
+  }, [reportStockTrades, reportCryptoTrades]); // Real-time calculation helpers for modals
   const cryptoQuantity =
     Number(amount) > 0 && Number(price) > 0
       ? Math.floor((Number(amount) / Number(price)) * 100_000_000) / 100_000_000
@@ -1292,6 +1351,205 @@ export function PortfolioInvestmentView({
             </div>
           </div>
 
+          {/* Charts Row */}
+          <div className="grid gap-3 sm:grid-cols-2">
+            {/* Donut — Alokasi Portofolio */}
+            <div className="flex flex-col gap-3 rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-2xs dark:border-[#27272A] dark:bg-[#121215]">
+              <h3 className="text-xs font-black uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
+                {isEn ? "Portfolio Allocation" : "Alokasi Portofolio"}
+              </h3>
+              {allocationData.length > 0 ? (
+                <>
+                  <ResponsiveContainer width="100%" height={180}>
+                    <PieChart>
+                      <Pie
+                        data={allocationData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={75}
+                        paddingAngle={3}
+                        dataKey="value"
+                      >
+                        {allocationData.map((_, i) => (
+                          <Cell
+                            key={i}
+                            fill={
+                              ALLOCATION_COLORS[i % ALLOCATION_COLORS.length]
+                            }
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value: number) =>
+                          formatCurrency(value, "IDR")
+                        }
+                        contentStyle={{
+                          fontSize: 11,
+                          borderRadius: 12,
+                          border: "1px solid #E5E7EB",
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="flex flex-col gap-1.5">
+                    {allocationData.map((d, i) => (
+                      <div
+                        key={d.name}
+                        className="flex items-center justify-between gap-2"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <div
+                            className="h-2.5 w-2.5 rounded-full shrink-0"
+                            style={{
+                              backgroundColor:
+                                ALLOCATION_COLORS[i % ALLOCATION_COLORS.length],
+                            }}
+                          />
+                          <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">
+                            {d.name}
+                          </span>
+                        </div>
+                        <span className="font-mono text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                          {totalPortfolioValue > 0
+                            ? `${Math.round((d.value / totalPortfolioValue) * 100)}%`
+                            : "—"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p className="text-center text-xs text-[#94A3B8] py-8">—</p>
+              )}
+            </div>
+
+            {/* Bar Chart — P&L per Aset */}
+            <div className="flex flex-col gap-3 rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-2xs dark:border-[#27272A] dark:bg-[#121215]">
+              <h3 className="text-xs font-black uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
+                {isEn ? "P&L by Asset" : "P&L per Aset"}
+              </h3>
+              {pnlBarData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={180}>
+                  <BarChart
+                    data={pnlBarData}
+                    layout="vertical"
+                    margin={{ top: 0, right: 16, left: 8, bottom: 0 }}
+                  >
+                    <XAxis
+                      type="number"
+                      domain={["auto", "auto"]}
+                      tickFormatter={(v) => {
+                        if (Math.abs(v) < 1000)
+                          return `${v >= 0 ? "+" : ""}${Math.round(v)}`;
+                        return `${v >= 0 ? "+" : ""}${(v / 1000).toFixed(1)}k`;
+                      }}
+                      tick={{ fontSize: 10, fill: "#94A3B8" }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      type="category"
+                      dataKey="symbol"
+                      tick={{ fontSize: 10, fill: "#94A3B8" }}
+                      axisLine={false}
+                      tickLine={false}
+                      width={40}
+                    />
+                    <Tooltip
+                      formatter={(value: number) => [
+                        `${value >= 0 ? "+" : ""}${formatCurrency(value, "IDR")}`,
+                        "P&L",
+                      ]}
+                      contentStyle={{
+                        fontSize: 11,
+                        borderRadius: 12,
+                        border: "1px solid #E5E7EB",
+                      }}
+                    />
+                    <Bar dataKey="pnl" radius={[0, 6, 6, 0]}>
+                      {pnlBarData.map((d, i) => (
+                        <Cell
+                          key={i}
+                          fill={d.pnl >= 0 ? "#10B981" : "#F43F5E"}
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="text-center text-xs text-[#94A3B8] py-8">
+                  {isEn ? "No closed trades yet" : "Belum ada transaksi jual"}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Line Chart — Kumulatif P&L */}
+          {cumulativePnlData.length > 0 && (
+            <div className="flex flex-col gap-3 rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-2xs dark:border-[#27272A] dark:bg-[#121215]">
+              <h3 className="text-xs font-black uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
+                {isEn ? "Cumulative P&L Over Time" : "Tren P&L Kumulatif"}
+              </h3>
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart
+                  data={cumulativePnlData}
+                  margin={{ top: 4, right: 16, left: 8, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 10, fill: "#94A3B8" }}
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(d) =>
+                      new Date(d).toLocaleDateString(isEn ? "en-US" : "id-ID", {
+                        day: "numeric",
+                        month: "short",
+                      })
+                    }
+                  />
+                  <YAxis
+                    tick={{ fontSize: 10, fill: "#94A3B8" }}
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(v) => {
+                      if (Math.abs(v) < 1000)
+                        return `${v >= 0 ? "+" : ""}${Math.round(v)}`;
+                      return `${v >= 0 ? "+" : ""}${(v / 1000).toFixed(1)}k`;
+                    }}
+                  />
+                  <Tooltip
+                    formatter={(value: number) => [
+                      `${value >= 0 ? "+" : ""}${formatCurrency(value, "IDR")}`,
+                      isEn ? "Cumulative P&L" : "P&L Kumulatif",
+                    ]}
+                    labelFormatter={(d) =>
+                      new Date(d).toLocaleDateString(isEn ? "en-US" : "id-ID", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })
+                    }
+                    contentStyle={{
+                      fontSize: 11,
+                      borderRadius: 12,
+                      border: "1px solid #E5E7EB",
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="cumulative"
+                    stroke="#6366F1"
+                    strokeWidth={2}
+                    dot={cumulativePnlData.length <= 10}
+                    activeDot={{ r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
           {/* Breakdown Per Aset: "Tau Untung Disini, Rugi Disini" */}
           <div className="overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-2xs dark:border-[#27272A] dark:bg-[#121215]">
             <div className="border-b border-[#E5E7EB] px-4 py-3 dark:border-[#27272A]">
@@ -1310,7 +1568,7 @@ export function PortfolioInvestmentView({
             {reportingStats.assetPerformance.length > 0 ? (
               <div className="divide-y divide-[#E5E7EB] dark:divide-[#27272A]">
                 {reportingStats.assetPerformance.map((asset) => {
-                  const isProfit = asset.netPnl >= 0;
+                  const isProfit = asset.netPnl > 0;
                   return (
                     <div
                       key={asset.symbol}
@@ -1326,18 +1584,24 @@ export function PortfolioInvestmentView({
                             <span
                               className={cn(
                                 "rounded-md px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider",
-                                isProfit
+                                asset.netPnl > 0
                                   ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
-                                  : "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300",
+                                  : asset.netPnl < 0
+                                    ? "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300"
+                                    : "bg-[#F1F3F5] text-[#64748B] dark:bg-[#27272A] dark:text-[#94A3B8]",
                               )}
                             >
-                              {isProfit
+                              {asset.netPnl > 0
                                 ? isEn
                                   ? "PROFIT"
                                   : "UNTUNG"
-                                : isEn
-                                  ? "LOSS"
-                                  : "RUGI"}
+                                : asset.netPnl < 0
+                                  ? isEn
+                                    ? "LOSS"
+                                    : "RUGI"
+                                  : isEn
+                                    ? "BREAK EVEN"
+                                    : "IMPAS"}
                             </span>
                           </div>
                           <p className="truncate text-[10px] text-[#64748B] dark:text-[#94A3B8]">
