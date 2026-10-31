@@ -181,7 +181,7 @@ export const translations = {
       accountsTitle: "Akun & Dompet Likuid",
       transferBtn: "Transfer",
       allAccounts: "Semua akun",
-      addAccount: "+ Akun",
+      addAccount: "Akun",
       budgetTitle: "Pantauan Anggaran (Aktif)",
       allBudgets: "Semua anggaran",
       noBudgetsSet: "Belum ada batas anggaran yang diatur untuk bulan ini",
@@ -432,7 +432,8 @@ export const translations = {
         priceHint: "Isi harga BTC yang ingin kamu pakai untuk valuasi",
         save: "Simpan pencatatan",
         empty: "Belum ada aset kripto di platform",
-        emptyHint: "Catat pembelian pertamamu dengan memasukkan nominal rupiahnya.",
+        emptyHint:
+          "Catat pembelian pertamamu dengan memasukkan nominal rupiahnya.",
         transactions: "transaksi kripto",
         saved: "Beli",
       },
@@ -1134,8 +1135,7 @@ export const translations = {
       csvTags: "Tagar",
       csvDescription: "Deskripsi",
       smartInsightsTitle: "Temuan Menarik",
-      smartInsightsSubtitle:
-        "Sinyal pengeluaran dan pola arus kas periode ini",
+      smartInsightsSubtitle: "Sinyal pengeluaran dan pola arus kas periode ini",
       smartInsightsPrintTitle: "Temuan & Pola Arus Kas",
       insightDominantCategoryTitle: "Kategori Dominan",
       insightDominantCategoryDesc:
@@ -1293,7 +1293,7 @@ export const translations = {
       accountsTitle: "Liquidity Accounts",
       transferBtn: "Transfer",
       allAccounts: "All accounts",
-      addAccount: "+ Account",
+      addAccount: "Account",
       budgetTitle: "Budget Monitor (Active)",
       allBudgets: "All budgets",
       noBudgetsSet: "No category budget limits set for this month",

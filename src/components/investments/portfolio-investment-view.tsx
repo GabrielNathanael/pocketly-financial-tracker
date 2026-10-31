@@ -2277,8 +2277,9 @@ function StockCard({
   onBuy: () => void;
   onSell: () => void;
 }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const i18n = t.investments;
+  const isEn = language === "en";
   const lots = Number(holding.lots) || Number(holding.total_shares) / 100;
 
   const publishableKey = process.env.NEXT_PUBLIC_LOGO_DEV_PUBLISHABLE_KEY;
@@ -2317,14 +2318,24 @@ function StockCard({
               Number(holding.total_cost),
               holding.account?.currency,
             )}
+            align="right"
           />
+          <div className="col-span-2 flex items-baseline justify-between border-t border-[#E5E7EB] pt-2.5 dark:border-[#27272A]">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
+              {isEn ? "Avg Price / Share" : "Harga Rata-rata / Lembar"}
+            </p>
+            <p className="font-mono text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+              {Number(holding.avg_buy_price) > 0
+                ? `${formatCurrency(Number(holding.avg_buy_price), holding.account?.currency)} / lbr`
+                : "—"}
+            </p>
+          </div>
         </div>
         <AssetActions onBuy={onBuy} onSell={onSell} />
       </div>
     </div>
   );
 }
-
 function CryptoCard({
   holding,
   onBuy,
@@ -2334,8 +2345,9 @@ function CryptoCard({
   onBuy: () => void;
   onSell: () => void;
 }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const i18n = t.investments;
+  const isEn = language === "en";
 
   const publishableKey = process.env.NEXT_PUBLIC_LOGO_DEV_PUBLISHABLE_KEY;
   const logoUrl = publishableKey
@@ -2377,14 +2389,29 @@ function CryptoCard({
               Number(holding.cost_basis),
               holding.price_currency,
             )}
+            align="right"
           />
+          <div className="col-span-2 flex items-baseline justify-between border-t border-[#E5E7EB] pt-2.5 dark:border-[#27272A]">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
+              {isEn
+                ? `Avg Buy Price / ${holding.symbol}`
+                : `Harga Rata-rata / ${holding.symbol}`}
+            </p>
+            <p className="font-mono text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+              {Number(holding.average_buy_price) > 0
+                ? formatCurrency(
+                    Number(holding.average_buy_price),
+                    holding.price_currency,
+                  )
+                : "—"}
+            </p>
+          </div>
         </div>
         <AssetActions onBuy={onBuy} onSell={onSell} />
       </div>
     </div>
   );
 }
-
 function AssetLogo({
   kind,
   symbol,
@@ -2428,13 +2455,17 @@ function AssetMetric({
   label,
   value,
   valueClassName = "",
+  align = "left",
 }: {
   label: string;
   value: string;
   valueClassName?: string;
+  align?: "left" | "right";
 }) {
   return (
-    <div className="min-w-0">
+    <div
+      className={cn("min-w-0", align === "right" ? "text-right" : "text-left")}
+    >
       <p className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
         {label}
       </p>
@@ -2449,7 +2480,6 @@ function AssetMetric({
     </div>
   );
 }
-
 function AssetActions({
   onBuy,
   onSell,
