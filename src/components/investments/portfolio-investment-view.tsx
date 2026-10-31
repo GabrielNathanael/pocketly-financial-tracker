@@ -1381,8 +1381,8 @@ export function PortfolioInvestmentView({
                         ))}
                       </Pie>
                       <Tooltip
-                        formatter={(value: number) =>
-                          formatCurrency(value, "IDR")
+                        formatter={(value: unknown) =>
+                          formatCurrency(Number(value), "IDR")
                         }
                         contentStyle={{
                           fontSize: 11,
@@ -1457,10 +1457,13 @@ export function PortfolioInvestmentView({
                       width={40}
                     />
                     <Tooltip
-                      formatter={(value: number) => [
-                        `${value >= 0 ? "+" : ""}${formatCurrency(value, "IDR")}`,
-                        "P&L",
-                      ]}
+                      formatter={(value: unknown) => {
+                        const v = Number(value);
+                        return [
+                          `${v >= 0 ? "+" : ""}${formatCurrency(v, "IDR")}`,
+                          "P&L",
+                        ] as [string, string];
+                      }}
                       contentStyle={{
                         fontSize: 11,
                         borderRadius: 12,
@@ -1520,16 +1523,22 @@ export function PortfolioInvestmentView({
                     }}
                   />
                   <Tooltip
-                    formatter={(value: number) => [
-                      `${value >= 0 ? "+" : ""}${formatCurrency(value, "IDR")}`,
-                      isEn ? "Cumulative P&L" : "P&L Kumulatif",
-                    ]}
-                    labelFormatter={(d) =>
-                      new Date(d).toLocaleDateString(isEn ? "en-US" : "id-ID", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      })
+                    formatter={(value: unknown) => {
+                      const v = Number(value);
+                      return [
+                        `${v >= 0 ? "+" : ""}${formatCurrency(v, "IDR")}`,
+                        isEn ? "Cumulative P&L" : "P&L Kumulatif",
+                      ] as [string, string];
+                    }}
+                    labelFormatter={(d: unknown) =>
+                      new Date(String(d)).toLocaleDateString(
+                        isEn ? "en-US" : "id-ID",
+                        {
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                        },
+                      )
                     }
                     contentStyle={{
                       fontSize: 11,
