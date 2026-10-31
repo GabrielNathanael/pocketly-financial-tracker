@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -2139,6 +2139,48 @@ function formatCryptoQuantity(value: number | string): string {
   return numericValue.toFixed(8).replace(/\.?0+$/, "");
 }
 
+function useAssetColor(src: string | null, fallback: string) {
+  const [color, setColor] = useState(fallback);
+
+  useEffect(() => {
+    if (!src) return;
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = src;
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.drawImage(img, 0, 0);
+      const { data } = ctx.getImageData(0, 0, img.width, img.height);
+
+      let r = 0,
+        g = 0,
+        b = 0,
+        count = 0;
+      for (let i = 0; i < data.length; i += 16) {
+        const alpha = data[i + 3];
+        if (alpha < 128) continue;
+        r += data[i];
+        g += data[i + 1];
+        b += data[i + 2];
+        count++;
+      }
+      if (count === 0) return;
+      r = Math.round(r / count);
+      g = Math.round(g / count);
+      b = Math.round(b / count);
+
+      const pastel = (c: number) => Math.round(c * 0.4 + 255 * 0.6);
+      setColor(`rgb(${pastel(r)}, ${pastel(g)}, ${pastel(b)})`);
+    };
+  }, [src]);
+
+  return color;
+}
+
 function Summary({
   label,
   value,
@@ -2182,10 +2224,19 @@ function StockCard({
   const { t } = useLanguage();
   const i18n = t.investments;
   const lots = Number(holding.lots) || Number(holding.total_shares) / 100;
+
+  const publishableKey = process.env.NEXT_PUBLIC_LOGO_DEV_PUBLISHABLE_KEY;
+  const logoUrl = publishableKey
+    ? `https://img.logo.dev/ticker/${holding.ticker.toLowerCase()}.jk?token=${publishableKey}`
+    : null;
+  const headerBg = useAssetColor(logoUrl, "rgb(224, 231, 255)");
+
   return (
     <div className="overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-2xs dark:border-[#27272A] dark:bg-[#121215]">
-      {/* Restored Original Rich Indigo Header Color */}
-      <div className="flex items-center justify-between gap-3 bg-indigo-100 px-5 py-4 dark:bg-indigo-950/40">
+      <div
+        className="flex items-center justify-between gap-3 px-5 py-4"
+        style={{ backgroundColor: headerBg }}
+      >
         <div className="flex min-w-0 items-center gap-3">
           <AssetLogo kind="stock" symbol={holding.ticker} />
           <div className="min-w-0">
@@ -2229,10 +2280,19 @@ function CryptoCard({
 }) {
   const { t } = useLanguage();
   const i18n = t.investments;
+
+  const publishableKey = process.env.NEXT_PUBLIC_LOGO_DEV_PUBLISHABLE_KEY;
+  const logoUrl = publishableKey
+    ? `https://img.logo.dev/crypto/${holding.symbol.toLowerCase()}?token=${publishableKey}`
+    : null;
+  const headerBg = useAssetColor(logoUrl, "rgb(253, 244, 208)");
+
   return (
     <div className="overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-2xs dark:border-[#27272A] dark:bg-[#121215]">
-      {/* Restored Original Warm Amber Header Color */}
-      <div className="flex items-center justify-between gap-3 bg-[#F9DFA6] px-5 py-4 dark:bg-[#5A431D]">
+      <div
+        className="flex items-center justify-between gap-3 px-5 py-4"
+        style={{ backgroundColor: headerBg }}
+      >
         <div className="flex min-w-0 items-center gap-3">
           <AssetLogo kind="crypto" symbol={holding.symbol} />
           <div className="min-w-0">
