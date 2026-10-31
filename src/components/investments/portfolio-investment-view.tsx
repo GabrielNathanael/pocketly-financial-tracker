@@ -1355,7 +1355,7 @@ export function PortfolioInvestmentView({
           modal === "edit"
             ? assetKind === "crypto"
               ? `${i18n.editCryptoTrade || "Edit Kripto"} · ${editTradeType === "buy" ? i18n.buy : i18n.sell}`
-              : i18n.modalEditTradeTitle
+              : `${i18n.modalEditTradeTitle} · ${editTradeType === "buy" ? i18n.buy : i18n.sell}`
             : modal === "buy"
               ? assetKind === "stock"
                 ? i18n.modalBuyTitle
@@ -1451,7 +1451,8 @@ export function PortfolioInvestmentView({
                 onChange={(event) => setLots(event.target.value)}
                 required
               />
-              {modal === "buy" ? (
+              {modal === "buy" ||
+              (modal === "edit" && editTradeType === "buy") ? (
                 <Input
                   label={i18n.netBuyAmountLabel}
                   type="number"
@@ -1459,7 +1460,8 @@ export function PortfolioInvestmentView({
                   onChange={(event) => setAmount(event.target.value)}
                   required
                 />
-              ) : (
+              ) : modal === "sell" ||
+                (modal === "edit" && editTradeType === "sell") ? (
                 <>
                   <Input
                     label={
@@ -1477,7 +1479,7 @@ export function PortfolioInvestmentView({
                     value={stockSellGrossAmount}
                   />
                 </>
-              )}
+              ) : null}
               {modal === "buy" && Number(amount) > 10_000_000 && (
                 <p className="rounded-xl bg-amber-50 p-3 text-xs text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
                   {i18n.stampDutyNotice}
