@@ -133,24 +133,25 @@ export async function getNetWorthData(
       );
     }
 
-    // Crypto holdings use the user's last manually recorded market price.
-    // They are included alongside portfolio assets, not as additional cash.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: cryptoHoldings } = await (supabase.from("crypto_holdings") as any)
-      .select("quantity, manual_price, price_currency")
-      .gt("quantity", 0)
-      .gt("manual_price", 0);
+  }
 
-    if (cryptoHoldings) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      for (const holding of cryptoHoldings as any[]) {
-        totalStockHoldingsIdr += convertAmount(
-          Number(holding.quantity) * Number(holding.manual_price),
-          holding.price_currency || "IDR",
-          displayCurrency,
-          rates,
-        );
-      }
+  // Crypto holdings contribute their recorded cost basis only. No market
+  // price is available or required for this ledger.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: cryptoHoldings } = await (supabase.from("crypto_holdings") as any)
+    .select("cost_basis, price_currency")
+    .gt("quantity", 0)
+    .gt("cost_basis", 0);
+
+  if (cryptoHoldings) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const holding of cryptoHoldings as any[]) {
+      totalStockHoldingsIdr += convertAmount(
+        Number(holding.cost_basis),
+        holding.price_currency || "IDR",
+        displayCurrency,
+        rates,
+      );
     }
   }
 

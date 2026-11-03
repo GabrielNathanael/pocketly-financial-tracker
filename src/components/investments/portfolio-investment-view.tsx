@@ -181,14 +181,13 @@ export function PortfolioInvestmentView({
     end: format(endOfMonth(new Date()), "yyyy-MM-dd"),
   });
 
-  // Portfolio overall valuations
+  // Portfolio totals use recorded cost basis only. No live or stored market price is used.
   const stockValue = stocks.reduce(
     (total, holding) => total + Number(holding.total_cost),
     0,
   );
   const cryptoValue = cryptos.reduce(
-    (total, holding) =>
-      total + Number(holding.quantity) * Number(holding.manual_price),
+    (total, holding) => total + Number(holding.cost_basis),
     0,
   );
   const cashValue = investmentAccounts.reduce(
@@ -490,15 +489,21 @@ export function PortfolioInvestmentView({
         })),
     ].sort((a, b) => a.date.localeCompare(b.date));
 
-    let cumulative = 0;
-    return allSells.map((t) => {
-      cumulative += t.pnl;
-      return { date: t.date, cumulative };
-    });
+    return allSells.reduce<Array<{ date: string; cumulative: number }>>(
+      (result, trade) => {
+        const previous = result[result.length - 1]?.cumulative || 0;
+        return [
+          ...result,
+          { date: trade.date, cumulative: previous + trade.pnl },
+        ];
+      },
+      [],
+    );
   }, [reportStockTrades, reportCryptoTrades]); // Real-time calculation helpers for modals
-  const cryptoQuantity =
+  const estimatedCryptoQuantity =
     Number(amount) > 0 && Number(price) > 0
-      ? Math.floor((Number(amount) / Number(price)) * 100_000_000) / 100_000_000
+      ? Math.round((Number(amount) / Number(price)) * 100_000_000) /
+        100_000_000
       : 0;
 
   const cryptoSellGrossAmount =
@@ -520,9 +525,18 @@ export function PortfolioInvestmentView({
     setCryptoPercent(pct);
     const balance = Number(selectedAccount?.current_balance || 0);
     if (balance > 0) {
-      // ← kalau balance 0 atau account undefined, stop di sini
-      const targetAmount = Math.max(0, Math.floor(balance * (pct / 100)));
+      const currentFee = Number(fee) || 0;
+      const targetAmount = Math.max(
+        0,
+        Math.floor(balance * (pct / 100) - (pct === 100 ? currentFee : 0)),
+      );
       setAmount(String(targetAmount));
+      if (Number(price) > 0 && targetAmount > 0) {
+        const targetQuantity =
+          Math.round((targetAmount / Number(price)) * 100_000_000) /
+          100_000_000;
+        setQuantity(targetQuantity.toFixed(8));
+      }
     }
   };
 
@@ -579,13 +593,6 @@ export function PortfolioInvestmentView({
         );
       } else {
         setSymbol((holding as EnrichedCryptoHolding).symbol);
-        setPrice(
-          String(
-            (holding as EnrichedCryptoHolding).manual_price ||
-              (holding as EnrichedCryptoHolding).average_buy_price ||
-              "",
-          ),
-        );
       }
       setAccountId(holding.account_id);
     }
@@ -664,7 +671,7 @@ export function PortfolioInvestmentView({
           : await recordCryptoBuy({
               accountId,
               symbol,
-              quantity: cryptoQuantity,
+              quantity: Number(quantity),
               grossAmount: Number(amount),
               feeAmount: Number(fee || 0),
               pricePerUnit: Number(price),
@@ -690,7 +697,7 @@ export function PortfolioInvestmentView({
       } else if (assetKind === "crypto" && modal === "edit" && selectedId) {
         result = await updateCryptoTrade({
           id: selectedId,
-          quantity: Number(editTradeType === "buy" ? cryptoQuantity : quantity),
+          quantity: Number(quantity),
           grossAmount:
             editTradeType === "buy" ? Number(amount) : cryptoSellGrossAmount,
           feeAmount: Number(fee || 0),
@@ -1021,8 +1028,7 @@ export function PortfolioInvestmentView({
               const totalAmount = Number(
                 isStock
                   ? (activity as EnrichedStockTrade).net_amount
-                  : Number((activity as EnrichedCryptoTrade).quantity) *
-                      Number((activity as EnrichedCryptoTrade).price_per_unit),
+                  : (activity as EnrichedCryptoTrade).gross_amount,
               );
               const pnl = Number(activity.realized_pnl) || 0;
               const hasPnl = !isBuy;
@@ -1912,31 +1918,88 @@ export function PortfolioInvestmentView({
 
               {modal === "buy" ||
               (modal === "edit" && editTradeType === "buy") ? (
-                <Input
-                  label={isEn ? "Gross buy amount" : "Nominal bruto pembelian"}
-                  type="number"
-                  step="any"
-                  value={amount}
-                  onChange={(event) => {
-                    setAmount(event.target.value);
-                    const bal = Number(selectedAccount?.current_balance || 0);
-                    if (bal > 0) {
-                      setCryptoPercent(
-                        Math.min(
-                          100,
-                          Math.max(
-                            0,
-                            Math.round(
-                              (Number(event.target.value) / bal) * 100,
+                <>
+                  <Input
+                    label={`${isEn ? "Price per" : "Harga per"} ${symbol || "asset"} ${
+                      isEn ? "buy" : "beli"
+                    }`}
+                    type="number"
+                    step="any"
+                    min="0.01"
+                    value={price}
+                    onChange={(event) => {
+                      const nextPrice = event.target.value;
+                      setPrice(nextPrice);
+                      const nextQuantity =
+                        Number(amount) > 0 && Number(nextPrice) > 0
+                          ? Math.round(
+                              (Number(amount) / Number(nextPrice)) * 100_000_000,
+                            ) / 100_000_000
+                          : 0;
+                      if (nextQuantity > 0) {
+                        setQuantity(nextQuantity.toFixed(8));
+                      }
+                    }}
+                    required
+                  />
+                  <Input
+                    label={
+                      isEn
+                        ? "Actual settled buy amount"
+                        : "Nominal aktual yang tersettle"
+                    }
+                    type="number"
+                    step="any"
+                    value={amount}
+                    onChange={(event) => {
+                      const nextAmount = event.target.value;
+                      setAmount(nextAmount);
+                      const bal = Number(selectedAccount?.current_balance || 0);
+                      if (bal > 0) {
+                        setCryptoPercent(
+                          Math.min(
+                            100,
+                            Math.max(
+                              0,
+                              Math.round(
+                                (Number(event.target.value) / bal) * 100,
+                              ),
                             ),
                           ),
-                        ),
-                      );
+                        );
+                      }
+                      const nextQuantity =
+                        Number(nextAmount) > 0 && Number(price) > 0
+                          ? Math.round(
+                              (Number(nextAmount) / Number(price)) * 100_000_000,
+                            ) / 100_000_000
+                          : 0;
+                      if (nextQuantity > 0) {
+                        setQuantity(nextQuantity.toFixed(8));
+                      }
+                    }}
+                    placeholder="Contoh: 4999994"
+                    required
+                  />
+                  <Input
+                    label={
+                      isEn
+                        ? `Calculated ${symbol} quantity`
+                        : `Jumlah ${symbol} (otomatis, bisa disesuaikan)`
                     }
-                  }}
-                  placeholder="Contoh: 5000000"
-                  required
-                />
+                    type="number"
+                    step="any"
+                    min="0.00000001"
+                    value={quantity}
+                    onChange={(event) => setQuantity(event.target.value)}
+                    placeholder={
+                      estimatedCryptoQuantity > 0
+                        ? estimatedCryptoQuantity.toFixed(8)
+                        : "Contoh: 0.00143766"
+                    }
+                    required
+                  />
+                </>
               ) : (
                 <Input
                   label={`${cryptoI18n.quantity} (${symbol})`}
@@ -1967,36 +2030,30 @@ export function PortfolioInvestmentView({
                 />
               )}
 
-              <Input
-                label={`${isEn ? "Price per" : "Harga per"} ${symbol || "asset"} (${
-                  modal === "buy" ||
-                  (modal === "edit" && editTradeType === "buy")
-                    ? isEn
-                      ? "buy"
-                      : "beli"
-                    : isEn
-                      ? "sell"
-                      : "jual"
-                })`}
-                type="number"
-                step="any"
-                min="0.01"
-                value={price}
-                onChange={(event) => setPrice(event.target.value)}
-                required
-              />
+              {!(modal === "buy" ||
+                (modal === "edit" && editTradeType === "buy")) && (
+                <Input
+                  label={`${isEn ? "Price per" : "Harga per"} ${symbol || "asset"} (${
+                    isEn ? "sell" : "jual"
+                  })`}
+                  type="number"
+                  step="any"
+                  min="0.01"
+                  value={price}
+                  onChange={(event) => setPrice(event.target.value)}
+                  required
+                />
+              )}
 
               {modal === "buy" ||
               (modal === "edit" && editTradeType === "buy") ? (
-                <p className="rounded-xl bg-emerald-50 p-3 font-mono text-sm font-bold text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200">
+                <p className="rounded-xl bg-slate-50 p-3 text-xs text-slate-600 dark:bg-slate-900/40 dark:text-slate-300">
                   {isEn
-                    ? `Quantity ${symbol} calculated automatically`
-                    : `Jumlah ${symbol} dihitung otomatis`}
-                  :{" "}
-                  {cryptoQuantity > 0
-                    ? cryptoQuantity.toFixed(8).replace(/\.?0+$/, "")
-                    : "—"}{" "}
-                  {symbol}
+                    ? "Quantity is rounded to 8 decimals like the broker. Adjust it if the broker shows a different final quantity."
+                    : "Jumlah dihitung dan dibulatkan 8 desimal seperti broker. Sesuaikan jika broker menampilkan jumlah final yang berbeda."}
+                  {estimatedCryptoQuantity > 0
+                    ? ` (${estimatedCryptoQuantity.toFixed(8)} ${symbol})`
+                    : ""}
                 </p>
               ) : (
                 <CalculatedAmount
@@ -2015,7 +2072,31 @@ export function PortfolioInvestmentView({
                 step="any"
                 min="0"
                 value={fee}
-                onChange={(event) => setFee(event.target.value)}
+                onChange={(event) => {
+                  const nextFee = event.target.value;
+                  setFee(nextFee);
+                  if (
+                    modal === "buy" &&
+                    cryptoPercent === 100 &&
+                    selectedAccount
+                  ) {
+                    const targetAmount = Math.max(
+                      0,
+                      Math.floor(
+                        Number(selectedAccount.current_balance || 0) -
+                          (Number(nextFee) || 0),
+                      ),
+                    );
+                    setAmount(String(targetAmount));
+                    if (Number(price) > 0 && targetAmount > 0) {
+                      const targetQuantity =
+                        Math.round(
+                          (targetAmount / Number(price)) * 100_000_000,
+                        ) / 100_000_000;
+                      setQuantity(targetQuantity.toFixed(8));
+                    }
+                  }
+                }}
                 placeholder="0"
               />
             </>

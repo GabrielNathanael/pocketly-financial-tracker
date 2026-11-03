@@ -633,9 +633,7 @@ export interface Database {
           quantity: number;
           cost_basis: number;
           average_buy_price: number;
-          manual_price: number;
           price_currency: CurrencyCode;
-          price_updated_at: string | null;
           notes: string | null;
           created_at: string;
           updated_at: string;
@@ -649,9 +647,7 @@ export interface Database {
           quantity?: number;
           cost_basis?: number;
           average_buy_price?: number;
-          manual_price?: number;
           price_currency?: CurrencyCode;
-          price_updated_at?: string | null;
           notes?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -665,9 +661,7 @@ export interface Database {
           quantity?: number;
           cost_basis?: number;
           average_buy_price?: number;
-          manual_price?: number;
           price_currency?: CurrencyCode;
-          price_updated_at?: string | null;
           notes?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -683,6 +677,7 @@ export interface Database {
           symbol: string;
           type: CryptoTradeType;
           quantity: number;
+          requested_amount: number;
           gross_amount: number;
           fee_amount: number;
           fee_currency: CurrencyCode;
@@ -701,6 +696,7 @@ export interface Database {
           symbol: string;
           type: CryptoTradeType;
           quantity: number;
+          requested_amount?: number;
           gross_amount: number;
           fee_amount?: number;
           fee_currency?: CurrencyCode;
@@ -719,6 +715,7 @@ export interface Database {
           symbol?: string;
           type?: CryptoTradeType;
           quantity?: number;
+          requested_amount?: number;
           gross_amount?: number;
           fee_amount?: number;
           fee_currency?: CurrencyCode;

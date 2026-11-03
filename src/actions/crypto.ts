@@ -59,16 +59,11 @@ async function syncCryptoHolding(
 
   let quantity = 0;
   let costBasis = 0;
-  const latestTradePrice = trades?.length
-    ? Number(trades[trades.length - 1].price_per_unit) || 0
-    : 0;
   for (const trade of trades || []) {
     const qty = Number(trade.quantity);
     if (trade.type === "buy") {
       quantity += qty;
-      costBasis +=
-        Number(trade.quantity) * Number(trade.price_per_unit) +
-        Number(trade.fee_amount || 0);
+      costBasis += Number(trade.cost_basis) || 0;
     } else {
       const currentCost = quantity > 0 ? (qty / quantity) * costBasis : 0;
       quantity = Math.max(0, quantity - qty);
@@ -78,7 +73,7 @@ async function syncCryptoHolding(
 
   const { data: current } = await supabase
     .from("crypto_holdings")
-    .select("id, manual_price, price_currency, name, notes")
+    .select("id, price_currency, name, notes")
     .eq("user_id", userId)
     .eq("account_id", accountId)
     .ilike("symbol", symbol)
@@ -103,7 +98,6 @@ async function syncCryptoHolding(
     quantity,
     cost_basis: costBasis,
     average_buy_price: costBasis / quantity,
-    manual_price: Number(current?.manual_price || latestTradePrice),
     price_currency: current?.price_currency || "IDR",
     notes: current?.notes || null,
     updated_at: new Date().toISOString(),
@@ -157,6 +151,7 @@ export async function recordCryptoBuy(input: {
   name?: string;
   quantity: number;
   grossAmount: number;
+  requestedAmount?: number;
   feeAmount?: number;
   pricePerUnit: number;
   notes?: string | null;
@@ -169,6 +164,7 @@ export async function recordCryptoSell(input: {
   holdingId: string;
   quantity: number;
   grossAmount: number;
+  requestedAmount?: number;
   feeAmount?: number;
   pricePerUnit: number;
   notes?: string | null;
@@ -195,6 +191,7 @@ export async function recordCryptoSell(input: {
     name: holding.name,
     quantity: input.quantity,
     grossAmount: input.grossAmount,
+    requestedAmount: input.requestedAmount,
     feeAmount: input.feeAmount,
     pricePerUnit: input.pricePerUnit,
     notes: input.notes,
@@ -210,6 +207,7 @@ async function recordCryptoTrade(input: {
   name?: string;
   quantity: number;
   grossAmount: number;
+  requestedAmount?: number;
   feeAmount?: number;
   pricePerUnit: number;
   notes?: string | null;
@@ -225,12 +223,14 @@ async function recordCryptoTrade(input: {
   const symbol = cleanSymbol(input.symbol);
   const quantity = Number(input.quantity);
   const grossAmount = Number(input.grossAmount);
+  const requestedAmount = Number(input.requestedAmount ?? grossAmount);
   const feeAmount = Number(input.feeAmount || 0);
   const pricePerUnit = Number(input.pricePerUnit);
   if (
     !symbol ||
     quantity <= 0 ||
     grossAmount <= 0 ||
+    requestedAmount <= 0 ||
     pricePerUnit <= 0 ||
     feeAmount < 0
   ) {
@@ -266,7 +266,7 @@ async function recordCryptoTrade(input: {
     input.type === "sell" && existing
       ? (quantity / Number(existing.quantity)) * Number(existing.cost_basis)
       : input.type === "buy"
-        ? quantity * pricePerUnit + feeAmount
+        ? grossAmount + feeAmount
         : 0;
   const realizedPnl =
     input.type === "sell" ? grossAmount - feeAmount - costBasis : 0;
@@ -291,6 +291,7 @@ async function recordCryptoTrade(input: {
       symbol,
       type: input.type,
       quantity,
+      requested_amount: requestedAmount,
       gross_amount: grossAmount,
       fee_amount: feeAmount,
       fee_currency: account.currency as CurrencyCode,
@@ -425,6 +426,7 @@ export async function updateCryptoTrade(input: {
   id: string;
   quantity: number;
   grossAmount: number;
+  requestedAmount?: number;
   feeAmount?: number;
   pricePerUnit: number;
   notes?: string | null;
@@ -490,6 +492,10 @@ export async function updateCryptoTrade(input: {
     .from("crypto_trades")
     .update({
       quantity,
+      requested_amount:
+        input.requestedAmount !== undefined
+          ? Number(input.requestedAmount)
+          : Number(trade.requested_amount || trade.gross_amount),
       gross_amount: grossAmount,
       fee_amount: feeAmount,
       price_per_unit: pricePerUnit,
@@ -532,31 +538,6 @@ export async function updateCryptoTrade(input: {
   revalidatePath("/dashboard");
   revalidatePath("/transactions");
   return { success: true, realizedPnl };
-}
-
-export async function updateCryptoManualPrice(input: {
-  holdingId: string;
-  manualPrice: number;
-}) {
-  const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: "Unauthorized" };
-  if (input.manualPrice < 0)
-    return { error: "Harga manual tidak boleh negatif" };
-  const { error } = await supabase
-    .from("crypto_holdings")
-    .update({
-      manual_price: input.manualPrice,
-      price_updated_at: new Date().toISOString(),
-    })
-    .eq("id", input.holdingId)
-    .eq("user_id", user.id);
-  if (error) return { error: error.message };
-  revalidatePath("/investments");
-  revalidatePath("/net-worth");
-  return { success: true };
 }
 
 export async function createInvestmentCashTransfer(input: {

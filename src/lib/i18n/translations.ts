@@ -407,8 +407,8 @@ export const translations = {
         "Kelola saham, kripto, saldo platform, dan performa investasimu",
       crypto: {
         title: "Aset Kripto",
-        subtitle: "Catat nominal rupiah, bukan menebak jumlah BTC",
-        marketValue: "Nilai pasar",
+        subtitle: "Catat nominal, harga, fee, dan jumlah aktual dari broker",
+        marketValue: "Nilai tercatat",
         costBasis: "Modal",
         quantity: "Jumlah aset",
         manualPrice: "Harga manual",
@@ -1518,8 +1518,8 @@ export const translations = {
         "Track stocks, crypto, platform balances, and investment performance",
       crypto: {
         title: "Crypto Assets",
-        subtitle: "Enter the rupiah amount, not a BTC quantity guess",
-        marketValue: "Market value",
+        subtitle: "Record the broker's actual amount, price, fee, and quantity",
+        marketValue: "Recorded value",
         costBasis: "Cost basis",
         quantity: "Asset amount",
         manualPrice: "Manual price",
