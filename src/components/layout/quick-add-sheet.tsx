@@ -594,6 +594,15 @@ function QuickAddSheetContent({
             />
           </div>
 
+          {isNumpadOpen && (
+            <div
+              className="overflow-x-auto whitespace-nowrap text-right text-xs font-mono font-semibold tracking-wide text-[#64748B] dark:text-[#94A3B8] no-scrollbar"
+              aria-label={`Input nominal: ${amountStr}`}
+            >
+              {amountStr}
+            </div>
+          )}
+
           <div
             className={cn(
               "flex items-baseline gap-2",
