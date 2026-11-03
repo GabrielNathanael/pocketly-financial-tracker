@@ -102,22 +102,28 @@ export function TransactionDetailView({
     }
   };
 
-  const handlePin = () => {
+  const handlePin = async () => {
     const name = cleanDescription || memoText || category?.name || "Template";
-    savePinnedTemplate({
-      name,
-      accountId: transaction.account_id,
-      accountName: account?.name,
-      categoryId: transaction.category_id,
-      categoryName: category?.name,
-      categoryIcon: category?.icon,
-      type: transaction.type,
-      amount: Number(transaction.amount),
-      currency: transaction.currency,
-      description: transaction.description,
-    });
-    setIsPinned(true);
-    setTimeout(() => setIsPinned(false), 3000);
+    try {
+      await savePinnedTemplate({
+        name,
+        accountId: transaction.account_id,
+        accountName: account?.name,
+        categoryId: transaction.category_id,
+        categoryName: category?.name,
+        categoryIcon: category?.icon,
+        type: transaction.type,
+        amount: Number(transaction.amount),
+        currency: transaction.currency,
+        description: transaction.description,
+      });
+      setIsPinned(true);
+      setTimeout(() => setIsPinned(false), 3000);
+    } catch (error) {
+      toast.error("Gagal menyimpan pin", {
+        description: error instanceof Error ? error.message : "Coba lagi.",
+      });
+    }
   };
 
   const handleDelete = () => {

@@ -457,7 +457,7 @@ function QuickAddSheetContent({
         if (isPinned) {
           const name =
             description.trim() || activeCategory?.name || "Quick Template";
-          savePinnedTemplate({
+          await savePinnedTemplate({
             name,
             accountId: selectedAccountId,
             accountName: activeAccount?.name,

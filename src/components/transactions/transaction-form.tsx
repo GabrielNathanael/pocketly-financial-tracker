@@ -494,7 +494,7 @@ export function TransactionForm({
       };
 
       if (isPinned) {
-        savePinnedTemplate({
+        await savePinnedTemplate({
           name:
             description.trim() ||
             activeCategory?.name ||

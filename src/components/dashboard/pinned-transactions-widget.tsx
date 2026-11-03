@@ -11,6 +11,7 @@ import { formatCurrency } from "@/lib/utils/currency";
 import { usePrivacyMode, maskCurrency } from "@/lib/storage/privacy-mode";
 import { useLanguage } from "@/lib/i18n/language-context";
 import { createTransaction } from "@/actions/transactions";
+import { toast } from "sonner";
 import { Pin, Zap, X, Check, ChevronLeft, ChevronRight } from "lucide-react";
 
 export function PinnedTransactionsWidget() {
@@ -20,6 +21,7 @@ export function PinnedTransactionsWidget() {
   const templates = usePinnedTemplates();
   const [loggingId, setLoggingId] = useState<string | null>(null);
   const [successId, setSuccessId] = useState<string | null>(null);
+  const [removingId, setRemovingId] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   if (templates.length === 0) {
@@ -106,10 +108,19 @@ export function PinnedTransactionsWidget() {
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  removePinnedTemplate(tpl.id);
+                  setRemovingId(tpl.id);
+                  removePinnedTemplate(tpl.id)
+                    .catch((error) => {
+                      toast.error("Gagal menghapus pin", {
+                        description:
+                          error instanceof Error ? error.message : "Coba lagi.",
+                      });
+                    })
+                    .finally(() => setRemovingId(null));
                 }}
                 className="absolute right-1.5 top-1.5 p-2 rounded-full text-[#94A3B8] hover:text-[#E11D48] active:text-[#E11D48] opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-20 touch-manipulation"
                 title={t.dashboard.deletePinnedTitle || "Remove pin"}
+                disabled={removingId === tpl.id}
               >
                 <X className="w-3.5 h-3.5" />
               </button>
