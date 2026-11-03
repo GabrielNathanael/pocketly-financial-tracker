@@ -2,17 +2,71 @@
 
 import React, { InputHTMLAttributes, forwardRef } from 'react'
 import { cn } from '@/lib/utils/cn'
+import { NumberInput } from '@/components/ui/number-input'
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string
   error?: string
   leftIcon?: React.ReactNode
   rightIcon?: React.ReactNode
+  numberMode?: 'currency' | 'decimal'
+  numberDecimalScale?: number
+  numberMaxDigits?: number
+  numberThousandsShortcuts?: boolean
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ className, label, error, leftIcon, rightIcon, id, ...props }, ref) => {
     const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined)
+
+    if (props.type === 'number') {
+      const {
+        value,
+        onChange,
+        placeholder,
+        required,
+        disabled,
+        max,
+        step,
+        autoFocus,
+        numberMode = 'currency',
+        numberDecimalScale,
+        numberMaxDigits,
+        numberThousandsShortcuts,
+      } = props
+      const stringValue = value === undefined || value === null ? '' : String(value)
+      const stepText = step === undefined ? undefined : String(step)
+      const decimalScale = stepText?.includes('.')
+        ? stepText.split('.')[1]?.length
+        : undefined
+
+      return (
+        <NumberInput
+          label={label}
+          value={stringValue}
+          onValueChange={(nextValue) => {
+            onChange?.({
+              target: { value: nextValue },
+              currentTarget: { value: nextValue },
+            } as React.ChangeEvent<HTMLInputElement>)
+          }}
+          suffix={rightIcon}
+          leftIcon={leftIcon}
+          error={error}
+          placeholder={placeholder}
+          required={required}
+          disabled={disabled}
+          allowDecimal={numberMode === 'decimal'}
+          decimalScale={numberDecimalScale ?? decimalScale}
+          mode={numberMode}
+          maxDigits={numberMaxDigits}
+          showThousandsShortcuts={numberThousandsShortcuts}
+          max={max}
+          autoFocus={autoFocus}
+          className={className}
+        />
+      )
+    }
 
     return (
       <div className="w-full flex flex-col gap-1.5">

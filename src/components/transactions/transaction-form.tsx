@@ -10,6 +10,7 @@ import {
 } from "@/types/database";
 import { createTransaction, updateTransaction } from "@/actions/transactions";
 import { DatePicker } from "@/components/ui/date-picker";
+import { NumberInput } from "@/components/ui/number-input";
 import { DynamicIcon } from "@/components/ui/dynamic-icon";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useLanguage } from "@/lib/i18n/language-context";
@@ -608,9 +609,38 @@ export function TransactionForm({
       </div>
 
       {/* 2. Amount Input & Pin Shortcut (Click to Open Numpad) */}
+      <div className="relative">
+        <NumberInput
+          variant="card"
+          label={t.quickAdd.nominal}
+          value={amountStr}
+          onValueChange={(value) => {
+            setError(null);
+            setAmountStr(value);
+          }}
+          currency={currentCurrency}
+          allowDecimal={false}
+          maxDigits={12}
+          open={isNumpadOpen}
+          onOpenChange={setIsNumpadOpen}
+        />
+        <button
+          type="button"
+          onClick={() => setIsPinned(!isPinned)}
+          title={isPinned ? "Sematkan aktif" : "Sematkan transaksi ini"}
+          className={cn(
+            "absolute right-2 top-2 z-10 rounded-lg p-1.5 transition-colors",
+            isPinned
+              ? "bg-amber-50 text-amber-500 dark:bg-amber-950/40"
+              : "text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]",
+          )}
+        >
+          <Pin className={cn("h-3.5 w-3.5", isPinned && "fill-current")} />
+        </button>
+      </div>
       <div
         className={cn(
-          "relative rounded-xl bg-white dark:bg-[#121215] border shadow-2xs overflow-hidden transition-all group",
+          "relative hidden rounded-xl bg-white dark:bg-[#121215] border shadow-2xs overflow-hidden transition-all group",
           isNumpadOpen
             ? "border-[#0F172A] dark:border-[#FAFAFA] ring-2 ring-[#0F172A]/10 dark:ring-[#FAFAFA]/10"
             : "border-[#E5E7EB] dark:border-[#27272A]",
@@ -676,7 +706,7 @@ export function TransactionForm({
 
       {/* Conditionally render: If Numpad Open -> In-Place Keypad Grid; Else -> Form Fields */}
       {isNumpadOpen ? (
-        <div className="flex flex-col gap-2 pt-1 animate-in fade-in-50 zoom-in-98 duration-150">
+        <div className="hidden flex-col gap-2 pt-1 animate-in fade-in-50 zoom-in-98 duration-150">
           <div className="grid grid-cols-4 gap-1.5">
             {["1", "2", "3"].map((n) => (
               <button
@@ -1041,14 +1071,15 @@ export function TransactionForm({
                         }
                         className="flex-1 min-w-0 px-2 py-1.5 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8]"
                       />
-                      <input
-                        type="number"
-                        placeholder="0"
+                      <NumberInput
                         value={item.price}
-                        onChange={(e) =>
-                          handleUpdateItem(idx, "price", e.target.value)
+                        onValueChange={(value) =>
+                          handleUpdateItem(idx, "price", value)
                         }
-                        className="w-20 sm:w-24 px-2 py-1.5 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs font-mono font-bold text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8]"
+                        allowDecimal={false}
+                        maxDigits={12}
+                        placeholder="0"
+                        className="w-20 sm:w-24"
                       />
                       <button
                         type="button"

@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
+import { NumberInput } from "@/components/ui/number-input";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { DynamicIcon } from "@/components/ui/dynamic-icon";
@@ -770,7 +771,9 @@ function QuickAddSheetContent({
         <div
           className={cn(
             "col-start-1 row-start-1 flex flex-col gap-3 transition-opacity duration-150",
-            isNumpadOpen ? "opacity-0 pointer-events-none" : "opacity-100",
+            isNumpadOpen
+              ? "hidden"
+              : "opacity-100",
           )}
           aria-hidden={isNumpadOpen}
         >
@@ -1042,14 +1045,15 @@ function QuickAddSheetContent({
                         }
                         className="flex-1 min-w-0 px-2 py-1.5 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8]"
                       />
-                      <input
-                        type="number"
-                        placeholder="0"
+                      <NumberInput
                         value={item.price}
-                        onChange={(e) =>
-                          handleUpdateItem(idx, "price", e.target.value)
+                        onValueChange={(value) =>
+                          handleUpdateItem(idx, "price", value)
                         }
-                        className="w-20 sm:w-24 px-2 py-1.5 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs font-mono font-bold text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8]"
+                        allowDecimal={false}
+                        maxDigits={12}
+                        placeholder="0"
+                        className="w-20 sm:w-24"
                       />
                       <button
                         type="button"

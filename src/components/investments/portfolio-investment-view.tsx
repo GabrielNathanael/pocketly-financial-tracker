@@ -1822,6 +1822,9 @@ export function PortfolioInvestmentView({
                 label={i18n.lotsLabel}
                 type="number"
                 step="any"
+                numberMode="decimal"
+                numberThousandsShortcuts={false}
+                numberDecimalScale={2}
                 min="0.01"
                 max={
                   modal === "sell" && selectedStock
@@ -1853,6 +1856,7 @@ export function PortfolioInvestmentView({
                     }
                     type="number"
                     step="any"
+                    numberMode="currency"
                     min="0.01"
                     value={price}
                     onChange={(event) => setPrice(event.target.value)}
@@ -1925,6 +1929,7 @@ export function PortfolioInvestmentView({
                     }`}
                     type="number"
                     step="any"
+                    numberMode="currency"
                     min="0.01"
                     value={price}
                     onChange={(event) => {
@@ -1950,6 +1955,9 @@ export function PortfolioInvestmentView({
                     }
                     type="number"
                     step="any"
+                    numberMode="decimal"
+                    numberThousandsShortcuts={false}
+                    numberDecimalScale={8}
                     value={amount}
                     onChange={(event) => {
                       const nextAmount = event.target.value;
@@ -1989,6 +1997,9 @@ export function PortfolioInvestmentView({
                     }
                     type="number"
                     step="any"
+                    numberMode="decimal"
+                    numberThousandsShortcuts={false}
+                    numberDecimalScale={8}
                     min="0.00000001"
                     value={quantity}
                     onChange={(event) => setQuantity(event.target.value)}
@@ -2005,6 +2016,7 @@ export function PortfolioInvestmentView({
                   label={`${cryptoI18n.quantity} (${symbol})`}
                   type="number"
                   step="any"
+                  numberMode="currency"
                   min="0.00000001"
                   value={quantity}
                   onChange={(event) => {
@@ -2070,6 +2082,7 @@ export function PortfolioInvestmentView({
                 label={cryptoI18n.fee}
                 type="number"
                 step="any"
+                numberMode="currency"
                 min="0"
                 value={fee}
                 onChange={(event) => {
