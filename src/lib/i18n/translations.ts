@@ -646,7 +646,13 @@ export const translations = {
       createRecord: "Catat ke Buku Utang",
       deleteConfirmTitle: "Hapus Catatan Utang/Piutang",
       deleteConfirmMsg:
-        "Apakah Anda yakin ingin menghapus catatan ini? Seluruh transaksi kas terkait (transaksi awal & riwayat pembayaran cicilan) juga akan dihapus otomatis dari buku kas, dan saldo rekening Anda akan dipulihkan.",
+        "Apakah Anda yakin ingin menghapus catatan ini? Transaksi kas terkait, termasuk transaksi awal dan riwayat pembayaran cicilan, akan tetap disimpan di buku kas. Saldo rekening tidak akan berubah.",
+      deleteKeepTransactions: "Hapus card saja, pertahankan transaksi",
+      deleteAndRollback: "Batalkan transaksi & pulihkan saldo",
+      deleteKeepConfirmMsg:
+        "Card akan dihapus, tetapi transaksi awal dan riwayat cicilan tetap disimpan. Saldo rekening tidak berubah.",
+      deleteRollbackConfirmMsg:
+        "Card dan seluruh transaksi kas terkait akan dihapus. Saldo rekening akan dipulihkan. Gunakan ini jika utang/piutang sebenarnya tidak pernah terjadi.",
       recordPayment: "Catat Cicilan",
       paymentModalTitle: "Catat Pembayaran",
       editPaymentModalTitle: "Ubah Cicilan",
@@ -1754,7 +1760,13 @@ export const translations = {
       createRecord: "Add to Ledger",
       deleteConfirmTitle: "Delete Record",
       deleteConfirmMsg:
-        "Are you sure you want to delete this record? All linked cash transactions (initial disbursement & installment payments) will also be deleted from the ledger, and your account balances will be restored.",
+        "Are you sure you want to delete this record? Linked cash transactions, including the initial transaction and installment payment history, will be kept in the ledger. Account balances will not change.",
+      deleteKeepTransactions: "Delete card only, keep transactions",
+      deleteAndRollback: "Cancel transactions & restore balance",
+      deleteKeepConfirmMsg:
+        "The card will be deleted, but the initial and installment transactions will be kept. Account balances will not change.",
+      deleteRollbackConfirmMsg:
+        "The card and all linked cash transactions will be deleted. Account balances will be restored. Use this if the debt or receivable never actually happened.",
       recordPayment: "Record Payment",
       paymentModalTitle: "Record Installment",
       editPaymentModalTitle: "Edit Installment",

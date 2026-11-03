@@ -64,6 +64,7 @@ export function DebtForm({
   const [isLoading, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteTransactions, setDeleteTransactions] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -129,7 +130,7 @@ export function DebtForm({
     setError(null);
 
     try {
-      const res = await deleteDebt(initialData.id);
+      const res = await deleteDebt(initialData.id, { deleteTransactions });
       if (res.error) {
         setError(res.error);
       } else {
@@ -331,14 +332,31 @@ export function DebtForm({
 
       <div className="flex items-center gap-2 pt-2">
         {isEditing && (
-          <Button
-            type="button"
-            variant="danger"
-            onClick={() => setShowDeleteConfirm(true)}
-            className="px-3"
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setDeleteTransactions(false);
+                setShowDeleteConfirm(true);
+              }}
+              className="px-3"
+            >
+              {t.debts.deleteKeepTransactions}
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              onClick={() => {
+                setDeleteTransactions(true);
+                setShowDeleteConfirm(true);
+              }}
+              className="px-3"
+              title={t.debts.deleteAndRollback}
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </>
         )}
         <Button type="submit" isLoading={isLoading} className="flex-1">
           {isEditing ? t.debts.saveRecord : t.debts.createRecord}
@@ -352,7 +370,11 @@ export function DebtForm({
           onConfirm={handleDelete}
           isLoading={isDeleting}
           title={t.debts.deleteConfirmTitle}
-          message={t.debts.deleteConfirmMsg}
+          message={
+            deleteTransactions
+              ? t.debts.deleteRollbackConfirmMsg
+              : t.debts.deleteKeepConfirmMsg
+          }
         />
       )}
     </form>

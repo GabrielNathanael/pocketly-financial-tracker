@@ -227,55 +227,53 @@ export async function updateDebt(
   return { success: true }
 }
 
-export async function deleteDebt(id: string) {
+export async function deleteDebt(
+  id: string,
+  options: { deleteTransactions?: boolean } = {},
+) {
   const supabase = await createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Unauthorized' }
 
-  // 1. Fetch debt details before delete
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: debt } = await (supabase.from('debts') as any)
-    .select('*')
-    .eq('id', id)
-    .eq('user_id', user.id)
-    .single()
+  if (options.deleteTransactions) {
+    // Remove only explicitly linked payment transactions and the initial
+    // transaction tagged with this debt reference.
+    const { data: payments, error: paymentsError } = await supabase
+      .from('debt_payments')
+      .select('linked_transaction_id')
+      .eq('debt_id', id)
+    if (paymentsError) return { error: paymentsError.message }
 
-  // 2. Fetch all linked installment payment transactions
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: payments } = await (supabase.from('debt_payments') as any)
-    .select('id, linked_transaction_id')
-    .eq('debt_id', id)
+    const linkedTransactionIds = (payments || [])
+      .map((payment) => payment.linked_transaction_id)
+      .filter((transactionId): transactionId is string => Boolean(transactionId))
 
-  const linkedTxIds = (payments || [])
-    .map((p: { linked_transaction_id?: string | null }) => p.linked_transaction_id)
-    .filter(Boolean)
+    if (linkedTransactionIds.length > 0) {
+      const { error: paymentTransactionsError } = await supabase
+        .from('transactions')
+        .delete()
+        .in('id', linkedTransactionIds)
+        .eq('user_id', user.id)
+      if (paymentTransactionsError) return { error: paymentTransactionsError.message }
+    }
 
-  if (linkedTxIds.length > 0) {
-    // Delete payment transactions (which also restores account balances via triggers)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from('transactions') as any)
-      .delete()
-      .in('id', linkedTxIds)
-      .eq('user_id', user.id)
-  }
-
-  // 3. Delete initial disbursement transaction linked by Ref tag
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (supabase.from('transactions') as any)
-    .delete()
-    .eq('user_id', user.id)
-    .ilike('description', `%[Ref:debt-${id}]%`)
-
-  // Fallback: If created before Ref tags, search by counterparty name
-  if (debt) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from('transactions') as any)
+    const { error: initialTransactionError } = await supabase
+      .from('transactions')
       .delete()
       .eq('user_id', user.id)
-      .or(`description.ilike.%Pemberian Pinjaman ke ${debt.counterparty_name}%,description.ilike.%Pencairan Utang dari ${debt.counterparty_name}%,description.ilike.%${debt.counterparty_name}%`)
+      .ilike('description', `%[Ref:debt-${id}]%`)
+    if (initialTransactionError) return { error: initialTransactionError.message }
+  } else {
+    // Detach payment rows before deleting the debt. This protects the linked
+    // transactions even if the deployed database uses a cascading FK/trigger.
+    const { error: detachError } = await supabase
+      .from('debt_payments')
+      .update({ linked_transaction_id: null })
+      .eq('debt_id', id)
+    if (detachError) return { error: detachError.message }
   }
 
-  // 4. Delete the debt record (debt_payments cascade-deleted automatically)
+  // Payment rows cascade-delete after their transaction links are detached.
   const { error } = await supabase.from('debts').delete().eq('id', id).eq('user_id', user.id)
 
   if (error) {

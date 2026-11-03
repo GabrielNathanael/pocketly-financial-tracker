@@ -44,6 +44,7 @@ export function DebtDetailView({ debt, accounts }: DebtDetailViewProps) {
   const [editingPayment, setEditingPayment] = useState<EnrichedDebtPayment | null>(null)
   const [deletingPaymentId, setDeletingPaymentId] = useState<string | null>(null)
   const [showDeleteDebtConfirm, setShowDeleteDebtConfirm] = useState(false)
+  const [deleteTransactions, setDeleteTransactions] = useState(false)
   const [displayLimit, setDisplayLimit] = useState(30)
   const [isDeletingDebt, setIsDeletingDebt] = useState(false)
 
@@ -78,7 +79,7 @@ export function DebtDetailView({ debt, accounts }: DebtDetailViewProps) {
     setIsDeletingDebt(true)
     setShowDeleteDebtConfirm(false)
     try {
-      const res = await deleteDebt(debt.id)
+      const res = await deleteDebt(debt.id, { deleteTransactions })
       if (res?.error) {
         toast.error(t.debts.deleteDebtFailed || (language === 'en' ? 'Failed to Delete Debt' : 'Gagal Menghapus Utang'), { description: res.error })
       } else {
@@ -213,9 +214,25 @@ export function DebtDetailView({ debt, accounts }: DebtDetailViewProps) {
           </Button>
 
           <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setDeleteTransactions(true)
+              setShowDeleteDebtConfirm(true)
+            }}
+            className="px-3 shrink-0"
+          >
+            <span className="hidden sm:inline">{t.debts.deleteAndRollback}</span>
+            <span className="sm:hidden">Rollback</span>
+          </Button>
+
+          <Button
             variant="danger"
             size="sm"
-            onClick={() => setShowDeleteDebtConfirm(true)}
+            onClick={() => {
+              setDeleteTransactions(false)
+              setShowDeleteDebtConfirm(true)
+            }}
             className="px-3 shrink-0"
             title={t.common.delete}
           >
@@ -289,14 +306,16 @@ export function DebtDetailView({ debt, accounts }: DebtDetailViewProps) {
 
                   {/* Actions for installment: Edit & Delete */}
                   <div className="flex items-center gap-1 shrink-0">
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon"
                       onClick={() => setEditingPayment(p)}
-                      className="p-1.5 text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] rounded-md transition-colors cursor-pointer"
+                      className="h-auto w-auto p-1.5 text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] rounded-md"
                       title={t.common.edit}
                     >
                       <Pencil className="w-3.5 h-3.5" />
-                    </button>
+                    </Button>
                     <button
                       type="button"
                       disabled={deletingPaymentId === p.id}
@@ -387,7 +406,7 @@ export function DebtDetailView({ debt, accounts }: DebtDetailViewProps) {
         onClose={() => setShowDeleteDebtConfirm(false)}
         onConfirm={handleDeleteDebt}
         title={t.debts.deleteConfirmTitle || 'Hapus Catatan Utang/Piutang'}
-        message={t.debts.deleteConfirmMsg || 'Apakah Anda yakin ingin menghapus catatan utang/piutang ini secara permanen?'}
+        message={deleteTransactions ? t.debts.deleteRollbackConfirmMsg : t.debts.deleteKeepConfirmMsg}
         isLoading={isDeletingDebt}
       />
     </div>
