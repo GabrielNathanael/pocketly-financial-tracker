@@ -447,9 +447,9 @@ export const translations = {
       netPnl: "Hasil Trading Bersih",
       holdingsTitle: "Kepemilikan Saham Aktif",
       tradesTitle: "Riwayat Transaksi Jual Beli",
-      emptyHoldingsTitle: "Belum Ada Saham yang Dimiliki",
+      emptyHoldingsTitle: "Belum Ada Saham atau Kripto yang Dimiliki",
       emptyHoldingsDesc:
-        "Catat transaksi pembelian saham pertamamu untuk mulai memantau kepemilikan aset.",
+        "Catat transaksi pembelian saham atau kripto pertamamu untuk mulai memantau kepemilikan aset.",
       emptyTradesTitle: "Belum Ada Riwayat Transaksi",
       emptyTradesDesc:
         "Riwayat transaksi beli dan jual saham serta kripto akan tercatat di sini.",
@@ -1563,9 +1563,9 @@ export const translations = {
       netPnl: "Net Trading P&L",
       holdingsTitle: "Active Stock Holdings",
       tradesTitle: "Trade Execution History",
-      emptyHoldingsTitle: "No Stock Holdings Yet",
+      emptyHoldingsTitle: "No Stock or Crypto Holdings Yet",
       emptyHoldingsDesc:
-        "Record your first stock purchase to start tracking your equity investments.",
+        "Record your first stock or crypto purchase to start tracking your equity investments.",
       emptyTradesTitle: "No Trade History",
       emptyTradesDesc:
         "Your executed stock and crypto buy and sell trades will appear here.",
