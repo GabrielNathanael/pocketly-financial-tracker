@@ -1986,14 +1986,13 @@ export function PortfolioInvestmentView({
                         setQuantity(nextQuantity.toFixed(8));
                       }
                     }}
-                    placeholder="Contoh: 4999994"
                     required
                   />
                   <Input
                     label={
                       isEn
-                        ? `Calculated ${symbol} quantity`
-                        : `Jumlah ${symbol} (otomatis, bisa disesuaikan)`
+                        ? `${symbol} quantity`
+                        : `Jumlah ${symbol}`
                     }
                     type="number"
                     step="any"
@@ -2006,7 +2005,7 @@ export function PortfolioInvestmentView({
                     placeholder={
                       estimatedCryptoQuantity > 0
                         ? estimatedCryptoQuantity.toFixed(8)
-                        : "Contoh: 0.00143766"
+                        : undefined
                     }
                     required
                   />
@@ -2016,7 +2015,9 @@ export function PortfolioInvestmentView({
                   label={`${cryptoI18n.quantity} (${symbol})`}
                   type="number"
                   step="any"
-                  numberMode="currency"
+                  numberMode="decimal"
+                  numberDecimalScale={8}
+                  numberThousandsShortcuts={false}
                   min="0.00000001"
                   value={quantity}
                   onChange={(event) => {
@@ -2057,17 +2058,8 @@ export function PortfolioInvestmentView({
                 />
               )}
 
-              {modal === "buy" ||
-              (modal === "edit" && editTradeType === "buy") ? (
-                <p className="rounded-xl bg-slate-50 p-3 text-xs text-slate-600 dark:bg-slate-900/40 dark:text-slate-300">
-                  {isEn
-                    ? "Quantity is rounded to 8 decimals like the broker. Adjust it if the broker shows a different final quantity."
-                    : "Jumlah dihitung dan dibulatkan 8 desimal seperti broker. Sesuaikan jika broker menampilkan jumlah final yang berbeda."}
-                  {estimatedCryptoQuantity > 0
-                    ? ` (${estimatedCryptoQuantity.toFixed(8)} ${symbol})`
-                    : ""}
-                </p>
-              ) : (
+              {modal !== "buy" &&
+              !(modal === "edit" && editTradeType === "buy") && (
                 <CalculatedAmount
                   label={
                     isEn

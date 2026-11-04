@@ -89,11 +89,17 @@ export function NumberInput({
       window.removeEventListener(NUMBER_INPUT_OPEN_EVENT, closeOtherInputs);
   }, [controlledOpen]);
   const formattedValue = value
-    ? formatCurrency(Number(value) || 0, currency || "IDR").replace(
-        /^-?(?:Rp |\$|S\$)/,
-        (prefix) => (prefix.startsWith("-") ? "-" : ""),
-      )
+    ? value.endsWith(".")
+      ? value
+      : mode === "decimal" && !currency
+        ? value
+        : formatCurrency(Number(value) || 0, currency || "IDR").replace(
+            /^-?(?:Rp |\$|S\$)/,
+            (prefix) => (prefix.startsWith("-") ? "-" : ""),
+          )
     : placeholder;
+  const mainDisplayValue =
+    variant === "card" && !value ? "0" : formattedValue;
   const handleValueChange = (nextValue: string) => {
     if (
       max !== undefined &&
@@ -112,6 +118,7 @@ export function NumberInput({
       onDone={() => setOpen(false)}
       allowDecimal={allowDecimal}
       decimalScale={decimalScale}
+      minorUnitMode={currency === "USD" || currency === "SGD"}
       maxDigits={maxDigits}
       showThousandsShortcuts={showThousandsShortcuts}
       doneLabel={doneLabel}
@@ -126,7 +133,7 @@ export function NumberInput({
         </span>
       )}
       <span className="min-w-0 flex-1 truncate font-mono font-bold tracking-tight">
-        {formattedValue}
+        {mainDisplayValue}
       </span>
       {suffix && <span className="ml-2 shrink-0">{suffix}</span>}
     </>

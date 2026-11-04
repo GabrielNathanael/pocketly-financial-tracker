@@ -2,6 +2,7 @@
 
 import { Delete, Check } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { useState } from "react";
 
 interface NumberKeypadProps {
   value: string;
@@ -9,6 +10,7 @@ interface NumberKeypadProps {
   onDone?: () => void;
   allowDecimal?: boolean;
   decimalScale?: number;
+  minorUnitMode?: boolean;
   maxDigits?: number;
   showThousandsShortcuts?: boolean;
   doneLabel?: string;
@@ -32,33 +34,67 @@ export function NumberKeypad({
   onDone,
   allowDecimal = true,
   decimalScale,
+  minorUnitMode = false,
   maxDigits = 24,
   showThousandsShortcuts = true,
   doneLabel = "Selesai",
   compact = false,
   className,
 }: NumberKeypadProps) {
+  const [explicitDecimalMode, setExplicitDecimalMode] = useState(false);
   const press = (token: string) => {
     const current = value || "0";
     if (current === "0" && token !== ".") {
       if (token === "00" || token === "000") return;
-      onChange(token);
+      onChange(minorUnitMode ? `0.0${token}` : token);
       haptic();
       return;
     }
     if (token === ".") {
-      if (!allowDecimal || current.includes(".")) return;
+      if (!allowDecimal) return;
+      if (minorUnitMode && !explicitDecimalMode) {
+        const [whole = "0", fraction = ""] = current.split(".");
+        const digits = `${whole}${fraction}`.replace(/^0+(?=\d)/, "") || "0";
+        const numericValue = Number(current) || 0;
+        const wholeValue =
+          fraction.length > 0 ? Math.round(numericValue * 100) : Number(digits);
+        onChange(`${wholeValue}.`);
+        setExplicitDecimalMode(true);
+        haptic();
+        return;
+      }
+      if (current.includes(".")) return;
       onChange(current === "0" ? "0." : `${current}.`);
       haptic();
       return;
     }
 
     const [, fraction] = current.split(".");
-    if (decimalScale !== undefined && fraction && fraction.length >= decimalScale) {
+    if (
+      (explicitDecimalMode || !minorUnitMode) &&
+      decimalScale !== undefined &&
+      fraction &&
+      fraction.length >= decimalScale
+    ) {
       return;
     }
 
-    const next = current === "0" ? token : `${current}${token}`;
+    const next =
+      minorUnitMode && !explicitDecimalMode
+        ? (() => {
+            const digits = `${current.replace(".", "")}${token}`.replace(
+              /^0+/,
+              "",
+            );
+            const normalizedDigits = digits || "0";
+            if (normalizedDigits.length <= 2) {
+              return `0.${normalizedDigits.padStart(2, "0")}`;
+            }
+            return `${normalizedDigits.slice(0, -2)}.${normalizedDigits.slice(-2)}`;
+          })()
+        : current === "0"
+          ? token
+          : `${current}${token}`;
     const digits = next.replace(".", "");
     if (digits.length > maxDigits) {
       haptic(20);
@@ -77,6 +113,7 @@ export function NumberKeypad({
 
   const clear = () => {
     onChange("0");
+    setExplicitDecimalMode(false);
     haptic();
   };
 

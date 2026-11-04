@@ -58,8 +58,14 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           placeholder={placeholder}
           required={required}
           disabled={disabled}
-          allowDecimal={numberMode === 'decimal'}
-          decimalScale={numberDecimalScale ?? decimalScale}
+          allowDecimal={
+            numberMode === 'decimal' || currency === 'USD' || currency === 'SGD'
+          }
+          decimalScale={
+            numberDecimalScale ??
+            decimalScale ??
+            (currency === 'USD' || currency === 'SGD' ? 2 : undefined)
+          }
           mode={numberMode}
           currency={currency}
           maxDigits={numberMaxDigits}

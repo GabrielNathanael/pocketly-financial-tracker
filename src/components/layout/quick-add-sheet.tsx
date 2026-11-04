@@ -269,6 +269,22 @@ function QuickAddSheetContent({
   // Quick Calculator Keypad (Always enabled so user can type main amount freely)
   const handleKeypadPress = (val: string) => {
     setError(null);
+    const usesMinorUnits =
+      currentCurrency === "USD" || currentCurrency === "SGD";
+    if (usesMinorUnits && /^\d+$/.test(val)) {
+      const digits = `${amountStr.replace(/\D/g, "")}${val}`.replace(
+        /^0+/,
+        "",
+      ) || "0";
+      const nextAmount =
+        digits.length <= 2
+          ? `0.${digits.padStart(2, "0")}`
+          : `${digits.slice(0, -2)}.${digits.slice(-2)}`;
+      triggerHaptic();
+      setAmountStr(nextAmount);
+      return;
+    }
+
     if (amountStr === "0") {
       if (val === "000") return;
       triggerHaptic();
@@ -286,6 +302,15 @@ function QuickAddSheetContent({
   const handleKeypadBackspace = () => {
     setError(null);
     triggerHaptic();
+    if (currentCurrency === "USD" || currentCurrency === "SGD") {
+      const digits = amountStr.replace(/\D/g, "").slice(0, -1) || "0";
+      setAmountStr(
+        digits.length <= 2
+          ? `0.${digits.padStart(2, "0")}`
+          : `${digits.slice(0, -2)}.${digits.slice(-2)}`,
+      );
+      return;
+    }
     if (amountStr.length <= 1) {
       setAmountStr("0");
     } else {
