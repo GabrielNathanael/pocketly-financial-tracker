@@ -4,6 +4,7 @@ import { getAccounts } from '@/actions/accounts'
 import { getCategories } from '@/actions/categories'
 import { TransactionsView } from '@/components/transactions/transactions-view'
 import { TransactionType } from '@/types/database'
+import { getLatestForexRates } from '@/actions/exchange-rate'
 
 export const dynamic = 'force-dynamic'
 
@@ -35,11 +36,12 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
     sort: params.sort as any,
   }
 
-  const [transactions, accounts, categories, availableTags] = await Promise.all([
+  const [transactions, accounts, categories, availableTags, exchangeRates] = await Promise.all([
     getTransactions(filterParams),
     getAccounts(),
     getCategories(),
     getAllUserTags(),
+    getLatestForexRates(),
   ])
 
   return (
@@ -49,6 +51,7 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
       categories={categories}
       availableTags={availableTags}
       activeTag={params.tag}
+      exchangeRates={exchangeRates}
     />
   )
 }

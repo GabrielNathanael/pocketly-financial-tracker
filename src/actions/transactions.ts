@@ -187,13 +187,20 @@ export async function createTransaction(input: {
   )
     .select("id, name, currency, current_balance")
     .eq("id", input.accountId)
+    .eq("user_id", user.id)
     .single();
 
   if (accError || !acc) {
     return { error: "Akun tidak ditemukan" };
   }
 
-  const txCurrency = input.currency || (acc.currency as CurrencyCode) || "IDR";
+  const accountCurrency = (acc.currency as CurrencyCode) || "IDR";
+  const txCurrency = input.currency || accountCurrency;
+  if (txCurrency !== accountCurrency) {
+    return {
+      error: "Currency transaksi harus sama dengan currency akun.",
+    };
+  }
   const computedTags = extractTags(input.description, input.tags);
 
   // 2. Strict Non-Negative Balance Guard for Expense
@@ -256,6 +263,12 @@ export async function updateTransaction(
   }
 
   const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "Unauthorized" };
+  }
 
   // 1. Fetch Existing Transaction
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -264,6 +277,7 @@ export async function updateTransaction(
   )
     .select("*, account:accounts(*)")
     .eq("id", id)
+    .eq("user_id", user.id)
     .single();
 
   if (oldTxErr || !oldTx) {
@@ -277,10 +291,19 @@ export async function updateTransaction(
   )
     .select("id, name, currency, current_balance")
     .eq("id", input.accountId)
+    .eq("user_id", user.id)
     .single();
 
   if (targetAccErr || !targetAcc) {
     return { error: "Akun tujuan tidak ditemukan" };
+  }
+
+  const targetCurrency = (targetAcc.currency as CurrencyCode) || "IDR";
+  const txCurrency = input.currency || targetCurrency;
+  if (txCurrency !== targetCurrency) {
+    return {
+      error: "Currency transaksi harus sama dengan currency akun.",
+    };
   }
 
   const computedTags = extractTags(input.description, input.tags);
@@ -339,7 +362,7 @@ export async function updateTransaction(
       category_id: input.categoryId,
       type: input.type,
       amount: input.amount,
-      currency: input.currency || targetAcc.currency || "IDR",
+      currency: txCurrency,
       description: input.description?.trim() || null,
       tags: computedTags,
       transaction_date: input.transactionDate,

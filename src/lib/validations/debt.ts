@@ -4,7 +4,7 @@ export const debtSchema = z.object({
   type: z.enum(['debt', 'receivable']),
   counterpartyName: z.string().min(1, 'Person / party name is required').max(100),
   initialAmount: z.number().positive('Amount must be greater than 0'),
-  currency: z.enum(['IDR', 'USD']).default('IDR'),
+  currency: z.enum(['IDR', 'USD', 'SGD']).default('IDR'),
   dueDate: z.string().optional().nullable(),
   notes: z.string().max(255).optional().nullable(),
   accountId: z.string().uuid().optional().nullable(),

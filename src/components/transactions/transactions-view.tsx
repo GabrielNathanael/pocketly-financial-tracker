@@ -8,6 +8,7 @@ import { TransactionFilters } from './transaction-filters'
 import { TransactionList } from './transaction-list'
 import { TransactionSkeletonList } from './transaction-skeleton'
 import { Hash } from 'lucide-react'
+import { type ForexRatesMap } from '@/lib/utils/currency'
 
 interface TransactionsViewProps {
   transactions: EnrichedTransaction[]
@@ -15,6 +16,7 @@ interface TransactionsViewProps {
   categories: Category[]
   availableTags: string[]
   activeTag?: string
+  exchangeRates?: ForexRatesMap
 }
 
 export function TransactionsView({
@@ -23,6 +25,7 @@ export function TransactionsView({
   categories,
   availableTags,
   activeTag,
+  exchangeRates,
 }: TransactionsViewProps) {
   const router = useRouter()
   const pathname = usePathname()
@@ -91,7 +94,7 @@ export function TransactionsView({
       {isPending ? (
         <TransactionSkeletonList count={6} />
       ) : (
-        <TransactionList transactions={transactions} />
+        <TransactionList transactions={transactions} exchangeRates={exchangeRates} />
       )}
     </div>
   )

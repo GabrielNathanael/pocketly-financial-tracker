@@ -6,7 +6,11 @@ import { TransactionCard } from "@/components/transactions/transaction-card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { formatLedgerDateHeader, getLocalDateString } from "@/lib/utils/date";
-import { formatCurrency, convertAmount } from "@/lib/utils/currency";
+import {
+  formatCurrency,
+  convertAmount,
+  type ForexRatesMap,
+} from "@/lib/utils/currency";
 import { usePreferredCurrency } from "@/lib/storage/preferred-currency";
 import { useLanguage } from "@/lib/i18n/language-context";
 import { useUndo } from "@/lib/context/undo-context";
@@ -14,6 +18,7 @@ import { format, parseISO } from "date-fns";
 interface TransactionListProps {
   transactions: EnrichedTransaction[];
   onAddClick?: () => void;
+  exchangeRates?: ForexRatesMap;
 }
 
 const BATCH_SIZE = 50;
@@ -21,6 +26,7 @@ const BATCH_SIZE = 50;
 export function TransactionList({
   transactions,
   onAddClick,
+  exchangeRates,
 }: TransactionListProps) {
   const { t, language } = useLanguage();
   const { isPendingDelete } = useUndo();
@@ -68,6 +74,7 @@ export function TransactionList({
             Number(t.amount),
             t.currency,
             displayCurrency,
+            exchangeRates,
           );
           return sum + (t.type === "income" ? amtConverted : -amtConverted);
         }, 0);
