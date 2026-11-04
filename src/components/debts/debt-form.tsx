@@ -239,6 +239,7 @@ export function DebtForm({
             placeholder="0"
             value={initialAmount}
             onChange={(e) => setInitialAmount(e.target.value)}
+            currency={currency}
             required
             className="font-mono font-bold text-base tnum"
           />

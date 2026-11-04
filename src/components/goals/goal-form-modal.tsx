@@ -224,6 +224,7 @@ export function GoalFormModal({
             step="any"
             value={targetAmount}
             onChange={(e) => setTargetAmount(e.target.value)}
+            currency={currency}
             placeholder="0"
             required
             className="text-xs font-mono font-bold"
@@ -260,6 +261,7 @@ export function GoalFormModal({
               step="any"
               value={initialSaved}
               onChange={(e) => setInitialSaved(e.target.value)}
+              currency={currency}
               placeholder="0"
               className="text-xs font-mono"
             />

@@ -201,10 +201,10 @@ function BudgetForm({
         placeholder="0"
         value={amount}
         onChange={(e) => setAmount(e.target.value)}
+        currency={currency}
         required
         autoFocus
         className="font-mono font-bold text-sm tnum"
-        rightIcon={<span className="text-xs font-mono font-bold text-[#94A3B8]">{currency}</span>}
       />
 
       {error && <p className="text-xs font-semibold text-[#E11D48]">{error}</p>}

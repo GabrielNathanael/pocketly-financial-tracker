@@ -128,6 +128,7 @@ export function AdjustBalanceModal({
               setActualBalanceInput(e.target.value)
               setError(null)
             }}
+            currency={account.currency}
             className="font-mono text-base font-bold"
             autoFocus
           />

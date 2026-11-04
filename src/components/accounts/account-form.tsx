@@ -234,12 +234,8 @@ export function AccountForm({ initialData, onSuccess }: AccountFormProps) {
           placeholder="0"
           value={initialBalance}
           onChange={(e) => setInitialBalance(e.target.value)}
+          currency={currency}
           className="font-mono font-bold text-sm tnum"
-          rightIcon={
-            <span className="text-xs font-mono font-bold text-[#94A3B8]">
-              {currency}
-            </span>
-          }
         />
       )}
 

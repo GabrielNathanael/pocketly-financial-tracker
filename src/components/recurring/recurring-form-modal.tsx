@@ -326,6 +326,7 @@ export function RecurringFormModal({
               step="any"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
+              currency={currency}
               placeholder="0"
               required
               className="text-xs font-mono font-bold"

@@ -1035,7 +1035,10 @@ function QuickAddSheetContent({
               ) : (
                 <div className="flex flex-col gap-1.5 max-h-36 overflow-y-auto pr-0.5">
                   {items.map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-1.5">
+                    <div
+                      key={idx}
+                      className="grid grid-cols-[minmax(0,1fr)_5rem_auto] items-center gap-1.5"
+                    >
                       <input
                         type="text"
                         placeholder={`Item ${idx + 1}`}
@@ -1045,16 +1048,21 @@ function QuickAddSheetContent({
                         }
                         className="flex-1 min-w-0 px-2 py-1.5 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8]"
                       />
-                      <NumberInput
-                        value={item.price}
-                        onValueChange={(value) =>
-                          handleUpdateItem(idx, "price", value)
-                        }
-                        allowDecimal={false}
-                        maxDigits={12}
-                        placeholder="0"
-                        className="w-20 sm:w-24"
-                      />
+                      <div className="w-20 min-w-0">
+                        <NumberInput
+                          value={item.price}
+                          onValueChange={(value) =>
+                            handleUpdateItem(idx, "price", value)
+                          }
+                          allowDecimal={false}
+                          maxDigits={12}
+                          placeholder="0"
+                          currency={currentCurrency}
+                          compact
+                          showCurrency={false}
+                          className="w-full"
+                        />
+                      </div>
                       <button
                         type="button"
                         onClick={() => handleRemoveItem(idx)}

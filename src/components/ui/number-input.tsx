@@ -29,6 +29,8 @@ interface NumberInputProps {
   max?: number | string;
   autoFocus?: boolean;
   className?: string;
+  compact?: boolean;
+  showCurrency?: boolean;
   variant?: "input" | "card";
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -54,6 +56,8 @@ export function NumberInput({
   max,
   autoFocus,
   className,
+  compact = false,
+  showCurrency = true,
   variant = "input",
   open: controlledOpen,
   onOpenChange,
@@ -84,10 +88,12 @@ export function NumberInput({
     return () =>
       window.removeEventListener(NUMBER_INPUT_OPEN_EVENT, closeOtherInputs);
   }, [controlledOpen]);
-  const displayValue = value || placeholder;
-  const formattedValue = currency
-    ? formatCurrency(Number(value) || 0, currency)
-    : value || placeholder;
+  const formattedValue = value
+    ? formatCurrency(Number(value) || 0, currency || "IDR").replace(
+        /^-?(?:Rp |\$|S\$)/,
+        (prefix) => (prefix.startsWith("-") ? "-" : ""),
+      )
+    : placeholder;
   const handleValueChange = (nextValue: string) => {
     if (
       max !== undefined &&
@@ -114,13 +120,13 @@ export function NumberInput({
   );
   const display = (
     <>
-      {currency && (
+      {currency && showCurrency && (
         <span className="shrink-0 font-bold text-[#0F172A] dark:text-[#F8FAFC]">
           {currency}
         </span>
       )}
       <span className="min-w-0 flex-1 truncate font-mono font-bold tracking-tight">
-        {currency ? formattedValue : displayValue}
+        {formattedValue}
       </span>
       {suffix && <span className="ml-2 shrink-0">{suffix}</span>}
     </>
@@ -151,7 +157,7 @@ export function NumberInput({
             <Calculator className="h-4 w-4 text-[#94A3B8] group-hover:text-blue-500" />
           </div>
           <div className="mt-1 overflow-x-auto whitespace-nowrap text-right text-xs font-mono font-semibold tracking-wide text-[#64748B] dark:text-[#94A3B8] no-scrollbar">
-            {displayValue}
+            {formattedValue}
           </div>
           <div className="flex items-baseline gap-2 pt-1 text-4xl">{display}</div>
         </button>
@@ -173,7 +179,8 @@ export function NumberInput({
         autoFocus={autoFocus}
         onClick={() => setOpen(!isOpen)}
         className={cn(
-          "flex min-h-10 w-full items-center justify-between rounded-lg border bg-[#F8F9FA] px-3.5 py-2.5 text-left text-sm text-[#0F172A] transition-colors dark:border-[#27272A] dark:bg-[#1A1A20] dark:text-[#F8FAFC]",
+          "flex w-full items-center justify-between rounded-lg border bg-[#F8F9FA] text-left text-sm text-[#0F172A] transition-colors dark:border-[#27272A] dark:bg-[#1A1A20] dark:text-[#F8FAFC]",
+          compact ? "min-h-8 px-2 py-1.5" : "min-h-10 px-3.5 py-2.5",
           isOpen
             ? "border-[#0F172A] ring-1 ring-[#0F172A]/10 dark:border-[#FAFAFA]"
             : "border-[#E5E7EB]",
@@ -182,7 +189,7 @@ export function NumberInput({
       >
         <span className="flex min-w-0 flex-1 items-baseline gap-2 text-base">
           {leftIcon}
-          <span className={cn("flex min-w-0 flex-1 items-baseline gap-2 truncate", !value && "text-[#94A3B8]")}>
+          <span className={cn("flex min-w-0 flex-1 items-baseline gap-2 truncate", !value && "text-[#94A3B8]", compact ? "text-sm" : "text-base")}>
             {display}
           </span>
         </span>
@@ -197,7 +204,7 @@ export function NumberInput({
         <div className="flex flex-col gap-3">
           <div className="rounded-xl border border-[#E5E7EB] bg-white p-4 dark:border-[#27272A] dark:bg-[#121215]">
             <div className="overflow-x-auto whitespace-nowrap text-right text-xs font-mono font-semibold tracking-wide text-[#64748B] dark:text-[#94A3B8] no-scrollbar">
-              {displayValue}
+              {formattedValue}
             </div>
             <div className="flex items-baseline gap-2 pt-1 text-4xl sm:text-5xl">
               {display}

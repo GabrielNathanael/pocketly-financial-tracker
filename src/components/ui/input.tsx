@@ -10,6 +10,7 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   leftIcon?: React.ReactNode
   rightIcon?: React.ReactNode
   numberMode?: 'currency' | 'decimal'
+  currency?: string
   numberDecimalScale?: number
   numberMaxDigits?: number
   numberThousandsShortcuts?: boolean
@@ -33,6 +34,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         numberDecimalScale,
         numberMaxDigits,
         numberThousandsShortcuts,
+        currency,
       } = props
       const stringValue = value === undefined || value === null ? '' : String(value)
       const stepText = step === undefined ? undefined : String(step)
@@ -59,6 +61,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           allowDecimal={numberMode === 'decimal'}
           decimalScale={numberDecimalScale ?? decimalScale}
           mode={numberMode}
+          currency={currency}
           maxDigits={numberMaxDigits}
           showThousandsShortcuts={numberThousandsShortcuts}
           max={max}

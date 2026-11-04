@@ -408,14 +408,10 @@ function TransferForm({
           placeholder="0"
           value={amount}
           onChange={(e) => handleAmountChange(e.target.value)}
+          currency={fromAccount?.currency || "IDR"}
           required
           autoFocus
           className="font-mono font-bold text-sm tnum"
-          rightIcon={
-            <span className="text-xs font-mono font-bold text-[#94A3B8]">
-              {fromAccount?.currency || "IDR"}
-            </span>
-          }
         />
 
         <Input
@@ -425,12 +421,8 @@ function TransferForm({
           placeholder="0"
           value={transferFee}
           onChange={(e) => setTransferFee(e.target.value)}
+          currency={fromAccount?.currency || "IDR"}
           className="font-mono text-sm tnum"
-          rightIcon={
-            <span className="text-xs font-mono font-bold text-[#94A3B8]">
-              {fromAccount?.currency || "IDR"}
-            </span>
-          }
         />
       </div>
 
@@ -483,6 +475,7 @@ function TransferForm({
               placeholder="0"
               value={receivedAmount}
               onChange={(e) => handleReceivedAmountChange(e.target.value)}
+              currency={toAccount?.currency || "IDR"}
               required
               className="text-xs font-mono font-bold text-[#0D9488]"
             />
