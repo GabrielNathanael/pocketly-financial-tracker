@@ -46,22 +46,9 @@ body {
   }
 }
 
-@keyframes bottom-sheet-slide-down {
-  from {
-    transform: translateY(0);
-  }
-  to {
-    transform: translateY(100vh);
-  }
-}
-
 .bottom-sheet-enter {
   animation: bottom-sheet-slide-up 300ms cubic-bezier(0.22, 1, 0.36, 1)
     both;
-}
-
-.bottom-sheet-exit {
-  animation: bottom-sheet-slide-down 200ms ease-in both;
 }
 
 /* Tabular Numbers for all financial quantities */

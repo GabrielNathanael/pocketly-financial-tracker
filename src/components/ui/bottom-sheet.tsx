@@ -25,12 +25,20 @@ export function BottomSheet({
   const [isClosing, setIsClosing] = useState<boolean>(false);
   const [isMounted, setIsMounted] = useState<boolean>(isOpen);
   const [isEntered, setIsEntered] = useState<boolean>(false);
+  const [isEntering, setIsEntering] = useState<boolean>(isOpen);
 
   const startYRef = useRef<number>(0);
   const currentYRef = useRef<number>(0);
   const startTimeRef = useRef<number>(0);
   const isDraggingRef = useRef<boolean>(false);
   const enterFrameRef = useRef<number | null>(null);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const closeSheet = useCallback(() => {
+    if (isClosing) return;
+    setIsClosing(true);
+    closeTimerRef.current = setTimeout(onClose, 200);
+  }, [isClosing, onClose]);
 
   useEffect(() => {
     if (isOpen) {
@@ -39,14 +47,17 @@ export function BottomSheet({
       setDragOffset(0);
       setIsClosing(false);
       setIsEntered(false);
+      setIsEntering(true);
       const frame = requestAnimationFrame(() => {
         enterFrameRef.current = requestAnimationFrame(() =>
           setIsEntered(true),
         );
       });
+      const enterTimer = setTimeout(() => setIsEntering(false), 300);
       enterFrameRef.current = frame;
       return () => {
         cancelAnimationFrame(frame);
+        clearTimeout(enterTimer);
         if (enterFrameRef.current !== null) {
           cancelAnimationFrame(enterFrameRef.current);
           enterFrameRef.current = null;
@@ -61,6 +72,10 @@ export function BottomSheet({
     }
     return () => {
       document.body.style.overflow = "unset";
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = null;
+      }
     };
   }, [isOpen]);
 
@@ -95,15 +110,11 @@ export function BottomSheet({
 
     // If dragged down > 80px or swiped down quickly (velocity > 0.5)
     if (deltaY > 80 || (velocity > 0.5 && deltaY > 30)) {
-      setIsClosing(true);
-      setTimeout(() => {
-        onClose();
-        setDragOffset(0);
-      }, 200);
+      closeSheet();
     } else {
       setDragOffset(0);
     }
-  }, [onClose]);
+  }, [closeSheet]);
 
   // Touch event handlers for mobile
   const onTouchStart = (e: React.TouchEvent) => {
@@ -130,28 +141,27 @@ export function BottomSheet({
       <div
         className="fixed inset-0 bg-[#0F172A]/70 dark:bg-black/80 transition-opacity duration-200 ease-out"
         style={{ opacity: isEntered ? backdropOpacity : 0 }}
-        onClick={() => {
-          setIsClosing(true);
-          setTimeout(onClose, 200);
-        }}
+        onClick={closeSheet}
       />
 
       {/* Sheet Container */}
       <div
         className={cn(
           "relative w-full max-w-lg bg-white dark:bg-[#121215] border-t md:border border-[#E5E7EB] dark:border-[#27272A] rounded-t-2xl md:rounded-xl shadow-2xl z-10 max-h-[88dvh] md:h-auto flex flex-col overflow-hidden will-change-transform",
-          !isDragging && "transition-transform duration-200 ease-out",
-          isClosing
-            ? "bottom-sheet-exit"
-            : isOpen && !isDragging && "bottom-sheet-enter",
+          !isDragging && !isEntering && "transition-transform duration-200 ease-out",
+          isEntering && !isDragging && "bottom-sheet-enter",
           className,
         )}
         style={{
-          transform: dragOffset > 0
-              ? `translateY(${dragOffset}px)`
-              : isEntered
-                ? "translateY(0)"
+          transform:
+            isClosing
+              ? "translateY(100vh)"
+              : dragOffset > 0
+                ? `translateY(${dragOffset}px)`
                 : undefined,
+          transition: isClosing
+            ? "transform 200ms ease-in"
+            : undefined,
         }}
       >
         {/* Mobile handle indicator with generous touch target */}
@@ -176,10 +186,7 @@ export function BottomSheet({
           </h3>
           <button
             type="button"
-            onClick={() => {
-              setIsClosing(true);
-              setTimeout(onClose, 200);
-            }}
+            onClick={closeSheet}
             className="p-1 text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#F8FAFC] rounded-md hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] transition-colors"
           >
             <X className="w-4 h-4" />
