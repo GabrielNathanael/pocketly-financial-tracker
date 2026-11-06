@@ -234,8 +234,8 @@ export function BottomNav({
       icon: TrendingUp,
       desc:
         language === "en"
-          ? "Track stocks, crypto, platform balances, and P&L"
-          : "Kelola saham, kripto, saldo platform, dan performa",
+          ? "Track Indonesian Stocks, Crypto, US ETFs, platform balances, and P&L"
+          : "Kelola Saham Indonesia, Kripto, ETF AS, Saldo Platform, dan Performa",
     },
     {
       label: language === "en" ? "Due Dates & Bills" : "Pusat Tagihan",

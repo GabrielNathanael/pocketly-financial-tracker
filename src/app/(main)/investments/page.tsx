@@ -5,6 +5,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { getAccounts } from '@/actions/accounts'
 import { getInvestmentHoldings, getInvestmentTradesHistory } from '@/actions/investments'
 import { getCryptoHoldings, getCryptoTrades } from '@/actions/crypto'
+import { getEtfHoldings, getEtfTrades } from '@/actions/etf'
 import { getTransfers } from '@/actions/transfers'
 import { PortfolioInvestmentView } from '@/components/investments/portfolio-investment-view'
 
@@ -25,12 +26,14 @@ export default async function InvestmentsPage() {
     redirect('/login')
   }
 
-  const [accounts, holdings, trades, cryptoHoldings, cryptoTrades, transfers] = await Promise.all([
+  const [accounts, holdings, trades, cryptoHoldings, cryptoTrades, etfHoldings, etfTrades, transfers] = await Promise.all([
     getAccounts(),
     getInvestmentHoldings(),
     getInvestmentTradesHistory(),
     getCryptoHoldings(),
     getCryptoTrades(),
+    getEtfHoldings(),
+    getEtfTrades(),
     getTransfers(),
   ])
 
@@ -40,6 +43,8 @@ export default async function InvestmentsPage() {
       stockTrades={trades}
       cryptos={cryptoHoldings}
       cryptoTrades={cryptoTrades}
+      etfs={etfHoldings}
+      etfTrades={etfTrades}
       accounts={accounts}
       transfers={transfers}
     />

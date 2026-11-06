@@ -116,6 +116,7 @@ export interface Database {
           transfer_id: string | null;
           crypto_trade_id: string | null;
           stock_trade_id: string | null;
+          etf_trade_id: string | null;
           type: TransactionType;
           amount: number;
           currency: CurrencyCode;
@@ -133,6 +134,7 @@ export interface Database {
           transfer_id?: string | null;
           crypto_trade_id?: string | null;
           stock_trade_id?: string | null;
+          etf_trade_id?: string | null;
           type: TransactionType;
           amount: number;
           currency?: CurrencyCode;
@@ -150,6 +152,7 @@ export interface Database {
           transfer_id?: string | null;
           crypto_trade_id?: string | null;
           stock_trade_id?: string | null;
+          etf_trade_id?: string | null;
           type?: TransactionType;
           amount?: number;
           currency?: CurrencyCode;
@@ -792,6 +795,35 @@ export type StockHolding = Tables<"stock_holdings">;
 export type StockTrade = Tables<"stock_trades">;
 export type CryptoHolding = Tables<"crypto_holdings">;
 export type CryptoTrade = Tables<"crypto_trades">;
+export type EtfHolding = {
+  id: string;
+  user_id: string;
+  account_id: string;
+  ticker: string;
+  quantity: number;
+  total_cost: number;
+  avg_buy_price: number;
+  broker_name: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+export type EtfTrade = {
+  id: string;
+  user_id: string;
+  account_id: string;
+  ticker: string;
+  type: "buy" | "sell";
+  quantity: number;
+  price_per_unit: number;
+  gross_amount: number;
+  fee_amount: number;
+  buy_cost: number;
+  realized_pnl: number;
+  notes: string | null;
+  trade_date: string;
+  created_at: string;
+};
 export type PinnedTemplateDB = Tables<"pinned_templates">;
 
 // Joined / enriched view types
@@ -839,5 +871,11 @@ export interface EnrichedCryptoHolding extends CryptoHolding {
   account?: Account;
 }
 export interface EnrichedCryptoTrade extends CryptoTrade {
+  account?: Account;
+}
+export interface EnrichedEtfHolding extends EtfHolding {
+  account?: Account;
+}
+export interface EnrichedEtfTrade extends EtfTrade {
   account?: Account;
 }

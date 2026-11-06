@@ -34,6 +34,8 @@ import {
   Account,
   EnrichedCryptoHolding,
   EnrichedCryptoTrade,
+  EnrichedEtfHolding,
+  EnrichedEtfTrade,
   EnrichedStockHolding,
   EnrichedStockTrade,
   EnrichedTransfer,
@@ -50,6 +52,7 @@ import {
   updateCryptoTrade,
   deleteCryptoTrade,
 } from "@/actions/crypto";
+import { recordEtfTrade, updateEtfTrade, deleteEtfTrade } from "@/actions/etf";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -64,6 +67,7 @@ import {
 import { Modal } from "@/components/ui/modal";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { formatCurrency } from "@/lib/utils/currency";
+import { usePrivacyMode, maskCurrency } from "@/lib/storage/privacy-mode";
 import { getLocalDateString } from "@/lib/utils/date";
 import { useLanguage } from "@/lib/i18n/language-context";
 import { cn } from "@/lib/utils/cn";
@@ -82,8 +86,23 @@ import {
   CartesianGrid,
 } from "recharts";
 
-type AssetKind = "stock" | "crypto";
-type Activity = EnrichedStockTrade | EnrichedCryptoTrade;
+type AssetKind = "stock" | "crypto" | "etf";
+type Activity = EnrichedStockTrade | EnrichedCryptoTrade | EnrichedEtfTrade;
+
+const getActivityKind = (a: Activity): AssetKind =>
+  "lots" in a ? "stock" : "symbol" in a ? "crypto" : "etf";
+const getActivityTicker = (a: Activity, kind: AssetKind): string =>
+  kind === "stock"
+    ? (a as EnrichedStockTrade).ticker || ""
+    : kind === "etf"
+      ? (a as EnrichedEtfTrade).ticker || ""
+      : (a as EnrichedCryptoTrade).symbol || "";
+const getActivityGross = (a: Activity, kind: AssetKind): number =>
+  Number(
+    kind === "stock"
+      ? (a as EnrichedStockTrade).net_amount
+      : (a as unknown as { gross_amount?: number }).gross_amount ?? 0,
+  ) || 0;
 type TabKey = "portfolio" | "activity" | "reporting";
 type ReportPeriod = "all" | "this_month" | "this_year" | "custom";
 
@@ -92,6 +111,8 @@ interface PortfolioInvestmentViewProps {
   stockTrades: EnrichedStockTrade[];
   cryptos: EnrichedCryptoHolding[];
   cryptoTrades: EnrichedCryptoTrade[];
+  etfs: EnrichedEtfHolding[];
+  etfTrades: EnrichedEtfTrade[];
   accounts: Account[];
   transfers: EnrichedTransfer[];
 }
@@ -101,6 +122,8 @@ export function PortfolioInvestmentView({
   stockTrades,
   cryptos,
   cryptoTrades,
+  etfs,
+  etfTrades,
   accounts,
   transfers,
 }: PortfolioInvestmentViewProps) {
@@ -109,6 +132,9 @@ export function PortfolioInvestmentView({
   const i18n = t.investments;
   const cryptoI18n = i18n.crypto;
   const isEn = language === "en";
+  const isPrivate = usePrivacyMode();
+  const fmt = (amount: number, currency: string = "IDR") =>
+    maskCurrency(formatCurrency(amount, currency), isPrivate);
 
   const investmentAccounts = accounts.filter(
     (account) => account.type === "investment" && account.is_active,
@@ -164,7 +190,7 @@ export function PortfolioInvestmentView({
 
   // Filter states for Buku Transaksi (Activity Tab)
   const [activityKindFilter, setActivityKindFilter] = useState<
-    "all" | "stock" | "crypto"
+    "all" | "stock" | "crypto" | "etf"
   >("all");
   const [activityActionFilter, setActivityActionFilter] = useState<
     "all" | "buy" | "sell"
@@ -181,7 +207,6 @@ export function PortfolioInvestmentView({
     end: format(endOfMonth(new Date()), "yyyy-MM-dd"),
   });
 
-  // Portfolio totals use recorded cost basis only. No live or stored market price is used.
   const stockValue = stocks.reduce(
     (total, holding) => total + Number(holding.total_cost),
     0,
@@ -190,50 +215,39 @@ export function PortfolioInvestmentView({
     (total, holding) => total + Number(holding.cost_basis),
     0,
   );
+  const etfValue = etfs.reduce(
+    (total, holding) => total + Number(holding.total_cost),
+    0,
+  );
   const cashValue = investmentAccounts.reduce(
     (total, account) => total + Number(account.current_balance),
     0,
   );
-  const totalPortfolioValue = stockValue + cryptoValue + cashValue;
+  const totalPortfolioValue = stockValue + cryptoValue + etfValue + cashValue;
 
   // Consolidated & sorted activity transactions
   const allActivities = useMemo<Activity[]>(
     () =>
-      [...stockTrades, ...cryptoTrades].sort(
+      [...stockTrades, ...cryptoTrades, ...etfTrades].sort(
         (a, b) =>
           new Date(b.trade_date).getTime() - new Date(a.trade_date).getTime() ||
           new Date(b.created_at || 0).getTime() -
             new Date(a.created_at || 0).getTime(),
       ),
-    [stockTrades, cryptoTrades],
+    [stockTrades, cryptoTrades, etfTrades],
   );
 
   // Filtered activity for Buku Transaksi tab
   const filteredActivities = useMemo(() => {
     return allActivities.filter((activity) => {
-      const isStock = "ticker" in activity;
-      if (activityKindFilter === "stock" && !isStock) return false;
-      if (activityKindFilter === "crypto" && isStock) return false;
-      if (
-        activityActionFilter !== "all" &&
-        activity.type !== activityActionFilter
-      )
-        return false;
-      if (activitySearch.trim()) {
-        const query = activitySearch.trim().toLowerCase();
-        const code = isStock
-          ? (activity as EnrichedStockTrade).ticker.toLowerCase()
-          : (activity as EnrichedCryptoTrade).symbol.toLowerCase();
-        const note = (activity.notes || "").toLowerCase();
-        const accName = (activity.account?.name || "").toLowerCase();
-        if (
-          !code.includes(query) &&
-          !note.includes(query) &&
-          !accName.includes(query)
-        ) {
-          return false;
-        }
-      }
+      const kind = getActivityKind(activity);
+      const code = getActivityTicker(activity, kind).toLowerCase();
+      const query = activitySearch.trim().toLowerCase();
+      const note = (activity.notes || "").toLowerCase();
+      const accName = (activity.account?.name || "").toLowerCase();
+      if (activityKindFilter !== "all" && activityKindFilter !== kind) return false;
+      if (activityActionFilter !== "all" && activity.type !== activityActionFilter) return false;
+      if (query && !(code.includes(query) || note.includes(query) || accName.includes(query))) return false;
       return true;
     });
   }, [allActivities, activityKindFilter, activityActionFilter, activitySearch]);
@@ -286,6 +300,11 @@ export function PortfolioInvestmentView({
     [cryptoTrades, intervalStart, intervalEnd],
   );
 
+  const reportEtfTrades = useMemo(
+    () => etfTrades.filter((tr) => isDateInInterval(tr.trade_date)),
+    [etfTrades, intervalStart, intervalEnd],
+  );
+
   const reportTransfers = useMemo(
     () =>
       investmentTransfers.filter((tr) => isDateInInterval(tr.transfer_date)),
@@ -296,7 +315,8 @@ export function PortfolioInvestmentView({
   const reportingStats = useMemo(() => {
     const stockSales = reportStockTrades.filter((tr) => tr.type === "sell");
     const cryptoSales = reportCryptoTrades.filter((tr) => tr.type === "sell");
-    const allSales = [...stockSales, ...cryptoSales];
+    const etfSales = reportEtfTrades.filter((tr) => tr.type === "sell");
+    const allSales = [...stockSales, ...cryptoSales, ...etfSales];
 
     let totalGain = 0;
     let totalLoss = 0;
@@ -325,11 +345,15 @@ export function PortfolioInvestmentView({
       (sum, tr) => sum + (Number(tr.fee_amount) || 0),
       0,
     );
+    const etfFees = reportEtfTrades.reduce(
+      (sum, tr) => sum + (Number(tr.fee_amount) || 0),
+      0,
+    );
     const transferFees = reportTransfers.reduce(
       (sum, tr) => sum + (Number(tr.fee_amount) || 0),
       0,
     );
-    const totalFees = stockStampDuty + cryptoFees + transferFees;
+    const totalFees = stockStampDuty + cryptoFees + etfFees + transferFees;
     const totalClosedCount = allSales.length;
     const winRate =
       totalClosedCount > 0
@@ -394,6 +418,29 @@ export function PortfolioInvestmentView({
       assetMap.set(sym, curr);
     }
 
+    for (const trade of etfSales) {
+      const sym = trade.ticker;
+      const pnl = Number(trade.realized_pnl) || 0;
+      const curr = assetMap.get(sym) || {
+        kind: "etf",
+        symbol: sym,
+        netPnl: 0,
+        gain: 0,
+        loss: 0,
+        tradesCount: 0,
+        winCount: 0,
+      };
+      if (pnl > 0) {
+        curr.gain += pnl;
+        curr.winCount += 1;
+      } else if (pnl < 0) {
+        curr.loss += Math.abs(pnl);
+      }
+      curr.netPnl += pnl;
+      curr.tradesCount += 1;
+      assetMap.set(sym, curr);
+    }
+
     // Sort descending: Top gainers first, top losers at the bottom
     const assetPerformance = Array.from(assetMap.values()).sort(
       (a, b) => b.netPnl - a.netPnl,
@@ -407,7 +454,7 @@ export function PortfolioInvestmentView({
           id: `stock-${tr.id}`,
           date: tr.trade_date,
           type: i18n.feesStock,
-          reference: `${tr.ticker} · ${tr.type === "buy" ? i18n.buy : i18n.sell}`,
+          reference: "",
           amount: Number(tr.stamp_duty),
         })),
       ...reportCryptoTrades
@@ -417,6 +464,15 @@ export function PortfolioInvestmentView({
           date: tr.trade_date,
           type: i18n.feesCrypto,
           reference: `${tr.symbol} · ${tr.type === "buy" ? i18n.buy : i18n.sell}`,
+          amount: Number(tr.fee_amount),
+        })),
+      ...reportEtfTrades
+        .filter((tr) => Number(tr.fee_amount) > 0)
+        .map((tr) => ({
+          id: `etf-${tr.id}`,
+          date: tr.trade_date,
+          type: isEn ? "US ETF broker fee" : "Fee broker ETF AS",
+          reference: `${tr.ticker} · ${tr.type === "buy" ? i18n.buy : i18n.sell}`,
           amount: Number(tr.fee_amount),
         })),
       ...reportTransfers
@@ -438,6 +494,7 @@ export function PortfolioInvestmentView({
       netRealizedPnl,
       stockStampDuty,
       cryptoFees,
+      etfFees,
       transferFees,
       totalFees,
       totalClosedCount,
@@ -447,20 +504,20 @@ export function PortfolioInvestmentView({
       assetPerformance,
       feeRecords,
     };
-  }, [reportStockTrades, reportCryptoTrades, reportTransfers, i18n]);
+  }, [reportStockTrades, reportCryptoTrades, reportEtfTrades, reportTransfers, i18n, isEn]);
 
-  // Donut chart data
+  // Donut chart data — warna paten per jenis aset (biar ETF & Kas beda,
+  // dan nggak geser kalau salah satu nilainya 0)
   const allocationData = useMemo(
     () =>
       [
-        { name: isEn ? "Cash" : "Kas", value: cashValue },
-        { name: isEn ? "Stocks" : "Saham", value: stockValue },
-        { name: isEn ? "Crypto" : "Kripto", value: cryptoValue },
+        { key: "cash", name: isEn ? "Cash" : "Kas", value: cashValue, color: "#94A3B8" },
+        { key: "stock", name: isEn ? "Stocks" : "Saham", value: stockValue, color: "#10B981" },
+        { key: "crypto", name: isEn ? "Crypto" : "Kripto", value: cryptoValue, color: "#F59E0B" },
+        { key: "etf", name: isEn ? "US ETFs" : "ETF AS", value: etfValue, color: "#6366F1" },
       ].filter((d) => d.value > 0),
-    [cashValue, stockValue, cryptoValue, isEn],
+    [cashValue, stockValue, cryptoValue, etfValue, isEn],
   );
-
-  const ALLOCATION_COLORS = ["#6366F1", "#10B981", "#F59E0B"];
 
   // Bar chart data — P&L per aset (dari reportingStats yang sudah ada)
   const pnlBarData = useMemo(
@@ -474,22 +531,24 @@ export function PortfolioInvestmentView({
 
   // Line chart — kumulatif P&L over time (ikut filter periode)
   const cumulativePnlData = useMemo(() => {
-    const allSells = [
-      ...reportStockTrades
-        .filter((t) => t.type === "sell")
-        .map((t) => ({
-          date: t.trade_date.slice(0, 10),
-          pnl: Number(t.realized_pnl) || 0,
-        })),
-      ...reportCryptoTrades
-        .filter((t) => t.type === "sell")
-        .map((t) => ({
-          date: t.trade_date.slice(0, 10),
-          pnl: Number(t.realized_pnl) || 0,
-        })),
-    ].sort((a, b) => a.date.localeCompare(b.date));
+    const dailyPnl = new Map<string, number>();
+    const addSell = (date: string, pnl: number) => {
+      dailyPnl.set(date, (dailyPnl.get(date) || 0) + pnl);
+    };
+    for (const t of reportStockTrades) {
+      if (t.type === "sell") addSell(t.trade_date.slice(0, 10), Number(t.realized_pnl) || 0);
+    }
+    for (const t of reportCryptoTrades) {
+      if (t.type === "sell") addSell(t.trade_date.slice(0, 10), Number(t.realized_pnl) || 0);
+    }
+    for (const t of reportEtfTrades) {
+      if (t.type === "sell") addSell(t.trade_date.slice(0, 10), Number(t.realized_pnl) || 0);
+    }
+    const sorted = Array.from(dailyPnl.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([date, pnl]) => ({ date, pnl }));
 
-    return allSells.reduce<Array<{ date: string; cumulative: number }>>(
+    return sorted.reduce<Array<{ date: string; cumulative: number }>>(
       (result, trade) => {
         const previous = result[result.length - 1]?.cumulative || 0;
         return [
@@ -499,7 +558,7 @@ export function PortfolioInvestmentView({
       },
       [],
     );
-  }, [reportStockTrades, reportCryptoTrades]); // Real-time calculation helpers for modals
+  }, [reportStockTrades, reportCryptoTrades, reportEtfTrades]); // Real-time calculation helpers for modals
   const estimatedCryptoQuantity =
     Number(amount) > 0 && Number(price) > 0
       ? Math.round((Number(amount) / Number(price)) * 100_000_000) /
@@ -518,6 +577,7 @@ export function PortfolioInvestmentView({
 
   const selectedStock = stocks.find((holding) => holding.id === selectedId);
   const selectedCrypto = cryptos.find((holding) => holding.id === selectedId);
+  const selectedEtf = etfs.find((holding) => holding.id === selectedId);
   const selectedAccount = accounts.find((account) => account.id === accountId);
 
   // Synchronize crypto percentage slider
@@ -542,11 +602,15 @@ export function PortfolioInvestmentView({
 
   const handleCryptoSellPercentChange = (pct: number) => {
     setCryptoPercent(pct);
-    if (selectedCrypto) {
-      const maxQty = Number(selectedCrypto.quantity || 0);
+    const target = assetKind === "etf" ? selectedEtf : selectedCrypto;
+    if (target) {
+      const maxQty = Number(target.quantity || 0);
       if (maxQty > 0) {
         const targetQty = maxQty * (pct / 100);
         setQuantity(targetQty.toFixed(8).replace(/\.?0+$/, ""));
+        if (Number(price) > 0) {
+          setAmount(String(Math.round(targetQty * Number(price))));
+        }
       }
     }
   };
@@ -556,6 +620,16 @@ export function PortfolioInvestmentView({
     if (typeof window !== "undefined") {
       localStorage.setItem("investment_last_account_id", id);
     }
+  };
+
+  // Switcher Saham/Kripto/ETF di form yang sama: jangan bawa symbol antar
+  // jenis biar BTC gak nyangkut ke ETF (dan sebaliknya).
+  const handleKindSwitch = (kind: AssetKind) => {
+    if (kind === assetKind) return;
+    setAssetKind(kind);
+    setCryptoPercent(0);
+    if (kind === "etf") setSymbol("");
+    else if (kind === "crypto") setSymbol("BTC");
   };
 
   const closeModal = () => {
@@ -574,12 +648,15 @@ export function PortfolioInvestmentView({
     setCryptoPercent(0);
   };
 
+  // Satu form yang sama kayak crypto & saham INDO:
+  // Record Trade (header) = beli doang, Jual = dari kartu aset.
+  // Yang beda hanya field input per jenis aset.
   const openBuy = (
     kind: AssetKind,
-    holding?: EnrichedStockHolding | EnrichedCryptoHolding,
+    holding?: EnrichedStockHolding | EnrichedCryptoHolding | EnrichedEtfHolding,
   ) => {
     setAssetKind(kind);
-    setSelectedId(holding?.id || "");
+    setSelectedId((holding as any)?.id || "");
     setCryptoPercent(0);
     if (holding) {
       if (kind === "stock") {
@@ -591,6 +668,8 @@ export function PortfolioInvestmentView({
               1,
           ),
         );
+      } else if (kind === "etf") {
+        setSymbol((holding as EnrichedEtfHolding).ticker);
       } else {
         setSymbol((holding as EnrichedCryptoHolding).symbol);
       }
@@ -601,10 +680,10 @@ export function PortfolioInvestmentView({
 
   const openSell = (
     kind: AssetKind,
-    holding?: EnrichedStockHolding | EnrichedCryptoHolding,
+    holding?: EnrichedStockHolding | EnrichedCryptoHolding | EnrichedEtfHolding,
   ) => {
     setAssetKind(kind);
-    setSelectedId(holding?.id || "");
+    setSelectedId((holding as any)?.id || "");
     setCryptoPercent(0);
     if (holding) {
       setAccountId(holding.account_id);
@@ -614,6 +693,10 @@ export function PortfolioInvestmentView({
         setLots(
           String(Number(stock.lots) || Number(stock.total_shares) / 100 || 1),
         );
+        setPrice("");
+      } else if (kind === "etf") {
+        setSymbol((holding as EnrichedEtfHolding).ticker);
+        setQuantity(String((holding as EnrichedEtfHolding).quantity));
         setPrice("");
       } else {
         const crypto = holding as EnrichedCryptoHolding;
@@ -651,7 +734,7 @@ export function PortfolioInvestmentView({
           ? await recordStockSell({
               holdingId: selectedStock.id,
               lots: Number(lots),
-              netAmount: stockSellGrossAmount,
+              netAmount: Number(amount) || stockSellGrossAmount,
               notes: notes || null,
               tradeDate: date,
               language,
@@ -683,7 +766,7 @@ export function PortfolioInvestmentView({
           ? await recordCryptoSell({
               holdingId: selectedCrypto.id,
               quantity: Number(quantity),
-              grossAmount: cryptoSellGrossAmount,
+              grossAmount: Number(amount) || cryptoSellGrossAmount,
               feeAmount: Number(fee || 0),
               pricePerUnit: Number(price),
               notes: notes || null,
@@ -699,9 +782,62 @@ export function PortfolioInvestmentView({
           id: selectedId,
           quantity: Number(quantity),
           grossAmount:
-            editTradeType === "buy" ? Number(amount) : cryptoSellGrossAmount,
+            editTradeType === "buy"
+              ? Number(amount)
+              : Number(amount) || cryptoSellGrossAmount,
           feeAmount: Number(fee || 0),
           pricePerUnit: Number(price),
+          notes: notes || null,
+          tradeDate: date,
+        });
+      } else if (assetKind === "etf" && modal === "buy") {
+        result = !accountId
+          ? {
+              error: isEn
+                ? "Select an account first"
+                : "Pilih akun terlebih dahulu",
+            }
+          : await recordEtfTrade({
+              accountId,
+              ticker: symbol,
+              type: "buy",
+              quantity: Number(quantity),
+              pricePerUnit: Number(price),
+              feeAmount: Number(fee || 0),
+              notes: notes || null,
+              tradeDate: date,
+            });
+      } else if (assetKind === "etf" && modal === "sell") {
+        const correctedGross = Number(amount) || cryptoSellGrossAmount;
+        const qty = Number(quantity);
+        const effectiveEtfPrice =
+          correctedGross > 0 && qty > 0 ? correctedGross / qty : Number(price);
+        result = selectedEtf && accountId
+          ? await recordEtfTrade({
+              accountId,
+              ticker: selectedEtf.ticker,
+              type: "sell",
+              quantity: qty,
+              pricePerUnit: effectiveEtfPrice,
+              feeAmount: Number(fee || 0),
+              notes: notes || null,
+              tradeDate: date,
+            })
+          : {
+              error: isEn
+                ? "Select an ETF holding first"
+                : "Pilih kepemilikan ETF terlebih dahulu",
+            };
+      } else if (assetKind === "etf" && modal === "edit" && selectedId) {
+        const correctedGross = Number(amount) || cryptoSellGrossAmount;
+        const qty = Number(quantity);
+        const effectivePrice =
+          correctedGross > 0 && qty > 0 ? correctedGross / qty : Number(price);
+        result = await updateEtfTrade({
+          id: selectedId,
+          quantity: qty,
+          pricePerUnit: effectivePrice,
+          feeAmount: Number(fee || 0),
           notes: notes || null,
           tradeDate: date,
         });
@@ -733,7 +869,7 @@ export function PortfolioInvestmentView({
     }
   };
 
-  const handleDelete = (trade: EnrichedStockTrade) => {
+  const handleDelete = (trade: Activity) => {
     setDeleteTarget(trade);
   };
 
@@ -744,14 +880,23 @@ export function PortfolioInvestmentView({
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
     setIsDeleting(true);
-    const isCrypto = "symbol" in deleteTarget;
-    const result = isCrypto
-      ? await deleteCryptoTrade(deleteTarget.id)
-      : await deleteStockTrade(deleteTarget.id);
+    const kind = getActivityKind(deleteTarget);
+    const result =
+      kind === "etf"
+        ? await deleteEtfTrade(deleteTarget.id)
+        : kind === "crypto"
+          ? await deleteCryptoTrade(deleteTarget.id)
+          : await deleteStockTrade(deleteTarget.id);
     if (result.error) {
       toast.error(result.error);
     } else {
-      toast.success(isCrypto ? i18n.deleteCryptoSuccess : i18n.deleteSuccess);
+      toast.success(
+        kind === "etf"
+          ? i18n.etf.deleted
+          : kind === "crypto"
+            ? i18n.deleteCryptoSuccess
+            : i18n.deleteSuccess,
+      );
       router.refresh();
     }
     setIsDeleting(false);
@@ -789,7 +934,7 @@ export function PortfolioInvestmentView({
                   {i18n.totalPortfolio}
                 </span>
                 <span className="mt-1 truncate font-mono text-xs font-black leading-none text-[#0F172A] dark:text-[#F8FAFC] sm:text-sm">
-                  {formatCurrency(totalPortfolioValue, "IDR")}
+                  {fmt(totalPortfolioValue, "IDR")}
                 </span>
               </button>
 
@@ -819,7 +964,7 @@ export function PortfolioInvestmentView({
                               {account.name}
                             </span>
                             <span className="shrink-0 font-mono text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-                              {formatCurrency(
+                              {fmt(
                                 Number(account.current_balance),
                                 account.currency,
                               )}
@@ -831,7 +976,7 @@ export function PortfolioInvestmentView({
                             {isEn ? "Total Cash" : "Total Kas"}
                           </span>
                           <span className="font-mono text-xs font-black text-[#0F172A] dark:text-[#F8FAFC]">
-                            {formatCurrency(cashValue, "IDR")}
+                            {fmt(cashValue, "IDR")}
                           </span>
                         </div>
                       </div>
@@ -848,7 +993,7 @@ export function PortfolioInvestmentView({
                           {i18n.stock}
                         </span>
                         <span className="font-mono text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-                          {formatCurrency(stockValue, "IDR")}
+                          {fmt(stockValue, "IDR")}
                         </span>
                       </div>
                       <div className="flex items-center justify-between gap-3">
@@ -856,7 +1001,15 @@ export function PortfolioInvestmentView({
                           {i18n.cryptoAsset}
                         </span>
                         <span className="font-mono text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-                          {formatCurrency(cryptoValue, "IDR")}
+                          {fmt(cryptoValue, "IDR")}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">
+                          {i18n.etf.title}
+                        </span>
+                        <span className="font-mono text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                          {fmt(etfValue, "IDR")}
                         </span>
                       </div>
                       <div className="mt-1 flex items-center justify-between gap-3 border-t border-[#E5E7EB] pt-1.5 dark:border-[#27272A]">
@@ -864,7 +1017,7 @@ export function PortfolioInvestmentView({
                           {i18n.totalPortfolio}
                         </span>
                         <span className="font-mono text-xs font-black text-[#0F172A] dark:text-[#F8FAFC]">
-                          {formatCurrency(totalPortfolioValue, "IDR")}
+                          {fmt(totalPortfolioValue, "IDR")}
                         </span>
                       </div>
                     </div>
@@ -874,7 +1027,10 @@ export function PortfolioInvestmentView({
             </div>
 
             <Button
-              onClick={() => openBuy("crypto")}
+              onClick={() => {
+                // Default to crypto if no selection yet, user picks kind inside modal
+                openBuy("crypto");
+              }}
               className="h-11 min-h-[44px] gap-1.5 rounded-xl px-4 text-xs font-bold shadow-xs"
             >
               <Plus className="h-4 w-4 shrink-0" />
@@ -930,14 +1086,28 @@ export function PortfolioInvestmentView({
                 onSell={() => openSell("crypto", holding)}
               />
             ))}
+            {etfs.map((holding) => (
+              <EtfCard
+                key={holding.id}
+                holding={holding}
+                onBuy={() => openBuy("etf", holding)}
+                onSell={() => openSell("etf", holding)}
+              />
+            ))}
           </div>
-          {stocks.length + cryptos.length === 0 && (
+          {stocks.length + cryptos.length + etfs.length === 0 && (
             <div className="rounded-2xl border border-dashed border-[#E5E7EB] bg-white p-12 text-center text-xs text-[#64748B] dark:border-[#27272A] dark:bg-[#121215]">
               <Layers className="mx-auto mb-2 h-8 w-8 text-[#94A3B8]" />
               <p className="font-bold">{i18n.emptyHoldingsTitle}</p>
               <p className="mt-1 text-[11px] text-[#94A3B8]">
                 {i18n.emptyHoldingsDesc}
               </p>
+              <div className="mt-4 flex justify-center gap-2">
+                <Button onClick={() => openBuy("crypto")} className="min-h-[40px]">
+                  <Plus className="mr-1 h-3.5 w-3.5" />
+                  {i18n.addTradeBtn}
+                </Button>
+              </div>
             </div>
           )}
         </section>
@@ -949,13 +1119,14 @@ export function PortfolioInvestmentView({
           {/* Filter Bar (100% full width on mobile, no empty spaces) */}
           <div className="flex flex-col gap-2 rounded-2xl border border-[#E5E7EB] bg-white p-3 shadow-2xs dark:border-[#27272A] dark:bg-[#121215] sm:p-4">
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {/* Asset Kind Filter: Full-width 3-columns */}
-              <div className="grid grid-cols-3 gap-1 rounded-xl bg-[#F8F9FA] p-1 dark:bg-[#1A1A20]">
+              {/* Asset Kind Filter: Full-width 4-columns */}
+              <div className="grid grid-cols-4 gap-1 rounded-xl bg-[#F8F9FA] p-1 dark:bg-[#1A1A20]">
                 {(
                   [
-                    ["all", isEn ? "All Assets" : "Semua Aset"],
+                    ["all", isEn ? "All" : "Semua"],
                     ["stock", i18n.stock],
                     ["crypto", i18n.cryptoAsset],
+                    ["etf", i18n.etf.title],
                   ] as const
                 ).map(([kind, label]) => (
                   <button
@@ -1020,16 +1191,12 @@ export function PortfolioInvestmentView({
           {/* Trade Execution Cards */}
           <div className="flex flex-col gap-2.5">
             {filteredActivities.map((activity) => {
-              const isStock = "ticker" in activity;
+              const kind = getActivityKind(activity);
+              const isStock = kind === "stock";
+              const isEtf = kind === "etf";
               const isBuy = activity.type === "buy";
-              const symbolText = isStock
-                ? (activity as EnrichedStockTrade).ticker
-                : (activity as EnrichedCryptoTrade).symbol;
-              const totalAmount = Number(
-                isStock
-                  ? (activity as EnrichedStockTrade).net_amount
-                  : (activity as EnrichedCryptoTrade).gross_amount,
-              );
+              const symbolText = getActivityTicker(activity, kind);
+              const totalAmount = getActivityGross(activity, kind);
               const pnl = Number(activity.realized_pnl) || 0;
               const hasPnl = !isBuy;
 
@@ -1042,7 +1209,7 @@ export function PortfolioInvestmentView({
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2.5">
                       <AssetLogo
-                        kind={isStock ? "stock" : "crypto"}
+                        kind={kind}
                         symbol={symbolText}
                       />
                       <div>
@@ -1064,15 +1231,23 @@ export function PortfolioInvestmentView({
                               <ArrowUpRight className="h-3 w-3" />
                             )}
                             {isBuy
-                              ? isStock
-                                ? i18n.buyBtn
-                                : cryptoI18n.buy
-                              : isStock
-                                ? i18n.sellBtn
-                                : cryptoI18n.sell}
+                              ? isEtf
+                                ? isEn
+                                  ? "Buy"
+                                  : "Beli"
+                                : isStock
+                                  ? i18n.buyBtn
+                                  : cryptoI18n.buy
+                              : isEtf
+                                ? isEn
+                                  ? "Sell"
+                                  : "Jual"
+                                : isStock
+                                  ? i18n.sellBtn
+                                  : cryptoI18n.sell}
                           </span>
                           <span className="rounded-md border border-[#E5E7EB] bg-[#F8F9FA] px-1.5 py-0.5 text-[9px] font-bold text-[#64748B] dark:border-[#27272A] dark:bg-[#1A1A20] dark:text-[#94A3B8]">
-                            {isStock ? i18n.stock : i18n.cryptoAsset}
+                            {isEtf ? i18n.etf.title : isStock ? i18n.stock : i18n.cryptoAsset}
                           </span>
                         </div>
                         <p className="mt-0.5 text-[10px] text-[#64748B] dark:text-[#94A3B8]">
@@ -1094,7 +1269,17 @@ export function PortfolioInvestmentView({
                       <button
                         type="button"
                         onClick={() => {
-                          if (isStock) {
+                          if (isEtf) {
+                            const trade = activity as EnrichedEtfTrade;
+                            setSymbol(trade.ticker);
+                            setQuantity(String(trade.quantity));
+                            setAmount(String(trade.gross_amount));
+                            setPrice(String(trade.price_per_unit));
+                            setFee(String(trade.fee_amount || 0));
+                            setDate(trade.trade_date.slice(0, 10));
+                            setNotes(trade.notes || "");
+                            setAssetKind("etf");
+                          } else if (isStock) {
                             const trade = activity as EnrichedStockTrade;
                             setTicker(trade.ticker);
                             setLots(String(trade.lots || 1));
@@ -1125,11 +1310,13 @@ export function PortfolioInvestmentView({
                       <button
                         type="button"
                         onClick={() =>
-                          isStock
-                            ? handleDelete(activity as EnrichedStockTrade)
-                            : handleDeleteCrypto(
-                                activity as EnrichedCryptoTrade,
-                              )
+                          isEtf
+                            ? handleDelete(activity as EnrichedEtfTrade)
+                            : isStock
+                              ? handleDelete(activity as EnrichedStockTrade)
+                              : handleDeleteCrypto(
+                                  activity as EnrichedCryptoTrade,
+                                )
                         }
                         className="flex h-8 w-8 min-h-[36px] min-w-[36px] items-center justify-center rounded-xl text-[#94A3B8] transition-colors hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/30 dark:hover:text-rose-400"
                         title={i18n.deleteSuccess || "Hapus"}
@@ -1155,7 +1342,9 @@ export function PortfolioInvestmentView({
                       <p className="font-mono text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
                         {isStock
                           ? `${(activity as EnrichedStockTrade).lots || 0} Lot (${(activity as EnrichedStockTrade).shares || 0} lbr)`
-                          : `${formatCryptoQuantity((activity as EnrichedCryptoTrade).quantity)} ${symbolText}`}
+                          : isEtf
+                            ? `${formatCryptoQuantity((activity as EnrichedEtfTrade).quantity)} unit`
+                            : `${formatCryptoQuantity((activity as EnrichedCryptoTrade).quantity)} ${symbolText}`}
                       </p>
                     </div>
 
@@ -1165,14 +1354,22 @@ export function PortfolioInvestmentView({
                       </span>
                       <p className="font-mono text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
                         {isStock
-                          ? `${formatCurrency(Number((activity as EnrichedStockTrade).price_per_share || 0), "IDR")}/lbr`
-                          : formatCurrency(
-                              Number(
-                                (activity as EnrichedCryptoTrade)
-                                  .price_per_unit || 0,
-                              ),
-                              "IDR",
-                            )}
+                          ? `${fmt(Number((activity as EnrichedStockTrade).price_per_share || 0), "IDR")}/lbr`
+                          : isEtf
+                            ? fmt(
+                                Number(
+                                  (activity as EnrichedEtfTrade)
+                                    .price_per_unit || 0,
+                                ),
+                                "IDR",
+                              )
+                            : fmt(
+                                Number(
+                                  (activity as EnrichedCryptoTrade)
+                                    .price_per_unit || 0,
+                                ),
+                                "IDR",
+                              )}
                       </p>
                     </div>
 
@@ -1181,7 +1378,7 @@ export function PortfolioInvestmentView({
                         {isEn ? "Total Settlement" : "Total Eksekusi"}
                       </span>
                       <p className="font-mono text-xs font-black text-[#0F172A] dark:text-[#F8FAFC]">
-                        {formatCurrency(
+                        {fmt(
                           totalAmount,
                           activity.account?.currency || "IDR",
                         )}
@@ -1202,7 +1399,7 @@ export function PortfolioInvestmentView({
                           )}
                         >
                           {pnl >= 0 ? "+" : ""}
-                          {formatCurrency(
+                          {fmt(
                             pnl,
                             activity.account?.currency || "IDR",
                           )}
@@ -1303,7 +1500,7 @@ export function PortfolioInvestmentView({
           <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
             <Summary
               label={isEn ? "Net Realized P&L" : "Laba/Rugi Bersih (P&L)"}
-              value={`${reportingStats.netRealizedPnl >= 0 ? "+" : ""}${formatCurrency(reportingStats.netRealizedPnl, "IDR")}`}
+              value={`${reportingStats.netRealizedPnl >= 0 ? "+" : ""}${fmt(reportingStats.netRealizedPnl, "IDR")}`}
               tone={
                 reportingStats.netRealizedPnl >= 0 ? "positive" : "negative"
               }
@@ -1311,76 +1508,108 @@ export function PortfolioInvestmentView({
 
             <Summary
               label={isEn ? "Total Realized Profit" : "Total Cuan Bersih"}
-              value={`+${formatCurrency(reportingStats.totalGain, "IDR")}`}
+              value={`+${fmt(reportingStats.totalGain, "IDR")}`}
               tone="positive"
             />
 
             <Summary
               label={isEn ? "Total Cut Loss" : "Total Rugi Bersih"}
-              value={`-${formatCurrency(reportingStats.totalLoss, "IDR")}`}
+              value={`-${fmt(reportingStats.totalLoss, "IDR")}`}
               tone={reportingStats.totalLoss > 0 ? "negative" : "neutral"}
             />
 
             <Summary
               label={isEn ? "Total Paid Fees" : "Total Biaya Terbayar"}
-              value={formatCurrency(reportingStats.totalFees, "IDR")}
+              value={fmt(reportingStats.totalFees, "IDR")}
               tone="neutral"
             />
           </div>
 
           {/* Win Rate & Trading Efficiency Card */}
-          <div className="flex flex-col gap-3 rounded-2xl border border-[#E5E7EB] bg-white p-3.5 shadow-2xs dark:border-[#27272A] dark:bg-[#121215] sm:p-5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Percent className="h-4 w-4 text-emerald-600" />
-                <h3 className="text-xs font-black uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
-                  {isEn
-                    ? "Trading Win Rate & Discipline"
-                    : "Win Rate & Hasil Penjualan"}
-                </h3>
-              </div>
-              <span className="font-mono text-sm font-black text-emerald-600 dark:text-emerald-400">
-                {reportingStats.winRate}% Win Rate
-              </span>
+          <div className="flex flex-col gap-4 rounded-2xl border border-[#E5E7EB] bg-white p-3.5 shadow-2xs dark:border-[#27272A] dark:bg-[#121215] sm:p-5">
+            <div className="flex items-center gap-2">
+              <Percent className="h-4 w-4 text-emerald-600" />
+              <h3 className="text-xs font-black uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
+                {isEn
+                  ? "Trading Win Rate & Discipline"
+                  : "Win Rate & Hasil Penjualan"}
+              </h3>
             </div>
 
-            {/* Visual Win/Loss bar */}
-            <div className="h-2.5 w-full overflow-hidden rounded-full bg-[#E5E7EB] dark:bg-[#27272A]">
-              <div
-                className="h-full bg-emerald-500 transition-all duration-500"
-                style={{ width: `${reportingStats.winRate}%` }}
-              />
-            </div>
+            <div className="flex items-center gap-4 sm:gap-5">
+              {(() => {
+                const size = 120;
+                const stroke = 10;
+                const r = (size - stroke) / 2;
+                const c = 2 * Math.PI * r;
+                const win = Math.min(100, Math.max(0, reportingStats.winRate));
+                const offset = c * (1 - win / 100);
+                return (
+                  <div className="relative shrink-0" style={{ width: size, height: size }}>
+                    <svg width={size} height={size} className="-rotate-90">
+                      <circle
+                        cx={size / 2}
+                        cy={size / 2}
+                        r={r}
+                        fill="none"
+                        strokeWidth={stroke}
+                        className="stroke-[#E5E7EB] dark:stroke-[#27272A]"
+                      />
+                      <circle
+                        cx={size / 2}
+                        cy={size / 2}
+                        r={r}
+                        fill="none"
+                        strokeWidth={stroke}
+                        strokeLinecap="round"
+                        className="stroke-emerald-500 transition-all duration-500"
+                        strokeDasharray={c}
+                        strokeDashoffset={offset}
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="font-mono text-2xl font-black leading-none text-[#0F172A] dark:text-[#F8FAFC]">
+                        {win}%
+                      </span>
+                      <span className="mt-1 text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
+                        Win Rate
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
 
-            <div className="grid grid-cols-3 gap-2 pt-1 text-center text-xs">
-              <div className="rounded-xl bg-[#F8F9FA] p-2 dark:bg-[#1A1A20]">
-                <span className="text-[10px] text-[#94A3B8]">
-                  {isEn ? "Total Closed" : "Total Penjualan"}
-                </span>
-                <p className="font-mono font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-                  {reportingStats.totalClosedCount}
-                </p>
-              </div>
-              <div className="rounded-xl bg-emerald-50 p-2 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200">
-                <span className="text-[10px]">
-                  {isEn ? "Profitable" : "Untung (Cuan)"}
-                </span>
-                <p className="font-mono font-bold">
-                  {reportingStats.winningTradesCount}
-                </p>
-              </div>
-              <div className="rounded-xl bg-rose-50 p-2 text-rose-800 dark:bg-rose-950/30 dark:text-rose-200">
-                <span className="text-[10px]">
-                  {isEn ? "Losses" : "Rugi (Cut Loss)"}
-                </span>
-                <p className="font-mono font-bold">
-                  {reportingStats.losingTradesCount}
-                </p>
+              <div className="flex flex-1 flex-col divide-y divide-[#E5E7EB] text-xs dark:divide-[#27272A]">
+                <div className="flex items-center justify-between gap-3 py-2.5">
+                  <span className="text-[11px] font-semibold text-[#64748B] dark:text-[#94A3B8]">
+                    {isEn ? "Total Closed" : "Total Penjualan"}
+                  </span>
+                  <span className="font-mono text-sm font-black text-[#0F172A] dark:text-[#F8FAFC]">
+                    {reportingStats.totalClosedCount}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-3 py-2.5">
+                  <span className="text-[11px] font-semibold text-[#64748B] dark:text-[#94A3B8]">
+                    {isEn ? "Profitable" : "Untung (Cuan)"}
+                  </span>
+                  <span className="font-mono text-sm font-black text-emerald-600 dark:text-emerald-400">
+                    {reportingStats.winningTradesCount}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-3 py-2.5">
+                  <span className="text-[11px] font-semibold text-[#64748B] dark:text-[#94A3B8]">
+                    {isEn ? "Losses" : "Rugi (Cut Loss)"}
+                  </span>
+                  <span className="font-mono text-sm font-black text-rose-600 dark:text-rose-400">
+                    {reportingStats.losingTradesCount}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Charts Row */}
+          {/* Charts Row — stretch aja biar tinggi sama,
+              whitespace di P&L dipindah ke atas, chart nempel bawah */}
           <div className="grid gap-3 sm:grid-cols-2">
             {/* Donut — Alokasi Portofolio */}
             <div className="flex flex-col gap-3 rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-2xs dark:border-[#27272A] dark:bg-[#121215]">
@@ -1400,40 +1629,42 @@ export function PortfolioInvestmentView({
                         paddingAngle={3}
                         dataKey="value"
                       >
-                        {allocationData.map((_, i) => (
-                          <Cell
-                            key={i}
-                            fill={
-                              ALLOCATION_COLORS[i % ALLOCATION_COLORS.length]
-                            }
-                          />
+                        {allocationData.map((d) => (
+                          <Cell key={d.key} fill={d.color} />
                         ))}
                       </Pie>
                       <Tooltip
-                        formatter={(value) =>
-                          formatCurrency(Number(value ?? 0), "IDR")
-                        }
+                        content={({ active, payload }: any) => {
+                          if (!active || !payload?.length) return null;
+                          const entry = payload[0];
+                          const name = String(entry.name ?? "");
+                          const val = Number(entry.value ?? 0);
+                          return (
+                            <div style={{ fontSize: 11, borderRadius: 12, border: "1px solid #E5E7EB" }} className="bg-white px-2.5 py-1.5 shadow-lg dark:bg-[#121215]">
+                              <span style={{ color: "#0F172A" }} className="font-bold dark:text-[#F8FAFC]">{name}</span>
+                              <span style={{ color: "#0F172A" }} className="ml-2 font-mono font-bold dark:text-[#F8FAFC]">{fmt(val, "IDR")}</span>
+                            </div>
+                          );
+                        }}
                         contentStyle={{
                           fontSize: 11,
                           borderRadius: 12,
                           border: "1px solid #E5E7EB",
+                          color: "#0F172A",
                         }}
                       />
                     </PieChart>
                   </ResponsiveContainer>
                   <div className="flex flex-col gap-1.5">
-                    {allocationData.map((d, i) => (
+                    {allocationData.map((d) => (
                       <div
-                        key={d.name}
+                        key={d.key}
                         className="flex items-center justify-between gap-2"
                       >
                         <div className="flex items-center gap-1.5">
                           <div
                             className="h-2.5 w-2.5 rounded-full shrink-0"
-                            style={{
-                              backgroundColor:
-                                ALLOCATION_COLORS[i % ALLOCATION_COLORS.length],
-                            }}
+                            style={{ backgroundColor: d.color }}
                           />
                           <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">
                             {d.name}
@@ -1458,17 +1689,28 @@ export function PortfolioInvestmentView({
               <h3 className="text-xs font-black uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
                 {isEn ? "P&L by Asset" : "P&L per Aset"}
               </h3>
+              <div className="mt-auto mb-2 w-full">
               {pnlBarData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={180}>
+                <ResponsiveContainer
+                  width="100%"
+                  height={Math.max(80, pnlBarData.length * 36 + 32)}
+                >
                   <BarChart
                     data={pnlBarData}
                     layout="vertical"
                     margin={{ top: 0, right: 16, left: 8, bottom: 0 }}
+                    barCategoryGap="25%"
                   >
                     <XAxis
                       type="number"
-                      domain={["auto", "auto"]}
+                      domain={[
+                        (dataMin: number) => Math.min(0, dataMin),
+                        (dataMax: number) =>
+                          dataMax > 0 ? dataMax * 1.05 : dataMax,
+                      ]}
+                      allowDataOverflow={false}
                       tickFormatter={(v) => {
+                        if (isPrivate) return "\u2022\u2022\u2022";
                         if (Math.abs(v) < 1000)
                           return `${v >= 0 ? "+" : ""}${Math.round(v)}`;
                         return `${v >= 0 ? "+" : ""}${(v / 1000).toFixed(1)}k`;
@@ -1483,20 +1725,29 @@ export function PortfolioInvestmentView({
                       tick={{ fontSize: 10, fill: "#94A3B8" }}
                       axisLine={false}
                       tickLine={false}
-                      width={40}
+                      width={56}
                     />
                     <Tooltip
-                      formatter={(value) => [
-                        `${Number(value ?? 0) >= 0 ? "+" : ""}${formatCurrency(Number(value ?? 0), "IDR")}`,
-                        "P&L",
-                      ]}
+                      content={({ active, payload }: any) => {
+                        if (!active || !payload?.length) return null;
+                        const entry = payload[0];
+                        const name = String(entry?.payload?.symbol ?? entry?.name ?? "");
+                        const val = Number(entry?.value ?? 0);
+                        return (
+                          <div style={{ fontSize: 11, borderRadius: 12, border: "1px solid #E5E7EB" }} className="bg-white px-2.5 py-1.5 shadow-lg dark:bg-[#121215]">
+                            <span style={{ color: "#0F172A" }} className="font-bold dark:text-[#F8FAFC]">{name}</span>
+                            <span style={{ color: "#0F172A" }} className="ml-2 font-mono font-bold dark:text-[#F8FAFC]">{val >= 0 ? "+" : ""}{fmt(val, "IDR")}</span>
+                          </div>
+                        );
+                      }}
                       contentStyle={{
                         fontSize: 11,
                         borderRadius: 12,
                         border: "1px solid #E5E7EB",
+                        color: "#0F172A",
                       }}
                     />
-                    <Bar dataKey="pnl" radius={[0, 6, 6, 0]}>
+                    <Bar dataKey="pnl" radius={[0, 6, 6, 0]} maxBarSize={22}>
                       {pnlBarData.map((d, i) => (
                         <Cell
                           key={i}
@@ -1511,6 +1762,7 @@ export function PortfolioInvestmentView({
                   {isEn ? "No closed trades yet" : "Belum ada transaksi jual"}
                 </p>
               )}
+              </div>
             </div>
           </div>
 
@@ -1543,16 +1795,26 @@ export function PortfolioInvestmentView({
                     axisLine={false}
                     tickLine={false}
                     tickFormatter={(v) => {
+                      if (isPrivate) return "\u2022\u2022\u2022";
                       if (Math.abs(v) < 1000)
                         return `${v >= 0 ? "+" : ""}${Math.round(v)}`;
                       return `${v >= 0 ? "+" : ""}${(v / 1000).toFixed(1)}k`;
                     }}
                   />
                   <Tooltip
-                    formatter={(value) => [
-                      `${Number(value ?? 0) >= 0 ? "+" : ""}${formatCurrency(Number(value ?? 0), "IDR")}`,
-                      isEn ? "Cumulative P&L" : "P&L Kumulatif",
-                    ]}
+                    content={({ active, payload, label }: any) => {
+                      if (!active || !payload?.length) return null;
+                      const val = Number(payload[0].value ?? 0);
+                      const isProfit = val >= 0;
+                      return (
+                        <div style={{ fontSize: 11, borderRadius: 12, border: "1px solid #E5E7EB" }} className="bg-white px-2.5 py-1.5 shadow-lg dark:bg-[#121215]">
+                          <div style={{ color: "#0F172A" }} className="font-bold dark:text-[#F8FAFC]">{String(label ?? "")}</div>
+                          <div style={{ color: isProfit ? "#059669" : "#E11D48" }} className="font-mono font-bold">
+                            {isProfit ? "+" : ""}{fmt(val, "IDR")}
+                          </div>
+                        </div>
+                      );
+                    }}
                     labelFormatter={(d) =>
                       new Date(String(d)).toLocaleDateString(
                         isEn ? "en-US" : "id-ID",
@@ -1653,11 +1915,11 @@ export function PortfolioInvestmentView({
                           )}
                         >
                           {isProfit ? "+" : ""}
-                          {formatCurrency(asset.netPnl, "IDR")}
+                          {fmt(asset.netPnl, "IDR")}
                         </p>
                         <p className="font-mono text-[9px] text-[#94A3B8] whitespace-nowrap sm:text-[10px]">
-                          +{formatCurrency(asset.gain, "IDR")} | -
-                          {formatCurrency(asset.loss, "IDR")}
+                          +{fmt(asset.gain, "IDR")} | -
+                          {fmt(asset.loss, "IDR")}
                         </p>
                       </div>
                     </div>
@@ -1683,13 +1945,13 @@ export function PortfolioInvestmentView({
                     : "Transparansi Biaya Terbayar"}
                 </h2>
                 <span className="shrink-0 font-mono text-sm font-black text-rose-600 whitespace-nowrap dark:text-rose-400">
-                  {formatCurrency(reportingStats.totalFees, "IDR")}
+                  {fmt(reportingStats.totalFees, "IDR")}
                 </span>
               </div>
               <p className="mt-1 text-[11px] text-[#64748B] dark:text-[#94A3B8]">
                 {isEn
-                  ? "All stamp duty, exchange fees, and platform funding costs (already reflected in net P&L)."
-                  : "Total bea materai saham, biaya transaksi bursa kripto, dan transfer platform (sudah otomatis terhitung di laba/rugi bersih)."}
+                  ? "Indonesian stocks only: Indonesian stamp duty (bea materai), exchange fees, and platform funding costs (already reflected in net P&L). US ETFs/foreign assets have separate US fees and no Indonesian stamp duty."
+                  : "Khusus saham Indonesia: bea materai saham, biaya transaksi bursa kripto, dan transfer platform (sudah otomatis terhitung di laba/rugi bersih). ETF AS/asset luar negeri fee-nya terpisah fee AS dan tanpa bea materai Indonesia."}
               </p>
             </div>
 
@@ -1709,12 +1971,14 @@ export function PortfolioInvestmentView({
                       <p className="truncate text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
                         {detail.type}
                       </p>
-                      <p className="truncate text-[10px] text-[#64748B] dark:text-[#94A3B8]">
-                        {detail.reference}
-                      </p>
+                      {detail.reference ? (
+                        <p className="truncate text-[10px] text-[#64748B] dark:text-[#94A3B8]">
+                          {detail.reference}
+                        </p>
+                      ) : null}
                     </div>
                     <span className="font-mono text-xs font-bold text-rose-600 whitespace-nowrap dark:text-rose-400">
-                      -{formatCurrency(detail.amount, "IDR")}
+                      -{fmt(detail.amount, "IDR")}
                     </span>
                   </div>
                 ))}
@@ -1736,22 +2000,28 @@ export function PortfolioInvestmentView({
           modal === "edit"
             ? assetKind === "crypto"
               ? `${i18n.editCryptoTrade || "Edit Kripto"} · ${editTradeType === "buy" ? i18n.buy : i18n.sell}`
-              : `${i18n.modalEditTradeTitle} · ${editTradeType === "buy" ? i18n.buy : i18n.sell}`
+              : assetKind === "etf"
+                ? `${i18n.etf.editTitle} · ${editTradeType === "buy" ? i18n.buy : i18n.sell}`
+                : `${i18n.modalEditTradeTitle} · ${editTradeType === "buy" ? i18n.buy : i18n.sell}`
             : modal === "buy"
               ? assetKind === "stock"
                 ? i18n.modalBuyTitle
-                : cryptoI18n.buyTitle
+                : assetKind === "etf"
+                  ? i18n.etf.buyTitle
+                  : cryptoI18n.buyTitle
               : assetKind === "stock"
                 ? i18n.modalSellTitle
-                : cryptoI18n.sellTitle
+                : assetKind === "etf"
+                  ? i18n.etf.sellTitle
+                  : cryptoI18n.sellTitle
         }
       >
         <form onSubmit={submitTransaction} className="flex flex-col gap-3.5">
           {modal !== "edit" && !selectedId && (
-            <div className="grid grid-cols-2 gap-2 rounded-xl bg-[#F8F9FA] p-1.5 dark:bg-[#1A1A20]">
+            <div className="grid grid-cols-3 gap-2 rounded-xl bg-[#F8F9FA] p-1.5 dark:bg-[#1A1A20]">
               <button
                 type="button"
-                onClick={() => setAssetKind("stock")}
+                onClick={() => handleKindSwitch("stock")}
                 className={cn(
                   "min-h-[36px] rounded-lg px-3 py-2 text-xs font-bold transition-all",
                   assetKind === "stock"
@@ -1763,7 +2033,7 @@ export function PortfolioInvestmentView({
               </button>
               <button
                 type="button"
-                onClick={() => setAssetKind("crypto")}
+                onClick={() => handleKindSwitch("crypto")}
                 className={cn(
                   "min-h-[36px] rounded-lg px-3 py-2 text-xs font-bold transition-all",
                   assetKind === "crypto"
@@ -1773,13 +2043,25 @@ export function PortfolioInvestmentView({
               >
                 {i18n.cryptoAsset}
               </button>
+              <button
+                type="button"
+                onClick={() => handleKindSwitch("etf")}
+                className={cn(
+                  "min-h-[36px] rounded-lg px-3 py-2 text-xs font-bold transition-all",
+                  assetKind === "etf"
+                    ? "bg-white text-[#0F172A] shadow-xs dark:bg-[#27272A] dark:text-[#FAFAFA]"
+                    : "text-[#64748B]",
+                )}
+              >
+                {i18n.etf.title}
+              </button>
             </div>
           )}
 
-          {modal !== "edit" && selectedId && (
+          {modal === "buy" && selectedId && (
             <div className="rounded-xl bg-emerald-50 p-2.5 text-[11px] font-bold text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200">
               {assetKind === "stock" ? ticker || i18n.stock : symbol || "BTC"} ·{" "}
-              {modal === "buy" ? i18n.addPosition : i18n.sellPosition}
+              {i18n.addPosition}
             </div>
           )}
 
@@ -1794,13 +2076,12 @@ export function PortfolioInvestmentView({
               {investmentAccounts.map((account) => (
                 <SelectItem key={account.id} value={account.id}>
                   {account.name} ·{" "}
-                  {formatCurrency(account.current_balance, account.currency)}
+                  {fmt(account.current_balance, account.currency)}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
 
-          {/* STOCK FORM */}
           {assetKind === "stock" ? (
             <>
               {selectedId ? (
@@ -1835,7 +2116,17 @@ export function PortfolioInvestmentView({
                     : undefined
                 }
                 value={lots}
-                onChange={(event) => setLots(event.target.value)}
+                onChange={(event) => {
+                  const nextLots = event.target.value;
+                  setLots(nextLots);
+                  const l = Number(nextLots) || 0;
+                  const p = Number(price) || 0;
+                  if ((modal === "sell" || (modal === "edit" && editTradeType === "sell")) && l > 0 && p > 0) {
+                    setAmount(String(Math.round(l * 100 * p)));
+                  } else if ((modal === "sell" || (modal === "edit" && editTradeType === "sell")) && (!nextLots || !price)) {
+                    setAmount("");
+                  }
+                }}
                 required
               />
               {modal === "buy" ||
@@ -1852,19 +2143,36 @@ export function PortfolioInvestmentView({
                 <>
                   <Input
                     label={
-                      isEn ? "Sell price per share" : "Harga jual per saham"
+                      isEn ? "Sell price per share" : "Harga jual per lembar"
                     }
                     type="number"
                     step="any"
                     numberMode="currency"
                     min="0.01"
                     value={price}
-                    onChange={(event) => setPrice(event.target.value)}
+                    onChange={(event) => {
+                      const nextPrice = event.target.value;
+                      setPrice(nextPrice);
+                      const l = Number(lots) || 0;
+                      const p = Number(nextPrice) || 0;
+                      if (l > 0 && p > 0) {
+                        setAmount(String(Math.round(l * 100 * p)));
+                      } else if (!nextPrice || !lots) {
+                        setAmount("");
+                      }
+                    }}
                     required
                   />
-                  <CalculatedAmount
+                  <Input
                     label={isEn ? "Gross sale proceeds" : "Hasil jual bruto"}
-                    value={stockSellGrossAmount}
+                    type="number"
+                    step="1"
+                    numberMode="currency"
+                    min="0"
+                    value={amount}
+                    onChange={(event) => setAmount(event.target.value)}
+                    placeholder={stockSellGrossAmount > 0 ? String(stockSellGrossAmount) : "0"}
+                    required
                   />
                 </>
               ) : null}
@@ -1875,7 +2183,6 @@ export function PortfolioInvestmentView({
               )}
             </>
           ) : (
-            /* CRYPTO FORM WITH CLEAN HORIZONTAL DOT-SLIDER & FLOATING TOOLTIP */
             <>
               {selectedId ? (
                 <div className="rounded-xl border border-[#E5E7EB] px-3 py-2 text-xs font-bold dark:border-[#27272A]">
@@ -1883,11 +2190,12 @@ export function PortfolioInvestmentView({
                 </div>
               ) : (
                 <Input
-                  label={cryptoI18n.symbol}
+                  label={assetKind === "etf" ? i18n.etf.ticker : cryptoI18n.symbol}
                   value={symbol}
                   onChange={(event) =>
                     setSymbol(event.target.value.toUpperCase())
                   }
+                  placeholder={assetKind === "etf" ? i18n.etf.tickerPlaceholder : undefined}
                   required
                 />
               )}
@@ -1899,7 +2207,10 @@ export function PortfolioInvestmentView({
                   disabled={
                     modal === "buy"
                       ? Number(selectedAccount?.current_balance || 0) <= 0
-                      : Number(selectedCrypto?.quantity || 0) <= 0
+                      : Number(
+                          (assetKind === "etf" ? selectedEtf : selectedCrypto)
+                            ?.quantity || 0,
+                        ) <= 0
                   }
                   hint={
                     modal === "buy"
@@ -1954,10 +2265,8 @@ export function PortfolioInvestmentView({
                         : "Nominal aktual yang tersettle"
                     }
                     type="number"
-                    step="any"
-                    numberMode="decimal"
-                    numberThousandsShortcuts={false}
-                    numberDecimalScale={8}
+                    step="1"
+                    numberMode="currency"
                     value={amount}
                     onChange={(event) => {
                       const nextAmount = event.target.value;
@@ -2012,18 +2321,41 @@ export function PortfolioInvestmentView({
                 </>
               ) : (
                 <Input
-                  label={`${cryptoI18n.quantity} (${symbol})`}
+                  label={
+                    assetKind === "etf"
+                      ? `${i18n.etf.sellQuantity} (${symbol})`
+                      : `${cryptoI18n.quantity} (${symbol})`
+                  }
                   type="number"
                   step="any"
                   numberMode="decimal"
                   numberDecimalScale={8}
                   numberThousandsShortcuts={false}
                   min="0.00000001"
+                  max={
+                    modal === "sell"
+                      ? String(
+                          Number(
+                            (assetKind === "etf" ? selectedEtf : selectedCrypto)
+                              ?.quantity || 0,
+                          ) || undefined,
+                        )
+                      : undefined
+                  }
                   value={quantity}
                   onChange={(event) => {
                     setQuantity(event.target.value);
-                    if (selectedCrypto) {
-                      const maxQty = Number(selectedCrypto.quantity || 0);
+                    const q = Number(event.target.value) || 0;
+                    const p = Number(price) || 0;
+                    if (q > 0 && p > 0) {
+                      setAmount(String(Math.round(q * p)));
+                    } else if (!event.target.value || !price) {
+                      setAmount("");
+                    }
+                    const holding =
+                      assetKind === "etf" ? selectedEtf : selectedCrypto;
+                    if (holding) {
+                      const maxQty = Number(holding.quantity || 0);
                       if (maxQty > 0) {
                         setCryptoPercent(
                           Math.min(
@@ -2053,20 +2385,35 @@ export function PortfolioInvestmentView({
                   step="any"
                   min="0.01"
                   value={price}
-                  onChange={(event) => setPrice(event.target.value)}
+                  onChange={(event) => {
+                    const nextPrice = event.target.value;
+                    setPrice(nextPrice);
+                    const q = Number(quantity) || 0;
+                    const p = Number(nextPrice) || 0;
+                    if (q > 0 && p > 0) {
+                      setAmount(String(Math.round(q * p)));
+                    } else if (!nextPrice || !quantity) {
+                      setAmount("");
+                    }
+                  }}
                   required
                 />
               )}
 
               {modal !== "buy" &&
               !(modal === "edit" && editTradeType === "buy") && (
-                <CalculatedAmount
+                <Input
                   label={
-                    isEn
-                      ? "Gross sale proceeds (calculated)"
-                      : "Hasil jual bruto (dihitung otomatis)"
+                    isEn ? "Gross sale proceeds" : "Hasil jual bruto"
                   }
-                  value={cryptoSellGrossAmount}
+                  type="number"
+                  step="1"
+                  numberMode="currency"
+                  min="0"
+                  value={amount}
+                  onChange={(event) => setAmount(event.target.value)}
+                  placeholder={cryptoSellGrossAmount > 0 ? String(cryptoSellGrossAmount) : "0"}
+                  required
                 />
               )}
 
@@ -2262,19 +2609,6 @@ function PercentageSlider({
   );
 }
 
-function CalculatedAmount({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-xl bg-emerald-50 p-3 dark:bg-emerald-950/30">
-      <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
-        {label}
-      </p>
-      <p className="mt-1 font-mono text-sm font-bold text-emerald-800 dark:text-emerald-200">
-        {value > 0 ? formatCurrency(value, "IDR") : "—"}
-      </p>
-    </div>
-  );
-}
-
 function formatCryptoQuantity(value: number | string): string {
   const numericValue = Number(value);
   if (!Number.isFinite(numericValue)) return "—";
@@ -2354,6 +2688,53 @@ function Summary({
   );
 }
 
+function EtfCard({
+  holding,
+  onBuy,
+  onSell,
+}: {
+  holding: EnrichedEtfHolding;
+  onBuy: () => void;
+  onSell: () => void;
+}) {
+  const { t, language } = useLanguage();
+  const i18n = t.investments;
+  const isEn = language === "en";
+  const isPrivate = usePrivacyMode();
+  const fmt = (amount: number, currency: string = "IDR") =>
+    maskCurrency(formatCurrency(amount, currency), isPrivate);
+  const publishableKey = process.env.NEXT_PUBLIC_LOGO_DEV_PUBLISHABLE_KEY;
+  const logoUrl = publishableKey
+    ? `https://img.logo.dev/ticker/${holding.ticker.toLowerCase()}?token=${publishableKey}`
+    : null;
+  const headerBg = useAssetColor(logoUrl, "rgb(224, 231, 255)");
+  return (
+    <div className="overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-2xs dark:border-[#27272A] dark:bg-[#121215]">
+      <div className="flex items-center justify-between gap-3 px-5 py-4" style={{ backgroundColor: headerBg }}>
+        <div className="flex min-w-0 items-center gap-3">
+          <AssetLogo kind="etf" symbol={holding.ticker} />
+          <div className="min-w-0">
+            <p className="font-black text-sm text-[#0F172A] dark:text-[#F8FAFC]">{holding.ticker}</p>
+            <p className="truncate text-[10px] text-indigo-800/70 dark:text-indigo-200/70">{isEn ? "US ETF" : "ETF AS"}</p>
+          </div>
+        </div>
+        <span className="truncate text-right text-xs font-medium text-indigo-900 dark:text-indigo-100">{holding.account?.name || "Broker"}</span>
+      </div>
+      <div className="p-4 sm:p-5">
+        <div className="grid grid-cols-2 gap-3">
+          <AssetMetric label={i18n.quantityLabel} value={`${holding.quantity} shares`} />
+          <AssetMetric label={i18n.capitalLabel} value={fmt(Number(holding.total_cost), "IDR")} align="right" />
+          <div className="col-span-2 flex items-baseline justify-between border-t border-[#E5E7EB] pt-2.5 dark:border-[#27272A]">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">{isEn ? "Avg Price / Share" : "Harga Rata-rata / Unit"}</p>
+            <p className="font-mono text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">{Number(holding.avg_buy_price) > 0 ? fmt(Number(holding.avg_buy_price), "IDR") : "—"}</p>
+          </div>
+        </div>
+        <AssetActions onBuy={onBuy} onSell={onSell} />
+      </div>
+    </div>
+  );
+}
+
 function StockCard({
   holding,
   onBuy,
@@ -2366,6 +2747,9 @@ function StockCard({
   const { t, language } = useLanguage();
   const i18n = t.investments;
   const isEn = language === "en";
+  const isPrivate = usePrivacyMode();
+  const fmt = (amount: number, currency: string = "IDR") =>
+    maskCurrency(formatCurrency(amount, currency), isPrivate);
   const lots = Number(holding.lots) || Number(holding.total_shares) / 100;
 
   const publishableKey = process.env.NEXT_PUBLIC_LOGO_DEV_PUBLISHABLE_KEY;
@@ -2400,7 +2784,7 @@ function StockCard({
           <AssetMetric label={i18n.quantityLabel} value={`${lots} lot`} />
           <AssetMetric
             label={i18n.capitalLabel}
-            value={formatCurrency(
+            value={fmt(
               Number(holding.total_cost),
               holding.account?.currency,
             )}
@@ -2412,7 +2796,7 @@ function StockCard({
             </p>
             <p className="font-mono text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
               {Number(holding.avg_buy_price) > 0
-                ? `${formatCurrency(Number(holding.avg_buy_price), holding.account?.currency)} / lbr`
+                ? `${fmt(Number(holding.avg_buy_price), holding.account?.currency)} / lbr`
                 : "—"}
             </p>
           </div>
@@ -2434,6 +2818,9 @@ function CryptoCard({
   const { t, language } = useLanguage();
   const i18n = t.investments;
   const isEn = language === "en";
+  const isPrivate = usePrivacyMode();
+  const fmt = (amount: number, currency: string = "IDR") =>
+    maskCurrency(formatCurrency(amount, currency), isPrivate);
 
   const publishableKey = process.env.NEXT_PUBLIC_LOGO_DEV_PUBLISHABLE_KEY;
   const logoUrl = publishableKey
@@ -2471,7 +2858,7 @@ function CryptoCard({
           />
           <AssetMetric
             label={i18n.capitalLabel}
-            value={formatCurrency(
+            value={fmt(
               Number(holding.cost_basis),
               holding.price_currency,
             )}
@@ -2485,7 +2872,7 @@ function CryptoCard({
             </p>
             <p className="font-mono text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
               {Number(holding.average_buy_price) > 0
-                ? formatCurrency(
+                ? fmt(
                     Number(holding.average_buy_price),
                     holding.price_currency,
                   )
@@ -2502,7 +2889,7 @@ function AssetLogo({
   kind,
   symbol,
 }: {
-  kind: "stock" | "crypto";
+  kind: "stock" | "crypto" | "etf";
   symbol: string;
 }) {
   const [hasError, setHasError] = useState(false);
@@ -2511,7 +2898,7 @@ function AssetLogo({
   const identifier =
     kind === "stock" ? `${normalizedSymbol}.jk` : normalizedSymbol;
   const logoUrl = publishableKey
-    ? `https://img.logo.dev/${kind === "stock" ? "ticker" : "crypto"}/${encodeURIComponent(identifier)}?token=${encodeURIComponent(publishableKey)}`
+    ? `https://img.logo.dev/${kind === "crypto" ? "crypto" : "ticker"}/${encodeURIComponent(identifier)}?token=${encodeURIComponent(publishableKey)}`
     : null;
 
   return (
