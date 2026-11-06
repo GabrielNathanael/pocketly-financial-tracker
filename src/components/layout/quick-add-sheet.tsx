@@ -289,10 +289,8 @@ function QuickAddSheetContent({
     const usesMinorUnits =
       currentCurrency === "USD" || currentCurrency === "SGD";
     if (usesMinorUnits && /^\d+$/.test(val)) {
-      const digits = `${amountStr.replace(/\D/g, "")}${val}`.replace(
-        /^0+/,
-        "",
-      ) || "0";
+      const digits =
+        `${amountStr.replace(/\D/g, "")}${val}`.replace(/^0+/, "") || "0";
       const nextAmount =
         digits.length <= 2
           ? `0.${digits.padStart(2, "0")}`
@@ -643,7 +641,10 @@ function QuickAddSheetContent({
               </button>
               {showScanMenu && !isScanning && (
                 <>
-                  <div className="fixed inset-0 z-10" onClick={() => setShowScanMenu(false)} />
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setShowScanMenu(false)}
+                  />
                   <div className="absolute right-0 top-full z-20 mt-1 w-44 overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-lg dark:border-[#27272A] dark:bg-[#121215]">
                     <button
                       type="button"
@@ -665,7 +666,9 @@ function QuickAddSheetContent({
                       className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-[#0F172A] hover:bg-[#F8F9FA] dark:text-[#F8FAFC] dark:hover:bg-[#1A1A20]"
                     >
                       <AlignLeft className="h-3.5 w-3.5" />
-                      {language === "en" ? "Upload from device" : "Upload dari device"}
+                      {language === "en"
+                        ? "Upload from device"
+                        : "Upload dari device"}
                     </button>
                   </div>
                 </>
@@ -857,9 +860,7 @@ function QuickAddSheetContent({
         <div
           className={cn(
             "col-start-1 row-start-1 flex flex-col gap-3 transition-opacity duration-150",
-            isNumpadOpen
-              ? "hidden"
-              : "opacity-100",
+            isNumpadOpen ? "hidden" : "opacity-100",
           )}
           aria-hidden={isNumpadOpen}
         >
@@ -971,7 +972,6 @@ function QuickAddSheetContent({
 
             {/* Action Toolbar Grid (3 Columns: Items, Memo, Tags) */}
             <div className="grid grid-cols-3 gap-1.5">
-
               {/* Breakdown Items Button */}
               <button
                 type="button"
@@ -1105,13 +1105,14 @@ function QuickAddSheetContent({
                   {t.quickAdd.emptyItems}
                 </div>
               ) : (
-                <div className="flex flex-col gap-1.5 max-h-36 overflow-y-auto pr-0.5">
+                <div className="flex flex-col max-h-36 overflow-y-auto pr-0.5">
                   {items.map((item, idx) => (
                     <div
                       key={idx}
-                      className="flex flex-col gap-1.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] p-2"
+                      className="flex flex-col gap-1 py-2 border-b border-[#E5E7EB] dark:border-[#27272A] last:border-b-0"
                     >
-                      <div className="flex items-center gap-2">
+                      {/* Row 1: Name + Total */}
+                      <div className="flex items-center justify-between gap-2">
                         <input
                           type="text"
                           placeholder={`Item ${idx + 1}`}
@@ -1119,63 +1120,67 @@ function QuickAddSheetContent({
                           onChange={(e) =>
                             handleUpdateItem(idx, "name", e.target.value)
                           }
-                          className="flex-1 min-w-0 px-2 py-1.5 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-transparent text-xs text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8]"
+                          className="flex-1 min-w-0 bg-transparent text-sm font-medium text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8] focus:outline-none"
                         />
-                        <span className="shrink-0 font-mono text-xs font-black text-[#0F172A] dark:text-[#F8FAFC]">
+                        <span className="shrink-0 font-mono text-sm font-semibold text-[#0F172A] dark:text-[#F8FAFC]">
                           {formatCurrency(
-                            (parseFloat(item.quantity) || 1) * (parseFloat(item.price) || 0),
+                            (parseFloat(item.quantity) || 1) *
+                              (parseFloat(item.price) || 0),
                             currentCurrency,
-                          )}
+                          ).replace(/^Rp\s?/, "")}
                         </span>
+                      </div>
+
+                      {/* Row 2: Qty controls + price + trash */}
+                      <div className="flex items-center gap-2">
+                        {/* Minus */}
                         <button
                           type="button"
-                          onClick={() => handleRemoveItem(idx)}
-                          className="p-1 text-[#94A3B8] hover:text-[#E11D48] active:scale-90 transition-all cursor-pointer shrink-0"
+                          onClick={() =>
+                            handleUpdateItem(
+                              idx,
+                              "quantity",
+                              String(
+                                Math.max(
+                                  0,
+                                  (parseFloat(item.quantity) || 1) - 1,
+                                ),
+                              ),
+                            )
+                          }
+                          className="flex h-6 w-6 items-center justify-center rounded-md border border-[#E5E7EB] dark:border-[#27272A] text-[#64748B] dark:text-[#94A3B8] text-sm"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          −
                         </button>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleUpdateItem(
-                                idx,
-                                "quantity",
-                                String(Math.max(0, (parseFloat(item.quantity) || 1) - 1)),
-                              )
-                            }
-                            className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#E5E7EB] bg-[#F8F9FA] text-[#64748B] dark:border-[#27272A] dark:bg-[#1A1A20] dark:text-[#94A3B8]"
-                          >
-                            −
-                          </button>
-                          <input
-                            type="number"
-                            inputMode="decimal"
-                            placeholder="Qty"
-                            value={item.quantity}
-                            onChange={(e) =>
-                              handleUpdateItem(idx, "quantity", e.target.value)
-                            }
-                            className="w-12 px-1 py-1.5 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-transparent text-xs text-center text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8]"
-                          />
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleUpdateItem(
-                                idx,
-                                "quantity",
-                                String((parseFloat(item.quantity) || 1) + 1),
-                              )
-                            }
-                            className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#E5E7EB] bg-[#F8F9FA] text-[#64748B] dark:border-[#27272A] dark:bg-[#1A1A20] dark:text-[#94A3B8]"
-                          >
-                            +
-                          </button>
-                        </div>
-                        <span className="text-[11px] font-mono text-[#94A3B8]">×</span>
-                        <div className="w-24 min-w-0 flex-1">
+
+                        <input
+                          type="number"
+                          inputMode="decimal"
+                          value={item.quantity}
+                          onChange={(e) =>
+                            handleUpdateItem(idx, "quantity", e.target.value)
+                          }
+                          className="w-10 bg-transparent text-xs text-center text-[#0F172A] dark:text-[#FAFAFA] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+
+                        {/* Plus */}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleUpdateItem(
+                              idx,
+                              "quantity",
+                              String((parseFloat(item.quantity) || 1) + 1),
+                            )
+                          }
+                          className="flex h-6 w-6 items-center justify-center rounded-md border border-[#E5E7EB] dark:border-[#27272A] text-[#64748B] dark:text-[#94A3B8] text-sm"
+                        >
+                          +
+                        </button>
+
+                        {/* Multiply + unit price */}
+                        <span className="text-xs text-[#94A3B8]">×</span>
+                        <div className="flex-1 min-w-0">
                           <NumberInput
                             value={item.price}
                             onValueChange={(value) =>
@@ -1187,9 +1192,18 @@ function QuickAddSheetContent({
                             currency={currentCurrency}
                             compact
                             showCurrency={false}
-                            className="w-full"
+                            className="w-full bg-transparent text-xs text-[#64748B] dark:text-[#94A3B8] focus:outline-none"
                           />
                         </div>
+
+                        {/* Trash */}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveItem(idx)}
+                          className="p-1 text-[#94A3B8] hover:text-[#E11D48] active:scale-90 transition-all cursor-pointer shrink-0"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </div>
                   ))}
