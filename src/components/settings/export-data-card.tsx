@@ -36,10 +36,30 @@ interface DateRange {
   rangeEnd?: string;
 }
 
-/** Data yang bisa dipilih untuk tiap format. CSV hanya punya tiga file. */
+/** Data yang bisa dipilih untuk tiap format. */
 const SECTIONS_BY_FORMAT: Record<ExportFormat, ExportSection[]> = {
-  csv: ["transactions", "accounts", "debts"],
-  json: ["transactions", "accounts", "debts", "budgets", "categories"],
+  csv: [
+    "transactions",
+    "accounts",
+    "debts",
+    "transfers",
+    "stockHoldings",
+    "stockTrades",
+    "cryptoHoldings",
+    "cryptoTrades",
+  ],
+  json: [
+    "transactions",
+    "accounts",
+    "debts",
+    "budgets",
+    "categories",
+    "transfers",
+    "stockHoldings",
+    "stockTrades",
+    "cryptoHoldings",
+    "cryptoTrades",
+  ],
 };
 
 function toDateStr(date: Date): string {
@@ -115,6 +135,11 @@ export function ExportDataCard() {
     debts: t.settings.exportSectionDebts,
     budgets: t.settings.exportSectionBudgets,
     categories: t.settings.exportSectionCategories,
+    transfers: t.settings.exportSectionTransfers,
+    stockHoldings: t.settings.exportSectionStockHoldings,
+    stockTrades: t.settings.exportSectionStockTrades,
+    cryptoHoldings: t.settings.exportSectionCryptoHoldings,
+    cryptoTrades: t.settings.exportSectionCryptoTrades,
   };
 
   const toggleSection = (fmt: ExportFormat, key: ExportSection) =>
@@ -163,6 +188,21 @@ export function ExportDataCard() {
             name: `pocketly-debts-${timestamp}.csv`,
             content: data.csvDebts,
           });
+        }
+        const csvFiles = [
+          ["transfers", data.csvTransfers],
+          ["stock-holdings", data.csvStockHoldings],
+          ["stock-trades", data.csvStockTrades],
+          ["crypto-holdings", data.csvCryptoHoldings],
+          ["crypto-trades", data.csvCryptoTrades],
+        ] as const;
+        for (const [name, content] of csvFiles) {
+          if (content !== null) {
+            files.push({
+              name: `pocketly-${name}-${timestamp}.csv`,
+              content,
+            });
+          }
         }
 
         if (files.length === 1) {
