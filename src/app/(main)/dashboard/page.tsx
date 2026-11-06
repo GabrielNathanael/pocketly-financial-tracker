@@ -13,17 +13,16 @@ import { RecentTransactions } from '@/components/dashboard/recent-transactions'
 import { PinnedTransactionsWidget } from '@/components/dashboard/pinned-transactions-widget'
 import { CashflowChartWidget } from '@/components/dashboard/cashflow-chart-widget'
 import { CompactDueBanner } from '@/components/dashboard/compact-due-banner'
-import { getCurrentPeriodStartDate } from '@/lib/utils/date'
+import { getCurrentPeriodStartDate, getCurrentMonthDateStrings } from '@/lib/utils/date'
+import { getUserTimeZone } from '@/lib/utils/timezone-server'
 import { convertAmount } from '@/lib/utils/currency'
-import { startOfMonth, endOfMonth, format } from 'date-fns'
 
 export const dynamic = 'force-dynamic'
 
 export default async function DashboardPage() {
-  const currentPeriod = getCurrentPeriodStartDate()
-  const now = new Date()
-  const startDate = format(startOfMonth(now), 'yyyy-MM-dd')
-  const endDate = format(endOfMonth(now), 'yyyy-MM-dd')
+  const timeZone = await getUserTimeZone()
+  const currentPeriod = getCurrentPeriodStartDate(timeZone)
+  const { startDate, endDate } = getCurrentMonthDateStrings(timeZone)
 
   const [
     exchangeRate,

@@ -10,6 +10,8 @@ import {
 } from "@/types/database";
 import { transactionSchema } from "@/lib/validations/transaction";
 import { formatCurrency } from "@/lib/utils/currency";
+import { getLocalDateRangeBoundsUTC } from "@/lib/utils/date";
+import { getUserTimeZone } from "@/lib/utils/timezone-server";
 
 export interface TransactionFilterParams {
   categoryId?: string;
@@ -17,6 +19,7 @@ export interface TransactionFilterParams {
   type?: TransactionType | "all";
   startDate?: string;
   endDate?: string;
+  timeZone?: string;
   search?: string;
   tag?: string;
   sort?: "date_desc" | "date_asc" | "amount_desc" | "amount_asc";
@@ -51,12 +54,31 @@ export async function getTransactions(
     query = query.contains("tags", [cleanTag]);
   }
 
-  if (params.startDate) {
-    query = query.gte("transaction_date", `${params.startDate}T00:00:00.000Z`);
-  }
-
-  if (params.endDate) {
-    query = query.lte("transaction_date", `${params.endDate}T23:59:59.999Z`);
+  if (params.startDate || params.endDate) {
+    const timeZone = params.timeZone ?? (await getUserTimeZone());
+    if (params.startDate && params.endDate) {
+      const { startUtc, endUtcExclusive } = getLocalDateRangeBoundsUTC(
+        params.startDate,
+        params.endDate,
+        timeZone,
+      );
+      query = query.gte("transaction_date", startUtc);
+      query = query.lt("transaction_date", endUtcExclusive);
+    } else if (params.startDate) {
+      const { startUtc } = getLocalDateRangeBoundsUTC(
+        params.startDate,
+        params.startDate,
+        timeZone,
+      );
+      query = query.gte("transaction_date", startUtc);
+    } else if (params.endDate) {
+      const { endUtcExclusive } = getLocalDateRangeBoundsUTC(
+        params.endDate,
+        params.endDate,
+        timeZone,
+      );
+      query = query.lt("transaction_date", endUtcExclusive);
+    }
   }
 
   if (params.search && params.search.trim()) {
@@ -460,11 +482,31 @@ export async function getGlobalAuditLogs(
     .order("changed_at", { ascending: false })
     .limit(limit);
 
-  if (startDate) {
-    query = query.gte("changed_at", `${startDate}T00:00:00.000Z`);
-  }
-  if (endDate) {
-    query = query.lte("changed_at", `${endDate}T23:59:59.999Z`);
+  if (startDate || endDate) {
+    const timeZone = await getUserTimeZone();
+    if (startDate && endDate) {
+      const { startUtc, endUtcExclusive } = getLocalDateRangeBoundsUTC(
+        startDate,
+        endDate,
+        timeZone,
+      );
+      query = query.gte("changed_at", startUtc);
+      query = query.lt("changed_at", endUtcExclusive);
+    } else if (startDate) {
+      const { startUtc } = getLocalDateRangeBoundsUTC(
+        startDate,
+        startDate,
+        timeZone,
+      );
+      query = query.gte("changed_at", startUtc);
+    } else if (endDate) {
+      const { endUtcExclusive } = getLocalDateRangeBoundsUTC(
+        endDate,
+        endDate,
+        timeZone,
+      );
+      query = query.lt("changed_at", endUtcExclusive);
+    }
   }
 
   const { data, error } = await query;

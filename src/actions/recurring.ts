@@ -5,7 +5,9 @@ import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { EnrichedRecurringTransaction, RecurringFrequency } from '@/types/database'
 import { recurringTransactionSchema, RecurringTransactionInput } from '@/lib/validations/recurring'
 import { calculateNextDueDate } from '@/lib/utils/recurring'
-import { format, parseISO } from 'date-fns'
+import { parseISO } from 'date-fns'
+import { zonedDateToUtc, getTodayDateStringInTimeZone } from '@/lib/utils/date'
+import { getUserTimeZone } from '@/lib/utils/timezone-server'
 
 /**
  * Fetch all recurring transactions for the current user with joined account and category data
@@ -205,7 +207,8 @@ export async function processRecurringPayment(id: string, executionDate?: string
     return { error: 'Linked source account not found' }
   }
 
-  const txDate = executionDate ? `${executionDate}T12:00:00.000Z` : new Date().toISOString()
+  const userTz = await getUserTimeZone()
+  const txDate = executionDate ? zonedDateToUtc(executionDate, userTz, 12, 0, 0) : new Date().toISOString()
   const cleanDescription = rule.notes ? `${rule.name} • ${rule.notes}` : rule.name
 
   // 3. Insert transaction
@@ -240,7 +243,7 @@ export async function processRecurringPayment(id: string, executionDate?: string
 
   // 5. Advance next_due_date and record last_processed_date
   const nextDueDate = calculateNextDueDate(rule.next_due_date, rule.frequency as RecurringFrequency, rule.interval_count)
-  const todayStr = format(new Date(), 'yyyy-MM-dd')
+  const todayStr = getTodayDateStringInTimeZone(userTz)
 
   // Check if reached end_date
   let shouldDeactivate = false

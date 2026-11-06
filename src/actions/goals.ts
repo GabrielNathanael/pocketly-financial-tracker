@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { EnrichedSavingsGoal, GoalStatus } from '@/types/database'
 import { savingsGoalSchema, goalDepositSchema, SavingsGoalInput, GoalDepositInput } from '@/lib/validations/goal'
+import { zonedDateToUtc } from '@/lib/utils/date'
+import { getUserTimeZone } from '@/lib/utils/timezone-server'
 
 /**
  * Fetch all savings goals with category and deposit history
@@ -337,7 +339,7 @@ export async function recordGoalDeposit(input: GoalDepositInput) {
     amount,
     currency,
     description: fullDesc,
-    transaction_date: `${depositDate}T12:00:00.000Z`,
+    transaction_date: zonedDateToUtc(depositDate, await getUserTimeZone(), 12, 0, 0),
   })
 
   // Update account balance

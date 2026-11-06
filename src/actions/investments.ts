@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { EnrichedStockHolding, EnrichedStockTrade } from "@/types/database";
 import { formatCurrency } from "@/lib/utils/currency";
-import { normalizeISODate } from "@/lib/utils/date";
+import { normalizeISODate, getLocalDateRangeBoundsUTC, getTodayDateStringInTimeZone } from "@/lib/utils/date";
+import { getUserTimeZone } from "@/lib/utils/timezone-server";
 
 /**
  * Automatically recalculate and synchronize a stock holding's lots, total_shares,
@@ -216,8 +217,9 @@ export async function getDailyTradingVolume(
   if (!user)
     return { dailyVolume: 0, stampDutyCharged: 0, isThresholdReached: false };
 
-  const startOfDay = `${dateStr}T00:00:00.000Z`;
-  const endOfDay = `${dateStr}T23:59:59.999Z`;
+  const timeZone = await getUserTimeZone();
+  const { startUtc: startOfDay, endUtcExclusive: endNextDay } =
+    getLocalDateRangeBoundsUTC(dateStr, dateStr, timeZone);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: trades, error } = await (supabase.from("stock_trades") as any)
@@ -225,7 +227,7 @@ export async function getDailyTradingVolume(
     .eq("user_id", user.id)
     .eq("account_id", accountId)
     .gte("trade_date", startOfDay)
-    .lte("trade_date", endOfDay);
+    .lt("trade_date", endNextDay);
 
   if (error || !trades) {
     return { dailyVolume: 0, stampDutyCharged: 0, isThresholdReached: false };
@@ -295,7 +297,7 @@ export async function recordStockBuy(input: {
   }
 
   // 2. Check Daily Trading Volume & Stamp Duty (Bea Materai Rp 10.000)
-  const dateOnly = input.tradeDate || new Date().toISOString().split("T")[0];
+  const dateOnly = input.tradeDate || getTodayDateStringInTimeZone(await getUserTimeZone());
   const { dailyVolume, stampDutyCharged } = await getDailyTradingVolume(
     acc.id,
     dateOnly,
@@ -328,7 +330,7 @@ export async function recordStockBuy(input: {
   // 3. Record Trade Log
   const sharesToAdd = Math.round(lots * 100);
   const pricePerShare = netAmount / sharesToAdd;
-  const txDate = normalizeISODate(input.tradeDate);
+  const txDate = normalizeISODate(input.tradeDate, await getUserTimeZone());
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: trade, error: tradeErr } = await (
@@ -489,7 +491,7 @@ export async function recordStockSell(input: {
   const sellPricePerShare = sharesSold > 0 ? netAmount / sharesSold : 0;
 
   // 2. Check Daily Stamp Duty
-  const dateOnly = input.tradeDate || new Date().toISOString().split("T")[0];
+  const dateOnly = input.tradeDate || getTodayDateStringInTimeZone(await getUserTimeZone());
   const { dailyVolume, stampDutyCharged } = await getDailyTradingVolume(
     acc.id,
     dateOnly,
@@ -513,7 +515,7 @@ export async function recordStockSell(input: {
   }
 
   // 4. Record Trade Log
-  const txDate = normalizeISODate(input.tradeDate);
+  const txDate = normalizeISODate(input.tradeDate, await getUserTimeZone());
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: trade, error: tradeErr } = await (
     supabase.from("stock_trades") as any
@@ -752,7 +754,7 @@ export async function updateStockTrade(input: UpdateStockTradeInput) {
   }
 
   const txDate = input.tradeDate
-    ? `${input.tradeDate}T12:00:00.000Z`
+    ? normalizeISODate(input.tradeDate, await getUserTimeZone())
     : trade.trade_date;
 
   // 4. Update the trade row

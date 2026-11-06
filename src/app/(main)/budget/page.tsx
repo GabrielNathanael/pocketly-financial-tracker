@@ -4,6 +4,7 @@ import { getCategories } from '@/actions/categories'
 import { getLatestExchangeRate } from '@/actions/exchange-rate'
 import { BudgetManager } from '@/components/budget/budget-manager'
 import { getCurrentPeriodStartDate } from '@/lib/utils/date'
+import { getUserTimeZone } from '@/lib/utils/timezone-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,7 +14,8 @@ interface BudgetPageProps {
 
 export default async function BudgetPage({ searchParams }: BudgetPageProps) {
   const params = await searchParams
-  const currentPeriod = params.period || getCurrentPeriodStartDate()
+  const timeZone = await getUserTimeZone()
+  const currentPeriod = params.period || getCurrentPeriodStartDate(timeZone)
 
   const [budgets, categories, exchangeRate] = await Promise.all([
     getBudgetsWithActuals(currentPeriod),

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { normalizeISODate } from "@/lib/utils/date";
+import { getUserTimeZone } from "@/lib/utils/timezone-server";
 import {
   EnrichedCryptoHolding,
   EnrichedCryptoTrade,
@@ -281,7 +282,7 @@ async function recordCryptoTrade(input: {
     .eq("user_id", user.id);
   if (balanceError) return { error: balanceError.message };
 
-  const tradeDate = normalizeISODate(input.tradeDate);
+  const tradeDate = normalizeISODate(input.tradeDate, await getUserTimeZone());
   const { data: trade, error: tradeError } = await supabase
     .from("crypto_trades")
     .insert({
@@ -486,7 +487,7 @@ export async function updateCryptoTrade(input: {
       : Number(trade.cost_basis || 0) * (quantity / Number(trade.quantity));
   const realizedPnl =
     trade.type === "sell" ? grossAmount - feeAmount - newCostBasis : 0;
-  const tradeDate = normalizeISODate(input.tradeDate || trade.trade_date);
+  const tradeDate = normalizeISODate(input.tradeDate || trade.trade_date, await getUserTimeZone());
 
   const { error: updateError } = await supabase
     .from("crypto_trades")

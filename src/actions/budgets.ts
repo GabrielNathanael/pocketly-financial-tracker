@@ -6,7 +6,11 @@ import { EnrichedBudget, Category } from "@/types/database";
 import { budgetSchema } from "@/lib/validations/budget";
 import { CurrencyCode } from "@/lib/constants/currencies";
 import { getCanonicalCategoryName } from "@/lib/utils/category-i18n";
-import { endOfMonth, parseISO, format } from "date-fns";
+import {
+  getLocalDateRangeBoundsUTC,
+  getEndDateStringForPeriod,
+} from "@/lib/utils/date";
+import { getUserTimeZone } from "@/lib/utils/timezone-server";
 
 // Categories that exist purely for operational/system bookkeeping (balance
 // reconciliation, loan tracking, transfer fees, savings allocation) rather
@@ -79,15 +83,17 @@ export async function getBudgetsWithActuals(
   }
 
   // 4. Get transactions for this month range
-  const startDate = `${periodStartDate}T00:00:00.000Z`;
-  const endDate = `${format(endOfMonth(parseISO(periodStartDate)), "yyyy-MM-dd")}T23:59:59.999Z`;
+  const periodEndDate = getEndDateStringForPeriod(periodStartDate);
+  const timeZone = await getUserTimeZone();
+  const { startUtc: startDate, endUtcExclusive: endDate } =
+    getLocalDateRangeBoundsUTC(periodStartDate, periodEndDate, timeZone);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: txs } = await (supabase.from("transactions") as any)
     .select("category_id, amount, currency, type")
     .eq("type", "expense")
     .gte("transaction_date", startDate)
-    .lte("transaction_date", endDate);
+    .lt("transaction_date", endDate);
 
   // Map actual spending per categoryId and currency: key = `${categoryId}:${currency}`
   const actualSpentMap = new Map<string, number>();
@@ -305,7 +311,8 @@ export async function getCategoryBudgetHistory(
 
   const history: CategoryHistoryItem[] = [];
   const { getPreviousMonths } = await import("@/lib/utils/date");
-  const months = getPreviousMonths(monthsCount);
+  const timeZone = await getUserTimeZone();
+  const months = getPreviousMonths(monthsCount, "id", timeZone);
 
   for (const m of months) {
     // 1. Budget for specified currency (with fallback to latest prior for accurate historical graph)
@@ -334,8 +341,9 @@ export async function getCategoryBudgetHistory(
     }
 
     // 2. Spending for specified currency
-    const startDate = `${m.periodStart}T00:00:00.000Z`;
-    const endDate = `${format(endOfMonth(parseISO(m.periodStart)), "yyyy-MM-dd")}T23:59:59.999Z`;
+    const periodEnd = getEndDateStringForPeriod(m.periodStart);
+    const { startUtc: startDate, endUtcExclusive: endDate } =
+      getLocalDateRangeBoundsUTC(m.periodStart, periodEnd, timeZone);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: txs } = await (supabase.from("transactions") as any)
@@ -344,7 +352,7 @@ export async function getCategoryBudgetHistory(
       .eq("currency", currency)
       .eq("type", "expense")
       .gte("transaction_date", startDate)
-      .lte("transaction_date", endDate);
+      .lt("transaction_date", endDate);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const spent = (txs || []).reduce(

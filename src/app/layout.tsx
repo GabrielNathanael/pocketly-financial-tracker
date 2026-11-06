@@ -7,6 +7,7 @@ import { UndoSnackbar } from "@/components/ui/undo-snackbar";
 import { Toaster } from "sonner";
 import { Analytics } from "@vercel/analytics/next";
 import { PwaRegister } from "@/components/pwa/pwa-register";
+import { TimezoneCookieSync } from "@/components/layout/timezone-cookie-sync";
 import { PinnedTemplatesAuthSync } from "@/lib/storage/pinned-templates-auth-sync";
 import "./globals.css";
 
@@ -87,6 +88,7 @@ export default function RootLayout({
           </LanguageProvider>
         </ThemeProvider>
         <PinnedTemplatesAuthSync />
+        <TimezoneCookieSync />
         <Analytics />
         <PwaRegister />
       </body>
