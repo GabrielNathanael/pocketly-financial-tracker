@@ -163,11 +163,8 @@ export async function getBudgetsWithActuals(
   // Discrepancy/Loan & Debt/Transfer Fee/Savings are excluded) so they never
   // get auto-generated as virtual budget cards.
   for (const cat of budgetableCategories) {
-    let hasAnyBudget = false;
-
     for (const [key, spent] of actualSpentMap.entries()) {
       if (key.startsWith(`${cat.id}:`)) {
-        hasAnyBudget = true;
         if (!processedKeys.has(key)) {
           const cur = key.split(":")[1] as CurrencyCode;
           processedKeys.add(key);
@@ -186,22 +183,8 @@ export async function getBudgetsWithActuals(
       }
     }
 
-    // Default virtual IDR budget for categories with 0 limit and 0 spending
-    const defaultKey = `${cat.id}:IDR`;
-    if (!hasAnyBudget && !processedKeys.has(defaultKey)) {
-      processedKeys.add(defaultKey);
-      result.push({
-        id: `virtual-${cat.id}-IDR`,
-        user_id: user.id,
-        category_id: cat.id,
-        amount: 0,
-        currency: "IDR",
-        period_start_date: periodStartDate,
-        created_at: new Date().toISOString(),
-        category: cat,
-        actual_spent: 0,
-      });
-    }
+    // Kartu virtual 0/0 (tanpa limit & tanpa pengeluaran) tidak dibuat
+    // biar halaman Anggaran tidak penuh kartu kosong.
   }
 
   // Sort: Active budgets first, then alphabetical by category name

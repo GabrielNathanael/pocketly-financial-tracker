@@ -14,6 +14,13 @@ import { useLanguage } from '@/lib/i18n/language-context'
 import { ChevronLeft, ChevronRight, Plus, Search, X, Loader2 } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils/cn'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 interface BudgetManagerProps {
   budgets: EnrichedBudget[]
@@ -287,24 +294,22 @@ export function BudgetManager({
             ))}
           </div>
 
-          {/* Currency Filter Chips */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0">
-            {currencyOptions.map((item) => (
-              <button
-                key={item.value}
-                type="button"
-                onClick={() => setCurrencyFilter(item.value)}
-                className={cn(
-                  'px-2.5 py-1 rounded-md text-[11px] font-mono font-semibold transition-colors shrink-0 whitespace-nowrap cursor-pointer border',
-                  currencyFilter === item.value
-                    ? 'bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A] border-transparent shadow-2xs'
-                    : 'bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] dark:text-[#94A3B8] border-[#E5E7EB] dark:border-[#27272A] hover:bg-[#F1F3F5] dark:hover:bg-[#26262E]'
-                )}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
+          {/* Currency Filter — icon Select kayak di list Transaksi */}
+          <Select
+            value={currencyFilter}
+            onValueChange={(val) => setCurrencyFilter(val as BudgetCurrencyFilter)}
+          >
+            <SelectTrigger className="h-8 w-[110px] shrink-0 text-[11px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="end">
+              {currencyOptions.map((item) => (
+                <SelectItem key={item.value} value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
