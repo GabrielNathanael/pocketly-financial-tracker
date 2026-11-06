@@ -55,10 +55,25 @@ export default async function DashboardPage() {
   }
 
   // Calculate month income & expenses in IDR
+  // Exclude Goals (savings allocation/withdrawal) to match Reports
+  const isSavingsTransfer = (tx: { category?: { name?: string } | null; description?: string | null }) => {
+    const catName = (tx.category?.name || '').toLowerCase()
+    const desc = tx.description || ''
+    return (
+      catName === 'savings' ||
+      catName === 'tabungan' ||
+      catName === 'alokasi tabungan' ||
+      desc.includes('[Ref:goal-') ||
+      desc.startsWith('Alokasi Tabungan:') ||
+      desc.startsWith('Penarikan Tabungan:')
+    )
+  }
+
   let totalIncomeMonth = 0
   let totalExpenseMonth = 0
 
   for (const tx of monthTransactions) {
+    if (isSavingsTransfer(tx)) continue
     const amtIdr = convertAmount(Number(tx.amount), tx.currency, 'IDR', exchangeRate)
     if (tx.type === 'income') {
       totalIncomeMonth += amtIdr

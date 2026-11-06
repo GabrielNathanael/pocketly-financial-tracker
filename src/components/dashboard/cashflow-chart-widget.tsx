@@ -72,7 +72,21 @@ export function CashflowChartWidget({
     let expense = 0
     const catMap = new Map<string, { name: string; icon: string; amount: number; count: number }>()
 
+    const isSavingsTransfer = (tx: { category?: { name?: string } | null; description?: string | null }) => {
+      const catName = (tx.category?.name || '').toLowerCase()
+      const desc = tx.description || ''
+      return (
+        catName === 'savings' ||
+        catName === 'tabungan' ||
+        catName === 'alokasi tabungan' ||
+        desc.includes('[Ref:goal-') ||
+        desc.startsWith('Alokasi Tabungan:') ||
+        desc.startsWith('Penarikan Tabungan:')
+      )
+    }
+
     for (const tx of filteredTransactions) {
+      if (isSavingsTransfer(tx)) continue
       const amt = convertAmount(Number(tx.amount), tx.currency, displayCurrency, exchangeRate)
 
       if (tx.type === 'income') {
