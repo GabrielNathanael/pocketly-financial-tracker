@@ -1375,7 +1375,11 @@ export function ReportsView({
         startY: y,
         theme: "grid" as const,
         styles: { fontSize: 8, cellPadding: 1.5 },
-        headStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: "bold" as const },
+        headStyles: {
+          fillColor: [241, 245, 249] as [number, number, number],
+          textColor: [15, 23, 42] as [number, number, number],
+          fontStyle: "bold" as const,
+        },
         margin: { left: margin, right: margin },
       };
 
