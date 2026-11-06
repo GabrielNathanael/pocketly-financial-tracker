@@ -52,6 +52,8 @@ import {
   Download,
   CheckCircle2,
   PieChart as PieChartIcon,
+  ChevronLeft,
+  ChevronRight,
   Scale,
   Hash,
   X,
@@ -70,6 +72,9 @@ interface ReportsViewProps {
   transactions: EnrichedTransaction[];
   categories: Category[];
   rates?: ForexRatesMap;
+  stocks?: import("@/types/database").EnrichedStockHolding[];
+  cryptos?: import("@/types/database").EnrichedCryptoHolding[];
+  etfs?: import("@/types/database").EnrichedEtfHolding[];
 }
 
 type PeriodType = "this_month" | "last_month" | "this_year" | "custom";
@@ -92,6 +97,9 @@ export function ReportsView({
   transactions,
   categories,
   rates,
+  stocks = [],
+  cryptos = [],
+  etfs = [],
 }: ReportsViewProps) {
   const { t, language } = useLanguage();
   const displayCurrency = usePreferredCurrency();
@@ -119,6 +127,8 @@ export function ReportsView({
     "expense" | "income"
   >("expense");
   const [categorySearchQuery, setCategorySearchQuery] = useState<string>("");
+  const [insightSlideIdx, setInsightSlideIdx] = useState(0);
+  const INSIGHTS_PER_SLIDE = 4;
 
   // Extract unique available tags across transactions
   const availableTags = useMemo(() => {
@@ -974,7 +984,7 @@ export function ReportsView({
           ),
           ...getStyles(),
         });
-      } else if (savingsRate >= 0 && savingsRate < 15 && totalIncome > 0) {
+      } else if (savingsRate >= 0 && savingsRate < 20 && totalIncome > 0) {
         insights.push({
           id: "savings-health-warning",
           type: "warning",
@@ -1013,10 +1023,11 @@ export function ReportsView({
 
     allExpenseCategories.forEach((cat) => {
       const priorVal = priorExpenseMap.get(cat.id) || 0;
-      if (priorVal > 0 && cat.total > priorVal) {
-        const growth = ((cat.total - priorVal) / priorVal) * 100;
+      if (cat.total > priorVal) {
         const diff = cat.total - priorVal;
-        if (growth >= 25 && diff >= totalExpense * 0.05) {
+        const isNewCategory = priorVal === 0;
+        const growth = isNewCategory || priorVal === 0 ? 100 : ((cat.total - priorVal) / priorVal) * 100;
+        if ((isNewCategory ? diff >= totalExpense * 0.1 : growth >= 25 && diff >= totalExpense * 0.05)) {
           categorySpikes.push({
             name: cat.category?.name || t.reports.uncategorized,
             growth,
@@ -1028,24 +1039,25 @@ export function ReportsView({
 
     if (categorySpikes.length > 0) {
       categorySpikes.sort((a, b) => b.diff - a.diff);
-      const topSpike = categorySpikes[0];
-      insights.push({
-        id: "category-spike",
-        type: "warning",
-        icon: <TrendingUp className="w-3.5 h-3.5" />,
-        title: t.reports.insightSpikeTitle,
-        badge: `+${topSpike.growth.toFixed(0)}%`,
-        description: t.reports.insightSpikeDesc
-          .replace("{category}", topSpike.name)
-          .replace("{growth}", topSpike.growth.toFixed(1))
-          .replace(
-            "{diff}",
-            maskCurrency(
-              formatCurrency(topSpike.diff, displayCurrency),
-              isPrivate
-            )
-          ),
-        ...getStyles(),
+      categorySpikes.slice(0, 2).forEach((spike, idx) => {
+        insights.push({
+          id: `category-spike-${idx}`,
+          type: "warning",
+          icon: <TrendingUp className="w-3.5 h-3.5" />,
+          title: t.reports.insightSpikeTitle,
+          badge: `+${spike.growth.toFixed(0)}%`,
+          description: t.reports.insightSpikeDesc
+            .replace("{category}", spike.name)
+            .replace("{growth}", spike.growth.toFixed(1))
+            .replace(
+              "{diff}",
+              maskCurrency(
+                formatCurrency(spike.diff, displayCurrency),
+                isPrivate
+              )
+            ),
+          ...getStyles(),
+        });
       });
     }
 
@@ -1305,12 +1317,192 @@ export function ReportsView({
     isExcludedTx,
   ]);
 
-  // Handle Clean Print PDF Trigger
-  const handlePrint = () => {
-    const originalTitle = document.title;
-    document.title = `Pocketly-Financial-Report-${format(intervalStart, "MMM-yyyy", { locale: dateFnsLocale })}`;
-    window.print();
-    document.title = originalTitle;
+  // PDF beneran via jsPDF + autoTable (dari data, bukan screenshot DOM)
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const handlePrint = async () => {
+    setIsGeneratingPdf(true);
+    try {
+      const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+        import("jspdf"),
+        import("jspdf-autotable"),
+      ]);
+      const doc = new jsPDF({ unit: "mm", format: "a4" });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 14;
+      const textWidth = pageWidth - margin * 2;
+      const fmtAmt = (n: number) => formatCurrency(n, displayCurrency);
+      let y = margin;
+
+      const addSection = (title: string) => {
+        const pageHeight = doc.internal.pageSize.getHeight();
+        if (y > pageHeight - 35) {
+          doc.addPage();
+          y = margin;
+        }
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.text(title, margin, y);
+        y += 6;
+        doc.setDrawColor(15, 23, 42);
+        doc.setLineWidth(0.4);
+        doc.line(margin, y, pageWidth - margin, y);
+        y += 5;
+      };
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(16);
+      doc.text("POCKETLY", margin, y);
+      y += 5;
+      doc.setFontSize(11);
+      doc.text(language === "en" ? "Personal Financial Statement" : "Laporan Keuangan Pribadi", margin, y);
+      y += 4;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.text(
+        `${language === "en" ? "Period" : "Periode"}: ${format(intervalStart, "dd MMMM yyyy", { locale: dateFnsLocale })} - ${format(intervalEnd, "dd MMMM yyyy", { locale: dateFnsLocale })}`,
+        margin,
+        y,
+      );
+      y += 4;
+      doc.text(
+        `${language === "en" ? "Generated" : "Dihasilkan"}: ${format(new Date(), "dd MMM yyyy, HH:mm")} | ${language === "en" ? "Currency" : "Mata uang"}: ${displayCurrency}`,
+        margin,
+        y,
+      );
+      y += 8;
+
+      const tableOpts = {
+        startY: y,
+        theme: "grid" as const,
+        styles: { fontSize: 8, cellPadding: 1.5 },
+        headStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: "bold" as const },
+        margin: { left: margin, right: margin },
+      };
+
+      addSection(`1. ${language === "en" ? "Executive Summary" : "Ringkasan Eksekutif"}`);
+      autoTable(doc, {
+        ...tableOpts,
+        startY: y,
+        head: [["Metric", `Amount (${displayCurrency})`]],
+        body: [
+          [language === "en" ? "Total Inflow" : "Total Pemasukan", `+${fmtAmt(totalIncome)}`],
+          [language === "en" ? "Total Outflow" : "Total Pengeluaran", `-${fmtAmt(totalExpense)}`],
+          [language === "en" ? "Net Savings" : "Tabungan Bersih (Net)", fmtAmt(netSavings)],
+          [language === "en" ? "Savings Rate" : "Rasio Tabungan", `${savingsRate.toFixed(1)}%`],
+          [language === "en" ? "Average Daily Expense" : "Pengeluaran Harian", `${fmtAmt(dailyBurnRate)} / ${language === "en" ? "day" : "hari"}`],
+        ],
+      });
+      y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
+
+      if (smartInsights.length > 0) {
+        addSection(`2. ${language === "en" ? "Notable Findings" : "Temuan Menarik"}`);
+        doc.setFontSize(8);
+        smartInsights.forEach((ins) => {
+          doc.setFont("helvetica", "bold");
+          const title = `${ins.title} [${ins.badge}]`;
+          const lines = doc.splitTextToSize(`${title} — ${ins.description}`, textWidth);
+          if (y + lines.length * 4 > 280) doc.addPage();
+          doc.text(lines, margin, y);
+          y += lines.length * 4 + 4;
+        });
+        y += 4;
+      }
+
+      addSection(`3. ${language === "en" ? "Period Comparison" : "Perbandingan Periode"} (${currentPeriodLabel} vs ${priorPeriodLabel})`);
+      autoTable(doc, {
+        ...tableOpts,
+        startY: y,
+        head: [["", currentPeriodLabel, priorPeriodLabel]],
+        body: [
+          [language === "en" ? "Total Income" : "Total Pemasukan", `+${fmtAmt(totalIncome)}`, `+${fmtAmt(priorTotalIncome)}`],
+          [language === "en" ? "Total Expense" : "Total Pengeluaran", `-${fmtAmt(totalExpense)}`, `-${fmtAmt(priorTotalExpense)}`],
+          [language === "en" ? "Net Savings" : "Tabungan Bersih", fmtAmt(netSavings), fmtAmt(priorNetSavings)],
+        ],
+      });
+      y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
+
+      const addCategoryTable = (title: string, cats: typeof allExpenseCategories) => {
+        addSection(title);
+        autoTable(doc, {
+          ...tableOpts,
+          startY: y,
+          head: [["#", language === "en" ? "Category" : "Kategori", language === "en" ? "Count" : "Jumlah", language === "en" ? "Amount" : "Nominal", language === "en" ? "Share" : "Bagian"]],
+          body: cats.map((c, i) => [
+            String(i + 1),
+            c.category?.name || (language === "en" ? "Uncategorized" : "Lainnya"),
+            String(c.count),
+            fmtAmt(c.total),
+            `${c.percentage.toFixed(1)}%`,
+          ]),
+        });
+        y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
+      };
+      addCategoryTable(`4. ${language === "en" ? "Expense Category Breakdown" : "Rincian Kategori Pengeluaran"}`, allExpenseCategories);
+      addCategoryTable(`5. ${language === "en" ? "Income Category Breakdown" : "Rincian Kategori Pemasukan"}`, allIncomeCategories);
+
+      addSection(`6. ${language === "en" ? "Top 10 Largest Outflows" : "Top 10 Pengeluaran Terbesar"}`);
+      autoTable(doc, {
+        ...tableOpts,
+        startY: y,
+        head: [["Date", language === "en" ? "Description" : "Deskripsi", language === "en" ? "Category" : "Kategori", language === "en" ? "Account" : "Akun", language === "en" ? "Amount" : "Nominal"]],
+        body: topExpenses.slice(0, 10).map((tx) => [
+          format(parseISO(tx.transaction_date), "dd/MM/yyyy"),
+          getCleanDescription(tx.description) || tx.category?.name || "-",
+          tx.category?.name || "-",
+          tx.account?.name || "-",
+          `-${fmtAmt(tx.convertedAmount)}`,
+        ]),
+      });
+      y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
+
+      // Holdings snapshot (paling bawah)
+      const holdingRows = [
+        ...stocks.map((h) => ({
+          kind: language === "en" ? "Stock" : "Saham Indonesia",
+          symbol: h.ticker,
+          qty: `${Number(h.lots) || Number(h.total_shares) / 100} lot`,
+          cost: convertAmount(Number(h.total_cost) || 0, h.account?.currency || "IDR", displayCurrency, rates),
+        })),
+        ...cryptos.map((h) => ({
+          kind: language === "en" ? "Crypto" : "Kripto",
+          symbol: h.symbol,
+          qty: `${Number(h.quantity)} ${h.symbol}`,
+          cost: convertAmount(Number(h.cost_basis) || 0, h.account?.currency || h.price_currency || "IDR", displayCurrency, rates),
+        })),
+        ...etfs.map((h) => ({
+          kind: language === "en" ? "US ETF" : "ETF AS",
+          symbol: h.ticker,
+          qty: `${Number(h.quantity)} unit`,
+          cost: convertAmount(Number(h.total_cost) || 0, h.account?.currency || "IDR", displayCurrency, rates),
+        })),
+      ];
+      if (holdingRows.length > 0) {
+        addSection(`7. ${language === "en" ? "Portfolio Holdings (Snapshot)" : "Kepemilikan Portofolio (Snapshot)"}`);
+        const totalH = holdingRows.reduce((s, r) => s + r.cost, 0);
+        autoTable(doc, {
+          ...tableOpts,
+          startY: y,
+          head: [[language === "en" ? "Asset" : "Aset", language === "en" ? "Quantity" : "Jumlah", language === "en" ? "Cost" : "Modal", language === "en" ? "Share" : "Bagian"]],
+          body: holdingRows.map((r) => [ `${r.kind} ${r.symbol}`, r.qty, fmtAmt(r.cost), totalH > 0 ? `${((r.cost / totalH) * 100).toFixed(1)}%` : "—" ]),
+        });
+        y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
+      }
+
+      doc.setFontSize(7);
+      doc.setTextColor(148, 163, 184);
+      doc.text(language === "en" ? "Generated by Pocketly - Confidential & Owner Only" : "Dihasilkan otomatis oleh Pocketly - Rahasia & Khusus Pemilik Akun", margin, y + 4);
+      pdfSave(doc);
+    } catch (e) {
+      console.error("Failed to generate PDF:", e);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+
+    function pdfSave(pdfDoc: InstanceType<typeof import("jspdf").jsPDF>) {
+      pdfDoc.save(
+        `Pocketly-Financial-Report-${format(intervalStart, "MMM-yyyy", { locale: dateFnsLocale })}.pdf`,
+      );
+    }
   };
 
   // Dynamic Auto-scale helper
@@ -1339,22 +1531,13 @@ export function ReportsView({
 
           <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
             <Button
-              onClick={handleExportCSV}
-              variant="outline"
-              size="sm"
-              className="gap-1.5 cursor-pointer text-xs font-semibold"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>CSV</span>
-            </Button>
-
-            <Button
               onClick={handlePrint}
               size="sm"
+              disabled={isGeneratingPdf}
               className="gap-1.5 cursor-pointer text-xs font-bold bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A]"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>{t.reports.printBtn}</span>
+              <span>{isGeneratingPdf ? "…" : t.reports.printBtn}</span>
             </Button>
           </div>
         </div>
@@ -1748,8 +1931,13 @@ export function ReportsView({
               {t.reports.noInsightsDesc}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {smartInsights.map((insight) => (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {(() => {
+                const totalSlides = Math.ceil(smartInsights.length / INSIGHTS_PER_SLIDE);
+                const safeIdx = Math.min(insightSlideIdx, totalSlides - 1);
+                const pageInsights = smartInsights.slice(safeIdx * INSIGHTS_PER_SLIDE, safeIdx * INSIGHTS_PER_SLIDE + INSIGHTS_PER_SLIDE);
+                return pageInsights.map((insight) => (
                 <div
                   key={insight.id}
                   className={cn(
@@ -1785,8 +1973,55 @@ export function ReportsView({
                     {insight.description}
                   </p>
                 </div>
-              ))}
-            </div>
+                ));
+              })()}
+              </div>
+
+              {(() => {
+                const totalSlides = Math.ceil(smartInsights.length / INSIGHTS_PER_SLIDE);
+                if (totalSlides <= 1) return null;
+                const safeIdx = Math.min(insightSlideIdx, totalSlides - 1);
+                return (
+                  <div className="flex items-center justify-between gap-3 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setInsightSlideIdx((i) => Math.max(0, i - 1))}
+                      disabled={safeIdx === 0}
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-[#E5E7EB] text-[#64748B] disabled:opacity-40 dark:border-[#27272A] dark:text-[#94A3B8]"
+                      aria-label="Previous slide"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    <div className="flex items-center gap-1.5">
+                      {Array.from({ length: totalSlides }).map((_, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => setInsightSlideIdx(i)}
+                          aria-label={`Slide ${i + 1}`}
+                          className={cn(
+                            "h-1.5 rounded-full transition-all",
+                            i === safeIdx ? "w-5 bg-[#0F172A] dark:bg-[#FAFAFA]" : "w-1.5 bg-[#E5E7EB] dark:bg-[#3F3F46]",
+                          )}
+                        />
+                      ))}
+                    </div>
+                    <span className="font-mono text-[10px] text-[#94A3B8]">
+                      Slide {safeIdx + 1} / {totalSlides}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setInsightSlideIdx((i) => Math.min(totalSlides - 1, i + 1))}
+                      disabled={safeIdx >= totalSlides - 1}
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-[#E5E7EB] text-[#64748B] disabled:opacity-40 dark:border-[#27272A] dark:text-[#94A3B8]"
+                      aria-label="Next slide"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                );
+              })()}
+            </>
           )}
         </div>
 
@@ -2403,6 +2638,77 @@ export function ReportsView({
             )}
           </div>
         </div>
+
+        {/* Kepemilikan Portofolio — paling bawah, snapshot terakhir (tidak difilter tanggal) */}
+        {(stocks.length > 0 || cryptos.length > 0 || etfs.length > 0) && (
+          <div className="p-5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-3 shadow-2xs">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-md bg-[#F1F3F5] dark:bg-[#1A1A20] flex items-center justify-center text-[#0F172A] dark:text-[#FAFAFA] border border-[#E5E7EB] dark:border-[#27272A] shrink-0">
+                  <Wallet className="w-3.5 h-3.5" />
+                </div>
+                <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#FAFAFA]">
+                  {language === "en" ? "Portfolio Holdings" : "Kepemilikan Portofolio"}
+                </h2>
+              </div>
+              <span className="text-[10px] text-[#64748B] dark:text-[#94A3B8] font-mono">
+                {language === "en" ? "Snapshot today" : "Snapshot hari ini"}
+              </span>
+            </div>
+            {(() => {
+              const rows = [
+                ...stocks.map((h) => ({
+                  kind: language === "en" ? "Stock" : "Saham Indonesia",
+                  symbol: h.ticker,
+                  qtyText: `${Number(h.lots) || Number(h.total_shares) / 100} lot (${Number(h.total_shares) || 0} lbr)`,
+                  cost: Number(h.total_cost) || 0,
+                  currency: h.account?.currency || "IDR",
+                })),
+                ...cryptos.map((h) => ({
+                  kind: language === "en" ? "Crypto" : "Kripto",
+                  symbol: h.symbol,
+                  qtyText: `${Number(h.quantity)} ${h.symbol}`,
+                  cost: Number(h.cost_basis) || 0,
+                  currency: h.account?.currency || h.price_currency || "IDR",
+                })),
+                ...etfs.map((h) => ({
+                  kind: language === "en" ? "US ETF" : "ETF AS",
+                  symbol: h.ticker,
+                  qtyText: `${Number(h.quantity)} unit`,
+                  cost: Number(h.total_cost) || 0,
+                  currency: h.account?.currency || "IDR",
+                })),
+              ].map((r) => ({
+                ...r,
+                costDisplay: convertAmount(r.cost, r.currency, displayCurrency, rates),
+              }));
+              const totalHoldingsCost = rows.reduce((s, r) => s + r.costDisplay, 0);
+              return (
+                <div className="divide-y divide-[#E5E7EB] dark:divide-[#27272A]">
+                  {rows.map((r, i) => (
+                    <div key={`${r.kind}-${r.symbol}-${i}`} className="flex items-center justify-between gap-3 py-2.5">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-black text-xs text-[#0F172A] dark:text-[#F8FAFC]">{r.symbol}</span>
+                          <span className="rounded-md bg-[#F1F3F5] px-1.5 py-0.5 text-[9px] font-bold text-[#64748B] dark:bg-[#27272A] dark:text-[#94A3B8]">{r.kind}</span>
+                        </div>
+                        <p className="truncate text-[10px] text-[#64748B] dark:text-[#94A3B8]">{r.qtyText}</p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="font-mono text-xs font-black text-[#0F172A] dark:text-[#F8FAFC]">
+                          {maskCurrency(formatCurrency(r.costDisplay, displayCurrency), isPrivate)}
+                        </p>
+                        <p className="font-mono text-[9px] text-[#94A3B8]">
+                          {totalHoldingsCost > 0 ? `${((r.costDisplay / totalHoldingsCost) * 100).toFixed(1)}%` : "—"}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
+        )}
       </div>
 
       {/* PDF print view */}

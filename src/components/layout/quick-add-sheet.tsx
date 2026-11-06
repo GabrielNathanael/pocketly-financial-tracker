@@ -42,6 +42,7 @@ import {
 import { cn } from "@/lib/utils/cn";
 import { toast } from "sonner";
 import { scanReceipt } from "@/lib/ocr/receipt-scanner";
+import { scanReceiptGemini } from "@/lib/ocr/receipt-gemini-client";
 import { localDateToISO, getLocalDateString } from "@/lib/utils/date";
 interface QuickAddSheetProps {
   isOpen: boolean;
@@ -59,6 +60,7 @@ interface QuickAddSheetProps {
 
 interface ItemRow {
   name: string;
+  quantity: string;
   price: string;
 }
 
@@ -131,7 +133,9 @@ function QuickAddSheetContent({
   const [isScanning, setIsScanning] = useState(false);
   const [ocrProgress, setOcrProgress] = useState<number>(0);
   const [ocrStatus, setOcrStatus] = useState<string>("");
+  const [showScanMenu, setShowScanMenu] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const cameraInputRef = React.useRef<HTMLInputElement>(null);
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -149,11 +153,21 @@ function QuickAddSheetContent({
     setOcrProgress(10);
     setOcrStatus(t.quickAdd.scanningReceipt);
 
+    const progressTimer = setInterval(() => {
+      setOcrProgress((prev) => Math.min(85, prev + 10));
+    }, 600);
+
     try {
-      const parsed = await scanReceipt(file, (pct, status) => {
-        setOcrProgress(pct);
-        setOcrStatus(status);
-      });
+      // Gemini dulu (rincian terstruktur), gagal baru Tesseract
+      const gemini = await scanReceiptGemini(file);
+      clearInterval(progressTimer);
+      const parsed =
+        gemini && gemini.amount > 0
+          ? gemini
+          : await scanReceipt(file, (pct, status) => {
+              setOcrProgress(pct);
+              setOcrStatus(status);
+            });
 
       if (parsed.amount > 0) {
         setAmountStr(String(Math.round(parsed.amount)));
@@ -171,9 +185,11 @@ function QuickAddSheetContent({
 
       toast.success(t.quickAdd.scanSuccess);
     } catch (err: any) {
+      clearInterval(progressTimer);
       console.error("OCR Error:", err);
       toast.error(t.quickAdd.scanFailed);
     } finally {
+      clearInterval(progressTimer);
       setIsScanning(false);
       setOcrProgress(0);
       setOcrStatus("");
@@ -222,8 +238,9 @@ function QuickAddSheetContent({
 
   // Sub-items calculation
   const itemsTotal = items.reduce((sum, item) => {
+    const q = parseFloat(item.quantity) || 1;
     const p = parseFloat(item.price) || 0;
-    return sum + p;
+    return sum + q * p;
   }, 0);
 
   // Numeric amount is strictly driven by the main amountStr input/keypad
@@ -332,7 +349,7 @@ function QuickAddSheetContent({
 
   // Sub-items CRUD
   const handleAddItem = () => {
-    setItems((prev) => [...prev, { name: "", price: "" }]);
+    setItems((prev) => [...prev, { name: "", quantity: "1", price: "" }]);
   };
 
   const handleUpdateItem = (
@@ -431,10 +448,11 @@ function QuickAddSheetContent({
       );
       if (validItems.length > 0) {
         const itemsSummary = validItems
-          .map(
-            (i) =>
-              `${i.name.trim()} (${formatCurrency(parseFloat(i.price), currentCurrency)})`,
-          )
+          .map((i) => {
+            const q = parseFloat(i.quantity) || 1;
+            const label = q !== 1 ? `${i.name.trim()} x${q}` : i.name.trim();
+            return `${label} (${formatCurrency(parseFloat(i.price), currentCurrency)})`;
+          })
           .join(", ");
         finalDesc += ` [Items: ${itemsSummary}]`;
       }
@@ -597,8 +615,7 @@ function QuickAddSheetContent({
               : "border-[#E5E7EB] dark:border-[#27272A]",
         )}
       >
-        <button
-          type="button"
+        <div
           onClick={() => setIsNumpadOpen(!isNumpadOpen)}
           className={cn(
             "w-full flex flex-col text-left cursor-pointer hover:bg-[#F8F9FA] dark:hover:bg-[#16161A] transition-all",
@@ -610,14 +627,58 @@ function QuickAddSheetContent({
               {t.quickAdd.nominal}
             </span>
 
-            <Calculator
-              className={cn(
-                "w-4 h-4 transition-colors",
-                isNumpadOpen
-                  ? "text-[#0F172A] dark:text-[#FAFAFA]"
-                  : "text-[#94A3B8] group-hover:text-blue-500",
+            <div className="relative flex items-center gap-1">
+              <button
+                type="button"
+                disabled={isScanning}
+                onClick={() => setShowScanMenu((v) => !v)}
+                title={t.quickAdd.scanReceiptBtn}
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-[#94A3B8] transition-colors hover:bg-[#F1F3F5] hover:text-[#0F172A] dark:hover:bg-[#1A1A20] dark:hover:text-[#FAFAFA] disabled:opacity-60"
+              >
+                {isScanning ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-indigo-500" />
+                ) : (
+                  <Camera className="h-4 w-4 text-indigo-500" />
+                )}
+              </button>
+              {showScanMenu && !isScanning && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setShowScanMenu(false)} />
+                  <div className="absolute right-0 top-full z-20 mt-1 w-44 overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-lg dark:border-[#27272A] dark:bg-[#121215]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowScanMenu(false);
+                        cameraInputRef.current?.click();
+                      }}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-[#0F172A] hover:bg-[#F8F9FA] dark:text-[#F8FAFC] dark:hover:bg-[#1A1A20]"
+                    >
+                      <Camera className="h-3.5 w-3.5" />
+                      {language === "en" ? "Take photo" : "Ambil dari kamera"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowScanMenu(false);
+                        fileInputRef.current?.click();
+                      }}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-[#0F172A] hover:bg-[#F8F9FA] dark:text-[#F8FAFC] dark:hover:bg-[#1A1A20]"
+                    >
+                      <AlignLeft className="h-3.5 w-3.5" />
+                      {language === "en" ? "Upload from device" : "Upload dari device"}
+                    </button>
+                  </div>
+                </>
               )}
-            />
+              <Calculator
+                className={cn(
+                  "w-4 h-4 transition-colors",
+                  isNumpadOpen
+                    ? "text-[#0F172A] dark:text-[#FAFAFA]"
+                    : "text-[#94A3B8] group-hover:text-blue-500",
+                )}
+              />
+            </div>
           </div>
 
           {isNumpadOpen && (
@@ -655,7 +716,7 @@ function QuickAddSheetContent({
               {formatCurrency(numericAmount, currentCurrency)}
             </span>
           </div>
-        </button>
+        </div>
 
         {/* Pin Toggle Button */}
         <div className="absolute right-2 top-2 z-10">
@@ -884,6 +945,14 @@ function QuickAddSheetContent({
               className="hidden"
               onChange={handleReceiptUpload}
             />
+            <input
+              type="file"
+              ref={cameraInputRef}
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={handleReceiptUpload}
+            />
 
             {/* OCR Scanning Status Banner */}
             {isScanning && (
@@ -900,30 +969,8 @@ function QuickAddSheetContent({
               </div>
             )}
 
-            {/* Action Toolbar Grid (4 Columns: Scan, Items, Memo, Tags) */}
-            <div className="grid grid-cols-4 gap-1.5">
-              {/* OCR Scan Button */}
-              <button
-                type="button"
-                disabled={isScanning}
-                onClick={() => fileInputRef.current?.click()}
-                className={cn(
-                  "py-1.5 px-1 rounded-lg border text-[11px] font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none",
-                  isScanning
-                    ? "opacity-60 cursor-not-allowed bg-indigo-50 text-indigo-600 border-indigo-200 dark:bg-indigo-950/40 dark:border-indigo-800"
-                    : "bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#0F172A] dark:text-[#F8FAFC] hover:border-indigo-400 dark:hover:border-indigo-600 border-[#E5E7EB] dark:border-[#27272A]",
-                )}
-                title={t.quickAdd.scanReceiptBtn}
-              >
-                {isScanning ? (
-                  <Loader2 className="w-3 h-3 text-indigo-600 dark:text-indigo-400 animate-spin shrink-0" />
-                ) : (
-                  <Camera className="w-3 h-3 text-indigo-500 shrink-0" />
-                )}
-                <span className="truncate">
-                  {language === "en" ? "Scan" : "Pindai"}
-                </span>
-              </button>
+            {/* Action Toolbar Grid (3 Columns: Items, Memo, Tags) */}
+            <div className="grid grid-cols-3 gap-1.5">
 
               {/* Breakdown Items Button */}
               <button
@@ -1062,39 +1109,88 @@ function QuickAddSheetContent({
                   {items.map((item, idx) => (
                     <div
                       key={idx}
-                      className="grid grid-cols-[minmax(0,1fr)_5rem_auto] items-center gap-1.5"
+                      className="flex flex-col gap-1.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] p-2"
                     >
-                      <input
-                        type="text"
-                        placeholder={`Item ${idx + 1}`}
-                        value={item.name}
-                        onChange={(e) =>
-                          handleUpdateItem(idx, "name", e.target.value)
-                        }
-                        className="flex-1 min-w-0 px-2 py-1.5 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8]"
-                      />
-                      <div className="w-20 min-w-0">
-                        <NumberInput
-                          value={item.price}
-                          onValueChange={(value) =>
-                            handleUpdateItem(idx, "price", value)
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          placeholder={`Item ${idx + 1}`}
+                          value={item.name}
+                          onChange={(e) =>
+                            handleUpdateItem(idx, "name", e.target.value)
                           }
-                          allowDecimal={false}
-                          maxDigits={12}
-                          placeholder="0"
-                          currency={currentCurrency}
-                          compact
-                          showCurrency={false}
-                          className="w-full"
+                          className="flex-1 min-w-0 px-2 py-1.5 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-transparent text-xs text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8]"
                         />
+                        <span className="shrink-0 font-mono text-xs font-black text-[#0F172A] dark:text-[#F8FAFC]">
+                          {formatCurrency(
+                            (parseFloat(item.quantity) || 1) * (parseFloat(item.price) || 0),
+                            currentCurrency,
+                          )}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveItem(idx)}
+                          className="p-1 text-[#94A3B8] hover:text-[#E11D48] active:scale-90 transition-all cursor-pointer shrink-0"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveItem(idx)}
-                        className="p-1.5 text-[#94A3B8] hover:text-[#E11D48] active:scale-90 transition-all cursor-pointer shrink-0"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleUpdateItem(
+                                idx,
+                                "quantity",
+                                String(Math.max(0, (parseFloat(item.quantity) || 1) - 1)),
+                              )
+                            }
+                            className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#E5E7EB] bg-[#F8F9FA] text-[#64748B] dark:border-[#27272A] dark:bg-[#1A1A20] dark:text-[#94A3B8]"
+                          >
+                            −
+                          </button>
+                          <input
+                            type="number"
+                            inputMode="decimal"
+                            placeholder="Qty"
+                            value={item.quantity}
+                            onChange={(e) =>
+                              handleUpdateItem(idx, "quantity", e.target.value)
+                            }
+                            className="w-12 px-1 py-1.5 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-transparent text-xs text-center text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8]"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleUpdateItem(
+                                idx,
+                                "quantity",
+                                String((parseFloat(item.quantity) || 1) + 1),
+                              )
+                            }
+                            className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#E5E7EB] bg-[#F8F9FA] text-[#64748B] dark:border-[#27272A] dark:bg-[#1A1A20] dark:text-[#94A3B8]"
+                          >
+                            +
+                          </button>
+                        </div>
+                        <span className="text-[11px] font-mono text-[#94A3B8]">×</span>
+                        <div className="w-24 min-w-0 flex-1">
+                          <NumberInput
+                            value={item.price}
+                            onValueChange={(value) =>
+                              handleUpdateItem(idx, "price", value)
+                            }
+                            allowDecimal={false}
+                            maxDigits={12}
+                            placeholder="0"
+                            currency={currentCurrency}
+                            compact
+                            showCurrency={false}
+                            className="w-full"
+                          />
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>

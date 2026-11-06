@@ -2,6 +2,7 @@ import { createWorker } from "tesseract.js";
 import { getLocalDateString } from "@/lib/utils/date";
 export interface ParsedReceiptItem {
   name: string;
+  quantity: string;
   price: string;
 }
 
@@ -409,6 +410,7 @@ export function parseReceiptText(text: string): ParsedReceipt {
       ) {
         items.push({
           name: itemName,
+          quantity: "1",
           price: String(Math.round(itemPriceNum)),
         });
       }
