@@ -514,6 +514,183 @@ export function humanizeAuditLog(
   }
 
   // ==========================================
+  // 0c. ETF TRADES (IDR settlement)
+  // ==========================================
+  if (table === "etf_trades") {
+    const ticker = (newVal.ticker || oldVal.ticker || "ETF").toUpperCase();
+    const type = newVal.type || oldVal.type || "buy";
+    const isBuy = type === "buy";
+    const typeLabel = isBuy
+      ? isId
+        ? "Beli ETF"
+        : "Buy ETF"
+      : isId
+        ? "Jual ETF"
+        : "Sell ETF";
+    const quantity = Number(newVal.quantity || oldVal.quantity || 0);
+    const pricePerUnit = Number(
+      newVal.price_per_unit || oldVal.price_per_unit || 0,
+    );
+    const grossAmount = Number(
+      newVal.gross_amount || oldVal.gross_amount || 0,
+    );
+    const feeAmount = Number(newVal.fee_amount || oldVal.fee_amount || 0);
+    const realizedPnl = Number(
+      newVal.realized_pnl || oldVal.realized_pnl || 0,
+    );
+    const formattedGross = formatCurrency(grossAmount, "IDR");
+    const fmtQty = (q: number) =>
+      q.toLocaleString("en-US", { maximumFractionDigits: 4 });
+
+    if (log.action === "INSERT") {
+      return {
+        moduleName: isId ? "Transaksi ETF" : "ETF Trades",
+        title: `${ticker} · ${typeLabel} — ${formattedGross}`,
+        summary: isId
+          ? `Mencatat ${typeLabel.toLowerCase()} ${fmtQty(quantity)} ${ticker} senilai ${formattedGross}`
+          : `Recorded ${typeLabel.toLowerCase()} of ${fmtQty(quantity)} ${ticker} worth ${formattedGross}`,
+        changes: [
+          { field: isId ? "Kode ETF" : "Ticker", to: ticker },
+          { field: isId ? "Tipe" : "Type", to: typeLabel },
+          {
+            field: isId ? "Jumlah" : "Quantity",
+            to: `${fmtQty(quantity)} ${ticker}`,
+          },
+          ...(pricePerUnit > 0
+            ? [
+                {
+                  field: isId ? "Harga per Unit" : "Price / Unit",
+                  to: formatCurrency(pricePerUnit, "IDR"),
+                },
+              ]
+            : []),
+          { field: isId ? "Nominal Kotor" : "Gross Amount", to: formattedGross },
+          ...(feeAmount > 0
+            ? [
+                {
+                  field: isId ? "Biaya" : "Fee",
+                  to: formatCurrency(feeAmount, "IDR"),
+                },
+              ]
+            : []),
+          ...(!isBuy && realizedPnl !== 0
+            ? [
+                {
+                  field: isId ? "Realized PnL" : "Realized P&L",
+                  to: `${realizedPnl >= 0 ? "+" : ""}${formatCurrency(realizedPnl, "IDR")}`,
+                },
+              ]
+            : []),
+          ...(newVal.trade_date
+            ? [
+                {
+                  field: isId ? "Tanggal" : "Trade Date",
+                  to: formatDate(newVal.trade_date, "d MMM yyyy", lang),
+                },
+              ]
+            : []),
+          ...(newVal.notes
+            ? [{ field: isId ? "Catatan" : "Notes", to: newVal.notes }]
+            : []),
+        ],
+        badgeType: "create",
+        badgeLabel: isId ? "Dibuat" : "Created",
+      };
+    }
+
+    if (log.action === "DELETE") {
+      return {
+        moduleName: isId ? "Transaksi ETF" : "ETF Trades",
+        title: `${ticker} · ${typeLabel} — ${formattedGross}`,
+        summary: isId
+          ? `Menghapus catatan ETF ${ticker} senilai ${formattedGross}`
+          : `Deleted ETF trade record of ${ticker} worth ${formattedGross}`,
+        changes: [
+          { field: isId ? "Kode ETF" : "Ticker", from: ticker },
+          {
+            field: isId ? "Jumlah" : "Quantity",
+            from: `${fmtQty(quantity)} ${ticker}`,
+          },
+          {
+            field: isId ? "Total Dihapus" : "Deleted Amount",
+            from: formattedGross,
+          },
+        ],
+        badgeType: "delete",
+        badgeLabel: isId ? "Dihapus" : "Deleted",
+      };
+    }
+
+    const etfChanges: Array<{ field: string; from?: string; to?: string }> = [];
+    if (oldVal.ticker !== newVal.ticker && (oldVal.ticker || newVal.ticker)) {
+      etfChanges.push({
+        field: isId ? "Kode ETF" : "Ticker",
+        from: oldVal.ticker || "-",
+        to: newVal.ticker || "-",
+      });
+    }
+    if (oldVal.type !== newVal.type && (oldVal.type || newVal.type)) {
+      etfChanges.push({
+        field: isId ? "Tipe" : "Type",
+        from: oldVal.type === "buy" ? (isId ? "Beli" : "Buy") : isId ? "Jual" : "Sell",
+        to: newVal.type === "buy" ? (isId ? "Beli" : "Buy") : isId ? "Jual" : "Sell",
+      });
+    }
+    if (oldVal.quantity !== newVal.quantity) {
+      etfChanges.push({
+        field: isId ? "Jumlah" : "Quantity",
+        from: `${fmtQty(Number(oldVal.quantity || 0))} ${ticker}`,
+        to: `${fmtQty(Number(newVal.quantity || 0))} ${ticker}`,
+      });
+    }
+    if (oldVal.price_per_unit !== newVal.price_per_unit) {
+      etfChanges.push({
+        field: isId ? "Harga per Unit" : "Price / Unit",
+        from: formatCurrency(Number(oldVal.price_per_unit || 0), "IDR"),
+        to: formatCurrency(Number(newVal.price_per_unit || 0), "IDR"),
+      });
+    }
+    if (oldVal.gross_amount !== newVal.gross_amount) {
+      etfChanges.push({
+        field: isId ? "Nominal Kotor" : "Gross Amount",
+        from: formatCurrency(Number(oldVal.gross_amount || 0), "IDR"),
+        to: formatCurrency(Number(newVal.gross_amount || 0), "IDR"),
+      });
+    }
+    if (oldVal.fee_amount !== newVal.fee_amount) {
+      etfChanges.push({
+        field: isId ? "Biaya" : "Fee",
+        from: formatCurrency(Number(oldVal.fee_amount || 0), "IDR"),
+        to: formatCurrency(Number(newVal.fee_amount || 0), "IDR"),
+      });
+    }
+    if (oldVal.realized_pnl !== newVal.realized_pnl) {
+      etfChanges.push({
+        field: isId ? "Realized PnL" : "Realized P&L",
+        from: formatCurrency(Number(oldVal.realized_pnl || 0), "IDR"),
+        to: formatCurrency(Number(newVal.realized_pnl || 0), "IDR"),
+      });
+    }
+    if (oldVal.notes !== newVal.notes) {
+      etfChanges.push({
+        field: isId ? "Catatan" : "Notes",
+        from: oldVal.notes || (isId ? "(Kosong)" : "(Empty)"),
+        to: newVal.notes || (isId ? "(Kosong)" : "(Empty)"),
+      });
+    }
+    return {
+      moduleName: isId ? "Transaksi ETF" : "ETF Trades",
+      title: `${ticker} · ${typeLabel} — ${formattedGross}`,
+      summary: isId
+        ? `Memperbarui data transaksi ETF ${ticker}`
+        : `Updated ETF trade details for ${ticker}`,
+      changes: etfChanges,
+      badgeType: "update",
+      badgeLabel: isId ? "Diubah" : "Updated",
+    };
+  }
+
+  // ==========================================
   // 1. TRANSFERS
   // ==========================================
   if (table === "transfers") {
@@ -812,7 +989,8 @@ export function humanizeAuditLog(
       };
     }
 
-    // UPDATE account
+    // UPDATE account — only meaningful fields; balance-only updates
+    // are skipped at the trigger level, so they don't reach here.
     const accChanges: Array<{ field: string; from?: string; to?: string }> = [];
     if (oldVal.name !== newVal.name && (oldVal.name || newVal.name)) {
       accChanges.push({
@@ -826,6 +1004,61 @@ export function humanizeAuditLog(
         field: isId ? "Tipe Akun" : "Account Type",
         from: oldVal.type,
         to: newVal.type,
+      });
+    }
+    if (oldVal.currency !== newVal.currency && (oldVal.currency || newVal.currency)) {
+      accChanges.push({
+        field: isId ? "Mata Uang" : "Currency",
+        from: oldVal.currency || "-",
+        to: newVal.currency || "-",
+      });
+    }
+    if (
+      Number(oldVal.initial_balance || 0) !==
+        Number(newVal.initial_balance || 0) &&
+      (oldVal.initial_balance !== undefined ||
+        newVal.initial_balance !== undefined)
+    ) {
+      accChanges.push({
+        field: isId ? "Saldo Awal" : "Initial Balance",
+        from: formatCurrency(Number(oldVal.initial_balance || 0), cur),
+        to: formatCurrency(Number(newVal.initial_balance || 0), cur),
+      });
+    }
+    if (oldVal.icon !== newVal.icon && (oldVal.icon || newVal.icon)) {
+      accChanges.push({
+        field: isId ? "Ikon" : "Icon",
+        from: oldVal.icon || "-",
+        to: newVal.icon || "-",
+      });
+    }
+    if (oldVal.color !== newVal.color && (oldVal.color || newVal.color)) {
+      accChanges.push({
+        field: isId ? "Warna" : "Color",
+        from: oldVal.color || "-",
+        to: newVal.color || "-",
+      });
+    }
+    if (
+      Boolean(oldVal.is_active) !== Boolean(newVal.is_active) &&
+      (oldVal.is_active !== undefined || newVal.is_active !== undefined)
+    ) {
+      accChanges.push({
+        field: isId ? "Status Aktif" : "Active Status",
+        from: oldVal.is_active ? (isId ? "Aktif" : "Active") : isId ? "Nonaktif" : "Inactive",
+        to: newVal.is_active ? (isId ? "Aktif" : "Active") : isId ? "Nonaktif" : "Inactive",
+      });
+    }
+    if (
+      Number(oldVal.current_balance || 0) !==
+        Number(newVal.current_balance || 0) &&
+      (oldVal.current_balance !== undefined ||
+        newVal.current_balance !== undefined)
+    ) {
+      accChanges.push({
+        field: isId ? "Saldo Saat Ini" : "Current Balance",
+        from: formatCurrency(Number(oldVal.current_balance || 0), cur),
+        to: formatCurrency(Number(newVal.current_balance || 0), cur),
       });
     }
 
@@ -891,28 +1124,50 @@ export function humanizeAuditLog(
       };
     }
 
-    // UPDATE budget
-    const oldAmt = formatCurrency(
-      Number(oldVal.amount || 0),
-      oldVal.currency || "IDR",
-    );
-    const newAmt = formatCurrency(
-      Number(newVal.amount || 0),
-      newVal.currency || "IDR",
-    );
+    // UPDATE budget — only fields that actually changed
+    const budgetChanges: Array<{ field: string; from?: string; to?: string }> = [];
+    if (Number(oldVal.amount || 0) !== Number(newVal.amount || 0)) {
+      budgetChanges.push({
+        field: isId ? "Batas Anggaran" : "Budget Limit",
+        from: formatCurrency(Number(oldVal.amount || 0), oldVal.currency || "IDR"),
+        to: formatCurrency(Number(newVal.amount || 0), newVal.currency || "IDR"),
+      });
+    }
+    if (oldVal.currency !== newVal.currency && (oldVal.currency || newVal.currency)) {
+      budgetChanges.push({
+        field: isId ? "Mata Uang" : "Currency",
+        from: oldVal.currency || "-",
+        to: newVal.currency || "-",
+      });
+    }
+    const oldPeriod = oldVal.period_start_date
+      ? String(oldVal.period_start_date).substring(0, 10)
+      : "";
+    const newPeriod = newVal.period_start_date
+      ? String(newVal.period_start_date).substring(0, 10)
+      : "";
+    if (oldPeriod !== newPeriod && (oldVal.period_start_date || newVal.period_start_date)) {
+      budgetChanges.push({
+        field: isId ? "Periode" : "Period",
+        from: oldPeriod ? formatDate(oldPeriod, "MMMM yyyy", lang) : "-",
+        to: newPeriod ? formatDate(newPeriod, "MMMM yyyy", lang) : "-",
+      });
+    }
+    if (oldVal.category_id !== newVal.category_id && (oldVal.category_id || newVal.category_id)) {
+      budgetChanges.push({
+        field: isId ? "Kategori" : "Category",
+        from: oldVal.category_id ? String(oldVal.category_id).slice(0, 8) : "-",
+        to: newVal.category_id ? String(newVal.category_id).slice(0, 8) : "-",
+      });
+    }
+    const newAmt = formatCurrency(Number(newVal.amount || 0), newVal.currency || "IDR");
     return {
       moduleName: isId ? "Anggaran" : "Budgets",
       title: `${newAmt}`,
       summary: isId
-        ? `Mengubah batas anggaran dari ${oldAmt} menjadi ${newAmt}`
-        : `Changed budget limit from ${oldAmt} to ${newAmt}`,
-      changes: [
-        {
-          field: isId ? "Batas Anggaran" : "Budget Limit",
-          from: oldAmt,
-          to: newAmt,
-        },
-      ],
+        ? `Mengubah batas anggaran menjadi ${newAmt}`
+        : `Changed budget limit to ${newAmt}`,
+      changes: budgetChanges,
       badgeType: "update",
       badgeLabel: isId ? "Diubah" : "Updated",
     };
@@ -968,19 +1223,52 @@ export function humanizeAuditLog(
       };
     }
 
+    const catChanges: Array<{ field: string; from?: string; to?: string }> = [];
+    if (oldVal.name !== newVal.name && (oldVal.name || newVal.name)) {
+      catChanges.push({
+        field: isId ? "Nama Kategori" : "Category Name",
+        from: oldVal.name || "-",
+        to: newVal.name || "-",
+      });
+    }
+    if (oldVal.type !== newVal.type && (oldVal.type || newVal.type)) {
+      catChanges.push({
+        field: isId ? "Tipe" : "Type",
+        from: oldVal.type || "-",
+        to: newVal.type || "-",
+      });
+    }
+    if (oldVal.icon !== newVal.icon && (oldVal.icon || newVal.icon)) {
+      catChanges.push({
+        field: isId ? "Ikon" : "Icon",
+        from: oldVal.icon || "-",
+        to: newVal.icon || "-",
+      });
+    }
+    if (oldVal.color !== newVal.color && (oldVal.color || newVal.color)) {
+      catChanges.push({
+        field: isId ? "Warna" : "Color",
+        from: oldVal.color || "-",
+        to: newVal.color || "-",
+      });
+    }
+    if (
+      Boolean(oldVal.is_default) !== Boolean(newVal.is_default) &&
+      (oldVal.is_default !== undefined || newVal.is_default !== undefined)
+    ) {
+      catChanges.push({
+        field: isId ? "Kategori Default" : "Default Category",
+        from: oldVal.is_default ? (isId ? "Ya" : "Yes") : isId ? "Tidak" : "No",
+        to: newVal.is_default ? (isId ? "Ya" : "Yes") : isId ? "Tidak" : "No",
+      });
+    }
     return {
       moduleName: isId ? "Kategori" : "Categories",
       title: `${catName}`,
       summary: isId
         ? `Memperbarui kategori "${catName}"`
         : `Updated category "${catName}"`,
-      changes: [
-        {
-          field: isId ? "Nama Kategori" : "Category Name",
-          from: oldVal.name,
-          to: newVal.name,
-        },
-      ],
+      changes: catChanges,
       badgeType: "update",
       badgeLabel: isId ? "Diubah" : "Updated",
     };
@@ -1536,6 +1824,47 @@ export function humanizeAuditLog(
           : isId
             ? "Pengeluaran"
             : "Expense",
+    });
+  }
+
+  if (
+    oldVal.account_id !== newVal.account_id &&
+    (oldVal.account_id || newVal.account_id)
+  ) {
+    changes.push({
+      field: isId ? "Akun" : "Account",
+      from: oldVal.account_id
+        ? String(oldVal.account_id).slice(0, 8)
+        : (isId ? "(Kosong)" : "(Empty)"),
+      to: newVal.account_id
+        ? String(newVal.account_id).slice(0, 8)
+        : (isId ? "(Kosong)" : "(Empty)"),
+    });
+  }
+
+  if (
+    oldVal.category_id !== newVal.category_id &&
+    (oldVal.category_id || newVal.category_id)
+  ) {
+    changes.push({
+      field: isId ? "Kategori" : "Category",
+      from: oldVal.category_id
+        ? String(oldVal.category_id).slice(0, 8)
+        : (isId ? "(Kosong)" : "(Empty)"),
+      to: newVal.category_id
+        ? String(newVal.category_id).slice(0, 8)
+        : (isId ? "(Kosong)" : "(Empty)"),
+    });
+  }
+
+  if (
+    oldVal.currency !== newVal.currency &&
+    (oldVal.currency || newVal.currency)
+  ) {
+    changes.push({
+      field: isId ? "Mata Uang" : "Currency",
+      from: oldVal.currency || "-",
+      to: newVal.currency || "-",
     });
   }
 

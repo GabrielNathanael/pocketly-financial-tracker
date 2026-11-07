@@ -469,18 +469,56 @@ export async function getTransactionAuditLogs(
   return (data as unknown as AuditLog[]) || [];
 }
 
+export interface GlobalAuditLogsOptions {
+  limit?: number;
+  offset?: number;
+  start?: string;
+  end?: string;
+  module?: string;
+  action?: string;
+  search?: string;
+}
+
 export async function getGlobalAuditLogs(
-  limit: number = 100,
-  startDate?: string,
-  endDate?: string,
-): Promise<AuditLog[]> {
+  options: GlobalAuditLogsOptions = {},
+): Promise<{ logs: AuditLog[]; total: number }> {
   const supabase = await createServerSupabaseClient();
+  const {
+    limit = 50,
+    offset = 0,
+    start: startDate,
+    end: endDate,
+    module,
+    action,
+    search,
+  } = options;
 
   let query = supabase
     .from("audit_logs")
-    .select("*")
+    .select("*", { count: "exact" })
     .order("changed_at", { ascending: false })
-    .limit(limit);
+    // Derived holdings are not user actions; hide even legacy rows.
+    .not(
+      "table_name",
+      "in",
+      '("stock_holdings","crypto_holdings","etf_holdings")',
+    )
+    .range(offset, offset + limit - 1);
+
+  if (module && module !== "all") {
+    query = query.eq("table_name", module);
+  }
+
+  if (action && action !== "all") {
+    query = query.eq("action", action as "INSERT" | "UPDATE" | "DELETE");
+  }
+
+  const q = (search || "").trim().replace(/[,()\\%_]/g, "").slice(0, 100);
+  if (q) {
+    query = query.or(
+      `table_name.ilike.%${q}%,action.ilike.%${q}%,new_values->>description.ilike.%${q}%,old_values->>description.ilike.%${q}%`,
+    );
+  }
 
   if (startDate || endDate) {
     const timeZone = await getUserTimeZone();
@@ -509,14 +547,17 @@ export async function getGlobalAuditLogs(
     }
   }
 
-  const { data, error } = await query;
+  const { data, error, count } = await query;
 
   if (error) {
     console.error("Error fetching global audit logs:", error);
-    return [];
+    return { logs: [], total: 0 };
   }
 
-  return (data as unknown as AuditLog[]) || [];
+  return {
+    logs: (data as unknown as AuditLog[]) || [],
+    total: count ?? 0,
+  };
 }
 
 export async function getAllUserTags(): Promise<string[]> {

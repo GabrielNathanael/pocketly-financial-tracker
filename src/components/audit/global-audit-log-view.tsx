@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useTransition } from "react";
+import React, { useState, useEffect, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AuditLog } from "@/types/database";
@@ -25,8 +25,14 @@ import { cn } from "@/lib/utils/cn";
 
 interface GlobalAuditLogViewProps {
   initialLogs: AuditLog[];
+  total: number;
+  page: number;
+  totalPages: number;
   initialStart?: string;
   initialEnd?: string;
+  initialModule?: string;
+  initialAction?: string;
+  initialSearch?: string;
 }
 
 type ModuleFilter =
@@ -35,6 +41,7 @@ type ModuleFilter =
   | "transfers"
   | "stock_trades"
   | "crypto_trades"
+  | "etf_trades"
   | "recurring_transactions"
   | "savings_goals"
   | "savings_goal_deposits"
@@ -45,43 +52,73 @@ type ModuleFilter =
   | "budgets";
 type ActionFilter = "all" | "INSERT" | "UPDATE" | "DELETE";
 
-const BATCH_SIZE = 50;
+const PAGE_SIZE = 50;
 
 export function GlobalAuditLogView({
   initialLogs,
+  total,
+  page,
+  totalPages,
   initialStart,
   initialEnd,
+  initialModule,
+  initialAction,
+  initialSearch,
 }: GlobalAuditLogViewProps) {
   const { language, t } = useLanguage();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  const [moduleFilter, setModuleFilter] = useState<ModuleFilter>("all");
-  const [actionFilter, setActionFilter] = useState<ActionFilter>("all");
+  const [moduleFilter, setModuleFilter] = useState<ModuleFilter>(
+    (initialModule as ModuleFilter) || "all",
+  );
+  const [actionFilter, setActionFilter] = useState<ActionFilter>(
+    (initialAction as ActionFilter) || "all",
+  );
   const [startDate, setStartDateLocal] = useState(initialStart || "");
   const [endDate, setEndDateLocal] = useState(initialEnd || "");
-  const [search, setSearch] = useState("");
-  const [displayLimit, setDisplayLimit] = useState(BATCH_SIZE);
+  const [search, setSearch] = useState(initialSearch || "");
 
-  const pushDateParams = (start: string, end: string) => {
+  const pushParams = (overrides: Record<string, string>) => {
     const params = new URLSearchParams();
-    if (start) params.set("start", start);
-    if (end) params.set("end", end);
+    const next = {
+      start: startDate,
+      end: endDate,
+      module: moduleFilter,
+      action: actionFilter,
+      search,
+      page: String(page),
+      ...overrides,
+    };
+    if (next.start) params.set("start", next.start);
+    if (next.end) params.set("end", next.end);
+    if (next.module && next.module !== "all") params.set("module", next.module);
+    if (next.action && next.action !== "all") params.set("action", next.action);
+    if (next.search) params.set("search", next.search);
+    if (next.page && next.page !== "1") params.set("page", next.page);
     startTransition(() => {
       router.push(`?${params.toString()}`);
     });
   };
 
+  // Debounced server search
+  useEffect(() => {
+    if (search === (initialSearch || "")) return;
+    const timer = setTimeout(() => {
+      pushParams({ search, page: "1" });
+    }, 450);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
+
   const setStartDate = (val: string) => {
     setStartDateLocal(val);
-    setDisplayLimit(BATCH_SIZE);
-    pushDateParams(val, endDate);
+    pushParams({ start: val, page: "1" });
   };
 
   const setEndDate = (val: string) => {
     setEndDateLocal(val);
-    setDisplayLimit(BATCH_SIZE);
-    pushDateParams(startDate, val);
+    pushParams({ end: val, page: "1" });
   };
 
   const moduleOptions: Array<{ label: string; value: ModuleFilter }> = [
@@ -90,6 +127,7 @@ export function GlobalAuditLogView({
     { label: t.auditLog.modules.transfers, value: "transfers" },
     { label: t.auditLog.modules.stockTrades, value: "stock_trades" },
     { label: t.auditLog.modules.cryptoTrades, value: "crypto_trades" },
+    { label: "ETF Trades", value: "etf_trades" },
     {
       label: t.auditLog.modules.recurringTransactions,
       value: "recurring_transactions",
@@ -110,49 +148,6 @@ export function GlobalAuditLogView({
     { label: t.auditLog.actions.deleted, value: "DELETE" },
   ];
 
-  const filteredLogs = useMemo(() => {
-    return initialLogs.filter((log) => {
-      // 0. Always hide stock_holdings & crypto_holdings — derived state
-      if (
-        log.table_name === "stock_holdings" ||
-        log.table_name === "crypto_holdings"
-      )
-        return false;
-
-      // 1. Module filter
-      if (moduleFilter !== "all") {
-        if (moduleFilter === "stock_trades") {
-          if (
-            log.table_name !== "stock_trades" &&
-            log.table_name !== "stock_holdings"
-          )
-            return false;
-        } else if (log.table_name !== moduleFilter) {
-          return false;
-        }
-      }
-
-      // 2. Action filter
-      if (actionFilter !== "all" && log.action !== actionFilter) return false;
-
-      // 3. Search query (date filter sudah dihandle server via URL params)
-      if (search.trim()) {
-        const q = search.toLowerCase();
-        const matchTable = log.table_name.toLowerCase().includes(q);
-        const matchRecord = log.record_id.toLowerCase().includes(q);
-        const matchOld = JSON.stringify(log.old_values || {})
-          .toLowerCase()
-          .includes(q);
-        const matchNew = JSON.stringify(log.new_values || {})
-          .toLowerCase()
-          .includes(q);
-        return matchTable || matchRecord || matchOld || matchNew;
-      }
-
-      return true;
-    });
-  }, [initialLogs, moduleFilter, actionFilter, search]);
-
   const hasActiveFilters =
     moduleFilter !== "all" ||
     actionFilter !== "all" ||
@@ -166,7 +161,6 @@ export function GlobalAuditLogView({
     setStartDateLocal("");
     setEndDateLocal("");
     setSearch("");
-    setDisplayLimit(BATCH_SIZE);
     startTransition(() => {
       router.push("?");
     });
@@ -262,7 +256,10 @@ export function GlobalAuditLogView({
               <button
                 key={item.value}
                 type="button"
-                onClick={() => setModuleFilter(item.value)}
+                onClick={() => {
+                  setModuleFilter(item.value);
+                  pushParams({ module: item.value, page: "1" });
+                }}
                 className={cn(
                   "px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors shrink-0 whitespace-nowrap cursor-pointer border",
                   moduleFilter === item.value
@@ -282,7 +279,10 @@ export function GlobalAuditLogView({
             <button
               key={item.value}
               type="button"
-              onClick={() => setActionFilter(item.value)}
+              onClick={() => {
+                setActionFilter(item.value);
+                pushParams({ action: item.value, page: "1" });
+              }}
               className={cn(
                 "px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors shrink-0 whitespace-nowrap cursor-pointer border",
                 actionFilter === item.value
@@ -304,14 +304,14 @@ export function GlobalAuditLogView({
       )}
 
       {/* Logs Timeline List */}
-      {filteredLogs.length === 0 ? (
+      {initialLogs.length === 0 ? (
         <div className="p-8 text-center bg-white dark:bg-[#121215] rounded-xl border border-[#E5E7EB] dark:border-[#27272A] text-xs text-[#94A3B8]">
           {t.auditLog.emptySearch ||
             "Tidak ada catatan audit yang cocok dengan kriteria filter."}
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {filteredLogs.slice(0, displayLimit).map((log) => {
+          {initialLogs.map((log) => {
             const h = humanizeAuditLog(log, language);
 
             return (
@@ -382,6 +382,11 @@ export function GlobalAuditLogView({
                                 currency={c.currency || "IDR"}
                                 muted
                               />
+                              {c.items.length > 0 && (
+                                <span className="mt-2 border-t border-[#E5E7EB] pt-2 text-[10px] font-bold uppercase tracking-wider text-[#94A3B8] dark:border-[#27272A]">
+                                  {language === "en" ? "To" : "Jadi"}
+                                </span>
+                              )}
                             </>
                           )}
                           {c.items.length > 0 ? (
@@ -427,33 +432,39 @@ export function GlobalAuditLogView({
             );
           })}
 
-          {/* Pagination Load More Controls */}
-          {displayLimit < filteredLogs.length && (
+          {/* Pagination Controls (server-side) */}
+          {totalPages > 1 && (
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs">
               <span className="text-[#64748B] dark:text-[#94A3B8] font-medium text-center sm:text-left">
                 {t.common.showing}{" "}
                 <span className="font-bold text-[#0F172A] dark:text-[#FAFAFA]">
-                  {Math.min(displayLimit, filteredLogs.length)}
+                  {initialLogs.length === 0
+                    ? 0
+                    : (page - 1) * PAGE_SIZE + 1}
                 </span>{" "}
-                / {filteredLogs.length}
+                - {(page - 1) * PAGE_SIZE + initialLogs.length} / {total}
               </span>
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setDisplayLimit((prev) => prev + BATCH_SIZE)}
-                  className="flex-1 sm:flex-initial text-xs font-bold cursor-pointer"
+                  disabled={page <= 1}
+                  onClick={() => pushParams({ page: String(page - 1) })}
+                  className="flex-1 sm:flex-initial text-xs font-bold cursor-pointer disabled:opacity-50"
                 >
-                  {t.common.loadMore} (+
-                  {Math.min(BATCH_SIZE, filteredLogs.length - displayLimit)})
+                  {language === "id" ? "Sebelumnya" : "Previous"}
                 </Button>
+                <span className="font-mono text-[#64748B] dark:text-[#94A3B8] shrink-0">
+                  {page} / {totalPages}
+                </span>
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
-                  onClick={() => setDisplayLimit(filteredLogs.length)}
-                  className="flex-1 sm:flex-initial text-xs text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] cursor-pointer"
+                  disabled={page >= totalPages}
+                  onClick={() => pushParams({ page: String(page + 1) })}
+                  className="flex-1 sm:flex-initial text-xs font-bold cursor-pointer disabled:opacity-50"
                 >
-                  {t.common.showAll}
+                  {language === "id" ? "Berikutnya" : "Next"}
                 </Button>
               </div>
             </div>

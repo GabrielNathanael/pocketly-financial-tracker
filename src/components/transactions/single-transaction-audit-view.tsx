@@ -107,6 +107,11 @@ export function SingleTransactionAuditView({
                                 currency={c.currency || "IDR"}
                                 muted
                               />
+                              {c.items.length > 0 && (
+                                <span className="mt-2 border-t border-[#E5E7EB] pt-2 text-[10px] font-bold uppercase tracking-wider text-[#94A3B8] dark:border-[#27272A]">
+                                  {language === "en" ? "To" : "Jadi"}
+                                </span>
+                              )}
                             </>
                           )}
                           {c.items.length > 0 ? (
