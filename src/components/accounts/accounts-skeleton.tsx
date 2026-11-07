@@ -1,7 +1,7 @@
 import React from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
 
-export default function AccountsLoading() {
+export function AccountsSkeleton() {
   return (
     <div className="flex flex-col gap-4 animate-in fade-in-50 duration-150" aria-busy="true" aria-live="polite">
       {/* Total Liquidity Banner Card (1:1 with AccountsManager) */}

@@ -261,6 +261,9 @@ export function AccountDetailView({ account, mutations, accounts = [] }: Account
         onClose={() => setSelectedTransfer(null)}
         mutation={selectedTransfer}
         currentAccountName={account.name}
+        onSuccess={() => {
+          router.refresh()
+        }}
       />
     </div>
   )

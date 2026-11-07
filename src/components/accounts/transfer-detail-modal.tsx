@@ -1,19 +1,24 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { AccountMutation } from '@/actions/accounts'
+import { deleteTransfer } from '@/actions/transfers'
 import { formatCurrency, formatNaturalForexRate } from '@/lib/utils/currency'
 import { formatDate } from '@/lib/utils/date'
 import { useLanguage } from '@/lib/i18n/language-context'
-import { ArrowRightLeft, ArrowUpRight, ArrowDownRight, Calendar, FileText, CheckCircle2 } from 'lucide-react'
+import { ArrowRightLeft, ArrowUpRight, ArrowDownRight, Calendar, FileText, CheckCircle2, Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface TransferDetailModalProps {
   isOpen: boolean
   onClose: () => void
   mutation: AccountMutation | null
   currentAccountName: string
+  onSuccess?: () => void
 }
 
 export function TransferDetailModal({
@@ -21,10 +26,34 @@ export function TransferDetailModal({
   onClose,
   mutation,
   currentAccountName,
+  onSuccess,
 }: TransferDetailModalProps) {
   const { t, language } = useLanguage()
+  const router = useRouter()
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   if (!isOpen || !mutation) return null
+
+  const handleDelete = async () => {
+    setIsDeleting(true)
+    try {
+      const res = await deleteTransfer(mutation.id)
+      if (res?.error) {
+        toast.error(language === 'en' ? 'Failed to delete transfer' : 'Gagal menghapus transfer', {
+          description: res.error,
+        })
+      } else {
+        toast.success(language === 'en' ? 'Transfer deleted' : 'Transfer dihapus')
+        setShowDeleteConfirm(false)
+        onClose()
+        onSuccess?.()
+        router.refresh()
+      }
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   const isOutgoing = mutation.type === 'transfer_out'
   const counterparty = mutation.counterpartyOrCategory || (language === 'en' ? 'Account' : 'Akun')
@@ -137,16 +166,40 @@ export function TransferDetailModal({
           )}
         </div>
 
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={onClose}
-          className="w-full cursor-pointer font-bold"
-        >
-          {t.common.close}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onClose}
+            className="flex-1 cursor-pointer font-bold"
+          >
+            {t.common.close}
+          </Button>
+          <Button
+            type="button"
+            variant="danger"
+            size="sm"
+            onClick={() => setShowDeleteConfirm(true)}
+            className="flex-1 cursor-pointer font-bold gap-1.5"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>{t.common.delete}</span>
+          </Button>
+        </div>
       </div>
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDelete}
+        isLoading={isDeleting}
+        title={language === 'en' ? 'Delete Transfer' : 'Hapus Transfer'}
+        message={
+          language === 'en'
+            ? 'The transfer will be cancelled and both account balances will be restored. This cannot be undone.'
+            : 'Transfer akan dibatalkan dan saldo kedua akun akan dikembalikan. Tindakan ini tidak dapat dibatalkan.'
+        }
+      />
     </Modal>
   )
 }
