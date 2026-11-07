@@ -8,8 +8,8 @@ import {
   parseISO,
   startOfMonth,
   endOfMonth,
-  startOfWeek,
-  endOfWeek,
+  startOfYear,
+  endOfYear,
   subMonths,
   eachDayOfInterval,
   isSameDay,
@@ -111,7 +111,7 @@ export function DateRangePicker({
     setOpen(false)
   }
 
-  const applyPreset = (preset: 'today' | 'this_week' | 'this_month' | 'last_month') => {
+  const applyPreset = (preset: 'today' | 'this_month' | 'last_month' | 'this_year') => {
     const now = new Date()
     let start = now
     let end = now
@@ -119,9 +119,6 @@ export function DateRangePicker({
     if (preset === 'today') {
       start = now
       end = now
-    } else if (preset === 'this_week') {
-      start = startOfWeek(now, { weekStartsOn: 1 })
-      end = endOfWeek(now, { weekStartsOn: 1 })
     } else if (preset === 'this_month') {
       start = startOfMonth(now)
       end = endOfMonth(now)
@@ -129,6 +126,9 @@ export function DateRangePicker({
       const last = subMonths(now, 1)
       start = startOfMonth(last)
       end = endOfMonth(last)
+    } else if (preset === 'this_year') {
+      start = startOfYear(now)
+      end = endOfYear(now)
     }
 
     onChange(format(start, 'yyyy-MM-dd'), format(end, 'yyyy-MM-dd'))
@@ -204,13 +204,6 @@ export function DateRangePicker({
             </button>
             <button
               type="button"
-              onClick={() => applyPreset('this_week')}
-              className="px-2 py-1 rounded-md text-[11px] font-semibold bg-[#F1F3F5] dark:bg-[#1A1A20] hover:bg-[#E2E8F0] dark:hover:bg-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] transition-colors cursor-pointer text-center"
-            >
-              {t.dashboard.periodThisWeek}
-            </button>
-            <button
-              type="button"
               onClick={() => applyPreset('this_month')}
               className="px-2 py-1 rounded-md text-[11px] font-semibold bg-[#F1F3F5] dark:bg-[#1A1A20] hover:bg-[#E2E8F0] dark:hover:bg-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] transition-colors cursor-pointer text-center"
             >
@@ -222,6 +215,13 @@ export function DateRangePicker({
               className="px-2 py-1 rounded-md text-[11px] font-semibold bg-[#F1F3F5] dark:bg-[#1A1A20] hover:bg-[#E2E8F0] dark:hover:bg-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] transition-colors cursor-pointer text-center"
             >
               {t.dashboard.periodLastMonth}
+            </button>
+            <button
+              type="button"
+              onClick={() => applyPreset('this_year')}
+              className="px-2 py-1 rounded-md text-[11px] font-semibold bg-[#F1F3F5] dark:bg-[#1A1A20] hover:bg-[#E2E8F0] dark:hover:bg-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] transition-colors cursor-pointer text-center"
+            >
+              {t.dashboard.periodThisYear}
             </button>
           </div>
 

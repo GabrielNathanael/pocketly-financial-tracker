@@ -520,13 +520,23 @@ export function PortfolioInvestmentView({
   );
 
   // Bar chart data — P&L per aset (dari reportingStats yang sudah ada)
-  const pnlBarData = useMemo(
+  const [showAllPnl, setShowAllPnl] = useState(false);
+  const pnlBarDataFull = useMemo(
     () =>
       reportingStats.assetPerformance.map((a) => ({
         symbol: a.symbol,
         pnl: a.netPnl,
       })),
     [reportingStats.assetPerformance],
+  );
+  const pnlBarData = useMemo(
+    () =>
+      showAllPnl
+        ? pnlBarDataFull
+        : [...pnlBarDataFull]
+            .sort((a, b) => Math.abs(b.pnl) - Math.abs(a.pnl))
+            .slice(0, 5),
+    [pnlBarDataFull, showAllPnl],
   );
 
   // Line chart — kumulatif P&L over time (ikut filter periode)
@@ -1761,6 +1771,17 @@ export function PortfolioInvestmentView({
                 <p className="text-center text-xs text-[#94A3B8] py-8">
                   {isEn ? "No closed trades yet" : "Belum ada transaksi jual"}
                 </p>
+              )}
+              {pnlBarDataFull.length > 5 && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllPnl(!showAllPnl)}
+                  className="mt-2 w-full rounded-lg border border-[#E5E7EB] py-2 text-[11px] font-bold text-[#64748B] hover:text-[#0F172A] dark:border-[#27272A] dark:text-[#94A3B8] dark:hover:text-[#FAFAFA]"
+                >
+                  {showAllPnl
+                    ? (isEn ? "Show top 5" : "Tampilkan top 5")
+                    : (isEn ? `Show all (${pnlBarDataFull.length})` : `Lihat semua (${pnlBarDataFull.length})`)}
+                </button>
               )}
               </div>
             </div>
