@@ -66,7 +66,8 @@ import {
 } from "@/components/ui/select";
 import { Modal } from "@/components/ui/modal";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { formatCurrency } from "@/lib/utils/currency";
+import { formatCurrency, convertAmount, type ForexRatesMap } from "@/lib/utils/currency";
+import { usePreferredCurrency } from "@/lib/storage/preferred-currency";
 import { usePrivacyMode, maskCurrency } from "@/lib/storage/privacy-mode";
 import { getLocalDateString } from "@/lib/utils/date";
 import { useLanguage } from "@/lib/i18n/language-context";
@@ -115,6 +116,7 @@ interface PortfolioInvestmentViewProps {
   etfTrades: EnrichedEtfTrade[];
   accounts: Account[];
   transfers: EnrichedTransfer[];
+  rates?: ForexRatesMap;
 }
 
 export function PortfolioInvestmentView({
@@ -126,6 +128,7 @@ export function PortfolioInvestmentView({
   etfTrades,
   accounts,
   transfers,
+  rates,
 }: PortfolioInvestmentViewProps) {
   const { t, language } = useLanguage();
   const router = useRouter();
@@ -133,8 +136,15 @@ export function PortfolioInvestmentView({
   const cryptoI18n = i18n.crypto;
   const isEn = language === "en";
   const isPrivate = usePrivacyMode();
+  const displayCurrency = usePreferredCurrency();
   const fmt = (amount: number, currency: string = "IDR") =>
-    maskCurrency(formatCurrency(amount, currency), isPrivate);
+    maskCurrency(
+      formatCurrency(
+        convertAmount(amount, currency, displayCurrency, rates),
+        displayCurrency,
+      ),
+      isPrivate,
+    );
 
   const investmentAccounts = accounts.filter(
     (account) => account.type === "investment" && account.is_active,
@@ -1509,7 +1519,7 @@ export function PortfolioInvestmentView({
           {/* Key Analytics Cards: True Net PnL (Already Net of Costs) */}
           <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
             <Summary
-              label={isEn ? "Net Realized P&L" : "Laba/Rugi Bersih (P&L)"}
+              label={isEn ? "Net P&L" : "P&L Bersih"}
               value={`${reportingStats.netRealizedPnl >= 0 ? "+" : ""}${fmt(reportingStats.netRealizedPnl, "IDR")}`}
               tone={
                 reportingStats.netRealizedPnl >= 0 ? "positive" : "negative"
@@ -2722,8 +2732,9 @@ function EtfCard({
   const i18n = t.investments;
   const isEn = language === "en";
   const isPrivate = usePrivacyMode();
+  const displayCurrency = usePreferredCurrency();
   const fmt = (amount: number, currency: string = "IDR") =>
-    maskCurrency(formatCurrency(amount, currency), isPrivate);
+    maskCurrency(formatCurrency(convertAmount(amount, currency, displayCurrency), displayCurrency), isPrivate);
   const publishableKey = process.env.NEXT_PUBLIC_LOGO_DEV_PUBLISHABLE_KEY;
   const logoUrl = publishableKey
     ? `https://img.logo.dev/ticker/${holding.ticker.toLowerCase()}?token=${publishableKey}`
@@ -2769,8 +2780,9 @@ function StockCard({
   const i18n = t.investments;
   const isEn = language === "en";
   const isPrivate = usePrivacyMode();
+  const displayCurrency = usePreferredCurrency();
   const fmt = (amount: number, currency: string = "IDR") =>
-    maskCurrency(formatCurrency(amount, currency), isPrivate);
+    maskCurrency(formatCurrency(convertAmount(amount, currency, displayCurrency), displayCurrency), isPrivate);
   const lots = Number(holding.lots) || Number(holding.total_shares) / 100;
 
   const publishableKey = process.env.NEXT_PUBLIC_LOGO_DEV_PUBLISHABLE_KEY;
@@ -2840,8 +2852,9 @@ function CryptoCard({
   const i18n = t.investments;
   const isEn = language === "en";
   const isPrivate = usePrivacyMode();
+  const displayCurrency = usePreferredCurrency();
   const fmt = (amount: number, currency: string = "IDR") =>
-    maskCurrency(formatCurrency(amount, currency), isPrivate);
+    maskCurrency(formatCurrency(convertAmount(amount, currency, displayCurrency), displayCurrency), isPrivate);
 
   const publishableKey = process.env.NEXT_PUBLIC_LOGO_DEV_PUBLISHABLE_KEY;
   const logoUrl = publishableKey

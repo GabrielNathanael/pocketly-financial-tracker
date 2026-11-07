@@ -1203,7 +1203,7 @@ export const translations = {
         "Kategori {category} menyerap {pct}% ({amount}) dari total belanja periode ini.",
       insightSpikeTitle: "Lonjakan Pengeluaran",
       insightSpikeDesc:
-        "Belanja {category} melonjak +{growth}% (+{diff}) dibanding periode sebelumnya.",
+        "Pengeluaran {category} melonjak +{growth}% (+{diff}) dibanding periode sebelumnya.",
       insightWeekendTitle: "Pola Akhir Pekan",
       insightWeekendDesc:
         "Rata-rata belanja di akhir pekan (Sabtu-Minggu) tercatat {multiplier}x lipat lebih tinggi dari hari kerja.",

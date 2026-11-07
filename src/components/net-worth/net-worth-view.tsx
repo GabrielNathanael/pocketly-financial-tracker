@@ -1,12 +1,12 @@
 "use client";
 
-import React from "react";
+import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   formatCurrency,
-  ForexRatesMap,
   convertAmount,
 } from "@/lib/utils/currency";
+import type { NetWorthSnapshotPoint, NetWorthSummary } from "@/actions/exchange-rate";
 import { usePreferredCurrency } from "@/lib/storage/preferred-currency";
 import { usePrivacyMode, maskCurrency } from "@/lib/storage/privacy-mode";
 import { useLanguage } from "@/lib/i18n/language-context";
@@ -17,182 +17,226 @@ import {
   ArrowDownRight,
   TrendingUp,
   Target,
+  Coins,
+  Bitcoin,
+  LineChart,
+  ChevronDown,
 } from "lucide-react";
-
-interface NetWorthData {
-  totalAccountsIdr: number;
-  totalStockHoldingsIdr?: number;
-  totalReceivablesIdr: number;
-  totalSavingsGoalsIdr?: number;
-  totalDebtsIdr: number;
-  netWorthIdr: number;
-  exchangeRate: number;
-  rates?: ForexRatesMap;
-}
+import { cn } from "@/lib/utils/cn";
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+} from "recharts";
 
 interface NetWorthViewProps {
-  data: NetWorthData;
+  data: NetWorthSummary;
+  snapshots: NetWorthSnapshotPoint[];
 }
 
-export function NetWorthView({ data }: NetWorthViewProps) {
+type RangeKey = "1M" | "3M" | "6M" | "1Y" | "ALL";
+const RANGE_DAYS: Record<RangeKey, number | null> = {
+  "1M": 30,
+  "3M": 90,
+  "6M": 180,
+  "1Y": 365,
+  ALL: null,
+};
+
+export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
   const { t, language } = useLanguage();
   const isPrivate = usePrivacyMode();
   const displayCurrency = usePreferredCurrency();
+  const [selectedSlice, setSelectedSlice] = useState<string | null>(null);
+  const [range, setRange] = useState<RangeKey>("3M");
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const toggleExpanded = (id: string) =>
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
 
-  const convertedTotalAccounts = convertAmount(
-    data.totalAccountsIdr,
-    "IDR",
-    displayCurrency,
-    data.rates,
-  );
-  const convertedStockHoldings = convertAmount(
-    data.totalStockHoldingsIdr || 0,
-    "IDR",
-    displayCurrency,
-    data.rates,
-  );
-  const convertedReceivables = convertAmount(
-    data.totalReceivablesIdr,
-    "IDR",
-    displayCurrency,
-    data.rates,
-  );
-  const convertedSavingsGoals = convertAmount(
-    data.totalSavingsGoalsIdr || 0,
-    "IDR",
-    displayCurrency,
-    data.rates,
-  );
-  const convertedDebts = convertAmount(
-    data.totalDebtsIdr,
-    "IDR",
-    displayCurrency,
-    data.rates,
-  );
+  const convert = (amountIdr: number, rates = data.rates) =>
+    convertAmount(amountIdr, "IDR", displayCurrency, rates);
+
+  const totalAccounts = convert(data.totalAccountsIdr);
+  const totalStocks = convert(data.totalStockHoldingsIdr);
+  const totalCrypto = convert(data.totalCryptoHoldingsIdr);
+  const totalEtf = convert(data.totalEtfHoldingsIdr);
+  const totalReceivables = convert(data.totalReceivablesIdr);
+  const totalGoals = convert(data.totalSavingsGoalsIdr);
+  const totalDebts = convert(data.totalDebtsIdr);
   const totalAssets =
-    convertedTotalAccounts +
-    convertedStockHoldings +
-    convertedReceivables +
-    convertedSavingsGoals;
-  const totalLiabilities = convertedDebts;
-  const convertedNetWorth = totalAssets - totalLiabilities;
-  const accountsPct = totalAssets > 0 ? (convertedTotalAccounts / totalAssets) * 100 : 100;
-  const stocksPct = totalAssets > 0 ? (convertedStockHoldings / totalAssets) * 100 : 0;
-  const receivablesPct = totalAssets > 0 ? (convertedReceivables / totalAssets) * 100 : 0;
-  const goalsPct = totalAssets > 0 ? (convertedSavingsGoals / totalAssets) * 100 : 0;
+    totalAccounts + totalStocks + totalCrypto + totalEtf + totalReceivables + totalGoals;
+  const netWorth = totalAssets - totalDebts;
 
-  const [selectedSlice, setSelectedSlice] = React.useState<string | null>(null);
+  const assetCategories = [
+    {
+      id: "accounts",
+      name: language === "en" ? "Cash & Bank" : "Kas & Bank",
+      total: totalAccounts,
+      color: "#0EA5E9",
+      href: "/accounts",
+      icon: <Wallet className="w-3.5 h-3.5" />,
+      items: data.accounts.map((a) => ({
+        id: a.id,
+        name: a.name,
+        amount: convert(a.amountIdr),
+      })),
+    },
+    {
+      id: "stocks",
+      name: language === "en" ? "Stocks" : "Saham",
+      total: totalStocks,
+      color: "#8B5CF6",
+      href: "/investments",
+      icon: <TrendingUp className="w-3.5 h-3.5" />,
+      items: data.stocks.map((a) => ({
+        id: a.id,
+        name: a.name,
+        amount: convert(a.amountIdr),
+      })),
+    },
+    {
+      id: "crypto",
+      name: language === "en" ? "Crypto" : "Kripto",
+      total: totalCrypto,
+      color: "#F59E0B",
+      href: "/investments",
+      icon: <Bitcoin className="w-3.5 h-3.5" />,
+      items: data.crypto.map((a) => ({
+        id: a.id,
+        name: a.name,
+        amount: convert(a.amountIdr),
+      })),
+    },
+    {
+      id: "etf",
+      name: "ETF",
+      total: totalEtf,
+      color: "#EC4899",
+      href: "/investments",
+      icon: <LineChart className="w-3.5 h-3.5" />,
+      items: data.etf.map((a) => ({
+        id: a.id,
+        name: a.name,
+        amount: convert(a.amountIdr),
+      })),
+    },
+    {
+      id: "goals",
+      name: language === "en" ? "Savings Goals" : "Target Tabungan",
+      total: totalGoals,
+      color: "#14B8A6",
+      href: "/goals",
+      icon: <Target className="w-3.5 h-3.5" />,
+      items: data.goals.map((a) => ({
+        id: a.id,
+        name: a.name,
+        amount: convert(a.amountIdr),
+      })),
+    },
+    {
+      id: "receivables",
+      name: language === "en" ? "Receivables" : "Piutang",
+      total: totalReceivables,
+      color: "#22C55E",
+      href: "/debts",
+      icon: <ArrowUpRight className="w-3.5 h-3.5" />,
+      items: data.receivables.map((a) => ({
+        id: a.id,
+        name: a.name,
+        amount: convert(a.amountIdr),
+      })),
+    },
+  ].map((c) => ({
+    ...c,
+    percentage: totalAssets > 0 ? (c.total / totalAssets) * 100 : 0,
+  }));
 
-  const assetCategories = React.useMemo(() => {
-    return [
-      {
-        id: "accounts",
-        name: language === "en" ? "Cash & Bank" : "Kas & Bank",
-        total: convertedTotalAccounts,
-        percentage: accountsPct,
-        color: "#3B82F6", // Blue
-      },
-      ...(convertedStockHoldings > 0
-        ? [
-            {
-              id: "stocks",
-              name: language === "en" ? "Investments" : "Investasi",
-              total: convertedStockHoldings,
-              percentage: stocksPct,
-              color: "#6366F1", // Indigo
-            },
-          ]
-        : []),
-      ...(convertedSavingsGoals > 0
-        ? [
-            {
-              id: "goals",
-              name: language === "en" ? "Savings Goals" : "Target Tabungan",
-              total: convertedSavingsGoals,
-              percentage: goalsPct,
-              color: "#0D9488", // Teal
-            },
-          ]
-        : []),
-      ...(convertedReceivables > 0
-        ? [
-            {
-              id: "receivables",
-              name: language === "en" ? "Receivables" : "Piutang",
-              total: convertedReceivables,
-              percentage: receivablesPct,
-              color: "#10B981", // Emerald
-            },
-          ]
-        : []),
-    ];
-  }, [
-    convertedTotalAccounts,
-    convertedStockHoldings,
-    convertedSavingsGoals,
-    convertedReceivables,
-    accountsPct,
-    stocksPct,
-    goalsPct,
-    receivablesPct,
-    language,
-  ]);
+  const activeCategory = assetCategories.find((c) => c.id === selectedSlice);
 
-  // Half-Donut Math (180deg Arc from Left to Right)
-  const donutSlices = React.useMemo(() => {
+  // Full donut via arc paths (gap between slices, clean edges).
+  const donut = useMemo(() => {
+    const cx = 100;
+    const cy = 100;
+    const outerR = 84;
+    const innerR = 62;
+    const GAP = 2; // degrees between slices
+    const visible = assetCategories.filter((c) => c.total > 0);
+    if (visible.length === 0) return [];
+    // Single slice: draw a full ring as two half arcs.
+    if (visible.length === 1) {
+      const c = visible[0];
+      return [
+        {
+          ...c,
+          path: `M ${cx} ${cy - outerR} A ${outerR} ${outerR} 0 1 1 ${cx} ${cy + outerR} A ${outerR} ${outerR} 0 1 1 ${cx} ${cy - outerR} L ${cx} ${cy - innerR} A ${innerR} ${innerR} 0 1 0 ${cx} ${cy + innerR} A ${innerR} ${innerR} 0 1 0 ${cx} ${cy - innerR} Z`,
+        },
+      ];
+    }
     let cumulative = 0;
-    const center = 120;
-    const centerY = 110;
-    const outerR = 96;
-    const innerR = 70;
-
-    return assetCategories.map((cat) => {
+    return visible.map((c) => {
       const startPct = cumulative;
-      cumulative += cat.percentage;
+      cumulative += c.percentage;
       const endPct = cumulative;
-
-      // Map 0% to 180deg (left), 100% to 0deg (right)
-      const startDeg = 180 - (startPct / 100) * 180;
-      const endDeg = 180 - (endPct / 100) * 180;
-
+      // Start at top (-90deg), sweep clockwise.
+      const startDeg = -90 + (startPct / 100) * 360 + GAP / 2;
+      const endDeg = -90 + (endPct / 100) * 360 - GAP / 2;
       const startRad = (startDeg * Math.PI) / 180;
       const endRad = (endDeg * Math.PI) / 180;
-
-      const x1 = center + outerR * Math.cos(startRad);
-      const y1 = centerY - outerR * Math.sin(startRad);
-      const x2 = center + outerR * Math.cos(endRad);
-      const y2 = centerY - outerR * Math.sin(endRad);
-
-      const ix1 = center + innerR * Math.cos(startRad);
-      const iy1 = centerY - innerR * Math.sin(startRad);
-      const ix2 = center + innerR * Math.cos(endRad);
-      const iy2 = centerY - innerR * Math.sin(endRad);
-
-      const pathData = `M ${x1} ${y1} A ${outerR} ${outerR} 0 0 1 ${x2} ${y2} L ${ix2} ${iy2} A ${innerR} ${innerR} 0 0 0 ${ix1} ${iy1} Z`;
-
+      const x1 = cx + outerR * Math.cos(startRad);
+      const y1 = cy + outerR * Math.sin(startRad);
+      const x2 = cx + outerR * Math.cos(endRad);
+      const y2 = cy + outerR * Math.sin(endRad);
+      const ix1 = cx + innerR * Math.cos(startRad);
+      const iy1 = cy + innerR * Math.sin(startRad);
+      const ix2 = cx + innerR * Math.cos(endRad);
+      const iy2 = cy + innerR * Math.sin(endRad);
+      const largeArc = endDeg - startDeg > 180 ? 1 : 0;
       return {
-        ...cat,
-        pathData,
+        ...c,
+        path: `M ${x1} ${y1} A ${outerR} ${outerR} 0 ${largeArc} 1 ${x2} ${y2} L ${ix2} ${iy2} A ${innerR} ${innerR} 0 ${largeArc} 0 ${ix1} ${iy1} Z`,
       };
     });
   }, [assetCategories]);
 
-  const activeCategory = assetCategories.find((c) => c.id === selectedSlice);
+  const trendData = useMemo(() => {
+    const days = RANGE_DAYS[range];
+    const now = new Date();
+    const cutoff = days ? new Date(now.getTime() - days * 86400000) : new Date(0);
+    return snapshots
+      .filter((s) => new Date(s.date) >= cutoff)
+      .map((s) => {
+        const netWorth = convertAmount(s.netWorthIdr, "IDR", displayCurrency, s.rates);
+        const assets = convertAmount(s.assetsIdr, "IDR", displayCurrency, s.rates);
+        return {
+          date: s.date,
+          netWorth,
+          assets,
+          liabilities: assets - netWorth,
+        };
+      });
+  }, [snapshots, range, displayCurrency]);
 
-  const formattedNetWorth = maskCurrency(
-    formatCurrency(convertedNetWorth, displayCurrency),
-    isPrivate,
-  );
+  const firstTrend = trendData[0]?.netWorth;
+  const lastTrend = trendData[trendData.length - 1]?.netWorth;
+  const trendDelta =
+    firstTrend !== undefined && lastTrend !== undefined && firstTrend !== 0
+      ? ((lastTrend - firstTrend) / Math.abs(firstTrend)) * 100
+      : null;
 
-  const getNetWorthFontSize = (len: number) => {
-    if (len > 22) return "text-xl sm:text-2xl md:text-3xl";
-    if (len > 16) return "text-2xl sm:text-3xl md:text-4xl";
-    if (len > 12) return "text-[1.7rem] sm:text-3xl md:text-4xl";
-    return "text-3xl sm:text-4xl";
-  };
+  const fmt = (v: number) =>
+    maskCurrency(formatCurrency(v, displayCurrency), isPrivate);
 
   return (
-    <div className="flex flex-col gap-5 max-w-xl mx-auto">
+    <div className="flex flex-col gap-4 max-w-4xl mx-auto">
       <div>
         <Link
           href="/dashboard"
@@ -203,243 +247,341 @@ export function NetWorthView({ data }: NetWorthViewProps) {
         </Link>
       </div>
 
-      {/* Main Net Worth Total Hero */}
-      <div className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-4 shadow-2xs">
-        <div>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
-            {t.netWorth.calculatedPosition} ({displayCurrency})
+      {/* HERO — dark balance-sheet card */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0F172A] to-[#1E293B] p-5 sm:p-8 text-white shadow-md">
+        <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-sky-500/20 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-indigo-500/20 blur-3xl" />
+        <div className="relative flex flex-col gap-3">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-300">
+            {language === "en" ? "Net Worth" : "Kekayaan Bersih"} ({displayCurrency})
           </span>
-        </div>
-
-        {/* Net Worth Hero Number */}
-        <div className="flex flex-col gap-1">
-          <h1 className={`font-mono font-bold text-[#0F172A] dark:text-[#F8FAFC] tracking-tight tnum leading-none break-words ${getNetWorthFontSize(formattedNetWorth.length)}`}>
-            {formattedNetWorth}
+          <h1 className="font-mono text-4xl sm:text-5xl font-black tracking-tight tnum leading-none break-words">
+            {fmt(netWorth)}
           </h1>
-
-          {/* Sub-label explaining where this Net Worth comes from */}
-          <div className="flex flex-wrap items-center gap-1.5 pt-1 text-xs font-mono text-[#64748B] dark:text-[#94A3B8]">
-            <span className="text-emerald-600 dark:text-emerald-400 font-bold">
-              +{maskCurrency(formatCurrency(totalAssets, displayCurrency), isPrivate)} {language === "en" ? "Assets" : "Aset"}
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-xs">
+            <span className="font-bold text-emerald-300">
+              +{fmt(totalAssets)} {language === "en" ? "Assets" : "Aset"}
             </span>
-            {totalLiabilities > 0 && (
-              <>
-                <span>-</span>
-                <span className="text-rose-600 dark:text-rose-400 font-bold">
-                  {maskCurrency(formatCurrency(totalLiabilities, displayCurrency), isPrivate)} {language === "en" ? "Debts" : "Hutang"}
-                </span>
-              </>
-            )}
+            <span className="text-slate-400">−</span>
+            <span className="font-bold text-rose-300">
+              {fmt(totalDebts)} {language === "en" ? "Debts" : "Hutang"}
+            </span>
             {displayCurrency !== "IDR" && (
-              <span className="text-[#94A3B8] tnum">
+              <span className="text-slate-400 tnum">
                 (≈ {maskCurrency(formatCurrency(data.netWorthIdr, "IDR"), isPrivate)})
               </span>
             )}
           </div>
-        </div>
-
-        {/* Interactive Half-Donut Wealth Allocation Chart */}
-        <div className="flex flex-col items-center pt-4 border-t border-[#E5E7EB] dark:border-[#27272A] gap-1">
-          <div className="flex items-center justify-between w-full gap-2 pb-1">
-            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
-              {language === "en" ? "Asset Allocation" : "Alokasi Aset"}
-            </span>
-            <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-[#F1F3F5] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-[#64748B] dark:text-[#94A3B8] shrink-0">
-              {selectedSlice
-                ? language === "en" ? "Tap to reset" : "Ketuk untuk reset"
-                : language === "en" ? "Tap segment" : "Ketuk segmen"}
-            </span>
-          </div>
-
-          {/* Interactive SVG Half-Donut */}
-          <div className="relative flex items-center justify-center pt-2">
-            <svg
-              width="240"
-              height="115"
-              viewBox="0 0 240 115"
-              className="overflow-visible select-none"
-            >
-              {/* Background Guide Arc */}
-              <path
-                d="M 24 110 A 96 96 0 0 1 216 110 L 190 110 A 70 70 0 0 0 50 110 Z"
-                fill="currentColor"
-                className="text-[#F1F3F5] dark:text-[#1E1E24]"
-              />
-
-              {/* Slices */}
-              {donutSlices.map((slice) => {
-                const isSelected = selectedSlice === slice.id;
-                return (
-                  <path
-                    key={slice.id}
-                    d={slice.pathData}
-                    fill={slice.color}
-                    onClick={() =>
-                      setSelectedSlice(selectedSlice === slice.id ? null : slice.id)
-                    }
-                    className={`cursor-pointer transition-all duration-200 hover:opacity-85 ${
-                      isSelected
-                        ? "stroke-2 stroke-[#0F172A] dark:stroke-white brightness-110 filter drop-shadow-md"
-                        : "opacity-95"
-                    }`}
-                  />
-                );
-              })}
-            </svg>
-
-            {/* Dynamic Center Interactive Label inside Arch */}
-            <div className="absolute bottom-2 flex flex-col items-center pointer-events-none text-center">
-              <span className="text-[9px] uppercase font-bold text-[#64748B] dark:text-[#94A3B8] tracking-wider leading-tight">
-                {activeCategory
-                  ? activeCategory.name
-                  : language === "en"
-                    ? "Total Gross Assets"
-                    : "Total Seluruh Aset"}
-              </span>
-              <div className="flex items-center gap-1 mt-0.5">
-                <span className="text-xs font-mono font-black text-amber-500">
-                  {activeCategory ? `${activeCategory.percentage.toFixed(1)}%` : "100%"}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Dynamic Valuation Amount for Donut Selection */}
-          <div className="flex flex-col items-center pt-2 pb-1 text-center">
-            <span className="text-xl sm:text-2xl font-mono font-black text-[#0F172A] dark:text-[#FAFAFA] tnum leading-tight">
-              {maskCurrency(
-                formatCurrency(
-                  activeCategory ? activeCategory.total : totalAssets,
-                  displayCurrency,
-                ),
-                isPrivate,
+          {trendDelta !== null && (
+            <span
+              className={cn(
+                "inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold",
+                trendDelta >= 0
+                  ? "bg-emerald-400/15 text-emerald-300"
+                  : "bg-rose-400/15 text-rose-300",
               )}
+            >
+              {trendDelta >= 0 ? (
+                <TrendingUp className="w-3 h-3" />
+              ) : (
+                <ArrowDownRight className="w-3 h-3" />
+              )}
+              {trendDelta >= 0 ? "+" : ""}
+              {trendDelta.toFixed(1)}% ({range})
             </span>
-          </div>
+          )}
         </div>
       </div>
 
-      {/* Structured Ledger Balance Sheet Breakdown (Vertical Stacked Cards) */}
-      <div className="p-5 rounded-2xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-4 shadow-2xs">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
-          {t.netWorth.breakdownTitle}
-        </h2>
-
-        <div className="flex flex-col gap-3 font-mono tnum">
-          {/* Liquid Accounts */}
-          <div className="flex items-center justify-between p-3 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A]">
-            <div className="flex items-center gap-2.5 font-sans">
-              <div className="w-7 h-7 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] flex items-center justify-center">
-                <Wallet className="w-3.5 h-3.5" />
-              </div>
-              <span className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-                {t.netWorth.liquidAssets}
-              </span>
-            </div>
-            <span className="text-xs sm:text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-              {maskCurrency(
-                formatCurrency(convertedTotalAccounts, displayCurrency),
-                isPrivate,
-              )}
-            </span>
-          </div>
-
-          {/* Investment & Stock Holdings */}
-          {convertedStockHoldings > 0 && (
-            <div className="flex items-center justify-between p-3 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A]">
-              <div className="flex items-center gap-2.5 font-sans">
-                <div className="w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-200 dark:border-indigo-800/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
-                  <TrendingUp className="w-3.5 h-3.5 stroke-[2.5]" />
-                </div>
-                <span className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-                  {language === 'en' ? 'Investment & Portfolio Assets' : 'Aset Investasi & Portofolio'}
-                </span>
-              </div>
-              <span className="text-xs sm:text-sm font-bold text-indigo-600 dark:text-indigo-400">
-                +
-                {maskCurrency(
-                  formatCurrency(convertedStockHoldings, displayCurrency),
-                  isPrivate,
+      {/* TREND CHART */}
+      <div className="rounded-2xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] p-4 sm:p-5 flex flex-col gap-3 shadow-2xs">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
+            {language === "en" ? "Net Worth Trend" : "Tren Kekayaan Bersih"}
+          </h2>
+          <div className="flex items-center gap-1">
+            {(Object.keys(RANGE_DAYS) as RangeKey[]).map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => setRange(r)}
+                className={cn(
+                  "px-2 py-1 rounded-md text-[11px] font-bold transition-colors cursor-pointer",
+                  range === r
+                    ? "bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A]"
+                    : "text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]",
                 )}
-              </span>
-            </div>
-          )}
-
-          {/* Savings Goals Capital */}
-          {convertedSavingsGoals > 0 && (
-            <Link
-              href="/goals"
-              className="flex items-center justify-between p-3 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] hover:border-[#0D9488]/40 transition-colors group"
-            >
-              <div className="flex items-center gap-2.5 font-sans">
-                <div className="w-7 h-7 rounded-lg bg-[#0D9488]/10 border border-[#0D9488]/20 text-[#0D9488] flex items-center justify-center group-hover:scale-105 transition-transform">
-                  <Target className="w-3.5 h-3.5 stroke-[2.5]" />
-                </div>
-                <span className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC] group-hover:text-[#0D9488] transition-colors">
-                  {language === 'en' ? 'Savings Goals Capital' : 'Target Tabungan Terkumpul'}
-                </span>
-              </div>
-              <span className="text-xs sm:text-sm font-bold text-[#0D9488]">
-                +
-                {maskCurrency(
-                  formatCurrency(convertedSavingsGoals, displayCurrency),
-                  isPrivate,
-                )}
-              </span>
-            </Link>
-          )}
-
-          {/* Receivables */}
-          <div className="flex items-center justify-between p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A]">
-            <div className="flex items-center gap-2.5 font-sans">
-              <div className="w-7 h-7 rounded bg-[#ECFDF5] dark:bg-[#064E3B]/20 border border-[#A7F3D0] dark:border-[#065F46]/40 text-[#0D9488] flex items-center justify-center">
-                <ArrowUpRight className="w-3.5 h-3.5 stroke-[2.5]" />
-              </div>
-              <span className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-                {t.netWorth.activeReceivables}
-              </span>
-            </div>
-            <span className="text-xs sm:text-sm font-bold text-[#0D9488]">
-              +
-              {maskCurrency(
-                formatCurrency(convertedReceivables, displayCurrency),
-                isPrivate,
-              )}
-            </span>
-          </div>
-
-          {/* Debts */}
-          <div className="flex items-center justify-between p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A]">
-            <div className="flex items-center gap-2.5 font-sans">
-              <div className="w-7 h-7 rounded bg-[#FFF1F2] dark:bg-[#881337]/20 border border-[#FECDD3] dark:border-[#9F1239]/40 text-[#E11D48] flex items-center justify-center">
-                <ArrowDownRight className="w-3.5 h-3.5 stroke-[2.5]" />
-              </div>
-              <span className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-                {t.netWorth.activeLiabilities}
-              </span>
-            </div>
-            <span className="text-xs sm:text-sm font-bold text-[#E11D48]">
-              -
-              {maskCurrency(
-                formatCurrency(convertedDebts, displayCurrency),
-                isPrivate,
-              )}
-            </span>
+              >
+                {r}
+              </button>
+            ))}
           </div>
         </div>
 
-        <div className="flex items-center justify-between pt-3 border-t border-[#E5E7EB] dark:border-[#27272A] font-mono">
-          <span className="font-sans text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-            {t.netWorth.netTotal}
-          </span>
-          <span className="text-base sm:text-lg font-bold text-[#0F172A] dark:text-[#F8FAFC] tnum">
-            {maskCurrency(
-              formatCurrency(convertedNetWorth, displayCurrency),
-              isPrivate,
+        {trendData.length < 2 ? (
+          <div className="flex flex-col items-center gap-1 py-8 text-center">
+            <Coins className="w-6 h-6 text-[#94A3B8]" />
+            <p className="text-xs text-[#64748B] dark:text-[#94A3B8] max-w-xs">
+              {language === "en"
+                ? "Trend fills in daily from the first snapshot. Check back tomorrow."
+                : "Grafik terisi harian dari snapshot pertama. Cek lagi besok."}
+            </p>
+            {trendData.length === 1 && (
+              <span className="font-mono text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                {fmt(trendData[0].netWorth)}
+              </span>
             )}
-          </span>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={200}>
+            <AreaChart data={trendData} margin={{ top: 4, right: 8, left: 8, bottom: 0 }}>
+              <defs>
+                <linearGradient id="nwFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#0EA5E9" stopOpacity={0.35} />
+                  <stop offset="100%" stopColor="#0EA5E9" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
+              <XAxis
+                dataKey="date"
+                tick={{ fontSize: 10, fill: "#94A3B8" }}
+                axisLine={false}
+                tickLine={false}
+                tickFormatter={(d: string) =>
+                  new Date(d).toLocaleDateString(language === "en" ? "en-US" : "id-ID", {
+                    day: "numeric",
+                    month: "short",
+                  })
+                }
+              />
+              <YAxis
+                tick={{ fontSize: 10, fill: "#94A3B8" }}
+                axisLine={false}
+                tickLine={false}
+                width={56}
+                tickFormatter={(v: number) =>
+                  isPrivate ? "•••" : formatCurrency(v, displayCurrency).replace(/^(Rp|\$|S\$)\s?/, "")
+                }
+              />
+              <Tooltip
+                content={({ active, payload, label }: any) => {
+                  if (!active || !payload?.length) return null;
+                  const point = payload[0]?.payload as
+                    | { netWorth?: number; assets?: number; liabilities?: number }
+                    | undefined;
+                  const netWorth = Number(point?.netWorth ?? 0);
+                  const assets = Number(point?.assets ?? 0);
+                  const liabilities = Number(point?.liabilities ?? 0);
+                  return (
+                    <div
+                      style={{ fontSize: 11, borderRadius: 12 }}
+                      className="border border-[#E5E7EB] bg-white px-2.5 py-2 shadow-lg dark:border-[#27272A] dark:bg-[#121215]"
+                    >
+                      <div className="mb-1 font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                        {new Date(String(label ?? "")).toLocaleDateString(
+                          language === "en" ? "en-US" : "id-ID",
+                          { day: "numeric", month: "long", year: "numeric" },
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between gap-4">
+                        <span className="text-[#0EA5E9]">
+                          {language === "en" ? "Assets" : "Aset"}
+                        </span>
+                        <span className="font-mono font-bold text-[#0EA5E9] tnum">
+                          {fmt(assets)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-4">
+                        <span className="text-[#E11D48]">
+                          {language === "en" ? "Debts" : "Hutang"}
+                        </span>
+                        <span className="font-mono font-bold text-[#E11D48] tnum">
+                          {fmt(liabilities)}
+                        </span>
+                      </div>
+                      <div className="mt-1 flex items-center justify-between gap-4 border-t border-[#E5E7EB] pt-1 dark:border-[#27272A]">
+                        <span className="text-[#64748B] dark:text-[#94A3B8]">
+                          {language === "en" ? "Net Worth" : "Kekayaan"}
+                        </span>
+                        <span
+                          className="font-mono font-bold tnum"
+                          style={{ color: netWorth >= 0 ? "#0D9488" : "#E11D48" }}
+                        >
+                          {fmt(netWorth)}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                }}
+              />
+              <Area
+                type="monotone"
+                dataKey="netWorth"
+                stroke="#0EA5E9"
+                strokeWidth={2}
+                fill="url(#nwFill)"
+                dot={trendData.length <= 10}
+                activeDot={{ r: 4 }}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+
+      {/* ALLOCATION — donut + legend/bars */}
+      <div className="rounded-2xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] p-4 sm:p-5 shadow-2xs">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC] pb-3">
+          {language === "en" ? "Asset Allocation" : "Alokasi Aset"}
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-[220px_1fr] gap-5 items-center">
+          <div className="relative mx-auto h-[200px] w-[200px] shrink-0">
+            <svg width="200" height="200" viewBox="0 0 200 200" className="select-none">
+              <circle cx="100" cy="100" r="73" fill="none" stroke="#F1F3F5" strokeWidth="22" className="dark:stroke-[#1E1E24]" />
+              {donut.map((seg) => (
+                <path
+                  key={seg.id}
+                  d={seg.path}
+                  fill={seg.color}
+                  onClick={() => setSelectedSlice(selectedSlice === seg.id ? null : seg.id)}
+                  className={cn(
+                    "cursor-pointer transition-opacity",
+                    selectedSlice && selectedSlice !== seg.id && "opacity-25",
+                  )}
+                />
+              ))}
+            </svg>
+            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center px-8">
+              <span className="max-w-full truncate text-[9px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+                {activeCategory ? activeCategory.name : language === "en" ? "Total Assets" : "Total Aset"}
+              </span>
+              <span className="mt-0.5 max-w-full truncate font-mono text-sm font-black text-[#0F172A] dark:text-[#F8FAFC] tnum">
+                {(() => {
+                  const v = activeCategory ? activeCategory.total : totalAssets;
+                  const full = fmt(v);
+                  // Compact form fits inside the donut hole for long amounts.
+                  return full.length > 14
+                    ? maskCurrency(
+                        formatCurrency(v, displayCurrency, { compact: true }),
+                        isPrivate,
+                      )
+                    : full;
+                })()}
+              </span>
+              <span className="font-mono text-xs font-bold text-amber-500">
+                {activeCategory ? `${activeCategory.percentage.toFixed(1)}%` : "100%"}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            {assetCategories.filter((c) => c.total > 0).map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setSelectedSlice(selectedSlice === c.id ? null : c.id)}
+                className={cn(
+                  "flex flex-col gap-1 rounded-xl border p-2.5 text-left transition-all cursor-pointer",
+                  selectedSlice === c.id
+                    ? "border-[#0F172A] dark:border-[#FAFAFA] bg-[#F8F9FA] dark:bg-[#1A1A20]"
+                    : "border-[#E5E7EB] dark:border-[#27272A] hover:border-[#CBD5E1]",
+                )}
+              >
+                <span className="flex items-center justify-between gap-2">
+                  <span className="flex items-center gap-1.5 text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                    <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
+                    {c.name}
+                  </span>
+                  <span className="font-mono text-xs font-bold tnum">
+                    {fmt(c.total)} <span className="text-[#94A3B8] font-semibold">{c.percentage.toFixed(1)}%</span>
+                  </span>
+                </span>
+                <span className="h-1.5 w-full overflow-hidden rounded-full bg-[#F1F3F5] dark:bg-[#1E1E24]">
+                  <span
+                    className="block h-full rounded-full transition-all"
+                    style={{ width: `${Math.min(100, c.percentage)}%`, backgroundColor: c.color }}
+                  />
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
+
+      {/* BREAKDOWN 2-col */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="rounded-2xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] p-4 sm:p-5 flex flex-col gap-3 shadow-2xs">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
+            {language === "en" ? "Assets" : "Aset"} — {fmt(totalAssets)}
+          </h2>
+          {assetCategories.map((c) => {
+            const isExpanded = expanded.has(c.id);
+            return (
+            <div key={c.id} className="flex flex-col gap-1">
+              <div className="flex items-center justify-between gap-2">
+                <Link href={c.href} className="flex items-center gap-2 group min-w-0">
+                  <span className="flex items-center gap-2 text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC] group-hover:underline truncate">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-lg shrink-0" style={{ backgroundColor: `${c.color}1A`, color: c.color }}>
+                      {c.icon}
+                    </span>
+                    <span className="truncate">{c.name}</span>
+                  </span>
+                </Link>
+                <span className="flex items-center gap-1 shrink-0">
+                  <span className="font-mono text-xs font-bold tnum">{fmt(c.total)}</span>
+                  {c.items.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => toggleExpanded(c.id)}
+                      aria-expanded={isExpanded}
+                      aria-label={isExpanded ? "Collapse" : "Expand"}
+                      className="rounded-md p-1 text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] transition-colors cursor-pointer"
+                    >
+                      <ChevronDown className={cn("w-4 h-4 transition-transform", isExpanded && "rotate-180")} />
+                    </button>
+                  )}
+                </span>
+              </div>
+              {isExpanded && c.items.length > 0 && (
+                <div className="flex flex-col gap-0.5 pl-8 pr-0.5">
+                  {c.items.map((it) => (
+                    <div key={it.id} className="flex items-center justify-between gap-2 text-[11px] text-[#64748B] dark:text-[#94A3B8]">
+                      <span className="truncate">{it.name}</span>
+                      <span className="font-mono shrink-0 tnum">{fmt(it.amount)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            );
+          })}
+        </div>
+
+        <div className="rounded-2xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] p-4 sm:p-5 flex flex-col gap-3 shadow-2xs">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
+            {language === "en" ? "Liabilities" : "Hutang"} — {fmt(totalDebts)}
+          </h2>
+          {data.debts.length === 0 ? (
+            <p className="text-xs text-[#94A3B8] py-4 text-center">
+              {language === "en" ? "No active debts." : "Tidak ada hutang aktif."}
+            </p>
+          ) : (
+            data.debts.map((d) => (
+              <Link key={d.id} href="/debts" className="flex items-center justify-between gap-2 group">
+                <span className="flex items-center gap-2 text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC] group-hover:underline">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-rose-500/10 text-rose-500">
+                    <ArrowDownRight className="w-3.5 h-3.5" />
+                  </span>
+                  {d.name}
+                </span>
+                <span className="font-mono text-xs font-bold text-rose-500 tnum">
+                  -{fmt(convert(d.amountIdr))}
+                </span>
+              </Link>
+            ))
+          )}
+        </div>
+      </div>
+
     </div>
   );
 }

@@ -78,143 +78,113 @@ export async function getLatestExchangeRate(
   return convertAmount(1, base, target, rates);
 }
 
+import { computeNetWorthForUser, type NetWorthBreakdownItem } from "@/lib/net-worth/compute";
+
 export interface NetWorthSummary {
   totalAccountsIdr: number;
   totalStockHoldingsIdr: number;
+  totalCryptoHoldingsIdr: number;
+  totalEtfHoldingsIdr: number;
   totalReceivablesIdr: number;
   totalSavingsGoalsIdr: number;
   totalDebtsIdr: number;
   netWorthIdr: number;
   exchangeRate: number;
   rates: ForexRatesMap;
+  accounts: NetWorthBreakdownItem[];
+  stocks: NetWorthBreakdownItem[];
+  crypto: NetWorthBreakdownItem[];
+  etf: NetWorthBreakdownItem[];
+  receivables: NetWorthBreakdownItem[];
+  debts: NetWorthBreakdownItem[];
+  goals: NetWorthBreakdownItem[];
+}
+
+export interface NetWorthSnapshotPoint {
+  date: string;
+  netWorthIdr: number;
+  assetsIdr: number;
+  liabilitiesIdr: number;
+  rates: ForexRatesMap;
 }
 
 export async function getNetWorthData(
-  displayCurrency: CurrencyCode = "IDR",
+  // Kept for backward compat; computation is always in IDR (canonical),
+  // the view converts to the user's preferred display currency.
+  _displayCurrency: CurrencyCode = "IDR",
 ): Promise<NetWorthSummary> {
   const supabase = await createServerSupabaseClient();
   const rates = await getLatestForexRates();
-
-  // 1. Accounts
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: accounts } = await (supabase.from("accounts") as any)
-    .select("current_balance, currency, is_active")
-    .eq("is_active", true);
-
-  let totalAccountsIdr = 0;
-  if (accounts) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    for (const acc of accounts as any[]) {
-      totalAccountsIdr += convertAmount(
-        Number(acc.current_balance),
-        acc.currency,
-        displayCurrency,
-        rates,
-      );
-    }
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return {
+      totalAccountsIdr: 0,
+      totalStockHoldingsIdr: 0,
+      totalCryptoHoldingsIdr: 0,
+      totalEtfHoldingsIdr: 0,
+      totalReceivablesIdr: 0,
+      totalSavingsGoalsIdr: 0,
+      totalDebtsIdr: 0,
+      netWorthIdr: 0,
+      exchangeRate: rates.IDR || 16200,
+      rates,
+      accounts: [],
+      stocks: [],
+      crypto: [],
+      etf: [],
+      receivables: [],
+      debts: [],
+      goals: [],
+    };
   }
 
-  // 2. Stock Holdings
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: stockHoldings } = await (supabase.from("stock_holdings") as any)
-    .select("total_cost, account:accounts(currency)")
-    .gt("total_cost", 0);
-
-  let totalStockHoldingsIdr = 0;
-  if (stockHoldings) {
+  const c = await computeNetWorthForUser(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    for (const h of stockHoldings as any[]) {
-      const cur = h.account?.currency || "IDR";
-      totalStockHoldingsIdr += convertAmount(
-        Number(h.total_cost),
-        cur,
-        displayCurrency,
-        rates,
-      );
-    }
-
-  }
-
-  // Crypto holdings contribute their recorded cost basis only. No market
-  // price is available or required for this ledger.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: cryptoHoldings } = await (supabase.from("crypto_holdings") as any)
-    .select("cost_basis, price_currency")
-    .gt("quantity", 0)
-    .gt("cost_basis", 0);
-
-  if (cryptoHoldings) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    for (const holding of cryptoHoldings as any[]) {
-      totalStockHoldingsIdr += convertAmount(
-        Number(holding.cost_basis),
-        holding.price_currency || "IDR",
-        displayCurrency,
-        rates,
-      );
-    }
-  }
-
-  // 3. Debts & Receivables
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: debts } = await (supabase.from("debts") as any)
-    .select("type, remaining_amount, currency, status")
-    .eq("status", "active");
-
-  let totalReceivablesIdr = 0;
-  let totalDebtsIdr = 0;
-
-  if (debts) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    for (const d of debts as any[]) {
-      const converted = convertAmount(
-        Number(d.remaining_amount),
-        d.currency,
-        displayCurrency,
-        rates,
-      );
-      if (d.type === "receivable") {
-        totalReceivablesIdr += converted;
-      } else {
-        totalDebtsIdr += converted;
-      }
-    }
-  }
-
-  // 4. Savings Goals (Disimpan / Terkumpul)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: goals } = await (supabase.from("savings_goals") as any)
-    .select("current_amount, currency")
-    .gt("current_amount", 0);
-
-  let totalSavingsGoalsIdr = 0;
-  if (goals) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    for (const g of goals as any[]) {
-      totalSavingsGoalsIdr += convertAmount(
-        Number(g.current_amount),
-        g.currency || "IDR",
-        displayCurrency,
-        rates,
-      );
-    }
-  }
-
-  const totalAssets =
-    totalAccountsIdr +
-    totalStockHoldingsIdr +
-    totalReceivablesIdr +
-    totalSavingsGoalsIdr;
-  const netWorthIdr = totalAssets - totalDebtsIdr;
+    supabase as any,
+    user.id,
+    rates,
+  );
 
   return {
-    totalAccountsIdr,
-    totalStockHoldingsIdr,
-    totalReceivablesIdr,
-    totalSavingsGoalsIdr,
-    totalDebtsIdr,
-    netWorthIdr,
+    totalAccountsIdr: c.totalAccountsIdr,
+    // Stock only — crypto & ETF have their own fields below.
+    // (Previously this was stock+crypto+ETF combined, which double-counted
+    // crypto/ETF when the view summed all three separately.)
+    totalStockHoldingsIdr: c.totalStockHoldingsIdr,
+    totalCryptoHoldingsIdr: c.totalCryptoHoldingsIdr,
+    totalEtfHoldingsIdr: c.totalEtfHoldingsIdr,
+    totalReceivablesIdr: c.totalReceivablesIdr,
+    totalSavingsGoalsIdr: c.totalSavingsGoalsIdr,
+    totalDebtsIdr: c.totalDebtsIdr,
+    netWorthIdr: c.netWorthIdr,
     exchangeRate: rates.IDR || 16200,
     rates,
+    accounts: c.accounts,
+    stocks: c.stocks,
+    crypto: c.crypto,
+    etf: c.etf,
+    receivables: c.receivables,
+    debts: c.debts,
+    goals: c.goals,
   };
+}
+
+export async function getNetWorthSnapshots(): Promise<NetWorthSnapshotPoint[]> {
+  const supabase = await createServerSupabaseClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await ((supabase as any).from("net_worth_snapshots") as any)
+    .select("snapshot_date, net_worth_idr, total_assets_idr, total_liabilities_idr, rates")
+    .order("snapshot_date", { ascending: true })
+    .limit(730);
+
+  if (error || !data) return [];
+  return (data as any[]).map((r) => ({
+    date: String(r.snapshot_date).substring(0, 10),
+    netWorthIdr: Number(r.net_worth_idr) || 0,
+    assetsIdr: Number(r.total_assets_idr) || 0,
+    liabilitiesIdr: Number(r.total_liabilities_idr) || 0,
+    rates: (r.rates as ForexRatesMap) || { USD: 1, IDR: 16200, SGD: 1.35 },
+  }));
 }

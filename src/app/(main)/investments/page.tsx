@@ -7,6 +7,7 @@ import { getInvestmentHoldings, getInvestmentTradesHistory } from '@/actions/inv
 import { getCryptoHoldings, getCryptoTrades } from '@/actions/crypto'
 import { getEtfHoldings, getEtfTrades } from '@/actions/etf'
 import { getTransfers } from '@/actions/transfers'
+import { getLatestForexRates } from '@/actions/exchange-rate'
 import { PortfolioInvestmentView } from '@/components/investments/portfolio-investment-view'
 
 export const dynamic = 'force-dynamic'
@@ -26,7 +27,7 @@ export default async function InvestmentsPage() {
     redirect('/login')
   }
 
-  const [accounts, holdings, trades, cryptoHoldings, cryptoTrades, etfHoldings, etfTrades, transfers] = await Promise.all([
+  const [accounts, holdings, trades, cryptoHoldings, cryptoTrades, etfHoldings, etfTrades, transfers, rates] = await Promise.all([
     getAccounts(),
     getInvestmentHoldings(),
     getInvestmentTradesHistory(),
@@ -35,6 +36,7 @@ export default async function InvestmentsPage() {
     getEtfHoldings(),
     getEtfTrades(),
     getTransfers(),
+    getLatestForexRates(),
   ])
 
   return (
@@ -47,6 +49,7 @@ export default async function InvestmentsPage() {
       etfTrades={etfTrades}
       accounts={accounts}
       transfers={transfers}
+      rates={rates}
     />
   )
 }

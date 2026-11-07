@@ -23,6 +23,15 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils/cn";
 import {
+  ResponsiveContainer,
+  ComposedChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+} from "recharts";
+import {
   startOfMonth,
   endOfMonth,
   subMonths,
@@ -317,9 +326,13 @@ export function ReportsView({
 
     const net = inc - exp;
     const sRate = inc > 0 ? ((inc - exp) / inc) * 100 : exp > 0 ? -100 : 0;
+    // For the current (still running) period, only elapsed days count —
+    // dividing by the full month/year would understate the burn rate.
+    const nowDate = new Date();
+    const effectiveEnd = intervalEnd > nowDate ? nowDate : intervalEnd;
     const days = Math.max(
       1,
-      differenceInCalendarDays(intervalEnd, intervalStart) + 1,
+      differenceInCalendarDays(effectiveEnd, intervalStart) + 1,
     );
     const burnRate = exp / days;
 
@@ -827,42 +840,49 @@ export function ReportsView({
     isExcludedTx,
   ]);
 
-  const maxTimelineVal = useMemo(() => {
-    let max = 0;
-    timelineData.forEach((d) => {
-      if (d.income > max) max = d.income;
-      if (d.expense > max) max = d.expense;
-    });
-    return max || 1;
-  }, [timelineData]);
-
-  // Donut SVG Calculations with sleek thin ring (outerR=104, innerR=82) in 240x240 box
+  // Donut SVG — full donut with gap between slices (like Net Worth).
+  // Coordinates are rounded to 2 decimals so server & client render
+  // the exact same path string (avoids hydration mismatch from
+  // floating-point last-digit differences in Math.cos/sin).
   const donutSlices = useMemo(() => {
-    let cumulative = 0;
     const center = 120;
     const outerR = 104;
     const innerR = 82;
+    const GAP = 2; // degrees between slices
+    const r2 = (n: number) => Math.round(n * 100) / 100;
     const slices: ((typeof categoryBreakdown)[number] & { pathData: string })[] =
       [];
 
+    if (categoryBreakdown.length === 1) {
+      const cat = categoryBreakdown[0];
+      slices.push({
+        ...cat,
+        pathData: `M ${center} ${center - outerR} A ${outerR} ${outerR} 0 1 1 ${center} ${center + outerR} A ${outerR} ${outerR} 0 1 1 ${center} ${center - outerR} L ${center} ${center - innerR} A ${innerR} ${innerR} 0 1 0 ${center} ${center + innerR} A ${innerR} ${innerR} 0 1 0 ${center} ${center - innerR} Z`,
+      });
+      return slices;
+    }
+
+    let cumulative = 0;
     for (let i = 0; i < categoryBreakdown.length; i++) {
       const cat = categoryBreakdown[i];
-      const startAngle = (cumulative / 100) * 360;
+      const startPct = cumulative;
       cumulative += cat.percentage;
-      const endAngle = (cumulative / 100) * 360;
+      const endPct = cumulative;
+      const startAngle = (startPct / 100) * 360 + GAP / 2;
+      const endAngle = (endPct / 100) * 360 - GAP / 2;
 
       const startRad = ((startAngle - 90) * Math.PI) / 180;
       const endRad = ((endAngle - 90) * Math.PI) / 180;
 
-      const x1 = center + outerR * Math.cos(startRad);
-      const y1 = center + outerR * Math.sin(startRad);
-      const x2 = center + outerR * Math.cos(endRad);
-      const y2 = center + outerR * Math.sin(endRad);
+      const x1 = r2(center + outerR * Math.cos(startRad));
+      const y1 = r2(center + outerR * Math.sin(startRad));
+      const x2 = r2(center + outerR * Math.cos(endRad));
+      const y2 = r2(center + outerR * Math.sin(endRad));
 
-      const ix1 = center + innerR * Math.cos(startRad);
-      const iy1 = center + innerR * Math.sin(startRad);
-      const ix2 = center + innerR * Math.cos(endRad);
-      const iy2 = center + innerR * Math.sin(endRad);
+      const ix1 = r2(center + innerR * Math.cos(startRad));
+      const iy1 = r2(center + innerR * Math.sin(startRad));
+      const ix2 = r2(center + innerR * Math.cos(endRad));
+      const iy2 = r2(center + innerR * Math.sin(endRad));
 
       const largeArc = endAngle - startAngle > 180 ? 1 : 0;
 
@@ -1293,7 +1313,7 @@ export function ReportsView({
       });
     }
 
-    return insights.slice(0, 4);
+    return insights;
   }, [
     totalIncome,
     totalExpense,
@@ -1511,9 +1531,9 @@ export function ReportsView({
 
   // Dynamic Auto-scale helper
   const getCardFont = (strLen: number) => {
-    if (strLen > 18) return "text-xs sm:text-sm";
-    if (strLen > 13) return "text-sm sm:text-base";
-    return "text-base sm:text-lg";
+    if (strLen > 18) return "text-[11px] sm:text-xs";
+    if (strLen > 13) return "text-xs sm:text-sm";
+    return "text-sm sm:text-base";
   };
 
   return (
@@ -1769,7 +1789,7 @@ export function ReportsView({
 
             <div>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl font-black font-mono tracking-tight text-[#0F172A] dark:text-[#FAFAFA]">
+                <span className="text-xl font-black font-mono tracking-tight text-[#0F172A] dark:text-[#FAFAFA]">
                   {savingsRate >= 0
                     ? `+${savingsRate.toFixed(1)}%`
                     : `${savingsRate.toFixed(1)}%`}
@@ -1903,13 +1923,6 @@ export function ReportsView({
                   {t.reports.perDay}
                 </span>
               </h3>
-              <span className="text-[10px] font-mono text-[#94A3B8] mt-1 block">
-                {t.reports.netSavings}:{" "}
-                {maskCurrency(
-                  formatCurrency(netSavings, displayCurrency),
-                  isPrivate,
-                )}
-              </span>
             </div>
           </div>
         </div>
@@ -1936,7 +1949,20 @@ export function ReportsView({
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div
+                className="grid grid-cols-1 md:grid-cols-2 gap-3"
+                onTouchStart={(e) => {
+                  (e.currentTarget as any)._touchX = e.touches[0].clientX;
+                }}
+                onTouchEnd={(e) => {
+                  const startX = (e.currentTarget as any)._touchX as number | undefined;
+                  if (startX === undefined) return;
+                  const dx = e.changedTouches[0].clientX - startX;
+                  const totalSlides = Math.ceil(smartInsights.length / INSIGHTS_PER_SLIDE);
+                  if (dx < -40) setInsightSlideIdx((i) => Math.min(totalSlides - 1, i + 1));
+                  else if (dx > 40) setInsightSlideIdx((i) => Math.max(0, i - 1));
+                }}
+              >
               {(() => {
                 const totalSlides = Math.ceil(smartInsights.length / INSIGHTS_PER_SLIDE);
                 const safeIdx = Math.min(insightSlideIdx, totalSlides - 1);
@@ -1986,42 +2012,19 @@ export function ReportsView({
                 if (totalSlides <= 1) return null;
                 const safeIdx = Math.min(insightSlideIdx, totalSlides - 1);
                 return (
-                  <div className="flex items-center justify-between gap-3 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => setInsightSlideIdx((i) => Math.max(0, i - 1))}
-                      disabled={safeIdx === 0}
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-[#E5E7EB] text-[#64748B] disabled:opacity-40 dark:border-[#27272A] dark:text-[#94A3B8]"
-                      aria-label="Previous slide"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </button>
-                    <div className="flex items-center gap-1.5">
-                      {Array.from({ length: totalSlides }).map((_, i) => (
-                        <button
-                          key={i}
-                          type="button"
-                          onClick={() => setInsightSlideIdx(i)}
-                          aria-label={`Slide ${i + 1}`}
-                          className={cn(
-                            "h-1.5 rounded-full transition-all",
-                            i === safeIdx ? "w-5 bg-[#0F172A] dark:bg-[#FAFAFA]" : "w-1.5 bg-[#E5E7EB] dark:bg-[#3F3F46]",
-                          )}
-                        />
-                      ))}
-                    </div>
-                    <span className="font-mono text-[10px] text-[#94A3B8]">
-                      Slide {safeIdx + 1} / {totalSlides}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setInsightSlideIdx((i) => Math.min(totalSlides - 1, i + 1))}
-                      disabled={safeIdx >= totalSlides - 1}
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-[#E5E7EB] text-[#64748B] disabled:opacity-40 dark:border-[#27272A] dark:text-[#94A3B8]"
-                      aria-label="Next slide"
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </button>
+                  <div className="flex items-center justify-center gap-1.5 pt-1">
+                    {Array.from({ length: totalSlides }).map((_, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setInsightSlideIdx(i)}
+                        aria-label={`Slide ${i + 1}`}
+                        className={cn(
+                          "h-1.5 rounded-full transition-all",
+                          i === safeIdx ? "w-5 bg-[#0F172A] dark:bg-[#FAFAFA]" : "w-1.5 bg-[#E5E7EB] dark:bg-[#3F3F46]",
+                        )}
+                      />
+                    ))}
                   </div>
                 );
               })()}
@@ -2156,42 +2159,115 @@ export function ReportsView({
               {t.reports.noDataDesc}
             </div>
           ) : (
-            <div className="flex items-end justify-between gap-1.5 sm:gap-3 h-44 pt-4 pb-2 border-b border-[#E5E7EB] dark:border-[#27272A]">
-              {timelineData.map((bar, idx) => {
-                const incHeight = Math.max(
-                  4,
-                  (bar.income / maxTimelineVal) * 120,
-                );
-                const expHeight = Math.max(
-                  4,
-                  (bar.expense / maxTimelineVal) * 120,
-                );
-                return (
-                  <div
-                    key={idx}
-                    className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end group min-w-0"
-                  >
-                    <div className="w-full flex items-end justify-center gap-0.5 sm:gap-1 max-w-[32px] sm:max-w-[42px] h-full">
-                      {/* Income Bar */}
+            <ResponsiveContainer width="100%" height={200}>
+              <ComposedChart
+                data={timelineData}
+                margin={{ top: 4, right: 4, left: 4, bottom: 0 }}
+              >
+                <defs>
+                  <linearGradient id="rpIncomeFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#0D9488" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="#0D9488" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="rpExpenseFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#E11D48" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="#E11D48" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 9, fill: "#94A3B8" }}
+                  axisLine={false}
+                  tickLine={false}
+                  minTickGap={24}
+                  tickMargin={4}
+                />
+                <YAxis
+                  tick={{ fontSize: 9, fill: "#94A3B8" }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={44}
+                  tickFormatter={(v: number) =>
+                    isPrivate
+                      ? "•••"
+                      : formatCurrency(v, displayCurrency, { compact: true }).replace(/^(Rp|\$|S\$)\s?/, "")
+                  }
+                />
+                <Tooltip
+                  labelFormatter={(label) => String(label ?? "")}
+                  content={({ active, payload, label }: any) => {
+                    if (!active || !payload?.length) return null;
+                    const point = payload[0]?.payload as
+                      | { income?: number; expense?: number }
+                      | undefined;
+                    const income = Number(point?.income ?? 0);
+                    const expense = Number(point?.expense ?? 0);
+                    const net = income - expense;
+                    const netColor =
+                      net >= 0 ? "#0D9488" : "#E11D48";
+                    const fmtVal = (v: number) =>
+                      isPrivate
+                        ? "••••"
+                        : formatCurrency(v, displayCurrency);
+                    return (
                       <div
-                        style={{ height: `${incHeight}px` }}
-                        className="w-1/2 bg-[#0D9488] rounded-t-xs hover:brightness-110 transition-all relative"
-                        title={`${t.quickAdd.income}: ${formatCurrency(bar.income, displayCurrency)}`}
-                      />
-                      {/* Expense Bar */}
-                      <div
-                        style={{ height: `${expHeight}px` }}
-                        className="w-1/2 bg-[#E11D48] rounded-t-xs hover:brightness-110 transition-all relative"
-                        title={`${t.quickAdd.expense}: ${formatCurrency(bar.expense, displayCurrency)}`}
-                      />
-                    </div>
-                    <span className="text-[10px] sm:text-[11px] font-mono text-[#94A3B8] truncate max-w-full text-center">
-                      {bar.label}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+                        style={{ fontSize: 11, borderRadius: 12 }}
+                        className="border border-[#E5E7EB] bg-white px-2.5 py-2 shadow-lg dark:border-[#27272A] dark:bg-[#121215]"
+                      >
+                        <div className="mb-1 font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                          {String(label ?? "")}
+                        </div>
+                        <div className="flex items-center justify-between gap-4">
+                          <span className="text-[#0D9488]">{t.quickAdd.income}</span>
+                          <span className="font-mono font-bold text-[#0D9488] tnum">
+                            {fmtVal(income)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-4">
+                          <span className="text-[#E11D48]">{t.quickAdd.expense}</span>
+                          <span className="font-mono font-bold text-[#E11D48] tnum">
+                            {fmtVal(expense)}
+                          </span>
+                        </div>
+                        <div className="mt-1 flex items-center justify-between gap-4 border-t border-[#E5E7EB] pt-1 dark:border-[#27272A]">
+                          <span className="text-[#64748B] dark:text-[#94A3B8]">
+                            {language === "en" ? "Net" : "Selisih"}
+                          </span>
+                          <span
+                            className="font-mono font-bold tnum"
+                            style={{ color: netColor }}
+                          >
+                            {net > 0 && "+"}
+                            {fmtVal(net)}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="income"
+                  name={t.quickAdd.income}
+                  stroke="#0D9488"
+                  strokeWidth={2}
+                  fill="url(#rpIncomeFill)"
+                  dot={timelineData.length <= 8}
+                  activeDot={{ r: 3 }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="expense"
+                  name={t.quickAdd.expense}
+                  stroke="#E11D48"
+                  strokeWidth={2}
+                  fill="url(#rpExpenseFill)"
+                  dot={timelineData.length <= 8}
+                  activeDot={{ r: 3 }}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
           )}
         </div>
 
@@ -2262,7 +2338,7 @@ export function ReportsView({
                   width="240"
                   height="240"
                   viewBox="0 0 240 240"
-                  className="rotate-[-90deg]"
+                  className="select-none"
                 >
                   {donutSlices.map((slice, idx) => (
                     <path
@@ -2275,10 +2351,10 @@ export function ReportsView({
                         )
                       }
                       className={cn(
-                        "cursor-pointer transition-all duration-200 hover:opacity-80",
-                        selectedCategoryFilter === slice.id
-                          ? "stroke-2 stroke-[#0F172A] dark:stroke-[#FAFAFA] brightness-110"
-                          : "",
+                        "cursor-pointer transition-opacity duration-200 hover:opacity-85",
+                        selectedCategoryFilter &&
+                          selectedCategoryFilter !== slice.id &&
+                          "opacity-25",
                       )}
                     />
                   ))}
@@ -2299,28 +2375,31 @@ export function ReportsView({
                       categoryTab === "expense"
                         ? "text-[#E11D48]"
                         : "text-[#0D9488]",
-                      "text-[11px] sm:text-xs",
+                      "text-xs sm:text-sm",
                     )}
                   >
-                    {selectedCategoryFilter
-                      ? maskCurrency(
-                          formatCurrency(
-                            categoryBreakdown.find(
-                              (c) => c.id === selectedCategoryFilter,
-                            )?.total || 0,
-                            displayCurrency,
-                          ),
-                          isPrivate,
-                        )
-                      : maskCurrency(
-                          formatCurrency(
-                            categoryTab === "expense"
-                              ? totalExpense
-                              : totalIncome,
-                            displayCurrency,
-                          ),
-                          isPrivate,
-                        )}
+                    {(() => {
+                      const v = selectedCategoryFilter
+                        ? categoryBreakdown.find(
+                            (c) => c.id === selectedCategoryFilter,
+                          )?.total || 0
+                        : categoryTab === "expense"
+                          ? totalExpense
+                          : totalIncome;
+                      const full = maskCurrency(
+                        formatCurrency(v, displayCurrency),
+                        isPrivate,
+                      );
+                      // Donut hole here is 164px wide (vs 124px in Net Worth),
+                      // so full amounts fit at this font size — only compact
+                      // when really long, like Net Worth does.
+                      return full.length > 20
+                        ? maskCurrency(
+                            formatCurrency(v, displayCurrency, { compact: true }),
+                            isPrivate,
+                          )
+                        : full;
+                    })()}
                   </span>
                   {selectedCategoryFilter && (
                     <span className="text-[9px] font-bold text-[#0F172A] dark:text-[#FAFAFA] font-mono mt-0.5">
