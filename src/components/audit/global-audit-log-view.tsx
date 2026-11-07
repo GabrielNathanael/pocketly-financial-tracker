@@ -225,8 +225,12 @@ export function GlobalAuditLogView({
               startDate={startDate}
               endDate={endDate}
               onChange={(s, e) => {
-                setStartDate(s);
-                setEndDate(e);
+                // Single push with both dates — calling setStartDate +
+                // setEndDate separately pushed twice and the second push
+                // used stale state, dropping the start date.
+                setStartDateLocal(s);
+                setEndDateLocal(e);
+                pushParams({ start: s, end: e, page: "1" });
               }}
               placeholder={t.auditLog.dateRange}
             />

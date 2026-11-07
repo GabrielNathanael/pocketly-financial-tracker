@@ -1,7 +1,7 @@
 import React from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
 
-export default function AccountDetailLoading() {
+export function AccountDetailSkeleton() {
   return (
     <div className="flex flex-col gap-5 max-w-2xl mx-auto animate-in fade-in-50 duration-150" aria-busy="true" aria-live="polite">
       {/* Back button */}

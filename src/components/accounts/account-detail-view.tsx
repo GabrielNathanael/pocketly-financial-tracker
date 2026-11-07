@@ -17,21 +17,26 @@ import { AccountEditTrigger } from '@/components/accounts/account-edit-trigger'
 import { AdjustBalanceModal } from '@/components/accounts/adjust-balance-modal'
 import { TransferModal } from '@/components/accounts/transfer-modal'
 import { TransferDetailModal } from '@/components/accounts/transfer-detail-modal'
+import { DateRangePicker } from '@/components/ui/date-range-picker'
 import { cn } from '@/lib/utils/cn'
 
 interface AccountDetailViewProps {
   account: Account
   mutations: AccountMutation[]
+  totalMutations: number
+  page: number
+  totalPages: number
+  startDate?: string
+  endDate?: string
   accounts?: Account[]
 }
 
-const BATCH_SIZE = 50
+const PAGE_SIZE = 50
 
-export function AccountDetailView({ account, mutations, accounts = [] }: AccountDetailViewProps) {
+export function AccountDetailView({ account, mutations, totalMutations, page, totalPages, startDate = '', endDate = '', accounts = [] }: AccountDetailViewProps) {
   const router = useRouter()
   const { t, language } = useLanguage()
   const isPrivate = usePrivacyMode()
-  const [displayLimit, setDisplayLimit] = useState(BATCH_SIZE)
   const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false)
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false)
   const [selectedTransfer, setSelectedTransfer] = useState<AccountMutation | null>(null)
@@ -119,10 +124,24 @@ export function AccountDetailView({ account, mutations, accounts = [] }: Account
 
       {/* Mutation History */}
       <div className="flex flex-col gap-2.5">
-        <div className="flex items-center justify-between px-0.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-0.5">
           <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
-            {t.accounts.historyTitle} ({mutations.length})
+            {t.accounts.historyTitle} ({totalMutations})
           </h2>
+          <div className="w-full sm:w-64 shrink-0">
+            <DateRangePicker
+              startDate={startDate}
+              endDate={endDate}
+              onChange={(s, e) => {
+                // Single push with both dates (avoid double-push bug)
+                const params = new URLSearchParams()
+                if (s) params.set('start', s)
+                if (e) params.set('end', e)
+                router.push(`?${params.toString()}`)
+              }}
+              placeholder={language === 'en' ? 'Date range' : 'Rentang tanggal'}
+            />
+          </div>
         </div>
 
         {mutations.length === 0 ? (
@@ -131,7 +150,7 @@ export function AccountDetailView({ account, mutations, accounts = [] }: Account
           </div>
         ) : (
           <div className="flex flex-col gap-1.5">
-            {mutations.slice(0, displayLimit).map((m) => {
+            {mutations.map((m) => {
               const isPlus = m.type === 'income' || m.type === 'transfer_in'
               const isRegularTx = m.type === 'income' || m.type === 'expense'
               const formattedMutation = `${isPlus ? '+' : '-'}${formatCurrency(m.amount, m.currency)}`
@@ -207,29 +226,47 @@ export function AccountDetailView({ account, mutations, accounts = [] }: Account
               )
             })}
 
-            {/* Pagination Load More Controls */}
-            {displayLimit < mutations.length && (
+            {/* Pagination Controls (server-side) */}
+            {totalPages > 1 && (
               <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs">
                 <span className="text-[#64748B] dark:text-[#94A3B8] font-medium text-center sm:text-left">
-                  {t.common.showing} <span className="font-bold text-[#0F172A] dark:text-[#FAFAFA]">{Math.min(displayLimit, mutations.length)}</span> / {mutations.length}
+                  {t.common.showing} <span className="font-bold text-[#0F172A] dark:text-[#FAFAFA]">{mutations.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1} - {(page - 1) * PAGE_SIZE + mutations.length}</span> / {totalMutations}
                 </span>
                 <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setDisplayLimit((prev) => prev + BATCH_SIZE)}
-                    className="flex-1 sm:flex-initial text-xs font-bold cursor-pointer"
-                  >
-                    {t.common.loadMore} (+{Math.min(BATCH_SIZE, mutations.length - displayLimit)})
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setDisplayLimit(mutations.length)}
-                    className="flex-1 sm:flex-initial text-xs text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] cursor-pointer"
-                  >
-                    {t.common.showAll}
-                  </Button>
+                  {(() => {
+                    const goToPage = (p: number) => {
+                      const params = new URLSearchParams()
+                      params.set('page', String(p))
+                      if (startDate) params.set('start', startDate)
+                      if (endDate) params.set('end', endDate)
+                      router.push(`?${params.toString()}`)
+                    }
+                    return (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={page <= 1}
+                          onClick={() => goToPage(page - 1)}
+                          className="flex-1 sm:flex-initial text-xs font-bold cursor-pointer disabled:opacity-50"
+                        >
+                          {language === "en" ? "Previous" : "Sebelumnya"}
+                        </Button>
+                        <span className="font-mono text-[#64748B] dark:text-[#94A3B8] shrink-0">
+                          {page} / {totalPages}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={page >= totalPages}
+                          onClick={() => goToPage(page + 1)}
+                          className="flex-1 sm:flex-initial text-xs font-bold cursor-pointer disabled:opacity-50"
+                        >
+                          {language === "en" ? "Next" : "Berikutnya"}
+                        </Button>
+                      </>
+                    )
+                  })()}
                 </div>
               </div>
             )}

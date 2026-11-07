@@ -8,6 +8,8 @@ import {
   getCleanDescription,
   getCleanTransferDescription,
 } from "@/lib/utils/description";
+import { getLocalDateRangeBoundsUTC } from "@/lib/utils/date";
+import { getUserTimeZone } from "@/lib/utils/timezone-server";
 
 export async function getAccounts(): Promise<Account[]> {
   const supabase = await createServerSupabaseClient();
@@ -312,30 +314,77 @@ export async function adjustAccountBalance(input: {
 
 export async function getAccountMutations(
   accountId: string,
-): Promise<AccountMutation[]> {
+  options: {
+    limit?: number;
+    offset?: number;
+    start?: string;
+    end?: string;
+  } = {},
+): Promise<{ mutations: AccountMutation[]; total: number }> {
   const supabase = await createServerSupabaseClient();
+  const limit = options.limit ?? 50;
+  const offset = options.offset ?? 0;
+  // Over-fetch per source table: the merged top (offset+limit) items
+  // are guaranteed within the top (offset+limit) of each sublist.
+  const fetchLimit = offset + limit;
+
+  // Optional date filter (YYYY-MM-DD in user's timezone)
+  let startUtc: string | null = null;
+  let endUtcExclusive: string | null = null;
+  if (options.start || options.end) {
+    const timeZone = await getUserTimeZone();
+    const bounds = getLocalDateRangeBoundsUTC(
+      options.start || options.end || "",
+      options.end || options.start || "",
+      timeZone,
+    );
+    if (options.start) startUtc = bounds.startUtc;
+    if (options.end) endUtcExclusive = bounds.endUtcExclusive;
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: txs } = await (supabase.from("transactions") as any)
+  let txQuery: any = (supabase.from("transactions") as any)
     .select(
       "id, amount, currency, type, description, transaction_date, categories(name, icon, color)",
+      { count: "exact" },
     )
     .eq("account_id", accountId)
-    .order("transaction_date", { ascending: false });
+    .order("transaction_date", { ascending: false })
+    .limit(fetchLimit);
+  if (startUtc) txQuery = txQuery.gte("transaction_date", startUtc);
+  if (endUtcExclusive) txQuery = txQuery.lt("transaction_date", endUtcExclusive);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: transfersOut } = await (supabase.from("transfers") as any)
+  let outQuery: any = (supabase.from("transfers") as any)
     .select(
       "id, amount, from_currency, to_currency, exchange_rate_used, description, transfer_date, to_account:accounts!transfers_to_account_id_fkey(name)",
+      { count: "exact" },
     )
-    .eq("from_account_id", accountId);
+    .eq("from_account_id", accountId)
+    .order("transfer_date", { ascending: false })
+    .limit(fetchLimit);
+  if (startUtc) outQuery = outQuery.gte("transfer_date", startUtc);
+  if (endUtcExclusive) outQuery = outQuery.lt("transfer_date", endUtcExclusive);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: transfersIn } = await (supabase.from("transfers") as any)
+  let inQuery: any = (supabase.from("transfers") as any)
     .select(
       "id, amount, from_currency, to_currency, exchange_rate_used, description, transfer_date, from_account:accounts!transfers_from_account_id_fkey(name)",
+      { count: "exact" },
     )
-    .eq("to_account_id", accountId);
+    .eq("to_account_id", accountId)
+    .order("transfer_date", { ascending: false })
+    .limit(fetchLimit);
+  if (startUtc) inQuery = inQuery.gte("transfer_date", startUtc);
+  if (endUtcExclusive) inQuery = inQuery.lt("transfer_date", endUtcExclusive);
+
+  const [
+    { data: txs, count: txCount },
+    { data: transfersOut, count: outCount },
+    { data: transfersIn, count: inCount },
+  ] = await Promise.all([txQuery, outQuery, inQuery]);
+
+  const total = (txCount ?? 0) + (outCount ?? 0) + (inCount ?? 0);
 
   const mutations: AccountMutation[] = [];
 
@@ -414,7 +463,9 @@ export async function getAccountMutations(
     }
   }
 
-  return mutations.sort(
+  mutations.sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
   );
+
+  return { mutations: mutations.slice(offset, offset + limit), total };
 }
