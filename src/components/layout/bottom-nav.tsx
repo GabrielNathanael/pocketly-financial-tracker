@@ -53,7 +53,7 @@ export function BottomNav({
   mostUsedCategoryByAccount = {},
 }: BottomNavProps) {
   const pathname = usePathname();
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -91,7 +91,7 @@ export function BottomNav({
       icon: Plus,
     },
     {
-      label: language === "en" ? "Analytics" : "Analitik",
+      label: t.nav.analytics,
       href: "/reports",
       icon: BarChart3,
       isActive: pathname.startsWith("/reports"),
@@ -119,7 +119,7 @@ export function BottomNav({
   // Categorized desktop sidebar navigation groups
   const sidebarGroups = [
     {
-      title: language === "en" ? "Main Menu" : "Menu Utama",
+      title: t.nav.mainMenu,
       items: [
         {
           label: t.nav.overview,
@@ -140,8 +140,7 @@ export function BottomNav({
           isActive: pathname.startsWith("/budget"),
         },
         {
-          label:
-            language === "en" ? "Reports & Analytics" : "Laporan & Analitik",
+          label: t.nav.reports,
           href: "/reports",
           icon: BarChart3,
           isActive: pathname.startsWith("/reports"),
@@ -149,10 +148,10 @@ export function BottomNav({
       ],
     },
     {
-      title: language === "en" ? "Planning & Dues" : "Perencanaan & Arus Kas",
+      title: t.nav.planningDues,
       items: [
         {
-          label: language === "en" ? "Due Dates & Bills" : "Pusat Tagihan",
+          label: t.nav.dueDatesBills,
           href: "/due-center",
           icon: CalendarClock,
           isActive: pathname.startsWith("/due-center"),
@@ -164,13 +163,13 @@ export function BottomNav({
           isActive: pathname.startsWith("/investments"),
         },
         {
-          label: language === "en" ? "Savings Goals" : "Target Tabungan",
+          label: t.nav.goals,
           href: "/goals",
           icon: Target,
           isActive: pathname.startsWith("/goals"),
         },
         {
-          label: language === "en" ? "Recurring" : "Transaksi Rutin",
+          label: t.nav.recurringShort,
           href: "/recurring",
           icon: RefreshCw,
           isActive: pathname.startsWith("/recurring"),
@@ -182,7 +181,7 @@ export function BottomNav({
           isActive: pathname.startsWith("/debts"),
         },
         {
-          label: language === "en" ? "Net Worth" : "Kekayaan Bersih",
+          label: t.nav.netWorthShort,
           href: "/net-worth",
           icon: Coins,
           isActive: pathname.startsWith("/net-worth"),
@@ -190,8 +189,7 @@ export function BottomNav({
       ],
     },
     {
-      title:
-        language === "en" ? "Master Data & Tools" : "Master Data & Pengaturan",
+      title: t.nav.masterDataTools,
       items: [
         {
           label: t.accounts.title,
@@ -206,7 +204,7 @@ export function BottomNav({
           isActive: pathname.startsWith("/categories"),
         },
         {
-          label: language === "en" ? "Audit Trail" : "Riwayat Audit",
+          label: t.nav.auditTrail,
           href: "/audit-log",
           icon: History,
           isActive: pathname.startsWith("/audit-log"),
@@ -232,28 +230,19 @@ export function BottomNav({
       label: t.investments.title,
       href: "/investments",
       icon: TrendingUp,
-      desc:
-        language === "en"
-          ? "Track Indonesian Stocks, Crypto, US ETFs, platform balances, and P&L"
-          : "Kelola Saham Indonesia, Kripto, ETF AS, Saldo Platform, dan Performa",
+      desc: t.nav.investmentsDesc,
     },
     {
-      label: language === "en" ? "Due Dates & Bills" : "Pusat Tagihan",
+      label: t.nav.dueDatesBills,
       href: "/due-center",
       icon: CalendarClock,
-      desc:
-        language === "en"
-          ? "Track upcoming bills, dues, and milestones"
-          : "Pantau tagihan jatuh tempo & komitmen keuangan",
+      desc: t.nav.dueDatesDesc,
     },
     {
       label: t.nav.budget,
       href: "/budget",
       icon: PieChart,
-      desc:
-        language === "en"
-          ? "Set monthly category limits and budget caps"
-          : "Batas pengeluaran per kategori & pagu bulanan",
+      desc: t.nav.budgetDesc,
     },
     { label: t.nav.goals, href: "/goals", icon: Target, desc: t.nav.goalsDesc },
     {

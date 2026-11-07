@@ -151,7 +151,7 @@ export function RecurringManager({
         toast.success(t.recurring.processSuccess)
       }
     } catch {
-      toast.error(language === 'en' ? 'Failed to process payment' : 'Gagal memproses transaksi')
+      toast.error(t.recurring.processFailed)
     } finally {
       setProcessingId(null)
     }
@@ -167,8 +167,8 @@ export function RecurringManager({
       } else {
         toast.success(
           !item.is_active
-            ? language === 'en' ? 'Schedule resumed' : 'Jadwal diaktifkan kembali'
-            : language === 'en' ? 'Schedule paused' : 'Jadwal berhasil dijeda'
+            ? t.recurring.scheduleResumed
+            : t.recurring.schedulePaused
         )
       }
     } catch {
@@ -238,7 +238,7 @@ export function RecurringManager({
               -{maskCurrency(formatCurrency(monthlyOutflow, displayCurrency), isPrivate)}
             </h3>
             <span className="text-[10px] font-mono text-[#94A3B8] mt-0.5 block">
-              /{language === 'en' ? 'month' : 'bulan'}
+              /{t.recurring.perMonth}
             </span>
           </div>
         </div>
@@ -256,7 +256,7 @@ export function RecurringManager({
               +{maskCurrency(formatCurrency(monthlyInflow, displayCurrency), isPrivate)}
             </h3>
             <span className="text-[10px] font-mono text-[#94A3B8] mt-0.5 block">
-              /{language === 'en' ? 'month' : 'bulan'}
+              /{t.recurring.perMonth}
             </span>
           </div>
         </div>
@@ -281,8 +281,8 @@ export function RecurringManager({
             </h3>
             <span className="text-[10px] font-mono text-[#94A3B8] mt-0.5 block">
               {netMonthly >= 0
-                ? language === 'en' ? 'Surplus cash' : 'Surplus arus kas'
-                : language === 'en' ? 'Deficit' : 'Defisit tetap'}
+                ? t.recurring.surplusCash
+                : t.recurring.deficitNote}
             </span>
           </div>
         </div>
@@ -301,19 +301,19 @@ export function RecurringManager({
                 {dueSoonCount}
               </span>
               <span className="text-[11px] font-medium text-[#64748B] dark:text-[#94A3B8]">
-                {language === 'en' ? 'items' : 'tagihan'}
+                {t.recurring.itemsLabel}
               </span>
             </div>
             <div className="mt-0.5 flex items-center gap-1">
               {dueSoonCount > 0 ? (
                 <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
                   <AlertTriangle className="w-3 h-3" />
-                  <span>{language === 'en' ? 'Action required' : 'Perlu diselesaikan'}</span>
+                  <span>{t.recurring.actionRequired}</span>
                 </span>
               ) : (
                 <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                   <Sparkles className="w-3 h-3" />
-                  <span>{language === 'en' ? 'All settled' : 'Semua aman'}</span>
+                  <span>{t.recurring.allSettled}</span>
                 </span>
               )}
             </div>

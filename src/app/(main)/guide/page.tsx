@@ -31,7 +31,7 @@ import {
 import { cn } from "@/lib/utils/cn";
 
 export default function GuidePage() {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const g = t.guide;
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     quickStart: true,
@@ -136,7 +136,7 @@ export default function GuidePage() {
       key: "auditTrail",
       icon: History,
       data: g.sections.auditTrail,
-      badge: language === 'en' ? "Activity History" : "Riwayat Perubahan",
+      badge: g.auditTrailBadge,
       color: "text-[#6366F1] bg-[#6366F1]/10 border-[#6366F1]/20",
     },
     {

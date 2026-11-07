@@ -47,7 +47,7 @@ export function UnifiedDueReminder({
   debts,
   goals,
 }: UnifiedDueReminderProps) {
-  const { t, language } = useLanguage()
+  const { t } = useLanguage()
   const [isExpanded, setIsExpanded] = useState(true)
 
   const today = new Date()
@@ -171,12 +171,12 @@ export function UnifiedDueReminder({
           {urgentCount > 0 && (
             <span className="whitespace-nowrap px-2.5 py-1 rounded-full bg-rose-500 text-white text-[10px] font-bold animate-pulse leading-none flex items-center gap-1 shadow-2xs">
               <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-              {urgentCount} {language === 'en' ? 'urgent' : 'mendesak'}
+              {urgentCount} {t.dashboard.urgentBadge}
             </span>
           )}
           {urgentCount === 0 && soonCount > 0 && (
             <span className="whitespace-nowrap px-2.5 py-1 rounded-full bg-amber-500 text-white text-[10px] font-bold leading-none flex items-center shadow-2xs">
-              {soonCount} {language === 'en' ? 'due soon' : 'segera'}
+              {soonCount} {t.dashboard.dueSoonBadge}
             </span>
           )}
 

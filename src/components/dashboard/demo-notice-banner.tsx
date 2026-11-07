@@ -9,7 +9,7 @@ interface DemoNoticeBannerProps {
 }
 
 export function DemoNoticeBanner({ userEmail }: DemoNoticeBannerProps) {
-  const { language } = useLanguage();
+  const { t } = useLanguage();
   const [isDismissed, setIsDismissed] = useState(false);
 
   // Only show if user is logged in as the demo user
@@ -24,13 +24,9 @@ export function DemoNoticeBanner({ userEmail }: DemoNoticeBannerProps) {
       <div className="flex items-center gap-2.5 max-w-4xl mx-auto flex-1">
         <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
         <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-          <span className="font-bold">
-            {language === "id" ? "Akun Demo Publik:" : "Public Demo Account:"}
-          </span>
+          <span className="font-bold">{t.dashboard.demoAccountLabel}</span>
           <span className="text-amber-800 dark:text-amber-300">
-            {language === "id"
-              ? "Akun ini digunakan bersama untuk preview fitur. Mohon jangan memasukkan data pribadi/rahasia."
-              : "This account is shared publicly for demo. Please do not submit real or sensitive financial data."}
+            {t.dashboard.demoAccountDesc}
           </span>
         </div>
       </div>

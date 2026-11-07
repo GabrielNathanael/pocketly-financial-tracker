@@ -106,27 +106,19 @@ export function RecurringDetailModal({
 
   const freqLabel =
     recurring.frequency === 'daily'
-      ? language === 'en'
-        ? 'Daily'
-        : 'Harian'
+      ? t.recurring.frequencyDaily
       : recurring.frequency === 'weekly'
-        ? language === 'en'
-          ? 'Weekly'
-          : 'Mingguan'
+        ? t.recurring.frequencyWeekly
         : recurring.frequency === 'yearly'
-          ? language === 'en'
-            ? 'Yearly'
-            : 'Tahunan'
-          : language === 'en'
-            ? 'Monthly'
-            : 'Bulanan'
+          ? t.recurring.frequencyYearly
+          : t.recurring.frequencyMonthly
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
       title={recurring.name}
-      description={recurring.notes || (language === 'en' ? 'Recurring Schedule & Payment History' : 'Rincian Jadwal Tagihan & Riwayat Pembayaran')}
+      description={recurring.notes || t.recurring.modalDescription}
       maxWidth="lg"
     >
       <div className="flex flex-col gap-5 pt-1">
@@ -155,12 +147,12 @@ export function RecurringDetailModal({
                   {isPaused ? (
                     <>
                       <PauseCircle className="w-3 h-3" />
-                      <span>{language === 'en' ? 'Paused' : 'Dijeda'}</span>
+                      <span>{t.recurring.statusPaused}</span>
                     </>
                   ) : (
                     <>
                       <CheckCircle2 className="w-3 h-3" />
-                      <span>{language === 'en' ? 'Active' : 'Aktif'}</span>
+                      <span>{t.recurring.statusActive}</span>
                     </>
                   )}
                 </span>
@@ -192,7 +184,7 @@ export function RecurringDetailModal({
         <div className="flex flex-col gap-2.5">
           <div className="p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-between">
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
-              {language === 'en' ? 'Next Due Date' : 'Jatuh Tempo Berikutnya'}
+              {t.recurring.nextDueDate}
             </span>
             <div className="flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5 text-[#64748B]" />
@@ -204,7 +196,7 @@ export function RecurringDetailModal({
 
           <div className="p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-between">
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
-              {language === 'en' ? 'Payment Account' : 'Rekening Sumber'}
+              {t.recurring.paymentAccount}
             </span>
             <div className="flex items-center gap-1.5 min-w-0">
               <Wallet className="w-3.5 h-3.5 text-[#64748B] shrink-0" />
@@ -216,7 +208,7 @@ export function RecurringDetailModal({
 
           <div className="p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-between">
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
-              {language === 'en' ? 'Annual Projection' : 'Estimasi Pengeluaran / Thn'}
+              {t.recurring.annualProjection}
             </span>
             <span className="text-xs sm:text-sm font-bold font-mono text-[#0F172A] dark:text-[#FAFAFA]">
               {formatCurrency(annualTotal, recurring.currency)}
@@ -229,21 +221,21 @@ export function RecurringDetailModal({
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#FAFAFA] flex items-center gap-1.5">
               <History className="w-3.5 h-3.5 text-[#64748B]" />
-              <span>{language === 'en' ? 'Payment History' : 'Riwayat Pembayaran'}</span>
+              <span>{t.recurring.paymentHistory}</span>
             </h3>
             <span className="text-xs font-mono text-[#94A3B8]">
-              {history.length} {language === 'en' ? 'transactions' : 'transaksi'}
+              {t.recurring.historyCount.replace('{count}', String(history.length))}
             </span>
           </div>
 
           {isLoadingHistory ? (
             <div className="p-4 rounded-xl border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-center gap-2 text-xs text-[#94A3B8]">
               <Loader2 className="w-4 h-4 animate-spin text-[#0F172A] dark:text-[#FAFAFA]" />
-              <span>{language === 'en' ? 'Loading history...' : 'Memuat riwayat...'}</span>
+              <span>{t.recurring.loadingHistory}</span>
             </div>
           ) : history.length === 0 ? (
             <div className="p-4 rounded-xl border border-dashed border-[#E5E7EB] dark:border-[#27272A] text-center text-xs text-[#94A3B8]">
-              {language === 'en' ? 'No recorded transactions yet for this schedule.' : 'Belum ada riwayat transaksi tercatat untuk tagihan ini.'}
+              {t.recurring.noHistory}
             </div>
           ) : (
             <div className="flex flex-col gap-2">
@@ -338,7 +330,7 @@ export function RecurringDetailModal({
             className="w-full py-2.5 h-auto cursor-pointer text-xs font-bold bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] rounded-xl flex items-center justify-center gap-1.5 shadow-sm"
           >
             <CheckCircle2 className="w-4 h-4" />
-            <span>{language === 'en' ? 'Pay Now & Record Transaction' : 'Bayar & Catat Transaksi'}</span>
+            <span>{t.recurring.payNowRecord}</span>
           </Button>
 
           <div className="grid grid-cols-3 gap-2 w-full">
@@ -364,7 +356,7 @@ export function RecurringDetailModal({
               className="gap-1.5 cursor-pointer text-xs justify-center py-2 h-auto rounded-xl w-full"
             >
               {isPaused ? <PlayCircle className="w-3.5 h-3.5" /> : <PauseCircle className="w-3.5 h-3.5" />}
-              <span>{isPaused ? (language === 'en' ? 'Activate' : 'Aktifkan') : (language === 'en' ? 'Pause' : 'Jeda')}</span>
+              <span>{isPaused ? t.recurring.activate : t.recurring.pause}</span>
             </Button>
 
             <Button

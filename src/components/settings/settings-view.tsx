@@ -69,11 +69,7 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
 
   const handleSyncRate = async () => {
     if (lastSyncTime && Date.now() - lastSyncTime < 30000) {
-      toast.success(
-        language === "en"
-          ? "Exchange rates are already up to date"
-          : "Kurs mata uang sudah yang paling terbaru",
-      );
+      toast.success(t.settings.ratesUpToDate);
       return;
     }
 
@@ -84,18 +80,10 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
       setForexRates(newRates);
       setLastSyncTime(Date.now());
       setSyncSuccess(true);
-      toast.success(
-        language === "en"
-          ? "Currency exchange rates updated successfully"
-          : "Kurs mata uang berhasil diperbarui",
-      );
+      toast.success(t.settings.ratesUpdated);
       setTimeout(() => setSyncSuccess(false), 3000);
     } catch {
-      toast.error(
-        language === "en"
-          ? "Failed to fetch exchange rates"
-          : "Gagal memperbarui kurs mata uang",
-      );
+      toast.error(t.settings.ratesFailed);
     } finally {
       setIsSyncing(false);
     }
@@ -357,13 +345,11 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
             <div className="flex items-center gap-2">
               <RefreshCw className="w-4 h-4 text-amber-600 dark:text-amber-400" />
               <h3 className="text-xs font-bold uppercase tracking-wider text-amber-900 dark:text-amber-300">
-                {language === "id" ? "Reset Data Demo Awal" : "Reset Demo Data"}
+                {t.settings.demoResetTitle}
               </h3>
             </div>
             <p className="text-xs text-amber-800/80 dark:text-amber-300/70 max-w-md">
-              {language === "id"
-                ? "Kembalikan data akun bank, transaksi multi-valas, target tabungan, dan portofolio demo ke kondisi awal yang bersih."
-                : "Restore clean initial sample accounts, multi-currency transactions, savings goals, and portfolio holdings."}
+              {t.settings.demoResetDesc}
             </p>
           </div>
 
@@ -372,20 +358,12 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
             variant="secondary"
             size="sm"
             onClick={async () => {
-              toast.loading(
-                language === "id"
-                  ? "Mereset data demo..."
-                  : "Resetting demo data...",
-              );
+              toast.loading(t.settings.demoResetting);
               const { seedDemoData } = await import("@/actions/seed-demo");
               const res = await seedDemoData();
               toast.dismiss();
               if (res.success) {
-                toast.success(
-                  language === "id"
-                    ? "Data demo berhasil direset ke kondisi awal!"
-                    : "Demo data reset successfully!",
-                );
+                toast.success(t.settings.demoResetSuccess);
                 window.location.reload();
               } else {
                 toast.error(res.error || "Gagal mereset data demo");
@@ -393,7 +371,7 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
             }}
             className="border-amber-500/40 text-amber-900 dark:text-amber-200 hover:bg-amber-500/20 shrink-0 font-bold"
           >
-            {language === "id" ? "Reset Data Demo" : "Reset Demo"}
+            {t.settings.demoResetBtn}
           </Button>
         </div>
       )}

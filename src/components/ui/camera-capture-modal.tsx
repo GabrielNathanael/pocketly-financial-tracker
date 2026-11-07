@@ -27,7 +27,7 @@ export function CameraCaptureModal({
   onClose,
   onCapture,
 }: CameraCaptureModalProps) {
-  const { language } = useLanguage();
+  const { t } = useLanguage();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [facingMode, setFacingMode] = useState<FacingMode>("environment");
@@ -53,11 +53,7 @@ export function CameraCaptureModal({
         !navigator.mediaDevices ||
         !navigator.mediaDevices.getUserMedia
       ) {
-        setError(
-          language === "en"
-            ? "Camera is not supported in this browser."
-            : "Kamera tidak didukung di browser ini.",
-        );
+        setError(t.quickAdd.cameraNotSupported);
         return;
       }
       setIsStarting(true);
@@ -85,22 +81,16 @@ export function CameraCaptureModal({
         const name = err instanceof DOMException ? err.name : "";
         setError(
           name === "NotAllowedError"
-            ? language === "en"
-              ? "Camera permission denied. Allow camera access, then reopen."
-              : "Izin kamera ditolak. Izinkan akses kamera, lalu buka lagi."
+            ? t.quickAdd.cameraPermissionDenied
             : name === "NotFoundError" || name === "OverconstrainedError"
-              ? language === "en"
-                ? "No camera found on this device."
-                : "Tidak ada kamera yang ditemukan di perangkat ini."
-              : language === "en"
-                ? "Failed to open camera. Try Upload instead."
-                : "Gagal membuka kamera. Coba pakai Upload saja.",
+              ? t.quickAdd.cameraNotFound
+              : t.quickAdd.cameraOpenFailed,
         );
       } finally {
         setIsStarting(false);
       }
     },
-    [language, stopStream],
+    [t, stopStream],
   );
 
   useEffect(() => {
@@ -157,7 +147,7 @@ export function CameraCaptureModal({
       <div className="relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-2xl dark:border-[#27272A] dark:bg-[#121215]">
         <div className="flex items-center justify-between border-b border-[#E5E7EB] px-5 py-3 dark:border-[#27272A]">
           <h3 className="text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-            {language === "en" ? "Take Photo" : "Ambil Foto"}
+            {t.quickAdd.cameraTitle}
           </h3>
           <button
             type="button"
@@ -191,7 +181,7 @@ export function CameraCaptureModal({
               type="button"
               onClick={handleSwitchCamera}
               disabled={isStarting || !!error}
-              title={language === "en" ? "Switch camera" : "Ganti kamera"}
+              title={t.quickAdd.switchCamera}
               className="absolute right-2 top-2 rounded-full bg-black/50 p-2 text-white transition-colors hover:bg-black/70 disabled:opacity-50"
             >
               <RefreshCw className="h-4 w-4" />
@@ -207,7 +197,7 @@ export function CameraCaptureModal({
             )}
           >
             <Camera className="h-4 w-4" />
-            {language === "en" ? "Capture" : "Jepret"}
+            {t.quickAdd.capture}
           </button>
         </div>
       </div>

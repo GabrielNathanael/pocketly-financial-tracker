@@ -81,7 +81,7 @@ function TransferForm({
   onClose,
   onSuccess,
 }: TransferFormProps) {
-  const { language, t } = useLanguage();
+  const { t } = useLanguage();
   const initialFrom =
     defaultFromAccountId ||
     accounts.find((a) => a.is_default)?.id ||
@@ -221,11 +221,7 @@ function TransferForm({
 
   const handleManualRateRefresh = async () => {
     if (lastSyncTime && Date.now() - lastSyncTime < 30000) {
-      toast.success(
-        language === "en"
-          ? "Exchange rates are already up to date"
-          : "Kurs mata uang sudah yang paling terbaru",
-      );
+      toast.success(t.transfer.ratesUpToDate);
       return;
     }
 
@@ -235,17 +231,9 @@ function TransferForm({
       setRates(live);
       setLastSyncTime(Date.now());
       recalculateAmounts(fromAccountId, toAccountId, amount, live);
-      toast.success(
-        language === "en"
-          ? "Currency exchange rates updated successfully"
-          : "Kurs mata uang berhasil diperbarui",
-      );
+      toast.success(t.transfer.ratesUpdated);
     } catch {
-      toast.error(
-        language === "en"
-          ? "Failed to fetch exchange rates"
-          : "Gagal memperbarui kurs mata uang",
-      );
+      toast.error(t.transfer.ratesFetchFailed);
     } finally {
       setIsFetchingRates(false);
     }
@@ -274,10 +262,10 @@ function TransferForm({
     const totalRequired = numAmount + numFee;
 
     if (fromAccount && Number(fromAccount.current_balance) < totalRequired) {
-      const err =
-        language === "en"
-          ? `Insufficient balance in ${fromAccount.name}`
-          : `Saldo ${fromAccount.name} tidak mencukupi`;
+      const err = t.transfer.insufficientBalance.replace(
+        "{account}",
+        fromAccount.name,
+      );
       setError(err);
       toast.error(err);
       return;
@@ -315,22 +303,13 @@ function TransferForm({
         });
       } else {
         toast.success(
-          isCrossCurrency
-            ? language === "en"
-              ? "Currency exchange & transfer successful"
-              : "Transfer & konversi valas berhasil disimpan"
-            : language === "en"
-              ? "Transfer saved successfully"
-              : "Transfer berhasil disimpan",
+          isCrossCurrency ? t.transfer.forexSuccess : t.transfer.transferSaved,
         );
         onSuccess?.();
         onClose();
       }
     } catch {
-      const err =
-        language === "en"
-          ? "Failed to save transfer"
-          : "Gagal menyimpan transfer";
+      const err = t.transfer.saveFailed;
       setError(err);
       toast.error(t.transfer.transferFailed || "Gagal Transfer", {
         description: err,
@@ -415,7 +394,7 @@ function TransferForm({
         />
 
         <Input
-          label={`${t.transfer.adminFeeLabel || (language === "en" ? "Admin Fee (Optional)" : "Biaya Admin (Opsional)")} (${fromAccount?.currency || "IDR"})`}
+          label={`${t.transfer.adminFeeLabel} (${fromAccount?.currency || "IDR"})`}
           type="number"
           step="any"
           placeholder="0"
@@ -456,13 +435,7 @@ function TransferForm({
                 className={`w-3 h-3 ${isFetchingRates ? "animate-spin" : ""}`}
               />
               <span>
-                {isFetchingRates
-                  ? language === "en"
-                    ? "Updating..."
-                    : "Memperbarui..."
-                  : language === "en"
-                    ? "Sync Rates"
-                    : "Sinkron Kurs"}
+                {isFetchingRates ? t.transfer.updating : t.transfer.syncRates}
               </span>
             </button>
           </div>
@@ -481,7 +454,7 @@ function TransferForm({
             />
 
             <Input
-              label={`${language === "en" ? "Exchange Rate" : "Kurs Transaksi"} (1 ${pairInfo.baseCurrency} = ... ${pairInfo.quoteCurrency})`}
+              label={`${t.transfer.exchangeRateLabel} (1 ${pairInfo.baseCurrency} = ... ${pairInfo.quoteCurrency})`}
               type="number"
               step="any"
               placeholder={pairInfo.defaultRate.toString()}
@@ -498,7 +471,7 @@ function TransferForm({
             {/* Natural Human-Readable Effective Forex Indicator */}
             <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs font-mono flex items-center justify-between">
               <span className="text-[#64748B] dark:text-[#94A3B8] font-sans text-[11px]">
-                {language === "en" ? "Effective Rate:" : "Kurs Berlaku:"}
+                {t.transfer.effectiveRateLabel}
               </span>
               <span className="font-bold text-emerald-600 dark:text-emerald-400">
                 1 {pairInfo.baseCurrency} ={" "}
@@ -528,12 +501,7 @@ function TransferForm({
           rows={2}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder={
-            t.transfer.notePlaceholder ||
-            (language === "en"
-              ? "e.g. Monthly savings, Wise FX conversion, family transfer..."
-              : "Contoh: Tabungan bulanan, konversi Wise, transfer keluarga...")
-          }
+          placeholder={t.transfer.notePlaceholder}
           className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#F8FAFC] placeholder:text-[#94A3B8] focus:outline-none focus:ring-1 focus:ring-[#0F172A] dark:focus:ring-white resize-y min-h-[56px] max-h-[160px] transition-colors"
         />
       </div>

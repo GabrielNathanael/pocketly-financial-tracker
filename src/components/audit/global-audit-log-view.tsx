@@ -303,7 +303,7 @@ export function GlobalAuditLogView({
       {/* Loading indicator */}
       {isPending && (
         <div className="text-center text-xs text-[#94A3B8] py-2 animate-pulse">
-          {language === "id" ? "Memuat data..." : "Loading..."}
+          {t.auditLog.loadingData}
         </div>
       )}
 
@@ -379,7 +379,7 @@ export function GlobalAuditLogView({
                           {c.itemsFrom && c.itemsFrom.length > 0 && (
                             <>
                               <span className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
-                                {language === "en" ? "From" : "Dari"}
+                                {t.transactions.fromLabel}
                               </span>
                               <AuditItemsList
                                 items={c.itemsFrom}
@@ -388,7 +388,7 @@ export function GlobalAuditLogView({
                               />
                               {c.items.length > 0 && (
                                 <span className="mt-2 border-t border-[#E5E7EB] pt-2 text-[10px] font-bold uppercase tracking-wider text-[#94A3B8] dark:border-[#27272A]">
-                                  {language === "en" ? "To" : "Jadi"}
+                                  {t.transactions.toLabel}
                                 </span>
                               )}
                             </>
@@ -456,7 +456,7 @@ export function GlobalAuditLogView({
                   onClick={() => pushParams({ page: String(page - 1) })}
                   className="flex-1 sm:flex-initial text-xs font-bold cursor-pointer disabled:opacity-50"
                 >
-                  {language === "id" ? "Sebelumnya" : "Previous"}
+                  {t.auditLog.previousPage}
                 </Button>
                 <span className="font-mono text-[#64748B] dark:text-[#94A3B8] shrink-0">
                   {page} / {totalPages}
@@ -468,7 +468,7 @@ export function GlobalAuditLogView({
                   onClick={() => pushParams({ page: String(page + 1) })}
                   className="flex-1 sm:flex-initial text-xs font-bold cursor-pointer disabled:opacity-50"
                 >
-                  {language === "id" ? "Berikutnya" : "Next"}
+                  {t.auditLog.nextPage}
                 </Button>
               </div>
             </div>

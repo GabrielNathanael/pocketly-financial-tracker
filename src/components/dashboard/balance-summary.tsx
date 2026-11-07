@@ -21,7 +21,7 @@ export function BalanceSummary({
   totalExpenseMonth,
   exchangeRate,
 }: BalanceSummaryProps) {
-  const { t, language } = useLanguage()
+  const { t } = useLanguage()
   const displayCurrency = usePreferredCurrency()
   const isPrivate = usePrivacyMode()
 
@@ -30,8 +30,8 @@ export function BalanceSummary({
   const displayExpense = convertAmount(totalExpenseMonth, 'IDR', displayCurrency, exchangeRate)
 
   const privacyTooltip = isPrivate
-    ? language === 'id' ? 'Tampilkan Saldo' : 'Show Balance'
-    : language === 'id' ? 'Sembunyikan Saldo (Privasi)' : 'Hide Balance (Privacy)'
+    ? t.dashboard.showBalance
+    : t.dashboard.hideBalancePrivacy
 
   const formattedTotal = maskCurrency(formatCurrency(displayTotal, displayCurrency), isPrivate)
   const formattedIncome = maskCurrency(formatCurrency(displayIncome, displayCurrency), isPrivate)

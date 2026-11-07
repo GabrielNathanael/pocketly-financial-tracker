@@ -84,7 +84,7 @@ export function GoalDetailModal({
       isOpen={isOpen}
       onClose={onClose}
       title={goal.name}
-      description={goal.notes || (language === 'en' ? 'Savings Goal Overview & Mutation History' : 'Detail Target Tabungan & Riwayat Mutasi')}
+      description={goal.notes || t.goals.detailDescription}
       maxWidth="lg"
     >
       <div className="flex flex-col gap-5 pt-1">
@@ -116,17 +116,17 @@ export function GoalDetailModal({
                     {isCompleted ? (
                       <>
                         <CheckCircle2 className="w-3 h-3" />
-                        <span>{language === 'en' ? 'Completed' : 'Tercapai'}</span>
+                        <span>{t.goals.statusCompleted}</span>
                       </>
                     ) : isPaused ? (
                       <>
                         <PauseCircle className="w-3 h-3" />
-                        <span>{language === 'en' ? 'Paused' : 'Dijeda'}</span>
+                        <span>{t.goals.statusPaused}</span>
                       </>
                     ) : (
                       <>
                         <Clock className="w-3 h-3" />
-                        <span>{language === 'en' ? 'In Progress' : 'Berjalan'}</span>
+                        <span>{t.goals.statusActive}</span>
                       </>
                     )}
                   </span>
@@ -173,7 +173,7 @@ export function GoalDetailModal({
         <div className="flex flex-col gap-2.5">
           <div className="p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-between">
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
-              {language === 'en' ? 'Remaining Needed' : 'Sisa Kekurangan'}
+              {t.goals.remainingNeededLabel}
             </span>
             <span className="text-xs sm:text-sm font-bold font-mono text-[#0F172A] dark:text-[#FAFAFA]">
               {formatCurrency(remainingAmt, goal.currency)}
@@ -182,7 +182,7 @@ export function GoalDetailModal({
 
           <div className="p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-between">
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
-              {language === 'en' ? 'Target Date' : 'Tenggat Waktu'}
+              {t.goals.targetDateDetailLabel}
             </span>
             <span className="text-xs sm:text-sm font-bold font-mono text-[#0F172A] dark:text-[#FAFAFA]">
               {goal.target_date ? formatDate(goal.target_date, 'd MMM yyyy', language) : '-'}
@@ -191,10 +191,10 @@ export function GoalDetailModal({
 
           <div className="p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-between">
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
-              {language === 'en' ? 'Est. Monthly Saving' : 'Estimasi / Bulan'}
+              {t.goals.estMonthlySavingLabel}
             </span>
             <span className="text-xs sm:text-sm font-bold font-mono text-[#0D9488]">
-              {monthlyNeeded > 0 ? formatCurrency(monthlyNeeded, goal.currency) : (language === 'en' ? 'Target Reached' : 'Tercapai')}
+              {monthlyNeeded > 0 ? formatCurrency(monthlyNeeded, goal.currency) : t.goals.targetReachedLabel}
             </span>
           </div>
         </div>
@@ -204,16 +204,16 @@ export function GoalDetailModal({
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#FAFAFA] flex items-center gap-1.5">
               <History className="w-3.5 h-3.5 text-[#64748B]" />
-              <span>{language === 'en' ? 'Deposit & Withdrawal History' : 'Riwayat Setoran & Penarikan'}</span>
+              <span>{t.goals.historyTitleLabel}</span>
             </h3>
             <span className="text-xs font-mono text-[#94A3B8]">
-              {deposits.length} {language === 'en' ? 'entries' : 'riwayat'}
+              {deposits.length} {t.goals.historyEntriesLabel}
             </span>
           </div>
 
           {deposits.length === 0 ? (
             <div className="p-4 rounded-xl border border-dashed border-[#E5E7EB] dark:border-[#27272A] text-center text-xs text-[#94A3B8]">
-              {language === 'en' ? 'No deposits recorded yet. Click "+ Deposit" to add funds.' : 'Belum ada riwayat setoran. Klik "+ Setor" untuk menabung.'}
+              {t.goals.emptyHistoryLabel}
             </div>
           ) : (
             <div className="flex flex-col gap-2">
@@ -240,7 +240,7 @@ export function GoalDetailModal({
                       <div className="flex-1 min-w-0 flex flex-col gap-0.5">
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA] truncate group-hover:text-[#0D9488] transition-colors">
-                            {isDeposit ? (language === 'en' ? 'Deposit' : 'Setoran') : (language === 'en' ? 'Withdrawal' : 'Penarikan')}
+                            {isDeposit ? t.goals.depositTypeLabel : t.goals.withdrawalTypeLabel}
                             {dep.account && ` • ${dep.account.name}`}
                           </span>
                           <span
@@ -305,7 +305,7 @@ export function GoalDetailModal({
             className="w-full py-2.5 h-auto cursor-pointer text-xs font-bold bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] rounded-xl flex items-center justify-center gap-1.5 shadow-sm"
           >
             <Plus className="w-4 h-4" />
-            <span>{language === 'en' ? 'Deposit / Withdraw' : 'Setor / Tarik Dana'}</span>
+            <span>{t.goals.depositWithdrawBtn}</span>
           </Button>
 
           <div className="grid grid-cols-3 gap-2 w-full">
@@ -331,7 +331,7 @@ export function GoalDetailModal({
               className="gap-1.5 cursor-pointer text-xs justify-center py-2 h-auto rounded-xl w-full"
             >
               {isPaused ? <PlayCircle className="w-3.5 h-3.5" /> : <PauseCircle className="w-3.5 h-3.5" />}
-              <span>{isPaused ? (language === 'en' ? 'Resume' : 'Lanjutkan') : (language === 'en' ? 'Pause' : 'Jeda')}</span>
+              <span>{isPaused ? t.goals.resumeLabel : t.goals.pauseLabel}</span>
             </Button>
 
             <Button
@@ -355,7 +355,7 @@ export function GoalDetailModal({
         <Modal
           isOpen={!!selectedDeposit}
           onClose={() => setSelectedDeposit(null)}
-          title={selectedDeposit.type === 'deposit' ? (language === 'en' ? 'Deposit Receipt' : 'Rincian Setoran Celengan') : (language === 'en' ? 'Withdrawal Receipt' : 'Rincian Penarikan Celengan')}
+          title={selectedDeposit.type === 'deposit' ? t.goals.depositReceiptTitle : t.goals.withdrawalReceiptTitle}
           description={`${goal.name} • ${formatDate(selectedDeposit.deposit_date, 'd MMMM yyyy', language)}`}
           maxWidth="sm"
         >
@@ -363,7 +363,7 @@ export function GoalDetailModal({
             {/* Amount Badge Card */}
             <div className="p-4 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col items-center justify-center text-center">
               <span className="text-[10px] uppercase font-bold tracking-wider text-[#64748B] dark:text-[#94A3B8]">
-                {selectedDeposit.type === 'deposit' ? (language === 'en' ? 'Allocated Funds' : 'Nominal Setoran') : (language === 'en' ? 'Withdrawn Funds' : 'Nominal Penarikan')}
+                {selectedDeposit.type === 'deposit' ? t.goals.allocatedFundsAmountLabel : t.goals.withdrawnFundsAmountLabel}
               </span>
               <span
                 className={cn(
@@ -379,20 +379,20 @@ export function GoalDetailModal({
             {/* Info Grid */}
             <div className="flex flex-col gap-2 text-xs">
               <div className="flex items-center justify-between p-2.5 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A]">
-                <span className="text-[#64748B] dark:text-[#94A3B8]">{language === 'en' ? 'Savings Target' : 'Target Celengan'}</span>
+                <span className="text-[#64748B] dark:text-[#94A3B8]">{t.goals.receiptGoalLabel}</span>
                 <span className="font-bold text-[#0F172A] dark:text-[#FAFAFA]">{goal.name}</span>
               </div>
               <div className="flex items-center justify-between p-2.5 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A]">
-                <span className="text-[#64748B] dark:text-[#94A3B8]">{language === 'en' ? 'Source Account' : 'Rekening Sumber'}</span>
+                <span className="text-[#64748B] dark:text-[#94A3B8]">{t.goals.sourceAccountShortLabel}</span>
                 <span className="font-bold text-[#0F172A] dark:text-[#FAFAFA]">{selectedDeposit.account?.name || '-'}</span>
               </div>
               <div className="flex items-center justify-between p-2.5 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A]">
-                <span className="text-[#64748B] dark:text-[#94A3B8]">{language === 'en' ? 'Transaction Date' : 'Tanggal & Waktu'}</span>
+                <span className="text-[#64748B] dark:text-[#94A3B8]">{t.goals.receiptDateLabel}</span>
                 <span className="font-mono font-bold text-[#0F172A] dark:text-[#FAFAFA]">{formatDate(selectedDeposit.deposit_date, 'd MMM yyyy, HH:mm', language)}</span>
               </div>
               {selectedDeposit.notes && (
                 <div className="flex flex-col gap-1 p-2.5 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A]">
-                  <span className="text-[#64748B] dark:text-[#94A3B8]">{language === 'en' ? 'Notes / Memo' : 'Catatan Alokasi'}</span>
+                  <span className="text-[#64748B] dark:text-[#94A3B8]">{t.goals.receiptNotesLabel}</span>
                   <span className="font-medium text-[#0F172A] dark:text-[#FAFAFA]">{selectedDeposit.notes}</span>
                 </div>
               )}
@@ -404,7 +404,7 @@ export function GoalDetailModal({
               onClick={() => setSelectedDeposit(null)}
               className="w-full mt-2 cursor-pointer"
             >
-              {language === 'en' ? 'Close' : 'Tutup'}
+              {t.common.close}
             </Button>
           </div>
         </Modal>

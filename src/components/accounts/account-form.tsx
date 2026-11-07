@@ -38,7 +38,7 @@ interface AccountFormProps {
 
 export function AccountForm({ initialData, onSuccess }: AccountFormProps) {
   const router = useRouter();
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const isEditing = !!initialData;
 
   const [name, setName] = useState(initialData?.name || "");
@@ -135,11 +135,7 @@ export function AccountForm({ initialData, onSuccess }: AccountFormProps) {
         if (getDefaultAccountId() === initialData.id) {
           setDefaultAccountId(null);
         }
-        toast.success(
-          language === "en"
-            ? "Account deleted successfully"
-            : "Akun berhasil dihapus",
-        );
+        toast.success(t.accounts.deletedSuccess);
         if (onSuccess) {
           onSuccess();
         } else {
@@ -194,10 +190,7 @@ export function AccountForm({ initialData, onSuccess }: AccountFormProps) {
                 {t.accounts.types.credit_card}
               </SelectItem>
               <SelectItem value="investment">
-                {t.accounts.types.investment ||
-                  (language === "en"
-                    ? "Investment / Stocks"
-                    : "Investasi / RDN")}
+                {t.accounts.types.investment}
               </SelectItem>
             </SelectContent>
           </Select>

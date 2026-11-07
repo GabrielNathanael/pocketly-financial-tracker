@@ -16,7 +16,7 @@ interface RecurringDueBannerProps {
 }
 
 export function RecurringDueBanner({ recurringTransactions }: RecurringDueBannerProps) {
-  const { t, language } = useLanguage()
+  const { t } = useLanguage()
   const displayCurrency = usePreferredCurrency()
   const isPrivate = usePrivacyMode()
   const today = new Date()
@@ -94,7 +94,7 @@ export function RecurringDueBanner({ recurringTransactions }: RecurringDueBanner
           ) : (
             <CheckCircle2 className="w-3.5 h-3.5" />
           )}
-          <span>{language === 'en' ? 'Pay Now' : 'Bayar Sekarang'}</span>
+          <span>{t.recurring.payNowBtn}</span>
         </button>
 
         <Link

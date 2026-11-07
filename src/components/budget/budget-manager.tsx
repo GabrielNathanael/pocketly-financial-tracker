@@ -39,8 +39,7 @@ export function BudgetManager({
   currentPeriod,
 }: BudgetManagerProps) {
   const router = useRouter()
-  const { t, language } = useLanguage()
-  const isId = language === 'id'
+  const { t } = useLanguage()
   const isPrivate = usePrivacyMode()
   const displayCurrency = usePreferredCurrency()
 
@@ -126,15 +125,15 @@ export function BudgetManager({
   }
 
   const statusOptions: Array<{ label: string; value: BudgetStatusFilter }> = [
-    { label: isId ? 'Semua Status' : 'All Status', value: 'all' },
-    { label: isId ? 'Defisit (Over Budget)' : 'Over Budget', value: 'over' },
-    { label: isId ? 'Waspada (>80%)' : 'Warning (>80%)', value: 'warning' },
-    { label: isId ? 'Aman (<80%)' : 'Healthy (<80%)', value: 'healthy' },
-    { label: isId ? 'Tanpa Batas' : 'Unset Limit', value: 'unset' },
+    { label: t.budgets.filterAllStatus, value: 'all' },
+    { label: t.budgets.filterOverBudget, value: 'over' },
+    { label: t.budgets.filterWarning, value: 'warning' },
+    { label: t.budgets.filterHealthy, value: 'healthy' },
+    { label: t.budgets.filterUnset, value: 'unset' },
   ]
 
   const currencyOptions: Array<{ label: string; value: BudgetCurrencyFilter }> = [
-    { label: isId ? 'Semua Valas' : 'All Currencies', value: 'all' },
+    { label: t.budgets.filterAllCurrencies, value: 'all' },
     { label: 'IDR', value: 'IDR' },
     { label: 'USD', value: 'USD' },
     { label: 'SGD', value: 'SGD' },
@@ -255,7 +254,7 @@ export function BudgetManager({
             <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none" />
             <input
               type="text"
-              placeholder={isId ? 'Cari kategori anggaran...' : 'Search budget category...'}
+              placeholder={t.budgets.searchPlaceholder}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-8.5 pr-3 py-1.5 sm:py-2 text-xs bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] rounded-lg text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#0F172A] dark:focus:border-white transition-colors"
@@ -269,7 +268,7 @@ export function BudgetManager({
               className="text-xs text-[#E11D48] hover:underline flex items-center gap-1 cursor-pointer font-semibold shrink-0"
             >
               <X className="w-3.5 h-3.5" />
-              <span>{isId ? 'Reset' : 'Reset'}</span>
+              <span>{t.budgets.reset}</span>
             </button>
           )}
         </div>
@@ -342,8 +341,8 @@ export function BudgetManager({
       ) : filteredBudgets.length === 0 ? (
         <EmptyState
           icon="PieChart"
-          title={isId ? 'Tidak ada anggaran yang cocok' : 'No matching budgets found'}
-          description={isId ? 'Coba ubah filter pencarian atau buat batas anggaran baru.' : 'Try adjusting your search criteria or set a new budget limit.'}
+          title={t.budgets.emptyNoMatchTitle}
+          description={t.budgets.emptyNoMatchDesc}
         />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">

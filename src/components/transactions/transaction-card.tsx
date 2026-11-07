@@ -17,7 +17,7 @@ interface TransactionCardProps {
 }
 
 export function TransactionCard({ transaction }: TransactionCardProps) {
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const isPrivate = usePrivacyMode();
   const isIncome = transaction.type === "income";
   const cat = transaction.category;
@@ -56,7 +56,7 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
                 <span>•</span>
               </>
             )}
-            <span>{acc?.name || "Account"}</span>
+            <span>{acc?.name || t.common.account}</span>
           </div>
 
           {allTags.length > 0 && (

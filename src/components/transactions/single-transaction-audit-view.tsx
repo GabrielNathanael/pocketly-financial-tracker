@@ -100,7 +100,7 @@ export function SingleTransactionAuditView({
                           {c.itemsFrom && c.itemsFrom.length > 0 && (
                             <>
                               <span className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
-                                {language === "en" ? "From" : "Dari"}
+                                {t.transactions.fromLabel}
                               </span>
                               <AuditItemsList
                                 items={c.itemsFrom}
@@ -109,7 +109,7 @@ export function SingleTransactionAuditView({
                               />
                               {c.items.length > 0 && (
                                 <span className="mt-2 border-t border-[#E5E7EB] pt-2 text-[10px] font-bold uppercase tracking-wider text-[#94A3B8] dark:border-[#27272A]">
-                                  {language === "en" ? "To" : "Jadi"}
+                                  {t.transactions.toLabel}
                                 </span>
                               )}
                             </>

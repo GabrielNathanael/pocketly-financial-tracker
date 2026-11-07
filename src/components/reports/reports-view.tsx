@@ -1374,18 +1374,18 @@ export function ReportsView({
       doc.text("POCKETLY", margin, y);
       y += 5;
       doc.setFontSize(11);
-      doc.text(language === "en" ? "Personal Financial Statement" : "Laporan Keuangan Pribadi", margin, y);
+      doc.text(t.reports.statementHeader, margin, y);
       y += 4;
       doc.setFont("helvetica", "normal");
       doc.setFontSize(8);
       doc.text(
-        `${language === "en" ? "Period" : "Periode"}: ${format(intervalStart, "dd MMMM yyyy", { locale: dateFnsLocale })} - ${format(intervalEnd, "dd MMMM yyyy", { locale: dateFnsLocale })}`,
+        `${t.reports.pdfPeriod}: ${format(intervalStart, "dd MMMM yyyy", { locale: dateFnsLocale })} - ${format(intervalEnd, "dd MMMM yyyy", { locale: dateFnsLocale })}`,
         margin,
         y,
       );
       y += 4;
       doc.text(
-        `${language === "en" ? "Generated" : "Dihasilkan"}: ${format(new Date(), "dd MMM yyyy, HH:mm")} | ${language === "en" ? "Currency" : "Mata uang"}: ${displayCurrency}`,
+        `${t.reports.pdfGenerated}: ${format(new Date(), "dd MMM yyyy, HH:mm")} | ${t.reports.pdfCurrency}: ${displayCurrency}`,
         margin,
         y,
       );
@@ -1403,23 +1403,23 @@ export function ReportsView({
         margin: { left: margin, right: margin },
       };
 
-      addSection(`1. ${language === "en" ? "Executive Summary" : "Ringkasan Eksekutif"}`);
+      addSection(`1. ${t.reports.summarySection}`);
       autoTable(doc, {
         ...tableOpts,
         startY: y,
         head: [["Metric", `Amount (${displayCurrency})`]],
         body: [
-          [language === "en" ? "Total Inflow" : "Total Pemasukan", `+${fmtAmt(totalIncome)}`],
-          [language === "en" ? "Total Outflow" : "Total Pengeluaran", `-${fmtAmt(totalExpense)}`],
-          [language === "en" ? "Net Savings" : "Tabungan Bersih (Net)", fmtAmt(netSavings)],
-          [language === "en" ? "Savings Rate" : "Rasio Tabungan", `${savingsRate.toFixed(1)}%`],
-          [language === "en" ? "Average Daily Expense" : "Pengeluaran Harian", `${fmtAmt(dailyBurnRate)} / ${language === "en" ? "day" : "hari"}`],
+          [t.reports.totalIncome, `+${fmtAmt(totalIncome)}`],
+          [t.reports.totalExpense, `-${fmtAmt(totalExpense)}`],
+          [t.reports.pdfNetSavings, fmtAmt(netSavings)],
+          [t.reports.savingsRate, `${savingsRate.toFixed(1)}%`],
+          [t.reports.pdfDailyExpense, `${fmtAmt(dailyBurnRate)} ${t.reports.perDay}`],
         ],
       });
       y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
 
       if (smartInsights.length > 0) {
-        addSection(`2. ${language === "en" ? "Notable Findings" : "Temuan Menarik"}`);
+        addSection(`2. ${t.reports.smartInsightsTitle}`);
         doc.setFontSize(8);
         smartInsights.forEach((ins) => {
           doc.setFont("helvetica", "bold");
@@ -1432,15 +1432,15 @@ export function ReportsView({
         y += 4;
       }
 
-      addSection(`3. ${language === "en" ? "Period Comparison" : "Perbandingan Periode"} (${currentPeriodLabel} vs ${priorPeriodLabel})`);
+      addSection(`3. ${t.reports.pdfPeriodComparison} (${currentPeriodLabel} vs ${priorPeriodLabel})`);
       autoTable(doc, {
         ...tableOpts,
         startY: y,
         head: [["", currentPeriodLabel, priorPeriodLabel]],
         body: [
-          [language === "en" ? "Total Income" : "Total Pemasukan", `+${fmtAmt(totalIncome)}`, `+${fmtAmt(priorTotalIncome)}`],
-          [language === "en" ? "Total Expense" : "Total Pengeluaran", `-${fmtAmt(totalExpense)}`, `-${fmtAmt(priorTotalExpense)}`],
-          [language === "en" ? "Net Savings" : "Tabungan Bersih", fmtAmt(netSavings), fmtAmt(priorNetSavings)],
+          [t.reports.totalIncomeLabel, `+${fmtAmt(totalIncome)}`, `+${fmtAmt(priorTotalIncome)}`],
+          [t.reports.totalExpenseLabel, `-${fmtAmt(totalExpense)}`, `-${fmtAmt(priorTotalExpense)}`],
+          [t.reports.pdfNetSavingsShort, fmtAmt(netSavings), fmtAmt(priorNetSavings)],
         ],
       });
       y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
@@ -1450,10 +1450,10 @@ export function ReportsView({
         autoTable(doc, {
           ...tableOpts,
           startY: y,
-          head: [["#", language === "en" ? "Category" : "Kategori", language === "en" ? "Count" : "Jumlah", language === "en" ? "Amount" : "Nominal", language === "en" ? "Share" : "Bagian"]],
+          head: [["#", t.reports.pdfCategory, t.reports.pdfCount, t.reports.nominal, t.reports.pdfShare]],
           body: cats.map((c, i) => [
             String(i + 1),
-            c.category?.name || (language === "en" ? "Uncategorized" : "Lainnya"),
+            c.category?.name || t.reports.pdfUncategorized,
             String(c.count),
             fmtAmt(c.total),
             `${c.percentage.toFixed(1)}%`,
@@ -1461,14 +1461,14 @@ export function ReportsView({
         });
         y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
       };
-      addCategoryTable(`4. ${language === "en" ? "Expense Category Breakdown" : "Rincian Kategori Pengeluaran"}`, allExpenseCategories);
-      addCategoryTable(`5. ${language === "en" ? "Income Category Breakdown" : "Rincian Kategori Pemasukan"}`, allIncomeCategories);
+      addCategoryTable(`4. ${t.reports.pdfExpenseBreakdown}`, allExpenseCategories);
+      addCategoryTable(`5. ${t.reports.pdfIncomeBreakdown}`, allIncomeCategories);
 
-      addSection(`6. ${language === "en" ? "Top 10 Largest Outflows" : "Top 10 Pengeluaran Terbesar"}`);
+      addSection(`6. ${t.reports.pdfTopOutflows}`);
       autoTable(doc, {
         ...tableOpts,
         startY: y,
-        head: [["Date", language === "en" ? "Description" : "Deskripsi", language === "en" ? "Category" : "Kategori", language === "en" ? "Account" : "Akun", language === "en" ? "Amount" : "Nominal"]],
+        head: [["Date", t.reports.csvDescription, t.reports.pdfCategory, t.reports.csvAccount, t.reports.nominal]],
         body: topExpenses.slice(0, 10).map((tx) => [
           format(parseISO(tx.transaction_date), "dd/MM/yyyy"),
           getCleanDescription(tx.description) || tx.category?.name || "-",
@@ -1482,31 +1482,31 @@ export function ReportsView({
       // Holdings snapshot (paling bawah)
       const holdingRows = [
         ...stocks.map((h) => ({
-          kind: language === "en" ? "Stock" : "Saham Indonesia",
+          kind: t.reports.pdfStockKind,
           symbol: h.ticker,
           qty: `${Number(h.lots) || Number(h.total_shares) / 100} lot`,
           cost: convertAmount(Number(h.total_cost) || 0, h.account?.currency || "IDR", displayCurrency, rates),
         })),
         ...cryptos.map((h) => ({
-          kind: language === "en" ? "Crypto" : "Kripto",
+          kind: t.reports.pdfCryptoKind,
           symbol: h.symbol,
           qty: `${Number(h.quantity)} ${h.symbol}`,
           cost: convertAmount(Number(h.cost_basis) || 0, h.account?.currency || h.price_currency || "IDR", displayCurrency, rates),
         })),
         ...etfs.map((h) => ({
-          kind: language === "en" ? "US ETF" : "ETF AS",
+          kind: t.reports.pdfEtfKind,
           symbol: h.ticker,
           qty: `${Number(h.quantity)} unit`,
           cost: convertAmount(Number(h.total_cost) || 0, h.account?.currency || "IDR", displayCurrency, rates),
         })),
       ];
       if (holdingRows.length > 0) {
-        addSection(`7. ${language === "en" ? "Portfolio Holdings (Snapshot)" : "Kepemilikan Portofolio (Snapshot)"}`);
+        addSection(`7. ${t.reports.pdfPortfolioHoldings}`);
         const totalH = holdingRows.reduce((s, r) => s + r.cost, 0);
         autoTable(doc, {
           ...tableOpts,
           startY: y,
-          head: [[language === "en" ? "Asset" : "Aset", language === "en" ? "Quantity" : "Jumlah", language === "en" ? "Cost" : "Modal", language === "en" ? "Share" : "Bagian"]],
+          head: [[t.reports.pdfAsset, t.reports.pdfQuantity, t.reports.pdfCost, t.reports.pdfShare]],
           body: holdingRows.map((r) => [ `${r.kind} ${r.symbol}`, r.qty, fmtAmt(r.cost), totalH > 0 ? `${((r.cost / totalH) * 100).toFixed(1)}%` : "—" ]),
         });
         y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
@@ -1514,7 +1514,7 @@ export function ReportsView({
 
       doc.setFontSize(7);
       doc.setTextColor(148, 163, 184);
-      doc.text(language === "en" ? "Generated by Pocketly - Confidential & Owner Only" : "Dihasilkan otomatis oleh Pocketly - Rahasia & Khusus Pemilik Akun", margin, y + 4);
+      doc.text(t.reports.pdfFooter, margin, y + 4);
       pdfSave(doc);
     } catch (e) {
       console.error("Failed to generate PDF:", e);
@@ -1718,11 +1718,7 @@ export function ReportsView({
                   type="button"
                   onClick={() => setSelectedTag("all")}
                   className="hover:opacity-75 cursor-pointer ml-0.5"
-                  title={
-                    language === "en"
-                      ? "Clear tag filter"
-                      : "Hapus filter tagar"
-                  }
+                  title={t.reports.clearTagFilter}
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -2232,7 +2228,7 @@ export function ReportsView({
                         </div>
                         <div className="mt-1 flex items-center justify-between gap-4 border-t border-[#E5E7EB] pt-1 dark:border-[#27272A]">
                           <span className="text-[#64748B] dark:text-[#94A3B8]">
-                            {language === "en" ? "Net" : "Selisih"}
+                            {t.reports.netLabel}
                           </span>
                           <span
                             className="font-mono font-bold tnum"
@@ -2731,31 +2727,31 @@ export function ReportsView({
                   <Wallet className="w-3.5 h-3.5" />
                 </div>
                 <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#FAFAFA]">
-                  {language === "en" ? "Portfolio Holdings" : "Kepemilikan Portofolio"}
+                  {t.reports.portfolioHoldingsTitle}
                 </h2>
               </div>
               <span className="text-[10px] text-[#64748B] dark:text-[#94A3B8] font-mono">
-                {language === "en" ? "Snapshot today" : "Snapshot hari ini"}
+                {t.reports.snapshotToday}
               </span>
             </div>
             {(() => {
               const rows = [
                 ...stocks.map((h) => ({
-                  kind: language === "en" ? "Stock" : "Saham Indonesia",
+                  kind: t.reports.pdfStockKind,
                   symbol: h.ticker,
                   qtyText: `${Number(h.lots) || Number(h.total_shares) / 100} lot (${Number(h.total_shares) || 0} lbr)`,
                   cost: Number(h.total_cost) || 0,
                   currency: h.account?.currency || "IDR",
                 })),
                 ...cryptos.map((h) => ({
-                  kind: language === "en" ? "Crypto" : "Kripto",
+                  kind: t.reports.pdfCryptoKind,
                   symbol: h.symbol,
                   qtyText: `${Number(h.quantity)} ${h.symbol}`,
                   cost: Number(h.cost_basis) || 0,
                   currency: h.account?.currency || h.price_currency || "IDR",
                 })),
                 ...etfs.map((h) => ({
-                  kind: language === "en" ? "US ETF" : "ETF AS",
+                  kind: t.reports.pdfEtfKind,
                   symbol: h.ticker,
                   qtyText: `${Number(h.quantity)} unit`,
                   cost: Number(h.total_cost) || 0,

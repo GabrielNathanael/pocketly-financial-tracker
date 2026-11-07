@@ -52,7 +52,7 @@ export function GoalFormModal({
   editItem,
   onSuccess,
 }: GoalFormModalProps) {
-  const { t, language } = useLanguage()
+  const { t } = useLanguage()
 
   const [name, setName] = useState('')
   const [targetAmount, setTargetAmount] = useState('')
@@ -103,11 +103,11 @@ export function GoalFormModal({
     const numInitial = initialSaved ? parseFloat(initialSaved) : 0
 
     if (!name.trim()) {
-      setErrorMsg(language === 'en' ? 'Please enter goal name' : 'Nama target tidak boleh kosong')
+      setErrorMsg(t.goals.errorNameRequired)
       return
     }
     if (isNaN(numTarget) || numTarget <= 0) {
-      setErrorMsg(language === 'en' ? 'Target amount must be greater than 0' : 'Nominal target harus lebih dari 0')
+      setErrorMsg(t.goals.errorTargetAmount)
       return
     }
 
@@ -149,7 +149,7 @@ export function GoalFormModal({
       onSuccess?.()
       onClose()
     } catch {
-      setErrorMsg(language === 'en' ? 'An unexpected error occurred' : 'Terjadi kesalahan sistem')
+      setErrorMsg(t.goals.errorUnexpected)
     } finally {
       setLoading(false)
     }
@@ -187,7 +187,7 @@ export function GoalFormModal({
             <button
               type="button"
               onClick={() => setShowMemo(!showMemo)}
-              title="Catatan Tambahan"
+              title={t.goals.memoNoteLabel}
               className={cn(
                 'h-9 px-3 rounded-lg border transition-colors cursor-pointer shrink-0 flex items-center justify-center gap-1.5 text-xs font-medium',
                 showMemo
@@ -208,7 +208,7 @@ export function GoalFormModal({
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Rencana alokasi, link wishlist, atau catatan impian..."
+              placeholder={t.goals.memoPlaceholder}
               className="w-full p-2 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs text-[#0F172A] dark:text-[#F8FAFC] placeholder:text-[#94A3B8] focus:outline-none"
             />
           </div>
@@ -283,7 +283,7 @@ export function GoalFormModal({
         {/* Icon Picker Grid & Color Theme (Matching Category Form Style) */}
         <div className="flex flex-col gap-2 p-3 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A]">
           <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
-            {t.categories.iconLabel} & {language === 'en' ? 'Color Theme' : 'Warna Tema'}
+            {t.categories.iconLabel} & {t.goals.colorThemeLabel}
           </span>
 
           {/* Icon Picker Grid matching Category Form */}

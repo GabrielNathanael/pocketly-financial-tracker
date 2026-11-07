@@ -790,11 +790,7 @@ export function CategoryForm({
           setError(res.error);
           return;
         }
-        toast.success(
-          language === "en"
-            ? "Category updated successfully"
-            : "Kategori berhasil diperbarui",
-        );
+        toast.success(t.categories.updateSuccess);
       } else {
         const res = await createCategory({
           name,
@@ -805,11 +801,7 @@ export function CategoryForm({
           setError(res.error);
           return;
         }
-        toast.success(
-          language === "en"
-            ? "Category created successfully"
-            : "Kategori berhasil dibuat",
-        );
+        toast.success(t.categories.createSuccess);
       }
 
       if (onSuccess) {
@@ -835,11 +827,7 @@ export function CategoryForm({
       if (res.error) {
         setError(res.error);
       } else {
-        toast.success(
-          language === "en"
-            ? "Category deleted successfully"
-            : "Kategori berhasil dihapus",
-        );
+        toast.success(t.categories.deleteSuccess);
         if (onSuccess) {
           onSuccess();
         } else {
@@ -901,7 +889,7 @@ export function CategoryForm({
             </label>
             <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md">
               <ShieldCheck className="w-3 h-3" />
-              {language === "en" ? "System Protected" : "Kategori Sistem"}
+              {t.categories.systemProtected}
             </span>
           </div>
           <input
@@ -930,7 +918,7 @@ export function CategoryForm({
 
         <Input
           type="text"
-          placeholder={language === "en" ? "Search icons..." : "Cari ikon..."}
+          placeholder={t.categories.searchIcons}
           value={iconSearch}
           onChange={(e) => setIconSearch(e.target.value)}
           leftIcon={<Search className="w-3.5 h-3.5" />}
@@ -950,9 +938,7 @@ export function CategoryForm({
 
         {groupedIcons.length === 0 ? (
           <div className="py-6 text-center text-xs text-[#94A3B8]">
-            {language === "en"
-              ? "No icons match your search."
-              : "Tidak ada ikon yang cocok."}
+            {t.categories.noIconsMatch}
           </div>
         ) : (
           <div className="flex flex-col gap-3 max-h-52 overflow-y-auto p-0.5">

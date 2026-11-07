@@ -41,12 +41,12 @@ export function AdjustBalanceModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!hasValidInput) {
-      setError(language === 'en' ? 'Please enter a valid amount' : 'Masukkan nominal saldo riil yang valid')
+      setError(t.accounts.invalidAmountError)
       return
     }
 
     if (Math.abs(delta) < 0.0001) {
-      setError(language === 'en' ? 'Actual balance is already equal to recorded balance' : 'Saldo riil sama dengan saldo saat ini')
+      setError(t.accounts.balanceAlreadyEqualError)
       return
     }
 
@@ -158,7 +158,7 @@ export function AdjustBalanceModal({
         {/* Notes (Optional) */}
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-semibold text-[#64748B] dark:text-[#94A3B8]">
-            {language === 'en' ? 'Reason / Note (Optional)' : 'Catatan Rekonsiliasi (Opsional)'}
+            {t.accounts.reasonNoteLabel}
           </label>
           <Input
             type="text"

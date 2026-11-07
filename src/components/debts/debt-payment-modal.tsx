@@ -36,7 +36,7 @@ export function DebtPaymentModal({
   accounts,
   onSuccess,
 }: DebtPaymentModalProps) {
-  const { language, t } = useLanguage();
+  const { t } = useLanguage();
 
   const [amount, setAmount] = useState<string>("");
   const [paymentDate, setPaymentDate] = useState<string>(getLocalDateString());
@@ -95,18 +95,20 @@ export function DebtPaymentModal({
     if (debt.type === "debt") {
       const currentBal = Number(selectedAccount.current_balance) || 0;
       if (currentBal - numericAmount < 0) {
-        const err =
-          language === "en"
-            ? `Insufficient balance in ${selectedAccount.name} (Available: ${formatCurrency(currentBal, selectedAccount.currency)}, Required: ${formatCurrency(numericAmount, selectedAccount.currency)})`
-            : `Saldo ${selectedAccount.name} tidak mencukupi (Tersedia: ${formatCurrency(currentBal, selectedAccount.currency)}, Dibutuhkan: ${formatCurrency(numericAmount, selectedAccount.currency)})`;
+        const err = t.transactions.insufficientBalanceDesc
+          .replace("{account}", selectedAccount.name)
+          .replace(
+            "{available}",
+            formatCurrency(currentBal, selectedAccount.currency),
+          )
+          .replace(
+            "{needed}",
+            formatCurrency(numericAmount, selectedAccount.currency),
+          );
         setError(err);
-        toast.error(
-          t.transactions.insufficientBalance ||
-            (language === "en"
-              ? "Insufficient Balance"
-              : "Saldo Tidak Mencukupi"),
-          { description: err },
-        );
+        toast.error(t.transactions.insufficientBalance, {
+          description: err,
+        });
         return;
       }
     }
@@ -124,19 +126,9 @@ export function DebtPaymentModal({
 
       if (res.error) {
         setError(res.error);
-        toast.error(
-          t.debts.createPaymentFailed ||
-            (language === "en"
-              ? "Failed to Record Payment"
-              : "Gagal Mencatat Cicilan"),
-          { description: res.error },
-        );
+        toast.error(t.debts.createPaymentFailed, { description: res.error });
       } else {
-        toast.success(
-          language === "en"
-            ? "Installment recorded successfully"
-            : "Cicilan berhasil dicatat & saldo akun terpotong",
-        );
+        toast.success(t.debts.createPaymentSuccess);
         setAmount("");
         onSuccess?.();
         onClose();
@@ -144,10 +136,7 @@ export function DebtPaymentModal({
     } catch (err) {
       const msg = (err as Error).message;
       setError(msg);
-      toast.error(
-        language === "en" ? "An error occurred" : "Terjadi Kesalahan",
-        { description: msg },
-      );
+      toast.error(t.common.error, { description: msg });
     } finally {
       setIsLoading(false);
     }

@@ -14,7 +14,7 @@ export function ThemeToggle({
   showLabels?: boolean
 }) {
   const { theme, setTheme } = useTheme()
-  const { language } = useLanguage()
+  const { t } = useLanguage()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -25,17 +25,17 @@ export function ThemeToggle({
     {
       id: 'light' as const,
       icon: Sun,
-      label: language === 'en' ? 'Light' : 'Terang',
+      label: t.common.themeLight,
     },
     {
       id: 'dark' as const,
       icon: Moon,
-      label: language === 'en' ? 'Dark' : 'Gelap',
+      label: t.common.themeDark,
     },
     {
       id: 'system' as const,
       icon: Monitor,
-      label: language === 'en' ? 'System' : 'Sistem',
+      label: t.common.themeSystem,
     },
   ]
 

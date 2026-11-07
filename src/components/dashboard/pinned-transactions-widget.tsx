@@ -16,7 +16,7 @@ import { Pin, Zap, X, Check, ChevronLeft, ChevronRight } from "lucide-react";
 
 export function PinnedTransactionsWidget() {
   const router = useRouter();
-  const { language, t } = useLanguage();
+  const { t } = useLanguage();
   const isPrivate = usePrivacyMode();
   const templates = usePinnedTemplates();
   const [loggingId, setLoggingId] = useState<string | null>(null);
@@ -135,10 +135,8 @@ export function PinnedTransactionsWidget() {
                   {tpl.name}
                 </span>
                 <span className="text-[11px] text-[#64748B] dark:text-[#94A3B8] truncate mt-0.5">
-                  {tpl.categoryName ||
-                    (language === "en" ? "Category" : "Kategori")}{" "}
-                  •{" "}
-                  {tpl.accountName || (language === "en" ? "Account" : "Akun")}
+                  {tpl.categoryName || t.common.category} •{" "}
+                  {tpl.accountName || t.common.account}
                 </span>
 
                 <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-[#E5E7EB] dark:border-[#27272A]">

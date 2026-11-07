@@ -80,7 +80,7 @@ export function CategoriesManager({ categories }: CategoriesManagerProps) {
         <Button size="sm" onClick={handleAdd} className="gap-1.5 shrink-0 whitespace-nowrap">
           <Plus className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">{t.categories.newCategory}</span>
-          <span className="sm:hidden">{language === 'en' ? 'Category' : 'Kategori'}</span>
+          <span className="sm:hidden">{t.common.category}</span>
         </Button>
       </div>
 

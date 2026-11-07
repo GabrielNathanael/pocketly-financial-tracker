@@ -13,15 +13,11 @@ interface PrivacyToggleProps {
 
 export function PrivacyToggle({ className, variant = 'header' }: PrivacyToggleProps) {
   const isPrivate = usePrivacyMode()
-  const { language } = useLanguage()
+  const { t } = useLanguage()
 
   const label = isPrivate
-    ? language === 'id'
-      ? 'Tampilkan Saldo'
-      : 'Show Balance'
-    : language === 'id'
-      ? 'Sembunyikan Saldo (Privasi)'
-      : 'Hide Balance (Privacy)'
+    ? t.common.showBalance
+    : t.common.hideBalance
 
   if (variant === 'hero') {
     return (

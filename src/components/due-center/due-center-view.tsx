@@ -71,7 +71,7 @@ export function DueCenterView({
   accounts,
   exchangeRate = 15800,
 }: DueCenterViewProps) {
-  const { t, language } = useLanguage()
+  const { t } = useLanguage()
   const router = useRouter()
   const [filterSource, setFilterSource] = useState<'all' | 'recurring' | 'debt' | 'goal'>('all')
   const [filterUrgency, setFilterUrgency] = useState<'all' | 'overdue' | 'today' | 'soon' | 'later'>('all')
@@ -98,7 +98,7 @@ export function DueCenterView({
       dueDate: rec.next_due_date,
       daysDiff,
       icon: rec.category?.icon || 'Repeat',
-      color: rec.category?.color || '#6366F1',
+      color: '#64748B',
       link: '/recurring',
       ctaText: t.dueCenter.payBill,
       accountName: rec.account?.name,
@@ -117,7 +117,7 @@ export function DueCenterView({
       id: `debt-${debt.id}`,
       rawId: debt.id,
       source: 'debt',
-      title: `${debt.type === 'debt' ? (language === 'en' ? 'Pay Debt' : 'Bayar Utang') : (language === 'en' ? 'Collect Loan' : 'Tagih Piutang')}: ${debt.counterparty_name}`,
+      title: `${debt.type === 'debt' ? t.dueCenter.payDebt : t.dueCenter.collectLoan}: ${debt.counterparty_name}`,
       subtitle: debt.notes || t.dueCenter.debtDue,
       amount: remainingAmount,
       currency: debt.currency,
@@ -192,7 +192,7 @@ export function DueCenterView({
       if (res.error) {
         toast.error('Gagal Memproses Tagihan', { description: res.error })
       } else {
-        toast.success(language === 'en' ? 'Bill payment recorded successfully!' : 'Pembayaran tagihan berhasil dicatat!')
+        toast.success(t.dueCenter.billPaymentSuccess)
         router.refresh()
       }
     } catch (err: any) {
@@ -210,7 +210,7 @@ export function DueCenterView({
           <div className="w-8 h-8 rounded-xl bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
             <CalendarClock className="w-5 h-5" />
           </div>
-          <span>{language === 'en' ? 'Due Dates & Financial Center' : 'Pusat Tagihan & Jatuh Tempo'}</span>
+          <span>{t.dueCenter.centerTitle}</span>
         </h1>
         <p className="text-xs sm:text-sm text-[#64748B] dark:text-[#94A3B8] mt-1">
           {t.dueCenter.subtitle}
@@ -226,7 +226,7 @@ export function DueCenterView({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={language === 'en' ? 'Search by bill name, counterparty, account...' : 'Cari nama tagihan, akun, catatan...'}
+            placeholder={t.dueCenter.searchPlaceholder}
             className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-xs font-medium text-[#0F172A] dark:text-[#F8FAFC] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#0F172A] dark:focus:border-[#FAFAFA] transition-colors"
           />
         </div>
@@ -237,20 +237,20 @@ export function DueCenterView({
           <div className="flex-1 sm:flex-none min-w-[160px]">
             <Select value={filterSource} onValueChange={(val: any) => setFilterSource(val)}>
               <SelectTrigger className="px-3 py-2 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] text-xs font-semibold">
-                <SelectValue placeholder={language === 'en' ? 'All Sources' : 'Semua Sumber'} />
+                <SelectValue placeholder={t.dueCenter.allSources} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">
-                  {language === 'en' ? `All Sources (${items.length})` : `Semua Sumber (${items.length})`}
+                  {t.dueCenter.allSourcesCount.replace('{count}', String(items.length))}
                 </SelectItem>
                 <SelectItem value="recurring">
-                  {language === 'en' ? `Recurring (${items.filter((i) => i.source === 'recurring').length})` : `Transaksi Rutin (${items.filter((i) => i.source === 'recurring').length})`}
+                  {t.dueCenter.recurringCount.replace('{count}', String(items.filter((i) => i.source === 'recurring').length))}
                 </SelectItem>
                 <SelectItem value="debt">
-                  {language === 'en' ? `Debts & Loans (${items.filter((i) => i.source === 'debt').length})` : `${t.debts.title} (${items.filter((i) => i.source === 'debt').length})`}
+                  {t.dueCenter.debtsCount.replace('{count}', String(items.filter((i) => i.source === 'debt').length))}
                 </SelectItem>
                 <SelectItem value="goal">
-                  {language === 'en' ? `Savings Goals (${items.filter((i) => i.source === 'goal').length})` : `Target Goals (${items.filter((i) => i.source === 'goal').length})`}
+                  {t.dueCenter.goalsCount.replace('{count}', String(items.filter((i) => i.source === 'goal').length))}
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -260,23 +260,23 @@ export function DueCenterView({
           <div className="flex-1 sm:flex-none min-w-[160px]">
             <Select value={filterUrgency} onValueChange={(val: any) => setFilterUrgency(val)}>
               <SelectTrigger className="px-3 py-2 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] text-xs font-semibold">
-                <SelectValue placeholder={language === 'en' ? 'All Urgencies' : 'Semua Urgensi'} />
+                <SelectValue placeholder={t.dueCenter.allUrgencies} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">
-                  {language === 'en' ? 'All Urgencies' : 'Semua Urgensi'}
+                  {t.dueCenter.allUrgencies}
                 </SelectItem>
                 <SelectItem value="overdue">
-                  {language === 'en' ? `Overdue (${overdueCount})` : `Terlewat (${overdueCount})`}
+                  {t.dueCenter.overdueFilter.replace('{count}', String(overdueCount))}
                 </SelectItem>
                 <SelectItem value="today">
-                  {language === 'en' ? `Due Today (${todayCount})` : `Jatuh Tempo Hari Ini (${todayCount})`}
+                  {t.dueCenter.dueTodayFilter.replace('{count}', String(todayCount))}
                 </SelectItem>
                 <SelectItem value="soon">
-                  {language === 'en' ? `Due in 7 Days (${soonCount})` : `7 Hari Ke Depan (${soonCount})`}
+                  {t.dueCenter.dueSoonFilter.replace('{count}', String(soonCount))}
                 </SelectItem>
                 <SelectItem value="later">
-                  {language === 'en' ? `Later > 7 Days (${laterCount})` : `Mendatang > 7 Hari (${laterCount})`}
+                  {t.dueCenter.laterFilter.replace('{count}', String(laterCount))}
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -295,9 +295,7 @@ export function DueCenterView({
               {t.dueCenter.allClear}
             </h3>
             <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-1 max-w-md">
-              {language === 'en'
-                ? 'No upcoming financial dues or obligations match your filter.'
-                : 'Tidak ada tagihan atau komitmen keuangan yang perlu dibayar pada filter ini.'}
+              {t.dueCenter.noMatches}
             </p>
           </div>
         </div>
@@ -372,7 +370,7 @@ export function DueCenterView({
                 <div className="pt-3 border-t border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-between gap-3">
                   <div>
                     <span className="text-[9px] uppercase font-bold text-[#94A3B8] block leading-none">
-                      {language === 'en' ? 'Amount Due' : 'Nominal Tagihan'}
+                      {t.dueCenter.amountDue}
                     </span>
                     <span className="font-mono font-black text-sm sm:text-base text-[#0F172A] dark:text-[#F8FAFC] mt-0.5 block">
                       {formatCurrency(item.amount, item.currency)}
@@ -387,7 +385,7 @@ export function DueCenterView({
                       className="px-3.5 py-1.5 rounded-xl bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] text-xs font-bold hover:opacity-90 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5 shrink-0"
                     >
                       {processingId === item.rawId ? (
-                        <span>{language === 'en' ? 'Processing...' : 'Memproses...'}</span>
+                        <span>{t.dueCenter.processing}</span>
                       ) : (
                         <>
                           <Check className="w-3.5 h-3.5" />

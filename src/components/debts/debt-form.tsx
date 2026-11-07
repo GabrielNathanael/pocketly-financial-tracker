@@ -34,7 +34,7 @@ export function DebtForm({
   onSuccess,
 }: DebtFormProps) {
   const router = useRouter();
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const isEditing = !!initialData;
 
   const initCurrency = (initialData?.currency || "IDR") as CurrencyCode;
@@ -134,11 +134,7 @@ export function DebtForm({
       if (res.error) {
         setError(res.error);
       } else {
-        toast.success(
-          language === "en"
-            ? "Debt record deleted successfully"
-            : "Catatan utang berhasil dihapus",
-        );
+        toast.success(t.debts.deleteSuccess);
         if (onSuccess) {
           onSuccess();
         } else {

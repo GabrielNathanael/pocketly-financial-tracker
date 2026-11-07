@@ -62,14 +62,14 @@ export function DebtDetailView({ debt, accounts }: DebtDetailViewProps) {
     try {
       const res = await deleteDebtPayment(paymentId, debt.id)
       if (res?.error) {
-        toast.error(t.debts.deletePaymentFailed || (language === 'en' ? 'Failed to Delete Payment' : 'Gagal Menghapus Cicilan'), { description: res.error })
+        toast.error(t.debts.deletePaymentFailed, { description: res.error })
       } else {
-        toast.success(language === 'en' ? 'Installment record deleted successfully' : 'Riwayat cicilan berhasil dihapus')
+        toast.success(t.debts.deletePaymentSuccess)
         router.refresh()
       }
     } catch (err) {
       const msg = (err as Error).message
-      toast.error(language === 'en' ? 'An error occurred' : 'Terjadi Kesalahan', { description: msg })
+      toast.error(t.common.error, { description: msg })
     } finally {
       setDeletingPaymentId(null)
     }
@@ -81,14 +81,14 @@ export function DebtDetailView({ debt, accounts }: DebtDetailViewProps) {
     try {
       const res = await deleteDebt(debt.id, { deleteTransactions })
       if (res?.error) {
-        toast.error(t.debts.deleteDebtFailed || (language === 'en' ? 'Failed to Delete Debt' : 'Gagal Menghapus Utang'), { description: res.error })
+        toast.error(t.debts.deleteDebtFailed, { description: res.error })
       } else {
-        toast.success(language === 'en' ? 'Debt record deleted successfully' : 'Data utang/piutang berhasil dihapus')
+        toast.success(t.debts.deleteDebtSuccess)
         router.push('/debts')
       }
     } catch (err) {
       const msg = (err as Error).message
-      toast.error(language === 'en' ? 'An error occurred' : 'Terjadi Kesalahan', { description: msg })
+      toast.error(t.common.error, { description: msg })
     } finally {
       setIsDeletingDebt(false)
     }

@@ -79,7 +79,7 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
   const assetCategories = [
     {
       id: "accounts",
-      name: language === "en" ? "Cash & Bank" : "Kas & Bank",
+      name: t.netWorth.cashBank,
       total: totalAccounts,
       color: "#0EA5E9",
       href: "/accounts",
@@ -92,7 +92,7 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
     },
     {
       id: "stocks",
-      name: language === "en" ? "Stocks" : "Saham",
+      name: t.netWorth.stocks,
       total: totalStocks,
       color: "#8B5CF6",
       href: "/investments",
@@ -105,7 +105,7 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
     },
     {
       id: "crypto",
-      name: language === "en" ? "Crypto" : "Kripto",
+      name: t.netWorth.crypto,
       total: totalCrypto,
       color: "#F59E0B",
       href: "/investments",
@@ -131,7 +131,7 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
     },
     {
       id: "goals",
-      name: language === "en" ? "Savings Goals" : "Target Tabungan",
+      name: t.netWorth.savingsGoals,
       total: totalGoals,
       color: "#14B8A6",
       href: "/goals",
@@ -144,7 +144,7 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
     },
     {
       id: "receivables",
-      name: language === "en" ? "Receivables" : "Piutang",
+      name: t.netWorth.receivables,
       total: totalReceivables,
       color: "#22C55E",
       href: "/debts",
@@ -253,18 +253,18 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
         <div className="pointer-events-none absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-indigo-500/20 blur-3xl" />
         <div className="relative flex flex-col gap-3">
           <span className="text-[10px] font-bold uppercase tracking-widest text-slate-300">
-            {language === "en" ? "Net Worth" : "Kekayaan Bersih"} ({displayCurrency})
+            {t.netWorth.netWorthLabel} ({displayCurrency})
           </span>
           <h1 className="font-mono text-4xl sm:text-5xl font-black tracking-tight tnum leading-none break-words">
             {fmt(netWorth)}
           </h1>
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-xs">
             <span className="font-bold text-emerald-300">
-              +{fmt(totalAssets)} {language === "en" ? "Assets" : "Aset"}
+              +{fmt(totalAssets)} {t.netWorth.assets}
             </span>
             <span className="text-slate-400">−</span>
             <span className="font-bold text-rose-300">
-              {fmt(totalDebts)} {language === "en" ? "Debts" : "Hutang"}
+              {fmt(totalDebts)} {t.netWorth.debts}
             </span>
             {displayCurrency !== "IDR" && (
               <span className="text-slate-400 tnum">
@@ -297,7 +297,7 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
       <div className="rounded-2xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] p-4 sm:p-5 flex flex-col gap-3 shadow-2xs">
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
-            {language === "en" ? "Net Worth Trend" : "Tren Kekayaan Bersih"}
+            {t.netWorth.trendTitle}
           </h2>
           <div className="flex items-center gap-1">
             {(Object.keys(RANGE_DAYS) as RangeKey[]).map((r) => (
@@ -322,9 +322,7 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
           <div className="flex flex-col items-center gap-1 py-8 text-center">
             <Coins className="w-6 h-6 text-[#94A3B8]" />
             <p className="text-xs text-[#64748B] dark:text-[#94A3B8] max-w-xs">
-              {language === "en"
-                ? "Trend fills in daily from the first snapshot. Check back tomorrow."
-                : "Grafik terisi harian dari snapshot pertama. Cek lagi besok."}
+              {t.netWorth.trendEmpty}
             </p>
             {trendData.length === 1 && (
               <span className="font-mono text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC]">
@@ -385,7 +383,7 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
                       </div>
                       <div className="flex items-center justify-between gap-4">
                         <span className="text-[#0EA5E9]">
-                          {language === "en" ? "Assets" : "Aset"}
+                          {t.netWorth.assets}
                         </span>
                         <span className="font-mono font-bold text-[#0EA5E9] tnum">
                           {fmt(assets)}
@@ -393,7 +391,7 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
                       </div>
                       <div className="flex items-center justify-between gap-4">
                         <span className="text-[#E11D48]">
-                          {language === "en" ? "Debts" : "Hutang"}
+                          {t.netWorth.debts}
                         </span>
                         <span className="font-mono font-bold text-[#E11D48] tnum">
                           {fmt(liabilities)}
@@ -401,7 +399,7 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
                       </div>
                       <div className="mt-1 flex items-center justify-between gap-4 border-t border-[#E5E7EB] pt-1 dark:border-[#27272A]">
                         <span className="text-[#64748B] dark:text-[#94A3B8]">
-                          {language === "en" ? "Net Worth" : "Kekayaan"}
+                          {t.netWorth.netWorthLabel}
                         </span>
                         <span
                           className="font-mono font-bold tnum"
@@ -431,7 +429,7 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
       {/* ALLOCATION — donut + legend/bars */}
       <div className="rounded-2xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] p-4 sm:p-5 shadow-2xs">
         <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC] pb-3">
-          {language === "en" ? "Asset Allocation" : "Alokasi Aset"}
+          {t.netWorth.allocationTitle}
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-[220px_1fr] gap-5 items-center">
           <div className="relative mx-auto h-[200px] w-[200px] shrink-0">
@@ -452,7 +450,7 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
             </svg>
             <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center px-8">
               <span className="max-w-full truncate text-[9px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
-                {activeCategory ? activeCategory.name : language === "en" ? "Total Assets" : "Total Aset"}
+                {activeCategory ? activeCategory.name : t.netWorth.totalAssets}
               </span>
               <span className="mt-0.5 max-w-full truncate font-mono text-sm font-black text-[#0F172A] dark:text-[#F8FAFC] tnum">
                 {(() => {
@@ -511,7 +509,7 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="rounded-2xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] p-4 sm:p-5 flex flex-col gap-3 shadow-2xs">
           <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
-            {language === "en" ? "Assets" : "Aset"} — {fmt(totalAssets)}
+            {t.netWorth.assets} — {fmt(totalAssets)}
           </h2>
           {assetCategories.map((c) => {
             const isExpanded = expanded.has(c.id);
@@ -558,11 +556,11 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
 
         <div className="rounded-2xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] p-4 sm:p-5 flex flex-col gap-3 shadow-2xs">
           <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
-            {language === "en" ? "Liabilities" : "Hutang"} — {fmt(totalDebts)}
+            {t.netWorth.liabilitiesTitle} — {fmt(totalDebts)}
           </h2>
           {data.debts.length === 0 ? (
             <p className="text-xs text-[#94A3B8] py-4 text-center">
-              {language === "en" ? "No active debts." : "Tidak ada hutang aktif."}
+              {t.netWorth.noActiveDebts}
             </p>
           ) : (
             data.debts.map((d) => (

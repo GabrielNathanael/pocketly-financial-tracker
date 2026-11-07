@@ -139,13 +139,11 @@ export function GoalsManager({
         toast.error(res.error)
       } else {
         toast.success(
-          isPaused
-            ? language === 'en' ? 'Goal resumed' : 'Target diaktifkan kembali'
-            : language === 'en' ? 'Goal paused' : 'Target dijeda'
+          isPaused ? t.goals.resumeSuccess : t.goals.pauseSuccess
         )
       }
     } catch {
-      toast.error('Failed to update status')
+      toast.error(t.goals.errorUpdateStatus)
     }
   }
 
@@ -161,7 +159,7 @@ export function GoalsManager({
         toast.success(t.goals.deleteSuccess)
       }
     } catch {
-      toast.error('Failed to delete goal')
+      toast.error(t.goals.errorDeleteGoal)
     } finally {
       setIsDeleting(false)
       setDeletingId(null)
@@ -209,7 +207,7 @@ export function GoalsManager({
               {maskCurrency(formatCurrency(totalTargetCapital, displayCurrency), isPrivate)}
             </h3>
             <span className="text-[10px] font-mono text-[#94A3B8] mt-0.5 block">
-              {savingsGoals.length} {language === 'en' ? 'milestones' : 'impian terdaftar'}
+              {savingsGoals.length} {t.goals.milestonesLabel}
             </span>
           </div>
         </div>
@@ -227,7 +225,7 @@ export function GoalsManager({
               {maskCurrency(formatCurrency(totalSavedCapital, displayCurrency), isPrivate)}
             </h3>
             <span className="text-[10px] font-mono text-[#94A3B8] mt-0.5 block">
-              {language === 'en' ? 'Allocated funds' : 'Dana dialokasikan'}
+              {t.goals.allocatedFundsLabel}
             </span>
           </div>
         </div>
@@ -273,8 +271,8 @@ export function GoalsManager({
             <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 mt-0.5 flex items-center gap-1">
               <Sparkles className="w-2.5 h-2.5" />
               {completedGoalsCount > 0
-                ? language === 'en' ? 'Goals reached!' : 'Impian tercapai!'
-                : language === 'en' ? 'In journey' : 'Dalam perjuangan'}
+                ? t.goals.goalsReachedLabel
+                : t.goals.inJourneyLabel}
             </span>
           </div>
         </div>
@@ -533,7 +531,7 @@ export function GoalsManager({
                       type="button"
                       onClick={() => handleToggleStatus(goal)}
                       className="p-1.5 rounded-lg text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8] dark:hover:text-[#FAFAFA] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] transition-colors cursor-pointer"
-                      title={goal.status === 'paused' ? 'Lanjutkan' : 'Jeda'}
+                      title={goal.status === 'paused' ? t.goals.resumeLabel : t.goals.pauseLabel}
                     >
                       {goal.status === 'paused' ? (
                         <PlayCircle className="w-3.5 h-3.5 text-emerald-600" />
@@ -581,7 +579,7 @@ export function GoalsManager({
                     )}
                   >
                     <Coins className="w-3.5 h-3.5" />
-                    <span>{language === 'en' ? 'Deposit / Withdraw' : 'Setor / Tarik'}</span>
+                    <span>{t.goals.depositWithdrawBtn}</span>
                   </Button>
                 </div>
               </div>

@@ -43,14 +43,14 @@ export function AccountDetailView({ account, mutations, totalMutations, page, to
 
   const getMutationTitle = (m: AccountMutation) => {
     if (m.type === 'transfer_out') {
-      const targetName = m.counterpartyOrCategory || (language === 'en' ? 'Account' : 'Akun')
+      const targetName = m.counterpartyOrCategory || t.accounts.unknownAccount
       if (m.isCross) {
         return (t.transfer.exchangeTo || 'Exchange to {name}').replace('{name}', targetName)
       }
       return (t.transfer.transferTo || 'Transfer to {name}').replace('{name}', targetName)
     }
     if (m.type === 'transfer_in') {
-      const sourceName = m.counterpartyOrCategory || (language === 'en' ? 'Account' : 'Akun')
+      const sourceName = m.counterpartyOrCategory || t.accounts.unknownAccount
       if (m.isCross) {
         return (t.transfer.exchangeFrom || 'Exchange from {name}').replace('{name}', sourceName)
       }
@@ -139,7 +139,7 @@ export function AccountDetailView({ account, mutations, totalMutations, page, to
                 if (e) params.set('end', e)
                 router.push(`?${params.toString()}`)
               }}
-              placeholder={language === 'en' ? 'Date range' : 'Rentang tanggal'}
+              placeholder={t.accounts.dateRangePlaceholder}
             />
           </div>
         </div>
@@ -250,7 +250,7 @@ export function AccountDetailView({ account, mutations, totalMutations, page, to
                           onClick={() => goToPage(page - 1)}
                           className="flex-1 sm:flex-initial text-xs font-bold cursor-pointer disabled:opacity-50"
                         >
-                          {language === "en" ? "Previous" : "Sebelumnya"}
+                          {t.accounts.previousBtn}
                         </Button>
                         <span className="font-mono text-[#64748B] dark:text-[#94A3B8] shrink-0">
                           {page} / {totalPages}
@@ -262,7 +262,7 @@ export function AccountDetailView({ account, mutations, totalMutations, page, to
                           onClick={() => goToPage(page + 1)}
                           className="flex-1 sm:flex-initial text-xs font-bold cursor-pointer disabled:opacity-50"
                         >
-                          {language === "en" ? "Next" : "Berikutnya"}
+                          {t.accounts.nextBtn}
                         </Button>
                       </>
                     )

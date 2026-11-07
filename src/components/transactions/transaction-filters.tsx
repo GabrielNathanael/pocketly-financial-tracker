@@ -256,8 +256,8 @@ export function TransactionFilters({
                 })),
               ]}
               placeholder={t.common.all}
-              searchPlaceholder={language === "en" ? "Search account..." : "Cari akun..."}
-              emptyText={language === "en" ? "No account found." : "Akun tidak ditemukan."}
+              searchPlaceholder={t.transactions.searchAccountPlaceholder}
+              emptyText={t.transactions.noAccountFound}
             />
           </div>
 
@@ -285,8 +285,8 @@ export function TransactionFilters({
                 })),
               ]}
               placeholder={t.transactions.allExpenseCategories}
-              searchPlaceholder={language === "en" ? "Search category..." : "Cari kategori..."}
-              emptyText={language === "en" ? "No category found." : "Kategori tidak ditemukan."}
+              searchPlaceholder={t.transactions.searchCategoryPlaceholder}
+              emptyText={t.transactions.noCategoryFound}
             />
           </div>
 
@@ -314,8 +314,8 @@ export function TransactionFilters({
                 })),
               ]}
               placeholder={t.transactions.allIncomeCategories}
-              searchPlaceholder={language === "en" ? "Search category..." : "Cari kategori..."}
-              emptyText={language === "en" ? "No category found." : "Kategori tidak ditemukan."}
+              searchPlaceholder={t.transactions.searchCategoryPlaceholder}
+              emptyText={t.transactions.noCategoryFound}
             />
           </div>
 
@@ -336,8 +336,8 @@ export function TransactionFilters({
                 })),
               ]}
               placeholder={t.transactions.filterByTag}
-              searchPlaceholder={language === "en" ? "Search tag..." : "Cari tagar..."}
-              emptyText={language === "en" ? "No tags found." : "Tagar tidak ditemukan."}
+              searchPlaceholder={t.transactions.searchTagPlaceholder}
+              emptyText={t.transactions.noTagsFound}
             />
           </div>
 

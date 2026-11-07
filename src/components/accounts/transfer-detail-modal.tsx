@@ -28,7 +28,7 @@ export function TransferDetailModal({
   currentAccountName,
   onSuccess,
 }: TransferDetailModalProps) {
-  const { t, language } = useLanguage()
+  const { t } = useLanguage()
   const router = useRouter()
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -40,11 +40,11 @@ export function TransferDetailModal({
     try {
       const res = await deleteTransfer(mutation.id)
       if (res?.error) {
-        toast.error(language === 'en' ? 'Failed to delete transfer' : 'Gagal menghapus transfer', {
+        toast.error(t.transfer.deleteFailed, {
           description: res.error,
         })
       } else {
-        toast.success(language === 'en' ? 'Transfer deleted' : 'Transfer dihapus')
+        toast.success(t.transfer.deleteSuccess)
         setShowDeleteConfirm(false)
         onClose()
         onSuccess?.()
@@ -56,7 +56,7 @@ export function TransferDetailModal({
   }
 
   const isOutgoing = mutation.type === 'transfer_out'
-  const counterparty = mutation.counterpartyOrCategory || (language === 'en' ? 'Account' : 'Akun')
+  const counterparty = mutation.counterpartyOrCategory || t.transfer.unknownAccount
   const fromName = isOutgoing ? currentAccountName : counterparty
   const toName = isOutgoing ? counterparty : currentAccountName
 
@@ -64,7 +64,7 @@ export function TransferDetailModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={mutation.isCross ? (language === 'en' ? 'Forex Transfer Details' : 'Rincian Transfer Valas') : (language === 'en' ? 'Transfer Details' : 'Rincian Transfer')}
+      title={mutation.isCross ? t.transfer.forexDetailTitle : t.transfer.detailTitle}
       maxWidth="sm"
     >
       <div className="flex flex-col gap-4">
@@ -72,7 +72,7 @@ export function TransferDetailModal({
         <div className="p-4 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col items-center justify-center text-center gap-1.5">
           <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold uppercase tracking-wider">
             <CheckCircle2 className="w-3 h-3" />
-            <span>{language === 'en' ? 'Completed' : 'Berhasil'}</span>
+            <span>{t.transfer.completed}</span>
           </div>
           <span className="text-2xl font-mono font-bold text-[#0F172A] dark:text-[#FAFAFA] tracking-tight tnum mt-1">
             {formatCurrency(mutation.amount, mutation.currency)}
@@ -120,7 +120,7 @@ export function TransferDetailModal({
           {mutation.isCross && mutation.exchangeRateUsed && mutation.counterpartyCurrency && (
             <div className="pt-2.5 border-t border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-1.5 text-xs">
               <div className="flex items-center justify-between text-[#64748B] dark:text-[#94A3B8]">
-                <span>{language === 'en' ? 'Exchange Rate' : 'Nilai Kurs'}</span>
+                <span>{t.transfer.exchangeRateDetailLabel}</span>
                 <span className="font-mono font-bold text-[#0F172A] dark:text-[#FAFAFA]">
                   {formatNaturalForexRate(
                     mutation.type === 'transfer_out' ? mutation.currency : mutation.counterpartyCurrency,
@@ -131,7 +131,7 @@ export function TransferDetailModal({
               </div>
               {mutation.receivedAmount && (
                 <div className="flex items-center justify-between text-[#64748B] dark:text-[#94A3B8]">
-                  <span>{language === 'en' ? 'Received Amount' : 'Nominal Diterima'}</span>
+                  <span>{t.transfer.receivedAmountLabel}</span>
                   <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
                     {formatCurrency(mutation.receivedAmount, mutation.counterpartyCurrency)}
                   </span>
@@ -193,12 +193,8 @@ export function TransferDetailModal({
         onClose={() => setShowDeleteConfirm(false)}
         onConfirm={handleDelete}
         isLoading={isDeleting}
-        title={language === 'en' ? 'Delete Transfer' : 'Hapus Transfer'}
-        message={
-          language === 'en'
-            ? 'The transfer will be cancelled and both account balances will be restored. This cannot be undone.'
-            : 'Transfer akan dibatalkan dan saldo kedua akun akan dikembalikan. Tindakan ini tidak dapat dibatalkan.'
-        }
+        title={t.transfer.deleteConfirmTitle}
+        message={t.transfer.deleteConfirmMessage}
       />
     </Modal>
   )

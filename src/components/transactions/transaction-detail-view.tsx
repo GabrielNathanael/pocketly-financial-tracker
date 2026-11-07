@@ -102,7 +102,7 @@ export function TransactionDetailView({
   };
 
   const handlePin = async () => {
-    const name = cleanDescription || memoText || category?.name || "Template";
+    const name = cleanDescription || memoText || category?.name || t.common.templateFallback;
     try {
       await savePinnedTemplate({
         name,
@@ -134,7 +134,7 @@ export function TransactionDetailView({
       title:
         transaction.description ||
         category?.name ||
-        (language === "en" ? "Transaction" : "Transaksi"),
+        t.transactions.fallbackTransactionTitle,
       onExecuteDelete: async () => {
         const res = await deleteTransaction(transaction.id);
         if (res?.error) {
@@ -244,17 +244,14 @@ export function TransactionDetailView({
                 {t.common.account}
               </span>
               <span className="text-xs font-bold text-[#0F172A] dark:text-[#FAFAFA] truncate">
-                {account?.name || "Account"} ({transaction.currency})
+                {account?.name || t.common.account} ({transaction.currency})
               </span>
             </div>
           </div>
 
           {/* Category */}
           <div className="p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex items-center gap-3">
-            <div
-              className="w-8 h-8 rounded flex items-center justify-center shrink-0 text-white"
-              style={{ backgroundColor: category?.color || "#3B82F6" }}
-            >
+            <div className="w-8 h-8 rounded bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] flex items-center justify-center shrink-0">
               <DynamicIcon name={category?.icon || "Tag"} className="w-4 h-4" />
             </div>
             <div className="flex flex-col min-w-0">
@@ -262,7 +259,7 @@ export function TransactionDetailView({
                 {t.common.category}
               </span>
               <span className="text-xs font-bold text-[#0F172A] dark:text-[#FAFAFA] truncate">
-                {formatCategoryName(category?.name || "Category", language)}
+                {formatCategoryName(category?.name || t.common.category, language)}
               </span>
             </div>
           </div>
@@ -297,12 +294,7 @@ export function TransactionDetailView({
           <div className="flex flex-col gap-1 p-3 rounded-lg bg-[#F0FDF4] dark:bg-[#052E16]/30 border border-[#BBF7D0] dark:border-[#166534]/40">
             <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#15803D] dark:text-[#4ADE80]">
               <FileText className="w-3 h-3" />
-              <span>
-                {t.transactions.memoTitle ||
-                  (language === "en"
-                    ? "Additional Notes (Memo)"
-                    : "Catatan Tambahan (Memo)")}
-              </span>
+              <span>{t.transactions.memoTitle}</span>
             </div>
             <p className="text-xs text-[#0F172A] dark:text-[#FAFAFA] whitespace-pre-wrap">
               {memoText}
@@ -336,9 +328,10 @@ export function TransactionDetailView({
             <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
               <ListPlus className="w-3.5 h-3.5" />
               <span>
-                {language === "en"
-                  ? `Item Breakdown (${itemsList.length})`
-                  : `Rincian Belanja (${itemsList.length})`}
+                {t.transactions.itemBreakdownWithCount.replace(
+                  "{count}",
+                  String(itemsList.length),
+                )}
               </span>
             </div>
             <div className="flex flex-col gap-1.5 max-h-36 overflow-y-auto pr-0.5">
@@ -368,7 +361,7 @@ export function TransactionDetailView({
             </div>
             <div className="flex items-center justify-between pt-1 border-t border-[#E5E7EB] dark:border-[#27272A] text-[11px] font-mono">
               <span className="text-[#64748B] dark:text-[#94A3B8]">
-                {language === "en" ? "Items total" : "Total rincian"}
+                {t.transactions.itemsTotalLabel}
               </span>
               <span className="font-bold text-[#0F172A] dark:text-[#FAFAFA]">
                 {formatCurrency(
@@ -395,12 +388,12 @@ export function TransactionDetailView({
             {isPinned ? (
               <>
                 <Check className="w-3.5 h-3.5 text-[#0D9488]" />
-                <span>{language === "en" ? "Pinned" : "Tersimpan"}</span>
+                <span>{t.transactions.pinnedLabel}</span>
               </>
             ) : (
               <>
                 <Pin className="w-3.5 h-3.5" />
-                <span>{language === "en" ? "Pin" : "Sematkan"}</span>
+                <span>{t.transactions.pinLabel}</span>
               </>
             )}
           </Button>

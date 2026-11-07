@@ -78,7 +78,7 @@ function DebtPaymentEditForm({
   onClose,
   onSuccess,
 }: DebtPaymentEditFormProps) {
-  const { language, t } = useLanguage();
+  const { t } = useLanguage();
 
   // Strict currency filter
   const matchingAccounts = accounts.filter((a) => a.currency === debt.currency);
@@ -131,18 +131,16 @@ function DebtPaymentEditForm({
       const currentBal = Number(selectedAccount.current_balance) || 0;
       const delta = numericAmount - oldAmount;
       if (currentBal - delta < 0) {
-        const err =
-          language === "en"
-            ? `Insufficient balance in ${selectedAccount.name} for payment increase. (Available: ${formatCurrency(currentBal, selectedAccount.currency)})`
-            : `Saldo ${selectedAccount.name} tidak mencukupi untuk kenaikan pembayaran. (Tersedia: ${formatCurrency(currentBal, selectedAccount.currency)})`;
+        const err = t.debts.insufficientBalanceIncrease
+          .replace("{account}", selectedAccount.name)
+          .replace(
+            "{available}",
+            formatCurrency(currentBal, selectedAccount.currency),
+          );
         setError(err);
-        toast.error(
-          t.transactions.insufficientBalance ||
-            (language === "en"
-              ? "Insufficient Balance"
-              : "Saldo Tidak Mencukupi"),
-          { description: err },
-        );
+        toast.error(t.transactions.insufficientBalance, {
+          description: err,
+        });
         return;
       }
     }
@@ -161,29 +159,16 @@ function DebtPaymentEditForm({
 
       if (res.error) {
         setError(res.error);
-        toast.error(
-          t.debts.updatePaymentFailed ||
-            (language === "en"
-              ? "Failed to Update Payment"
-              : "Gagal Mengubah Cicilan"),
-          { description: res.error },
-        );
+        toast.error(t.debts.updatePaymentFailed, { description: res.error });
       } else {
-        toast.success(
-          language === "en"
-            ? "Installment updated successfully"
-            : "Perubahan cicilan berhasil disimpan",
-        );
+        toast.success(t.debts.updatePaymentSuccess);
         onSuccess?.();
         onClose();
       }
     } catch (err) {
       const msg = (err as Error).message;
       setError(msg);
-      toast.error(
-        language === "en" ? "An error occurred" : "Terjadi Kesalahan",
-        { description: msg },
-      );
+      toast.error(t.common.error, { description: msg });
     } finally {
       setIsLoading(false);
     }

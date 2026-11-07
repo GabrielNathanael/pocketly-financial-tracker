@@ -45,7 +45,7 @@ export function GoalDepositModal({
   accounts,
   onSuccess,
 }: GoalDepositModalProps) {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
 
   const [type, setType] = useState<GoalDepositType>("deposit");
   const [amount, setAmount] = useState("");
@@ -86,28 +86,21 @@ export function GoalDepositModal({
 
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount) || numAmount <= 0) {
-      setErrorMsg(
-        language === "en"
-          ? "Please enter a valid amount"
-          : "Nominal harus lebih dari 0",
-      );
+      setErrorMsg(t.goals.errorAmountInvalid);
       return;
     }
 
     if (!accountId) {
-      setErrorMsg(
-        language === "en"
-          ? "Please select an account (Cash or Bank)"
-          : "Silakan pilih akun sumber/tujuan (Kas Tunai atau Bank)",
-      );
+      setErrorMsg(t.goals.errorSelectAccount);
       return;
     }
 
     if (type === "withdraw" && numAmount > currentAmt) {
       setErrorMsg(
-        language === "en"
-          ? `Withdrawal cannot exceed saved balance (${formatCurrency(currentAmt, goal.currency)})`
-          : `Nominal tarik melebihi saldo tabungan (${formatCurrency(currentAmt, goal.currency)})`,
+        t.goals.errorWithdrawExceed.replace(
+          "{amount}",
+          formatCurrency(currentAmt, goal.currency),
+        ),
       );
       return;
     }
@@ -135,11 +128,7 @@ export function GoalDepositModal({
       onSuccess?.();
       onClose();
     } catch {
-      setErrorMsg(
-        language === "en"
-          ? "An unexpected error occurred"
-          : "Terjadi kesalahan sistem",
-      );
+      setErrorMsg(t.goals.errorUnexpected);
     } finally {
       setLoading(false);
     }
@@ -173,7 +162,7 @@ export function GoalDepositModal({
           </div>
           <div className="text-right">
             <span className="font-sans text-[#64748B] dark:text-[#94A3B8] block text-[10px] uppercase font-bold tracking-wider">
-              {language === "en" ? "Remaining Target" : "Sisa Target"}
+              {t.goals.remainingTargetLabel}
             </span>
             <span className="font-bold text-[#0F172A] dark:text-[#F8FAFC] text-sm tnum">
               {formatCurrency(remainingAmt, goal.currency)}
@@ -237,12 +226,8 @@ export function GoalDepositModal({
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA]">
             {type === "deposit"
-              ? language === "en"
-                ? "Source Account"
-                : "Rekening Sumber"
-              : language === "en"
-                ? "Destination Account"
-                : "Rekening Tujuan"}{" "}
+              ? t.goals.sourceAccountShortLabel
+              : t.goals.depositDestinationAccountLabel}{" "}
             <span className="text-rose-500">*</span>
           </label>
           <Select value={accountId} onValueChange={setAccountId}>
@@ -279,7 +264,7 @@ export function GoalDepositModal({
           label={t.recurring.notesLabel}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="misal: Setoran THR, Bonus Kerja"
+          placeholder={t.goals.depositNotesPlaceholder}
           className="text-xs"
         />
 

@@ -53,7 +53,7 @@ export function RecurringFormModal({
   editItem,
   onSuccess,
 }: RecurringFormModalProps) {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
 
   const [name, setName] = useState("");
   const [type, setType] = useState<"income" | "expense">("expense");
@@ -132,27 +132,15 @@ export function RecurringFormModal({
 
     const numAmount = parseFloat(amount);
     if (!name.trim()) {
-      setErrorMsg(
-        language === "en"
-          ? "Please enter a name"
-          : "Nama jadwal tidak boleh kosong",
-      );
+      setErrorMsg(t.recurring.nameRequired);
       return;
     }
     if (isNaN(numAmount) || numAmount <= 0) {
-      setErrorMsg(
-        language === "en"
-          ? "Please enter a valid amount"
-          : "Nominal harus lebih besar dari 0",
-      );
+      setErrorMsg(t.recurring.amountInvalid);
       return;
     }
     if (!accountId) {
-      setErrorMsg(
-        language === "en"
-          ? "Please select a source account"
-          : "Silakan pilih rekening sumber",
-      );
+      setErrorMsg(t.recurring.accountRequired);
       return;
     }
 
@@ -207,11 +195,7 @@ export function RecurringFormModal({
       onSuccess?.();
       onClose();
     } catch {
-      setErrorMsg(
-        language === "en"
-          ? "An unexpected error occurred"
-          : "Terjadi kesalahan sistem",
-      );
+      setErrorMsg(t.recurring.unexpectedError);
     } finally {
       setLoading(false);
     }
