@@ -4,6 +4,13 @@ export interface ParsedReceiptItem {
   name: string;
   quantity: string;
   price: string;
+  /**
+   * Line total AS PRINTED on the receipt (rightmost column, already
+   * rounded by the POS). Transcribed from the receipt, NOT calculated
+   * as quantity * price. Optional: older OCR results / manual items
+   * won't have it, in which case callers fall back to quantity * price.
+   */
+  subtotal?: string;
 }
 
 export interface ParsedReceipt {
@@ -412,6 +419,9 @@ export function parseReceiptText(text: string): ParsedReceipt {
           name: itemName,
           quantity: "1",
           price: String(Math.round(itemPriceNum)),
+          // Tesseract path has no qty x unit-price split, the single
+          // number it found is already the printed line total.
+          subtotal: String(Math.round(itemPriceNum)),
         });
       }
     }

@@ -10,8 +10,14 @@ import { DynamicIcon } from "@/components/ui/dynamic-icon";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Account, Category, TransactionType } from "@/types/database";
 import { formatCurrency } from "@/lib/utils/currency";
+import {
+  getItemTotal as getSharedItemTotal,
+  formatItemsSummary,
+} from "@/lib/utils/transaction-items";
 import { formatCategoryName } from "@/lib/utils/category-i18n";
 import { createTransaction } from "@/actions/transactions";
+import { CameraCaptureModal } from "@/components/ui/camera-capture-modal";
+import { isMobileDevice } from "@/lib/utils/device";
 import { useLanguage } from "@/lib/i18n/language-context";
 import {
   getPinnedTemplates,
@@ -62,6 +68,13 @@ interface ItemRow {
   name: string;
   quantity: string;
   price: string;
+  /**
+   * Printed line total from OCR (already rounded by POS).
+   * If present, it wins over quantity * price so weighed items
+   * (e.g. 0.414 x 24.900 = 10.308,6 on paper 10.309) match the receipt.
+   * Cleared whenever user edits quantity / price.
+   */
+  subtotal?: string;
 }
 
 interface QuickAddSheetContentProps {
@@ -134,6 +147,7 @@ function QuickAddSheetContent({
   const [ocrProgress, setOcrProgress] = useState<number>(0);
   const [ocrStatus, setOcrStatus] = useState<string>("");
   const [showScanMenu, setShowScanMenu] = useState(false);
+  const [showCameraModal, setShowCameraModal] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const cameraInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -143,10 +157,7 @@ function QuickAddSheetContent({
     useState<PinnedTemplate[]>(getPinnedTemplates);
 
   // Receipt OCR File Handler
-  const handleReceiptUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const file = e.target.files?.[0];
+  const handleReceiptFile = async (file: File) => {
     if (!file) return;
 
     setIsScanning(true);
@@ -193,8 +204,15 @@ function QuickAddSheetContent({
       setIsScanning(false);
       setOcrProgress(0);
       setOcrStatus("");
-      if (e.target) e.target.value = "";
     }
+  };
+
+  const handleReceiptUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0];
+    if (e.target) e.target.value = "";
+    if (file) await handleReceiptFile(file);
   };
 
   // Resolve default category for a given account + type: prefer the
@@ -236,12 +254,14 @@ function QuickAddSheetContent({
 
   const filteredCategories = categories.filter((c) => c.type === type);
 
+  // Line total for one row: prefer the printed subtotal copied from the
+  // receipt (already rounded by POS), otherwise fall back to qty * price
+  // rounded to the currency's decimals.
+  const getItemTotal = (item: ItemRow): number =>
+    getSharedItemTotal(item, currentCurrency);
+
   // Sub-items calculation
-  const itemsTotal = items.reduce((sum, item) => {
-    const q = parseFloat(item.quantity) || 1;
-    const p = parseFloat(item.price) || 0;
-    return sum + q * p;
-  }, 0);
+  const itemsTotal = items.reduce((sum, item) => sum + getItemTotal(item), 0);
 
   // Numeric amount is strictly driven by the main amountStr input/keypad
   const numericAmount = parseFloat(amountStr) || 0;
@@ -357,7 +377,18 @@ function QuickAddSheetContent({
   ) => {
     setItems((prev) => {
       const updated = [...prev];
-      updated[index] = { ...updated[index], [field]: value };
+      // Once the user edits qty/price, the OCR-copied printed subtotal
+      // is stale — drop it so the total falls back to qty * price.
+      // Clearing the subtotal field itself also reverts to qty * price.
+      const clearSubtotal =
+        field === "quantity" ||
+        field === "price" ||
+        (field === "subtotal" && value === "");
+      updated[index] = {
+        ...updated[index],
+        [field]: value,
+        ...(clearSubtotal ? { subtotal: undefined } : {}),
+      };
       return updated;
     });
   };
@@ -441,17 +472,8 @@ function QuickAddSheetContent({
       description.trim() || activeCategory?.name || defaultTypeLabel;
 
     if (showItemsBreakdown && items.length > 0) {
-      const validItems = items.filter(
-        (i) => i.name.trim() && parseFloat(i.price) > 0,
-      );
-      if (validItems.length > 0) {
-        const itemsSummary = validItems
-          .map((i) => {
-            const q = parseFloat(i.quantity) || 1;
-            const label = q !== 1 ? `${i.name.trim()} x${q}` : i.name.trim();
-            return `${label} (${formatCurrency(parseFloat(i.price), currentCurrency)})`;
-          })
-          .join(", ");
+      const itemsSummary = formatItemsSummary(items, currentCurrency);
+      if (itemsSummary) {
         finalDesc += ` [Items: ${itemsSummary}]`;
       }
     }
@@ -603,6 +625,7 @@ function QuickAddSheetContent({
       </div>
 
       {/* 2. Interactive Amount Card (Click to Open Numpad) */}
+      <div className="relative">
       <div
         className={cn(
           "relative rounded-xl bg-white dark:bg-[#121215] border shadow-2xs overflow-hidden transition-all group",
@@ -625,63 +648,14 @@ function QuickAddSheetContent({
               {t.quickAdd.nominal}
             </span>
 
-            <div className="relative flex items-center gap-1">
-              <button
-                type="button"
-                disabled={isScanning}
-                onClick={() => setShowScanMenu((v) => !v)}
-                title={t.quickAdd.scanReceiptBtn}
-                className="flex h-7 w-7 items-center justify-center rounded-lg text-[#94A3B8] transition-colors hover:bg-[#F1F3F5] hover:text-[#0F172A] dark:hover:bg-[#1A1A20] dark:hover:text-[#FAFAFA] disabled:opacity-60"
-              >
-                {isScanning ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-indigo-500" />
-                ) : (
-                  <Camera className="h-4 w-4 text-indigo-500" />
-                )}
-              </button>
-              {showScanMenu && !isScanning && (
-                <>
-                  <div
-                    className="fixed inset-0 z-10"
-                    onClick={() => setShowScanMenu(false)}
-                  />
-                  <div className="absolute right-0 top-full z-20 mt-1 w-44 overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-lg dark:border-[#27272A] dark:bg-[#121215]">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowScanMenu(false);
-                        cameraInputRef.current?.click();
-                      }}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-[#0F172A] hover:bg-[#F8F9FA] dark:text-[#F8FAFC] dark:hover:bg-[#1A1A20]"
-                    >
-                      <Camera className="h-3.5 w-3.5" />
-                      {language === "en" ? "Take photo" : "Ambil dari kamera"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowScanMenu(false);
-                        fileInputRef.current?.click();
-                      }}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-[#0F172A] hover:bg-[#F8F9FA] dark:text-[#F8FAFC] dark:hover:bg-[#1A1A20]"
-                    >
-                      <AlignLeft className="h-3.5 w-3.5" />
-                      {language === "en"
-                        ? "Upload from device"
-                        : "Upload dari device"}
-                    </button>
-                  </div>
-                </>
+            <Calculator
+              className={cn(
+                "w-4 h-4 transition-colors",
+                isNumpadOpen
+                  ? "text-[#0F172A] dark:text-[#FAFAFA]"
+                  : "text-[#94A3B8] group-hover:text-blue-500",
               )}
-              <Calculator
-                className={cn(
-                  "w-4 h-4 transition-colors",
-                  isNumpadOpen
-                    ? "text-[#0F172A] dark:text-[#FAFAFA]"
-                    : "text-[#94A3B8] group-hover:text-blue-500",
-                )}
-              />
-            </div>
+            />
           </div>
 
           {isNumpadOpen && (
@@ -740,6 +714,75 @@ function QuickAddSheetContent({
             <Pin className={cn("w-3.5 h-3.5", isPinned && "fill-current")} />
           </button>
         </div>
+      </div>
+      {/* Scan receipt — beside Calculator, OUTSIDE the overflow-hidden card
+          so the dropdown isn't clipped at the card edge (like edit form) */}
+      <div className="absolute right-[72px] top-2 z-20">
+        <button
+          type="button"
+          disabled={isScanning}
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowScanMenu((v) => !v);
+          }}
+          title={t.quickAdd.scanReceiptBtn}
+          className="flex h-7 w-7 items-center justify-center rounded-lg text-[#94A3B8] transition-colors hover:bg-[#F1F3F5] hover:text-[#0F172A] dark:hover:bg-[#1A1A20] dark:hover:text-[#FAFAFA] disabled:opacity-60"
+        >
+          {isScanning ? (
+            <Loader2 className="h-4 w-4 animate-spin text-indigo-500" />
+          ) : (
+            <Camera className="h-4 w-4 text-indigo-500" />
+          )}
+        </button>
+        {showScanMenu && !isScanning && (
+          <>
+            <div
+              className="fixed inset-0 z-10"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowScanMenu(false);
+              }}
+            />
+            <div
+              className="absolute right-0 top-full z-20 mt-1 w-44 overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-lg dark:border-[#27272A] dark:bg-[#121215]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowScanMenu(false);
+                  // Mobile: native camera (no permission prompt).
+                  // Desktop: webcam modal (capture is ignored there).
+                  if (isMobileDevice()) {
+                    cameraInputRef.current?.click();
+                  } else {
+                    setShowCameraModal(true);
+                  }
+                }}
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-[#0F172A] hover:bg-[#F8F9FA] dark:text-[#F8FAFC] dark:hover:bg-[#1A1A20]"
+              >
+                <Camera className="h-3.5 w-3.5" />
+                {language === "en" ? "Take photo" : "Ambil dari kamera"}
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowScanMenu(false);
+                  fileInputRef.current?.click();
+                }}
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-[#0F172A] hover:bg-[#F8F9FA] dark:text-[#F8FAFC] dark:hover:bg-[#1A1A20]"
+              >
+                <AlignLeft className="h-3.5 w-3.5" />
+                {language === "en"
+                  ? "Upload from device"
+                  : "Upload dari device"}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
       </div>
 
       {/*
@@ -1122,13 +1165,25 @@ function QuickAddSheetContent({
                           }
                           className="flex-1 min-w-0 bg-transparent text-sm font-medium text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8] focus:outline-none"
                         />
-                        <span className="shrink-0 font-mono text-sm font-semibold text-[#0F172A] dark:text-[#F8FAFC]">
-                          {formatCurrency(
-                            (parseFloat(item.quantity) || 1) *
-                              (parseFloat(item.price) || 0),
-                            currentCurrency,
-                          ).replace(/^Rp\s?/, "")}
-                        </span>
+                        <div className="w-28 shrink-0">
+                          <NumberInput
+                            value={
+                              item.subtotal ??
+                              String(getItemTotal(item))
+                            }
+                            onValueChange={(value) =>
+                              handleUpdateItem(idx, "subtotal", value)
+                            }
+                            allowDecimal={false}
+                            maxDigits={12}
+                            placeholder="0"
+                            currency={currentCurrency}
+                            compact
+                            showCurrency={false}
+                            bare
+                            className="w-full"
+                          />
+                        </div>
                       </div>
 
                       {/* Row 2: Qty controls + price + trash */}
@@ -1315,6 +1370,11 @@ function QuickAddSheetContent({
           </div>
         </div>
       </div>
+      <CameraCaptureModal
+        isOpen={showCameraModal}
+        onClose={() => setShowCameraModal(false)}
+        onCapture={handleReceiptFile}
+      />
     </div>
   );
 }

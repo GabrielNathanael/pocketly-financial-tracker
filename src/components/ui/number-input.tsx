@@ -31,6 +31,8 @@ interface NumberInputProps {
   className?: string;
   compact?: boolean;
   showCurrency?: boolean;
+  /** Borderless plain-text look (no box/outline), still opens the keypad on tap. */
+  bare?: boolean;
   variant?: "input" | "card";
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -58,6 +60,7 @@ export function NumberInput({
   className,
   compact = false,
   showCurrency = true,
+  bare = false,
   variant = "input",
   open: controlledOpen,
   onOpenChange,
@@ -132,7 +135,7 @@ export function NumberInput({
           {currency}
         </span>
       )}
-      <span className="min-w-0 flex-1 truncate font-mono font-bold tracking-tight">
+      <span className={cn("min-w-0 flex-1 truncate font-mono font-bold tracking-tight", bare && "text-right")}>
         {mainDisplayValue}
       </span>
       {suffix && <span className="ml-2 shrink-0">{suffix}</span>}
@@ -192,11 +195,13 @@ export function NumberInput({
             ? "border-[#0F172A] ring-1 ring-[#0F172A]/10 dark:border-[#FAFAFA]"
             : "border-[#E5E7EB]",
           error && "border-[#E11D48]",
+          bare &&
+            "justify-end border-0 bg-transparent p-0 min-h-0 ring-0 hover:bg-transparent dark:bg-transparent dark:border-0",
         )}
       >
-        <span className="flex min-w-0 flex-1 items-baseline gap-2 text-base">
+        <span className={cn("flex min-w-0 flex-1 items-baseline gap-2 text-base", bare && "justify-end")}>
           {leftIcon}
-          <span className={cn("flex min-w-0 flex-1 items-baseline gap-2 truncate", !value && "text-[#94A3B8]", compact ? "text-sm" : "text-base")}>
+          <span className={cn("flex min-w-0 flex-1 items-baseline gap-2 truncate", !value && "text-[#94A3B8]", compact ? "text-sm" : "text-base", bare && "justify-end text-right")}>
             {display}
           </span>
         </span>

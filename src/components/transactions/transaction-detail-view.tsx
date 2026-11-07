@@ -10,6 +10,10 @@ import { DynamicIcon } from "@/components/ui/dynamic-icon";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { formatCurrency } from "@/lib/utils/currency";
+import {
+  getItemTotal,
+  parseItemsFromDescription,
+} from "@/lib/utils/transaction-items";
 import { savePinnedTemplate } from "@/lib/storage/pinned-templates";
 import { useLanguage } from "@/lib/i18n/language-context";
 import { formatCategoryName } from "@/lib/utils/category-i18n";
@@ -62,20 +66,15 @@ export function TransactionDetailView({
   // Parse items and memo from description
   const rawDesc = transaction.description || "";
   let memoText = "";
-  let itemsList: string[] = [];
 
   const memoMatch = rawDesc.match(/\[Memo:\s*([^\]]+)\]/);
   if (memoMatch) {
     memoText = memoMatch[1].trim();
   }
 
-  const itemsMatch = rawDesc.match(/\[Items:\s*([^\]]+)\]/);
-  if (itemsMatch) {
-    itemsList = itemsMatch[1]
-      .split(",")
-      .map((it) => it.trim())
-      .filter(Boolean);
-  }
+  // Structured parse: handles "KOL BEIJING x0.414 (Rp 24.900) = Rp 10.309",
+  // legacy "Beras (Rp 75.000)", and currencies with ,/. inside parens.
+  const itemsList = parseItemsFromDescription(rawDesc);
 
   const cleanDescription = rawDesc
     .replace(/\[Memo:\s*[^\]]+\]/g, "")
@@ -342,17 +341,44 @@ export function TransactionDetailView({
                   : `Rincian Belanja (${itemsList.length})`}
               </span>
             </div>
-            <div className="flex flex-col gap-1.5">
-              {itemsList.map((item, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between p-2 rounded bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs"
-                >
-                  <span className="text-[#0F172A] dark:text-[#FAFAFA]">
-                    {item}
-                  </span>
-                </div>
-              ))}
+            <div className="flex flex-col gap-1.5 max-h-36 overflow-y-auto pr-0.5">
+              {itemsList.map((item, idx) => {
+                const qty = parseFloat(item.quantity) || 1;
+                const unit = parseFloat(item.price) || 0;
+                const subtotal = getItemTotal(item, transaction.currency);
+                return (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between gap-2 p-2 rounded bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs"
+                  >
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-[#0F172A] dark:text-[#FAFAFA] font-medium truncate">
+                        {item.name}
+                      </span>
+                      <span className="text-[11px] text-[#64748B] dark:text-[#94A3B8] font-mono">
+                        {`${qty} × ${formatCurrency(unit, transaction.currency)}`}
+                      </span>
+                    </div>
+                    <span className="shrink-0 font-mono font-semibold text-[#0F172A] dark:text-[#FAFAFC]">
+                      {formatCurrency(subtotal, transaction.currency)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex items-center justify-between pt-1 border-t border-[#E5E7EB] dark:border-[#27272A] text-[11px] font-mono">
+              <span className="text-[#64748B] dark:text-[#94A3B8]">
+                {language === "en" ? "Items total" : "Total rincian"}
+              </span>
+              <span className="font-bold text-[#0F172A] dark:text-[#FAFAFA]">
+                {formatCurrency(
+                  itemsList.reduce(
+                    (s, i) => s + getItemTotal(i, transaction.currency),
+                    0,
+                  ),
+                  transaction.currency,
+                )}
+              </span>
             </div>
           </div>
         )}

@@ -15,6 +15,11 @@ import { DynamicIcon } from "@/components/ui/dynamic-icon";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useLanguage } from "@/lib/i18n/language-context";
 import { formatCurrency } from "@/lib/utils/currency";
+import {
+  formatItemsSummary,
+  getItemTotal,
+  parseItemsSummary,
+} from "@/lib/utils/transaction-items";
 import { formatCategoryName } from "@/lib/utils/category-i18n";
 import {
   ArrowDownRight,
@@ -38,13 +43,17 @@ import {
 import { cn } from "@/lib/utils/cn";
 import { toast } from "sonner";
 import { savePinnedTemplate } from "@/lib/storage/pinned-templates";
+import { CameraCaptureModal } from "@/components/ui/camera-capture-modal";
+import { isMobileDevice } from "@/lib/utils/device";
 import { scanReceipt } from "@/lib/ocr/receipt-scanner";
 
 import { localDateToISO, getLocalDateString } from "@/lib/utils/date";
 
 interface ItemRow {
   name: string;
+  quantity: string;
   price: string;
+  subtotal?: string;
 }
 
 interface TransactionFormProps {
@@ -62,54 +71,6 @@ interface TransactionFormProps {
   mostUsedCategoryByAccount?: Record<string, string>;
 }
 
-/**
- * Reverse-parse angka dari string hasil formatCurrency, misal "Rp 6.000",
- * "$6.00", atau "S$1.340,50". HARUS sinkron dengan format yang dipakai
- * formatCurrency di lib/utils/currency.ts:
- * - IDR (id-ID): titik = pemisah ribuan, koma = desimal
- * - USD/SGD (en-US/en-SG): koma = pemisah ribuan, titik = desimal
- */
-function parseFormattedPriceToPlainString(raw: string): string {
-  const s = raw.trim();
-  const isUsdOrSgd = /^\$|^S\$|USD|SGD/i.test(s);
-
-  // Buang semua kecuali digit, titik, koma, minus
-  let numeric = s.replace(/[^0-9.,-]/g, "");
-
-  if (isUsdOrSgd) {
-    // en-US/en-SG: koma ribuan dibuang, titik tetap jadi desimal
-    numeric = numeric.replace(/,/g, "");
-  } else {
-    // id-ID (default/IDR): titik ribuan dibuang, koma jadi desimal
-    numeric = numeric.replace(/\./g, "").replace(",", ".");
-  }
-
-  const num = parseFloat(numeric);
-  return isNaN(num) ? "" : String(num);
-}
-
-/**
- * Split isi "[Items: a (Rp 1.000), b (Rp 2.000,50)]" dengan benar,
- * tanpa ikut kepotong koma desimal yang ada DI DALAM tanda kurung.
- */
-function splitItemsRespectingParens(itemsText: string): string[] {
-  const result: string[] = [];
-  let depth = 0;
-  let current = "";
-  for (const ch of itemsText) {
-    if (ch === "(") depth++;
-    if (ch === ")") depth--;
-    if (ch === "," && depth === 0) {
-      result.push(current);
-      current = "";
-    } else {
-      current += ch;
-    }
-  }
-  if (current.trim()) result.push(current);
-  return result;
-}
-
 function parseTransactionDescription(
   rawDesc?: string | null,
   rawTags?: string[],
@@ -123,23 +84,12 @@ function parseTransactionDescription(
   let memo = "";
   const tagsSet = new Set<string>(rawTags || []);
 
-  // Extract [Items: ...]
+  // Extract [Items: ...] — shared parser handles qty suffix
+  // ("KOL BEIJING x0.414 (Rp 24.900) = Rp 10.309") and legacy
+  // format ("Beras (Rp 75.000)").
   const itemsMatch = text.match(/\[Items:\s*([^\]]+)\]/);
   if (itemsMatch) {
-    const rawItems = splitItemsRespectingParens(itemsMatch[1]);
-    for (const item of rawItems) {
-      const parts = item.split("(");
-      const name = parts[0]?.trim() || "";
-      let price = "";
-      if (parts[1]) {
-        // Buang ")" penutup sebelum diparse
-        const priceText = parts[1].replace(/\)\s*$/, "");
-        price = parseFormattedPriceToPlainString(priceText);
-      }
-      if (name) {
-        items.push({ name, price });
-      }
-    }
+    items.push(...parseItemsSummary(itemsMatch[1]));
     text = text.replace(itemsMatch[0], "").trim();
   }
 
@@ -244,16 +194,16 @@ export function TransactionForm({
   const [isScanning, setIsScanning] = useState(false);
   const [ocrProgress, setOcrProgress] = useState<number>(0);
   const [ocrStatus, setOcrStatus] = useState<string>("");
+  const [showScanMenu, setShowScanMenu] = useState(false);
+  const [showCameraModal, setShowCameraModal] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const cameraInputRef = React.useRef<HTMLInputElement>(null);
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Receipt OCR File Handler
-  const handleReceiptUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const file = e.target.files?.[0];
+  const handleReceiptFile = async (file: File) => {
     if (!file) return;
 
     setIsScanning(true);
@@ -288,8 +238,15 @@ export function TransactionForm({
       setIsScanning(false);
       setOcrProgress(0);
       setOcrStatus("");
-      if (e.target) e.target.value = "";
     }
+  };
+
+  const handleReceiptUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0];
+    if (e.target) e.target.value = "";
+    if (file) await handleReceiptFile(file);
   };
 
   const activeAccount =
@@ -300,11 +257,12 @@ export function TransactionForm({
 
   const filteredCategories = categories.filter((c) => c.type === type);
 
-  // Sub-items calculation
-  const itemsTotal = items.reduce((sum, item) => {
-    const p = parseFloat(item.price) || 0;
-    return sum + p;
-  }, 0);
+  // Sub-items calculation: printed subtotal wins, else qty * unit price
+  // rounded to currency decimals (legacy rows without stored subtotal).
+  const itemsTotal = items.reduce(
+    (sum, item) => sum + getItemTotal(item, currentCurrency),
+    0,
+  );
 
   // Numeric amount is strictly driven by the main amountStr input/keypad
   const numericAmount = parseFloat(amountStr) || 0;
@@ -370,7 +328,7 @@ export function TransactionForm({
 
   // Sub-items CRUD
   const handleAddItem = () => {
-    setItems((prev) => [...prev, { name: "", price: "" }]);
+    setItems((prev) => [...prev, { name: "", quantity: "1", price: "" }]);
   };
 
   const handleUpdateItem = (
@@ -380,7 +338,15 @@ export function TransactionForm({
   ) => {
     setItems((prev) => {
       const updated = [...prev];
-      updated[index] = { ...updated[index], [field]: value };
+      const clearSubtotal =
+        field === "quantity" ||
+        field === "price" ||
+        (field === "subtotal" && value === "");
+      updated[index] = {
+        ...updated[index],
+        [field]: value,
+        ...(clearSubtotal ? { subtotal: undefined } : {}),
+      };
       return updated;
     });
   };
@@ -456,16 +422,8 @@ export function TransactionForm({
       description.trim() || activeCategory?.name || defaultTypeLabel;
 
     if (showItemsBreakdown && items.length > 0) {
-      const validItems = items.filter(
-        (i) => i.name.trim() && parseFloat(i.price) > 0,
-      );
-      if (validItems.length > 0) {
-        const itemsSummary = validItems
-          .map(
-            (i) =>
-              `${i.name.trim()} (${formatCurrency(parseFloat(i.price), currentCurrency)})`,
-          )
-          .join(", ");
+      const itemsSummary = formatItemsSummary(items, currentCurrency);
+      if (itemsSummary) {
         finalDesc += ` [Items: ${itemsSummary}]`;
       }
     }
@@ -637,6 +595,62 @@ export function TransactionForm({
         >
           <Pin className={cn("h-3.5 w-3.5", isPinned && "fill-current")} />
         </button>
+        {/* Scan receipt — beside Calculator in the amount card, like quick-add */}
+        <div className="absolute right-[72px] top-2 z-20">
+          <button
+            type="button"
+            disabled={isScanning}
+            onClick={() => setShowScanMenu((v) => !v)}
+            title={t.quickAdd.scanReceiptBtn}
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-[#94A3B8] transition-colors hover:bg-[#F1F3F5] hover:text-[#0F172A] dark:hover:bg-[#1A1A20] dark:hover:text-[#FAFAFA] disabled:opacity-60"
+          >
+            {isScanning ? (
+              <Loader2 className="h-4 w-4 animate-spin text-indigo-500" />
+            ) : (
+              <Camera className="h-4 w-4 text-indigo-500" />
+            )}
+          </button>
+          {showScanMenu && !isScanning && (
+            <>
+              <div
+                className="fixed inset-0 z-10"
+                onClick={() => setShowScanMenu(false)}
+              />
+              <div className="absolute right-0 top-full z-20 mt-1 w-44 overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-lg dark:border-[#27272A] dark:bg-[#121215]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowScanMenu(false);
+                    // Mobile: native camera (no permission prompt).
+                    // Desktop: webcam modal (capture is ignored there).
+                    if (isMobileDevice()) {
+                      cameraInputRef.current?.click();
+                    } else {
+                      setShowCameraModal(true);
+                    }
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-[#0F172A] hover:bg-[#F8F9FA] dark:text-[#F8FAFC] dark:hover:bg-[#1A1A20]"
+                >
+                  <Camera className="h-3.5 w-3.5" />
+                  {language === "en" ? "Take photo" : "Ambil dari kamera"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowScanMenu(false);
+                    fileInputRef.current?.click();
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-[#0F172A] hover:bg-[#F8F9FA] dark:text-[#F8FAFC] dark:hover:bg-[#1A1A20]"
+                >
+                  <AlignLeft className="h-3.5 w-3.5" />
+                  {language === "en"
+                    ? "Upload from device"
+                    : "Upload dari device"}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
       <div
         className={cn(
@@ -885,6 +899,14 @@ export function TransactionForm({
               className="hidden"
               onChange={handleReceiptUpload}
             />
+            <input
+              type="file"
+              ref={cameraInputRef}
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={handleReceiptUpload}
+            />
 
             {/* OCR Scanning Status Banner */}
             {isScanning && (
@@ -901,31 +923,8 @@ export function TransactionForm({
               </div>
             )}
 
-            {/* Action Toolbar Grid (4 Columns: Scan, Items, Memo, Tags) */}
-            <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
-              {/* OCR Scan Button */}
-              <button
-                type="button"
-                disabled={isScanning}
-                onClick={() => fileInputRef.current?.click()}
-                className={cn(
-                  "py-2 px-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none",
-                  isScanning
-                    ? "opacity-60 cursor-not-allowed bg-indigo-50 text-indigo-600 border-indigo-200 dark:bg-indigo-950/40 dark:border-indigo-800"
-                    : "bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#0F172A] dark:text-[#F8FAFC] hover:border-indigo-400 dark:hover:border-indigo-600 border-[#E5E7EB] dark:border-[#27272A]",
-                )}
-                title={t.quickAdd.scanReceiptBtn}
-              >
-                {isScanning ? (
-                  <Loader2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 animate-spin shrink-0" />
-                ) : (
-                  <Camera className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
-                )}
-                <span className="truncate">
-                  {language === "en" ? "Scan" : "Pindai"}
-                </span>
-              </button>
-
+            {/* Action Toolbar Grid (3 Columns: Items, Memo, Tags) — scan lives in amount card */}
+            <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
               {/* Breakdown Items Button */}
               <button
                 type="button"
@@ -1059,43 +1058,118 @@ export function TransactionForm({
                   {t.quickAdd.emptyItems}
                 </div>
               ) : (
-                <div className="flex flex-col gap-1.5 max-h-36 overflow-y-auto pr-0.5">
+                <div className="flex flex-col max-h-36 overflow-y-auto pr-0.5">
                   {items.map((item, idx) => (
                     <div
                       key={idx}
-                      className="grid grid-cols-[minmax(0,1fr)_5rem_auto] items-center gap-1.5"
+                      className="flex flex-col gap-1 py-2 border-b border-[#E5E7EB] dark:border-[#27272A] last:border-b-0"
                     >
-                      <input
-                        type="text"
-                        placeholder={`Item ${idx + 1}`}
-                        value={item.name}
-                        onChange={(e) =>
-                          handleUpdateItem(idx, "name", e.target.value)
-                        }
-                        className="flex-1 min-w-0 px-2 py-1.5 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8]"
-                      />
-                      <div className="w-20 min-w-0">
-                        <NumberInput
-                          value={item.price}
-                          onValueChange={(value) =>
-                            handleUpdateItem(idx, "price", value)
+                      {/* Row 1: Name + Total */}
+                      <div className="flex items-center justify-between gap-2">
+                        <input
+                          type="text"
+                          placeholder={`Item ${idx + 1}`}
+                          value={item.name}
+                          onChange={(e) =>
+                            handleUpdateItem(idx, "name", e.target.value)
                           }
-                          allowDecimal={false}
-                          maxDigits={12}
-                          placeholder="0"
-                          currency={currentCurrency}
-                          compact
-                          showCurrency={false}
-                          className="w-full"
+                          className="flex-1 min-w-0 bg-transparent text-sm font-medium text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8] focus:outline-none"
                         />
+                        <div className="w-28 shrink-0">
+                          <NumberInput
+                            value={
+                              item.subtotal ??
+                              String(getItemTotal(item, currentCurrency))
+                            }
+                            onValueChange={(value) =>
+                              handleUpdateItem(idx, "subtotal", value)
+                            }
+                            allowDecimal={false}
+                            maxDigits={12}
+                            placeholder="0"
+                            currency={currentCurrency}
+                            compact
+                            showCurrency={false}
+                            bare
+                            className="w-full"
+                          />
+                        </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveItem(idx)}
-                        className="p-1.5 text-[#94A3B8] hover:text-[#E11D48] active:scale-90 transition-all cursor-pointer shrink-0"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+
+                      {/* Row 2: Qty controls + price + trash */}
+                      <div className="flex items-center gap-2">
+                        {/* Minus */}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleUpdateItem(
+                              idx,
+                              "quantity",
+                              String(
+                                Math.max(
+                                  0,
+                                  (parseFloat(item.quantity) || 1) - 1,
+                                ),
+                              ),
+                            )
+                          }
+                          className="flex h-6 w-6 items-center justify-center rounded-md border border-[#E5E7EB] dark:border-[#27272A] text-[#64748B] dark:text-[#94A3B8] text-sm"
+                        >
+                          −
+                        </button>
+
+                        <input
+                          type="number"
+                          inputMode="decimal"
+                          value={item.quantity}
+                          onChange={(e) =>
+                            handleUpdateItem(idx, "quantity", e.target.value)
+                          }
+                          className="w-10 bg-transparent text-xs text-center text-[#0F172A] dark:text-[#FAFAFA] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+
+                        {/* Plus */}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleUpdateItem(
+                              idx,
+                              "quantity",
+                              String((parseFloat(item.quantity) || 1) + 1),
+                            )
+                          }
+                          className="flex h-6 w-6 items-center justify-center rounded-md border border-[#E5E7EB] dark:border-[#27272A] text-[#64748B] dark:text-[#94A3B8] text-sm"
+                        >
+                          +
+                        </button>
+
+                        {/* Multiply + unit price */}
+                        <span className="text-xs text-[#94A3B8]">×</span>
+                        <div className="flex-1 min-w-0">
+                          <NumberInput
+                            value={item.price}
+                            onValueChange={(value) =>
+                              handleUpdateItem(idx, "price", value)
+                            }
+                            allowDecimal={false}
+                            maxDigits={12}
+                            placeholder="0"
+                            currency={currentCurrency}
+                            compact
+                            showCurrency={false}
+                            className="w-full bg-transparent text-xs text-[#64748B] dark:text-[#94A3B8] focus:outline-none"
+                          />
+                        </div>
+
+                        {/* Trash */}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveItem(idx)}
+                          className="p-1 text-[#94A3B8] hover:text-[#E11D48] active:scale-90 transition-all cursor-pointer shrink-0"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1196,6 +1270,11 @@ export function TransactionForm({
           </div>
         </>
       )}
+      <CameraCaptureModal
+        isOpen={showCameraModal}
+        onClose={() => setShowCameraModal(false)}
+        onCapture={handleReceiptFile}
+      />
     </form>
   );
 }

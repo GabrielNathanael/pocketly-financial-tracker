@@ -41,17 +41,19 @@ export async function scanReceiptWithGemini(
 {
   "merchant": "nama toko string",
   "date": "yyyy-mm-dd atau null",
-  "total": 86500,
-  "items": [{"name": "nama item", "quantity": 2, "price": 12500}]
+  "total": 140963,
+  "items": [{"name": "KOL BEIJING", "quantity": 0.414, "price": 24900, "subtotal": 10309}]
 }
 
 Aturan:
 - total adalah TOTAL BELANJA (yang dibayar, bukan kembalian).
-- items adalah semua barang yang terbaca di struk, harga per item dalam Rupiah (angka saja, tanpa titik/koma).
-- quantity adalah jumlah bungkus/item (angka, 1 kalau tidak tercantum, boleh desimal seperti 0.5).
-- price adalah harga SATUAN per bungkus, bukan subtotal.
+- items adalah semua barang yang terbaca di struk, harga dalam Rupiah (angka saja, tanpa titik/koma).
+- quantity adalah jumlah bungkus/item/bobot (angka, 1 kalau tidak tercantum, boleh desimal seperti 0.5 untuk kiloan).
+- price adalah harga SATUAN per bungkus/kilo persis tertulis di kolom harga satuan, bukan subtotal.
+- subtotal adalah angka kolom paling kanan per baris. SALIN PERSIS angka yang tercetak di struk (sudah dibulatkan POS), JANGAN hitung ulang quantity x price.
+- Jika baris cuma punya 1 angka harga (tidak ada kolom subtotal terpisah), isi subtotal dengan angka itu, jangan mengarang.
 - Jika item tidak terbaca, kosongkan array items.
-- Harga dan total harus angka bulat (contoh: 12500 bukan "Rp12.500").
+- Harga, subtotal, dan total harus angka bulat (contoh: 10309 bukan "10.309").
 - Jangan tambah teks lain di luar JSON.`;
 
   const res = await fetch(
@@ -88,7 +90,7 @@ Aturan:
     "";
   if (!text) throw new Error("Gemini mengembalikan kosong");
 
-  let parsed: { merchant?: string; date?: string | null; total?: number; items?: { name: string; quantity?: number; price: number }[] };
+  let parsed: { merchant?: string; date?: string | null; total?: number; items?: { name: string; quantity?: number; price: number; subtotal?: number | null }[] };
   try {
     parsed = JSON.parse(extractJson(text));
   } catch {
@@ -102,6 +104,12 @@ Aturan:
           name: String(it.name).slice(0, 80),
           quantity: String(Number(it.quantity) > 0 ? Number(it.quantity) : 1),
           price: String(Math.round(Number(it.price))),
+          // Printed line total copied from the receipt. If the model
+          // omitted it / returned null, leave it undefined so callers
+          // fall back to quantity * price.
+          ...(it.subtotal != null && Number(it.subtotal) > 0
+            ? { subtotal: String(Math.round(Number(it.subtotal))) }
+            : {}),
         }))
     : [];
 
