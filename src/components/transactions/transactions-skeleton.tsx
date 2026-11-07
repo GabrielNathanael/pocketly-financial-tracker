@@ -1,7 +1,7 @@
 import React from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
 
-export default function TransactionsLoading() {
+export function TransactionsSkeleton() {
   return (
     <div className="flex flex-col gap-4 animate-in fade-in-50 duration-150" aria-busy="true" aria-live="polite">
       {/* 1. Header Skeleton */}

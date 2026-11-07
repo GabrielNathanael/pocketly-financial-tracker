@@ -1,8 +1,9 @@
-import React from 'react'
+import React, { Suspense } from 'react'
 import { getTransactions, getAllUserTags, TransactionFilterParams } from '@/actions/transactions'
 import { getAccounts } from '@/actions/accounts'
 import { getCategories } from '@/actions/categories'
 import { TransactionsView } from '@/components/transactions/transactions-view'
+import { TransactionsSkeleton } from '@/components/transactions/transactions-skeleton'
 import { TransactionType } from '@/types/database'
 import { getLatestForexRates } from '@/actions/exchange-rate'
 
@@ -21,9 +22,7 @@ interface TransactionsPageProps {
   }>
 }
 
-export default async function TransactionsPage({ searchParams }: TransactionsPageProps) {
-  const params = await searchParams
-
+async function TransactionsContent({ params }: { params: Awaited<TransactionsPageProps['searchParams']> }) {
   const filterParams: TransactionFilterParams = {
     type: params.type as TransactionType | 'all',
     accountId: params.accountId,
@@ -53,5 +52,14 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
       activeTag={params.tag}
       exchangeRates={exchangeRates}
     />
+  )
+}
+
+export default async function TransactionsPage({ searchParams }: TransactionsPageProps) {
+  const params = await searchParams
+  return (
+    <Suspense fallback={<TransactionsSkeleton />}>
+      <TransactionsContent params={params} />
+    </Suspense>
   )
 }

@@ -1,7 +1,7 @@
 import React from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
 
-export default function TransactionDetailLoading() {
+export function TransactionDetailSkeleton() {
   return (
     <div className="flex flex-col gap-5 max-w-lg mx-auto animate-in fade-in-50 duration-150" aria-busy="true" aria-live="polite">
       {/* Top Bar Navigation Skeleton */}
