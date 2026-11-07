@@ -2,11 +2,10 @@
 
 import { revalidatePath } from 'next/cache'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { EnrichedRecurringTransaction, RecurringFrequency } from '@/types/database'
+import { EnrichedRecurringTransaction } from '@/types/database'
 import { recurringTransactionSchema, RecurringTransactionInput } from '@/lib/validations/recurring'
-import { calculateNextDueDate } from '@/lib/utils/recurring'
-import { parseISO } from 'date-fns'
-import { zonedDateToUtc, getTodayDateStringInTimeZone } from '@/lib/utils/date'
+import { processOneRecurringPeriod } from '@/lib/recurring/process-due-recurring'
+import { getTodayDateStringInTimeZone } from '@/lib/utils/date'
 import { getUserTimeZone } from '@/lib/utils/timezone-server'
 
 /**
@@ -172,18 +171,16 @@ export async function toggleRecurringActive(id: string, isActive: boolean) {
 }
 
 /**
- * Execute/Pay a recurring transaction:
- * 1. Inserts a new row into `transactions` table.
- * 2. Updates the source account's balance (`current_balance`).
- * 3. Advances `next_due_date` to the next period.
- * 4. Records `last_processed_date`.
+ * Execute/Pay a recurring transaction manually ("Pay Now").
+ * Balance is maintained by the DB trigger on transaction INSERT —
+ * do NOT update it here (that double-counted before).
+ * Expense respects the non-negative balance guard, like createTransaction.
  */
 export async function processRecurringPayment(id: string, executionDate?: string) {
   const supabase = await createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Unauthorized' }
 
-  // 1. Fetch recurring rule
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: rule, error: ruleErr } = await (supabase.from('recurring_transactions') as any)
     .select('*')
@@ -195,71 +192,30 @@ export async function processRecurringPayment(id: string, executionDate?: string
     return { error: 'Recurring schedule not found' }
   }
 
-  // 2. Fetch source account
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: account, error: accErr } = await (supabase.from('accounts') as any)
-    .select('id, current_balance, currency')
-    .eq('id', rule.account_id)
-    .eq('user_id', user.id)
-    .single()
-
-  if (accErr || !account) {
-    return { error: 'Linked source account not found' }
-  }
-
   const userTz = await getUserTimeZone()
-  const txDate = executionDate ? zonedDateToUtc(executionDate, userTz, 12, 0, 0) : new Date().toISOString()
-  const cleanDescription = rule.notes ? `${rule.name} • ${rule.notes}` : rule.name
+  const overrideDate = executionDate || getTodayDateStringInTimeZone(userTz)
 
-  // 3. Insert transaction
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: tx, error: txErr } = await (supabase.from('transactions') as any)
-    .insert({
-      user_id: user.id,
-      account_id: rule.account_id,
-      category_id: rule.category_id || '',
-      type: rule.type,
-      amount: rule.amount,
-      currency: rule.currency,
-      description: cleanDescription,
-      transaction_date: txDate,
-    })
-    .select()
-    .single()
+  const result = await processOneRecurringPeriod(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    supabase as any,
+    rule,
+    userTz,
+    overrideDate,
+  )
 
-  if (txErr) {
-    console.error('Error inserting transaction from recurring rule:', txErr)
-    return { error: txErr.message }
+  if (!result.ok) {
+    if (result.reason === 'no_category') {
+      return { error: 'Kategori belum diatur untuk jadwal ini. Atur kategori dulu sebelum membayar.' }
+    }
+    if (result.reason === 'no_account') {
+      return { error: 'Linked source account not found' }
+    }
+    if (result.reason === 'insufficient_balance') {
+      return { error: 'Saldo tidak mencukupi untuk membayar jadwal ini.' }
+    }
+    console.error('Error processing recurring payment:', result.error)
+    return { error: result.error || 'Gagal memproses pembayaran recurring' }
   }
-
-  // 4. Update account balance
-  const balanceDelta = rule.type === 'income' ? Number(rule.amount) : -Number(rule.amount)
-  const newBalance = Number(account.current_balance) + balanceDelta
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (supabase.from('accounts') as any)
-    .update({ current_balance: newBalance })
-    .eq('id', account.id)
-
-  // 5. Advance next_due_date and record last_processed_date
-  const nextDueDate = calculateNextDueDate(rule.next_due_date, rule.frequency as RecurringFrequency, rule.interval_count)
-  const todayStr = getTodayDateStringInTimeZone(userTz)
-
-  // Check if reached end_date
-  let shouldDeactivate = false
-  if (rule.end_date && parseISO(nextDueDate) > parseISO(rule.end_date)) {
-    shouldDeactivate = true
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (supabase.from('recurring_transactions') as any)
-    .update({
-      next_due_date: nextDueDate,
-      last_processed_date: todayStr,
-      is_active: shouldDeactivate ? false : rule.is_active,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', rule.id)
 
   revalidatePath('/recurring')
   revalidatePath('/transactions')
@@ -268,7 +224,7 @@ export async function processRecurringPayment(id: string, executionDate?: string
   revalidatePath('/reports')
   revalidatePath('/net-worth')
 
-  return { success: true, transaction: tx }
+  return { success: true, transaction: { id: result.transactionId } }
 }
 
 /**
