@@ -2,11 +2,23 @@ import { AuditLog } from "@/types/database";
 import { formatCurrency } from "@/lib/utils/currency";
 import { formatDate } from "@/lib/utils/date";
 import { getCleanDescription } from "@/lib/utils/description";
+import {
+  formatItemsSummary,
+  parseItemsSummary,
+} from "@/lib/utils/transaction-items";
 
 export interface HumanizedAuditLog {
   title: string;
   summary: string;
-  changes: Array<{ field: string; from?: string; to?: string }>;
+  changes: Array<{
+    field: string;
+    from?: string;
+    to?: string;
+    /** Structured items for Rincian Item / Items Breakdown changes. */
+    items?: import("@/lib/utils/transaction-items").TransactionItem[];
+    itemsFrom?: import("@/lib/utils/transaction-items").TransactionItem[];
+    currency?: string;
+  }>;
   badgeType: "create" | "update" | "delete";
   badgeLabel: string;
   moduleName: string;
@@ -1349,7 +1361,16 @@ export function humanizeAuditLog(
           ? [
               {
                 field: isId ? "Rincian Item" : "Items Breakdown",
-                to: itemsMatch[1].trim(),
+                // Re-format via shared parser so legacy rows without a
+                // stored "= Rp SUBTOTAL" still show the POS-rounded
+                // subtotal (e.g. 0.414 x 24.900 -> = Rp 10.309).
+                to:
+                  formatItemsSummary(
+                    parseItemsSummary(itemsMatch[1]),
+                    newVal.currency || "IDR",
+                  ) || itemsMatch[1].trim(),
+                items: parseItemsSummary(itemsMatch[1]),
+                currency: newVal.currency || "IDR",
               },
             ]
           : []),
@@ -1364,6 +1385,18 @@ export function humanizeAuditLog(
       ? formatCurrency(Number(oldVal.amount), oldVal.currency || "IDR")
       : "";
     const cleanDesc = getCleanDescription(oldVal.description);
+    const rawDesc = oldVal.description || "";
+    const itemsMatch = rawDesc.match(/\[Items:\s*([^\]]+)\]/);
+    const memoMatch = rawDesc.match(/\[Memo:\s*([^\]]+)\]/);
+    const currency = oldVal.currency || "IDR";
+    const deletedTags: string[] = Array.from(
+      new Set([
+        ...(Array.isArray(oldVal.tags) ? oldVal.tags : []),
+        ...((rawDesc.match(/#[a-zA-Z0-9_\-]+/g) || []).map((t: string) =>
+          t.replace(/^#/, "").toLowerCase(),
+        ) as string[]),
+      ]),
+    );
 
     return {
       moduleName: isId ? "Transaksi" : "Transactions",
@@ -1383,6 +1416,48 @@ export function humanizeAuditLog(
         ...(cleanDesc
           ? [{ field: isId ? "Keterangan" : "Note", from: cleanDesc }]
           : []),
+        ...(oldVal.transaction_date
+          ? [
+              {
+                field: isId ? "Tanggal Transaksi" : "Transaction Date",
+                from: formatDate(
+                  String(oldVal.transaction_date).substring(0, 10),
+                  "d MMM yyyy",
+                  lang,
+                ),
+              },
+            ]
+          : []),
+        ...(memoMatch
+          ? [
+              {
+                field: isId ? "Catatan Memo" : "Memo",
+                from: memoMatch[1].trim(),
+              },
+            ]
+          : []),
+        ...(deletedTags.length > 0
+          ? [
+              {
+                field: isId ? "Tagar (#tags)" : "Tags",
+                from: deletedTags.map((t: string) => `#${t}`).join(", "),
+              },
+            ]
+          : []),
+        ...(itemsMatch
+          ? [
+              {
+                field: isId ? "Rincian Item" : "Items Breakdown",
+                from:
+                  formatItemsSummary(
+                    parseItemsSummary(itemsMatch[1]),
+                    currency,
+                  ) || itemsMatch[1].trim(),
+                items: parseItemsSummary(itemsMatch[1]),
+                currency,
+              },
+            ]
+          : []),
       ],
       badgeType: "delete",
       badgeLabel: isId ? "Dihapus" : "Deleted",
@@ -1390,7 +1465,7 @@ export function humanizeAuditLog(
   }
 
   // UPDATE action - trace only human meaningful fields
-  const changes: Array<{ field: string; from?: string; to?: string }> = [];
+  const changes: HumanizedAuditLog["changes"] = [];
 
   if (
     oldVal.amount !== newVal.amount &&
@@ -1414,6 +1489,31 @@ export function humanizeAuditLog(
       field: isId ? "Catatan / Keterangan" : "Description Note",
       from: oldCleanDesc || (isId ? "(Kosong)" : "(Empty)"),
       to: newCleanDesc || (isId ? "(Kosong)" : "(Empty)"),
+    });
+  }
+
+  const oldItemsMatch = (oldVal.description || "").match(
+    /\[Items:\s*([^\]]+)\]/,
+  );
+  const newItemsMatch = (newVal.description || "").match(
+    /\[Items:\s*([^\]]+)\]/,
+  );
+  const oldItemsRaw = oldItemsMatch ? oldItemsMatch[1].trim() : "";
+  const newItemsRaw = newItemsMatch ? newItemsMatch[1].trim() : "";
+  if (oldItemsRaw !== newItemsRaw) {
+    const fmt = (raw: string, currency: string) =>
+      raw
+        ? formatItemsSummary(parseItemsSummary(raw), currency) || raw
+        : isId
+          ? "(Kosong)"
+          : "(Empty)";
+    changes.push({
+      field: isId ? "Rincian Item" : "Items Breakdown",
+      from: fmt(oldItemsRaw, oldVal.currency || "IDR"),
+      to: fmt(newItemsRaw, newVal.currency || "IDR"),
+      itemsFrom: oldItemsRaw ? parseItemsSummary(oldItemsRaw) : undefined,
+      items: newItemsRaw ? parseItemsSummary(newItemsRaw) : undefined,
+      currency: newVal.currency || oldVal.currency || "IDR",
     });
   }
 

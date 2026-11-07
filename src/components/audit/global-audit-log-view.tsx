@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { AuditLog } from "@/types/database";
 import { formatDate, getLocalDateString } from "@/lib/utils/date";
 import { humanizeAuditLog } from "@/lib/utils/audit-humanizer";
+import { AuditItemsList } from "@/components/audit/audit-items-list";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/lib/i18n/language-context";
@@ -365,31 +366,61 @@ export function GlobalAuditLogView({
                 {/* Humanized Change Diff List */}
                 {h.changes.length > 0 && (
                   <div className="flex flex-col gap-1.5 p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-xs">
-                    {h.changes.map((c, cIdx) => (
-                      <div
-                        key={cIdx}
-                        className="flex items-start justify-between gap-2 flex-wrap text-[11px]"
-                      >
-                        <span className="font-semibold text-[#64748B] dark:text-[#94A3B8] shrink-0">
-                          {c.field}:
-                        </span>
-                        <div className="flex items-center gap-2 font-mono flex-wrap justify-end">
-                          {c.from && (
-                            <span className="px-1.5 py-0.5 rounded bg-[#FFF1F2] dark:bg-[#881337]/20 text-[#E11D48] line-through">
-                              {c.from}
-                            </span>
+                    {h.changes.map((c, cIdx) =>
+                      c.items ? (
+                        <div key={cIdx} className="flex flex-col gap-1.5 text-[11px]">
+                          <span className="font-semibold text-[#64748B] dark:text-[#94A3B8]">
+                            {c.field}:
+                          </span>
+                          {c.itemsFrom && c.itemsFrom.length > 0 && (
+                            <>
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
+                                {language === "en" ? "From" : "Dari"}
+                              </span>
+                              <AuditItemsList
+                                items={c.itemsFrom}
+                                currency={c.currency || "IDR"}
+                                muted
+                              />
+                            </>
                           )}
-                          {c.from && c.to && (
-                            <ArrowRight className="w-3 h-3 text-[#94A3B8] shrink-0" />
-                          )}
-                          {c.to && (
-                            <span className="px-1.5 py-0.5 rounded bg-[#ECFDF5] dark:bg-[#064E3B]/20 font-bold text-[#0D9488]">
+                          {c.items.length > 0 ? (
+                            <AuditItemsList
+                              items={c.items}
+                              currency={c.currency || "IDR"}
+                            />
+                          ) : (
+                            <span className="font-mono text-[#64748B]">
                               {c.to}
                             </span>
                           )}
                         </div>
-                      </div>
-                    ))}
+                      ) : (
+                        <div
+                          key={cIdx}
+                          className="flex items-start justify-between gap-2 flex-wrap text-[11px]"
+                        >
+                          <span className="font-semibold text-[#64748B] dark:text-[#94A3B8] shrink-0">
+                            {c.field}:
+                          </span>
+                          <div className="flex items-center gap-2 font-mono flex-wrap justify-end">
+                            {c.from && (
+                              <span className="px-1.5 py-0.5 rounded bg-[#FFF1F2] dark:bg-[#881337]/20 text-[#E11D48] line-through">
+                                {c.from}
+                              </span>
+                            )}
+                            {c.from && c.to && (
+                              <ArrowRight className="w-3 h-3 text-[#94A3B8] shrink-0" />
+                            )}
+                            {c.to && (
+                              <span className="px-1.5 py-0.5 rounded bg-[#ECFDF5] dark:bg-[#064E3B]/20 font-bold text-[#0D9488]">
+                                {c.to}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ),
+                    )}
                   </div>
                 )}
               </div>

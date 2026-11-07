@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { AuditLog } from '@/types/database'
 import { formatDate } from '@/lib/utils/date'
 import { humanizeAuditLog } from '@/lib/utils/audit-humanizer'
+import { AuditItemsList } from '@/components/audit/audit-items-list'
 import { useLanguage } from '@/lib/i18n/language-context'
 import { ArrowLeft, Clock, PlusCircle, Edit, Trash2, ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
@@ -90,24 +91,54 @@ export function SingleTransactionAuditView({
                 {/* Humanized Diff Changes */}
                 {h.changes.length > 0 && (
                   <div className="p-2.5 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-1 text-xs">
-                    {h.changes.map((c, idx) => (
-                      <div key={idx} className="flex items-center justify-between gap-2 text-[11px]">
-                        <span className="font-semibold text-[#64748B] dark:text-[#94A3B8]">
-                          {c.field}:
-                        </span>
-                        <div className="flex items-center gap-1.5 font-mono">
-                          {c.from && (
+                    {h.changes.map((c, idx) =>
+                      c.items ? (
+                        <div key={idx} className="flex flex-col gap-1.5 text-[11px]">
+                          <span className="font-semibold text-[#64748B] dark:text-[#94A3B8]">
+                            {c.field}:
+                          </span>
+                          {c.itemsFrom && c.itemsFrom.length > 0 && (
                             <>
-                              <span className="text-[#E11D48] line-through">{c.from}</span>
-                              <ArrowRight className="w-3 h-3 text-[#94A3B8]" />
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
+                                {language === "en" ? "From" : "Dari"}
+                              </span>
+                              <AuditItemsList
+                                items={c.itemsFrom}
+                                currency={c.currency || "IDR"}
+                                muted
+                              />
                             </>
                           )}
-                          {c.to && (
-                            <span className="font-bold text-[#0D9488]">{c.to}</span>
+                          {c.items.length > 0 ? (
+                            <AuditItemsList
+                              items={c.items}
+                              currency={c.currency || "IDR"}
+                            />
+                          ) : (
+                            <span className="font-mono text-[#64748B]">
+                              {c.to}
+                            </span>
                           )}
                         </div>
-                      </div>
-                    ))}
+                      ) : (
+                        <div key={idx} className="flex items-center justify-between gap-2 text-[11px]">
+                          <span className="font-semibold text-[#64748B] dark:text-[#94A3B8]">
+                            {c.field}:
+                          </span>
+                          <div className="flex items-center gap-1.5 font-mono">
+                            {c.from && (
+                              <>
+                                <span className="text-[#E11D48] line-through">{c.from}</span>
+                                <ArrowRight className="w-3 h-3 text-[#94A3B8]" />
+                              </>
+                            )}
+                            {c.to && (
+                              <span className="font-bold text-[#0D9488]">{c.to}</span>
+                            )}
+                          </div>
+                        </div>
+                      ),
+                    )}
                   </div>
                 )}
               </div>
