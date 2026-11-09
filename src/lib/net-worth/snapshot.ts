@@ -1,4 +1,5 @@
 import { computeNetWorthForUser } from "@/lib/net-worth/compute";
+import { getAssetPrices } from "@/lib/net-worth/prices";
 import type { ForexRatesMap } from "@/lib/utils/currency";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -15,7 +16,8 @@ export async function snapshotNetWorthForUser(
   snapshotDate: string,
   rates: ForexRatesMap,
 ): Promise<{ ok: boolean; error?: string }> {
-  const computed = await computeNetWorthForUser(supabase, userId, rates);
+  const prices = await getAssetPrices(supabase);
+  const computed = await computeNetWorthForUser(supabase, userId, rates, prices);
 
   const breakdown = {
     accounts: computed.totalAccountsIdr,

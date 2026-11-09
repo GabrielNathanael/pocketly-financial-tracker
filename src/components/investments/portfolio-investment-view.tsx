@@ -15,6 +15,7 @@ import {
   Layers,
   Percent,
   Plus,
+  RefreshCw,
   Search,
   Trash2,
   TrendingUp,
@@ -117,6 +118,7 @@ interface PortfolioInvestmentViewProps {
   accounts: Account[];
   transfers: EnrichedTransfer[];
   rates?: ForexRatesMap;
+  prices?: Array<{ kind: string; symbol: string; price: number; currency: string; fetchedAt: string }>;
 }
 
 export function PortfolioInvestmentView({
@@ -129,6 +131,7 @@ export function PortfolioInvestmentView({
   accounts,
   transfers,
   rates,
+  prices = [],
 }: PortfolioInvestmentViewProps) {
   const { t, language } = useLanguage();
   const router = useRouter();
@@ -217,16 +220,63 @@ export function PortfolioInvestmentView({
     end: format(endOfMonth(new Date()), "yyyy-MM-dd"),
   });
 
-  const stockValue = stocks.reduce(
+  const priceMap = useMemo(
+    () => new Map(prices.map((p) => [`${p.kind}:${p.symbol.toUpperCase()}`, p])),
+    [prices],
+  );
+  const toIdr = (amount: number, currency: string) =>
+    convertAmount(amount, currency, "IDR", rates);
+  const marketValue = (
+    kind: "stock" | "crypto" | "etf",
+    symbol: string,
+    quantity: number,
+    costIdr: number,
+  ): number => {
+    const cached = priceMap.get(`${kind}:${symbol.toUpperCase()}`);
+    if (!cached || cached.price <= 0 || quantity <= 0) return costIdr;
+    return toIdr(quantity * cached.price, cached.currency);
+  };
+
+  const stockCost = stocks.reduce(
     (total, holding) => total + Number(holding.total_cost),
     0,
   );
-  const cryptoValue = cryptos.reduce(
+  const cryptoCost = cryptos.reduce(
     (total, holding) => total + Number(holding.cost_basis),
     0,
   );
-  const etfValue = etfs.reduce(
+  const etfCost = etfs.reduce(
     (total, holding) => total + Number(holding.total_cost),
+    0,
+  );
+  const stockValue = stocks.reduce((total, holding) => {
+    const shares =
+      Number((holding as any).total_shares) || Number(holding.lots || 0) * 100 || 0;
+    return (
+      total +
+      marketValue("stock", holding.ticker || "", shares, Number(holding.total_cost) || 0)
+    );
+  }, 0);
+  const cryptoValue = cryptos.reduce(
+    (total, holding) =>
+      total +
+      marketValue(
+        "crypto",
+        holding.symbol || "",
+        Number(holding.quantity) || 0,
+        Number(holding.cost_basis) || 0,
+      ),
+    0,
+  );
+  const etfValue = etfs.reduce(
+    (total, holding) =>
+      total +
+      marketValue(
+        "etf",
+        holding.ticker || "",
+        Number(holding.quantity) || 0,
+        Number(holding.total_cost) || 0,
+      ),
     0,
   );
   const cashValue = investmentAccounts.reduce(
@@ -234,6 +284,8 @@ export function PortfolioInvestmentView({
     0,
   );
   const totalPortfolioValue = stockValue + cryptoValue + etfValue + cashValue;
+  const totalCostValue = stockCost + cryptoCost + etfCost + cashValue;
+  const unrealizedPnl = totalPortfolioValue - totalCostValue;
 
   // Consolidated & sorted activity transactions
   const allActivities = useMemo<Activity[]>(
@@ -925,36 +977,100 @@ export function PortfolioInvestmentView({
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-3.5 px-1 pb-20 sm:gap-4 sm:px-2">
-      {/* Sleek, Non-redundant Mobile-Optimized Header (Aligned heights, no jomplang) */}
+      {/* Header: title row + total row, actions compact */}
       <header className="rounded-2xl border border-[#E5E7EB] bg-white p-3.5 shadow-2xs dark:border-[#27272A] dark:bg-[#121215] sm:p-5">
-        <div className="flex flex-col gap-3.5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2.5">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2.5">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400">
               <TrendingUp className="h-4 w-4" />
             </div>
-            <div>
-              <h1 className="text-base font-black tracking-tight text-[#0F172A] dark:text-[#F8FAFC] sm:text-lg">
+            <div className="min-w-0">
+              <h1 className="truncate text-base font-black tracking-tight text-[#0F172A] dark:text-[#F8FAFC] sm:text-lg">
                 {i18n.title}
               </h1>
-              <p className="text-[10px] text-[#64748B] dark:text-[#94A3B8] sm:text-[11px]">
+              <p className="truncate text-[10px] text-[#64748B] dark:text-[#94A3B8] sm:text-[11px]">
                 {i18n.subtitle}
               </p>
             </div>
           </div>
-
-          {/* Equal-height (h-11) Metric Box & Action Button */}
-          <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-2.5">
-            <div className="relative">
+          <div className="flex shrink-0 items-center gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                const { refreshAssetPricesAction } = await import(
+                  "@/actions/asset-prices"
+                );
+                const res = await refreshAssetPricesAction();
+                if (res?.error) {
+                  toast.error(res.error);
+                } else {
+                  toast.success(
+                    isEn ? "Market prices updated" : "Harga pasar diperbarui",
+                  );
+                  router.refresh();
+                }
+              }}
+              title={isEn ? "Refresh Prices" : "Refresh Harga"}
+              className="h-9 w-9 rounded-xl p-0"
+            >
+              <RefreshCw className="h-4 w-4 shrink-0" />
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => openBuy("crypto")}
+              title={i18n.addTradeBtn}
+              className="h-9 gap-1.5 rounded-full px-3.5 text-xs font-bold shadow-xs"
+            >
+              <Plus className="h-4 w-4 shrink-0" />
+              <span className="truncate hidden sm:inline">{i18n.addTradeBtn}</span>
+            </Button>
+          </div>
+        </div>
+        <div className="mt-3">
+          <div className="relative">
               <button
                 type="button"
                 onClick={() => setShowCashBreakdown((prev) => !prev)}
-                className="flex h-11 flex-col justify-center rounded-xl border border-[#E5E7EB] bg-[#F8F9FA] px-3 text-left transition-colors hover:bg-[#F1F3F5] dark:border-[#27272A] dark:bg-[#1A1A20] dark:hover:bg-[#222228]"
+                className="flex w-full items-end justify-between gap-3 rounded-xl bg-[#F8F9FA] px-4 py-3 text-left transition-colors hover:bg-[#F1F3F5] dark:bg-[#1A1A20] dark:hover:bg-[#222228]"
               >
-                <span className="text-[9px] font-bold uppercase tracking-wider text-[#94A3B8] leading-none">
-                  {i18n.totalPortfolio}
+                <span className="flex min-w-0 flex-col">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8] leading-none">
+                    {i18n.totalPortfolio}
+                  </span>
+                  <span className="mt-1 whitespace-nowrap font-mono text-lg font-black leading-none text-[#0F172A] dark:text-[#F8FAFC] sm:text-2xl">
+                    {fmt(totalPortfolioValue, "IDR")}
+                  </span>
                 </span>
-                <span className="mt-1 truncate font-mono text-xs font-black leading-none text-[#0F172A] dark:text-[#F8FAFC] sm:text-sm">
-                  {fmt(totalPortfolioValue, "IDR")}
+                <span className="flex shrink-0 flex-col items-end">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8] leading-none">
+                    {isEn ? "Unrealized P&L" : "Unrealized P&L"}
+                  </span>
+                  <span
+                    className={cn(
+                      "mt-1 truncate font-mono text-xs font-black leading-none",
+                      unrealizedPnl >= 0
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : "text-rose-600 dark:text-rose-400",
+                    )}
+                  >
+                    {unrealizedPnl >= 0 ? "+" : ""}
+                    {fmt(unrealizedPnl, "IDR")}
+                  </span>
+                  <span
+                    className={cn(
+                      "mt-0.5 font-mono text-[10px] font-bold leading-none",
+                      unrealizedPnl >= 0
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : "text-rose-600 dark:text-rose-400",
+                    )}
+                  >
+                    {(() => {
+                      const base = totalCostValue - cashValue;
+                      const pct = base > 0 ? (unrealizedPnl / base) * 100 : 0;
+                      return `${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%`;
+                    })()}
+                  </span>
                 </span>
               </button>
 
@@ -967,7 +1083,7 @@ export function PortfolioInvestmentView({
                   />
 
                   {/* Popover */}
-                  <div className="absolute left-0 top-full z-20 mt-2 w-64 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-lg dark:border-[#27272A] dark:bg-[#121215]">
+                  <div className="absolute left-0 top-full z-20 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-lg dark:border-[#27272A] dark:bg-[#121215]">
                     {/* Kas per akun */}
                     <div className="border-b border-[#E5E7EB] px-4 py-3 dark:border-[#27272A]">
                       <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
@@ -983,7 +1099,7 @@ export function PortfolioInvestmentView({
                             <span className="truncate text-xs text-[#64748B] dark:text-[#94A3B8]">
                               {account.name}
                             </span>
-                            <span className="shrink-0 font-mono text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                            <span className="shrink-0 whitespace-nowrap font-mono text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
                               {fmt(
                                 Number(account.current_balance),
                                 account.currency,
@@ -995,7 +1111,7 @@ export function PortfolioInvestmentView({
                           <span className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
                             {isEn ? "Total Cash" : "Total Kas"}
                           </span>
-                          <span className="font-mono text-xs font-black text-[#0F172A] dark:text-[#F8FAFC]">
+                          <span className="whitespace-nowrap font-mono text-xs font-black text-[#0F172A] dark:text-[#F8FAFC]">
                             {fmt(cashValue, "IDR")}
                           </span>
                         </div>
@@ -1036,7 +1152,7 @@ export function PortfolioInvestmentView({
                         <span className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
                           {i18n.totalPortfolio}
                         </span>
-                        <span className="font-mono text-xs font-black text-[#0F172A] dark:text-[#F8FAFC]">
+                        <span className="whitespace-nowrap font-mono text-xs font-black text-[#0F172A] dark:text-[#F8FAFC]">
                           {fmt(totalPortfolioValue, "IDR")}
                         </span>
                       </div>
@@ -1045,18 +1161,6 @@ export function PortfolioInvestmentView({
                 </>
               )}
             </div>
-
-            <Button
-              onClick={() => {
-                // Default to crypto if no selection yet, user picks kind inside modal
-                openBuy("crypto");
-              }}
-              className="h-11 min-h-[44px] gap-1.5 rounded-xl px-4 text-xs font-bold shadow-xs"
-            >
-              <Plus className="h-4 w-4 shrink-0" />
-              <span className="truncate">{i18n.addTradeBtn}</span>
-            </Button>
-          </div>
         </div>
       </header>
 
@@ -1090,30 +1194,67 @@ export function PortfolioInvestmentView({
       {tab === "portfolio" && (
         <section className="flex flex-col gap-3 sm:gap-4">
           <div className="grid gap-3 sm:grid-cols-2">
-            {stocks.map((holding) => (
-              <StockCard
-                key={holding.id}
-                holding={holding}
-                onBuy={() => openBuy("stock", holding)}
-                onSell={() => openSell("stock", holding)}
-              />
-            ))}
-            {cryptos.map((holding) => (
-              <CryptoCard
-                key={holding.id}
-                holding={holding}
-                onBuy={() => openBuy("crypto", holding)}
-                onSell={() => openSell("crypto", holding)}
-              />
-            ))}
-            {etfs.map((holding) => (
-              <EtfCard
-                key={holding.id}
-                holding={holding}
-                onBuy={() => openBuy("etf", holding)}
-                onSell={() => openSell("etf", holding)}
-              />
-            ))}
+            {stocks.map((holding) => {
+              const shares =
+                Number((holding as any).total_shares) ||
+                Number(holding.lots || 0) * 100 ||
+                0;
+              const quote = priceMap.get(`stock:${(holding.ticker || "").toUpperCase()}`);
+              const market = marketValue(
+                "stock",
+                holding.ticker || "",
+                shares,
+                Number(holding.total_cost) || 0,
+              );
+              return (
+                <StockCard
+                  key={holding.id}
+                  holding={holding}
+                  quote={quote}
+                  marketValue={market}
+                  onBuy={() => openBuy("stock", holding)}
+                  onSell={() => openSell("stock", holding)}
+                />
+              );
+            })}
+            {cryptos.map((holding) => {
+              const quote = priceMap.get(`crypto:${(holding.symbol || "").toUpperCase()}`);
+              const market = marketValue(
+                "crypto",
+                holding.symbol || "",
+                Number(holding.quantity) || 0,
+                Number(holding.cost_basis) || 0,
+              );
+              return (
+                <CryptoCard
+                  key={holding.id}
+                  holding={holding}
+                  quote={quote}
+                  marketValue={market}
+                  onBuy={() => openBuy("crypto", holding)}
+                  onSell={() => openSell("crypto", holding)}
+                />
+              );
+            })}
+            {etfs.map((holding) => {
+              const quote = priceMap.get(`etf:${(holding.ticker || "").toUpperCase()}`);
+              const market = marketValue(
+                "etf",
+                holding.ticker || "",
+                Number(holding.quantity) || 0,
+                Number(holding.total_cost) || 0,
+              );
+              return (
+                <EtfCard
+                  key={holding.id}
+                  holding={holding}
+                  quote={quote}
+                  marketValue={market}
+                  onBuy={() => openBuy("etf", holding)}
+                  onSell={() => openSell("etf", holding)}
+                />
+              );
+            })}
           </div>
           {stocks.length + cryptos.length + etfs.length === 0 && (
             <div className="rounded-2xl border border-dashed border-[#E5E7EB] bg-white p-12 text-center text-xs text-[#64748B] dark:border-[#27272A] dark:bg-[#121215]">
@@ -1397,7 +1538,7 @@ export function PortfolioInvestmentView({
                       <span className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
                         {isEn ? "Total Settlement" : "Total Eksekusi"}
                       </span>
-                      <p className="font-mono text-xs font-black text-[#0F172A] dark:text-[#F8FAFC]">
+                      <p className="whitespace-nowrap font-mono text-xs font-black text-[#0F172A] dark:text-[#F8FAFC]">
                         {fmt(
                           totalAmount,
                           activity.account?.currency || "IDR",
@@ -2688,6 +2829,73 @@ function useAssetColor(src: string | null, fallback: string) {
   return color;
 }
 
+function MarketQuoteRow({
+  quote,
+  marketValue,
+  cost,
+  fmt,
+  isEn,
+}: {
+  quote?: { price: number; currency: string; fetchedAt: string };
+  marketValue?: number;
+  cost: number;
+  fmt: (amount: number, currency?: string) => string;
+  isEn: boolean;
+}) {
+  if (!quote || marketValue === undefined) return null;
+  const pnl = marketValue - cost;
+  const fetchedDate = quote.fetchedAt
+    ? new Date(quote.fetchedAt).toLocaleDateString(isEn ? "en-US" : "id-ID", {
+        day: "numeric",
+        month: "short",
+      })
+    : "";
+  const isStale = quote.fetchedAt
+    ? Date.now() - new Date(quote.fetchedAt).getTime() > 48 * 3600000
+    : false;
+  return (
+    <div className="col-span-2 flex flex-col gap-1 border-t border-[#E5E7EB] pt-2.5 dark:border-[#27272A]">
+      <div className="flex items-baseline justify-between">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
+          {isEn ? "Market Price" : "Harga Pasar"}
+        </p>
+        <p className="font-mono text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+          {fmt(quote.price, quote.currency)}
+          {isStale && (
+            <span className="ml-1 rounded bg-amber-500/10 px-1 py-0.5 text-[9px] font-bold text-amber-600 dark:text-amber-400">
+              {isEn ? "Stale" : "Lama"}
+            </span>
+          )}
+        </p>
+      </div>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8] leading-tight">
+          {isEn ? "Market Value" : "Nilai Pasar"}
+          {fetchedDate && (
+            <span className="block text-[9px] font-semibold normal-case text-[#94A3B8]">
+              {fetchedDate}
+            </span>
+          )}
+        </p>
+        <p
+          className={cn(
+            "text-right font-mono text-xs font-bold leading-tight",
+            pnl >= 0
+              ? "text-emerald-600 dark:text-emerald-400"
+              : "text-rose-600 dark:text-rose-400",
+          )}
+        >
+          {fmt(marketValue, "IDR")}
+          <span className="block text-[10px] font-semibold">
+            ({pnl >= 0 ? "+" : ""}
+            {fmt(pnl, "IDR")})
+          </span>
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function Summary({
   label,
   value,
@@ -2721,10 +2929,14 @@ function Summary({
 
 function EtfCard({
   holding,
+  quote,
+  marketValue: marketVal,
   onBuy,
   onSell,
 }: {
   holding: EnrichedEtfHolding;
+  quote?: { price: number; currency: string; fetchedAt: string };
+  marketValue?: number;
   onBuy: () => void;
   onSell: () => void;
 }) {
@@ -2739,28 +2951,55 @@ function EtfCard({
   const logoUrl = publishableKey
     ? `https://img.logo.dev/ticker/${holding.ticker.toLowerCase()}?token=${publishableKey}`
     : null;
-  const headerBg = useAssetColor(logoUrl, "rgb(224, 231, 255)");
+  const cost = Number(holding.total_cost) || 0;
+  const pnl = marketVal !== undefined ? marketVal - cost : 0;
+  const pnlPct = cost > 0 ? (pnl / cost) * 100 : 0;
+  const marketDate = quote?.fetchedAt
+    ? new Date(quote.fetchedAt).toLocaleDateString(isEn ? "en-US" : "id-ID", { day: "numeric", month: "short" })
+    : "";
   return (
     <div className="overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-2xs dark:border-[#27272A] dark:bg-[#121215]">
-      <div className="flex items-center justify-between gap-3 px-5 py-4" style={{ backgroundColor: headerBg }}>
-        <div className="flex min-w-0 items-center gap-3">
+      <div className="flex items-center justify-between gap-3 px-4 py-3.5">
+        <div className="flex min-w-0 items-center gap-2.5">
           <AssetLogo kind="etf" symbol={holding.ticker} />
           <div className="min-w-0">
             <p className="font-black text-sm text-[#0F172A] dark:text-[#F8FAFC]">{holding.ticker}</p>
-            <p className="truncate text-[10px] text-indigo-800/70 dark:text-indigo-200/70">{isEn ? "US ETF" : "ETF AS"}</p>
+            <p className="truncate text-[10px] text-[#64748B] dark:text-[#94A3B8]">{isEn ? "US ETF" : "ETF AS"}</p>
           </div>
         </div>
-        <span className="truncate text-right text-xs font-medium text-indigo-900 dark:text-indigo-100">{holding.account?.name || "Broker"}</span>
+        <div className="flex shrink-0 flex-col items-end gap-0.5">
+          <span className="rounded-full border border-[#E5E7EB] px-2 py-0.5 text-[10px] font-semibold text-[#64748B] dark:border-[#27272A] dark:text-[#94A3B8]">{holding.account?.name || "Broker"}</span>
+          {marketVal !== undefined && (
+            <>
+              <span className="font-mono text-sm font-black text-[#0F172A] dark:text-[#F8FAFC] tnum">{fmt(marketVal, "IDR")}</span>
+              <span className={cn("font-mono text-[10px] font-bold", pnl >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400")}>
+                {pnl >= 0 ? "+" : ""}{pnlPct.toFixed(2)}%
+              </span>
+            </>
+          )}
+        </div>
       </div>
-      <div className="p-4 sm:p-5">
-        <div className="grid grid-cols-2 gap-3">
-          <AssetMetric label={i18n.quantityLabel} value={`${holding.quantity} shares`} />
-          <AssetMetric label={i18n.capitalLabel} value={fmt(Number(holding.total_cost), "IDR")} align="right" />
-          <div className="col-span-2 flex items-baseline justify-between border-t border-[#E5E7EB] pt-2.5 dark:border-[#27272A]">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">{isEn ? "Avg Price / Share" : "Harga Rata-rata / Unit"}</p>
-            <p className="font-mono text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">{Number(holding.avg_buy_price) > 0 ? fmt(Number(holding.avg_buy_price), "IDR") : "—"}</p>
-          </div>
+      <div className="flex flex-col divide-y divide-[#F1F3F5] px-4 py-1 dark:divide-[#1E1E24]">
+        <div className="flex items-center justify-between py-2">
+          <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">{i18n.quantityLabel}</span>
+          <span className="font-mono text-xs font-bold tnum">{holding.quantity} shares</span>
         </div>
+        <div className="flex items-center justify-between py-2">
+          <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">{i18n.capitalLabel}</span>
+          <span className="font-mono text-xs font-bold tnum">{fmt(cost, "IDR")}</span>
+        </div>
+        <div className="flex items-center justify-between py-2">
+          <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">{isEn ? "Avg Price / Share" : "Harga Rata-rata / Unit"}</span>
+          <span className="font-mono text-xs font-bold tnum">{Number(holding.avg_buy_price) > 0 ? fmt(Number(holding.avg_buy_price), "IDR") : "—"}</span>
+        </div>
+        {quote && (
+          <div className="flex items-center justify-between py-2">
+            <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">{isEn ? `Market ${marketDate}` : `Market ${marketDate}`}</span>
+            <span className="font-mono text-xs font-bold tnum">{fmt(quote.price, quote.currency)}</span>
+          </div>
+        )}
+      </div>
+      <div className="px-4 pb-4">
         <AssetActions onBuy={onBuy} onSell={onSell} />
       </div>
     </div>
@@ -2769,10 +3008,14 @@ function EtfCard({
 
 function StockCard({
   holding,
+  quote,
+  marketValue: marketVal,
   onBuy,
   onSell,
 }: {
   holding: EnrichedStockHolding;
+  quote?: { price: number; currency: string; fetchedAt: string };
+  marketValue?: number;
   onBuy: () => void;
   onSell: () => void;
 }) {
@@ -2789,51 +3032,56 @@ function StockCard({
   const logoUrl = publishableKey
     ? `https://img.logo.dev/ticker/${holding.ticker.toLowerCase()}.jk?token=${publishableKey}`
     : null;
-  const headerBg = useAssetColor(logoUrl, "rgb(224, 231, 255)");
+  const cost = Number(holding.total_cost) || 0;
+  const pnl = marketVal !== undefined ? marketVal - cost : 0;
+  const pnlPct = cost > 0 ? (pnl / cost) * 100 : 0;
+  const marketDate = quote?.fetchedAt
+    ? new Date(quote.fetchedAt).toLocaleDateString(isEn ? "en-US" : "id-ID", { day: "numeric", month: "short" })
+    : "";
 
   return (
     <div className="overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-2xs dark:border-[#27272A] dark:bg-[#121215]">
-      <div
-        className="flex items-center justify-between gap-3 px-5 py-4"
-        style={{ backgroundColor: headerBg }}
-      >
-        <div className="flex min-w-0 items-center gap-3">
+      <div className="flex items-center justify-between gap-3 px-4 py-3.5">
+        <div className="flex min-w-0 items-center gap-2.5">
           <AssetLogo kind="stock" symbol={holding.ticker} />
           <div className="min-w-0">
-            <p className="font-black text-sm text-[#0F172A] dark:text-[#F8FAFC]">
-              {holding.ticker}
-            </p>
-            <p className="truncate text-[10px] text-indigo-800/70 dark:text-indigo-200/70">
-              {i18n.stock}
-            </p>
+            <p className="font-black text-sm text-[#0F172A] dark:text-[#F8FAFC]">{holding.ticker}</p>
+            <p className="truncate text-[10px] text-[#64748B] dark:text-[#94A3B8]">{isEn ? "IDX Stocks" : "Saham IDX"}</p>
           </div>
         </div>
-        <span className="truncate text-right text-xs font-medium text-indigo-900 dark:text-indigo-100">
-          {holding.account?.name || "RDN"}
-        </span>
+        <div className="flex shrink-0 flex-col items-end gap-0.5">
+          <span className="rounded-full border border-[#E5E7EB] px-2 py-0.5 text-[10px] font-semibold text-[#64748B] dark:border-[#27272A] dark:text-[#94A3B8]">{holding.account?.name || "RDN"}</span>
+          {marketVal !== undefined && (
+            <>
+              <span className="font-mono text-sm font-black text-[#0F172A] dark:text-[#F8FAFC] tnum">{fmt(marketVal, "IDR")}</span>
+              <span className={cn("font-mono text-[10px] font-bold", pnl >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400")}>
+                {pnl >= 0 ? "+" : ""}{pnlPct.toFixed(2)}%
+              </span>
+            </>
+          )}
+        </div>
       </div>
-      <div className="p-4 sm:p-5">
-        <div className="grid grid-cols-2 gap-3">
-          <AssetMetric label={i18n.quantityLabel} value={`${lots} lot`} />
-          <AssetMetric
-            label={i18n.capitalLabel}
-            value={fmt(
-              Number(holding.total_cost),
-              holding.account?.currency,
-            )}
-            align="right"
-          />
-          <div className="col-span-2 flex items-baseline justify-between border-t border-[#E5E7EB] pt-2.5 dark:border-[#27272A]">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
-              {isEn ? "Avg Price / Share" : "Harga Rata-rata / Lembar"}
-            </p>
-            <p className="font-mono text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-              {Number(holding.avg_buy_price) > 0
-                ? `${fmt(Number(holding.avg_buy_price), holding.account?.currency)} / lbr`
-                : "—"}
-            </p>
-          </div>
+      <div className="flex flex-col divide-y divide-[#F1F3F5] px-4 py-1 dark:divide-[#1E1E24]">
+        <div className="flex items-center justify-between py-2">
+          <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">{i18n.quantityLabel}</span>
+          <span className="font-mono text-xs font-bold tnum">{lots} lot</span>
         </div>
+        <div className="flex items-center justify-between py-2">
+          <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">{i18n.capitalLabel}</span>
+          <span className="font-mono text-xs font-bold tnum">{fmt(cost, holding.account?.currency)}</span>
+        </div>
+        <div className="flex items-center justify-between py-2">
+          <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">{isEn ? "Avg Price / Share" : "Harga Rata-rata / Lembar"}</span>
+          <span className="font-mono text-xs font-bold tnum">{Number(holding.avg_buy_price) > 0 ? `${fmt(Number(holding.avg_buy_price), holding.account?.currency)} / lbr` : "—"}</span>
+        </div>
+        {quote && (
+          <div className="flex items-center justify-between py-2">
+            <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">Market {marketDate}</span>
+            <span className="font-mono text-xs font-bold tnum">{fmt(quote.price, quote.currency)}</span>
+          </div>
+        )}
+      </div>
+      <div className="px-4 pb-4">
         <AssetActions onBuy={onBuy} onSell={onSell} />
       </div>
     </div>
@@ -2841,10 +3089,14 @@ function StockCard({
 }
 function CryptoCard({
   holding,
+  quote,
+  marketValue: marketVal,
   onBuy,
   onSell,
 }: {
   holding: EnrichedCryptoHolding;
+  quote?: { price: number; currency: string; fetchedAt: string };
+  marketValue?: number;
   onBuy: () => void;
   onSell: () => void;
 }) {
@@ -2860,60 +3112,56 @@ function CryptoCard({
   const logoUrl = publishableKey
     ? `https://img.logo.dev/crypto/${holding.symbol.toLowerCase()}?token=${publishableKey}`
     : null;
-  const headerBg = useAssetColor(logoUrl, "rgb(253, 244, 208)");
+  const cost = Number(holding.cost_basis) || 0;
+  const pnl = marketVal !== undefined ? marketVal - cost : 0;
+  const pnlPct = cost > 0 ? (pnl / cost) * 100 : 0;
+  const marketDate = quote?.fetchedAt
+    ? new Date(quote.fetchedAt).toLocaleDateString(isEn ? "en-US" : "id-ID", { day: "numeric", month: "short" })
+    : "";
 
   return (
     <div className="overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-2xs dark:border-[#27272A] dark:bg-[#121215]">
-      <div
-        className="flex items-center justify-between gap-3 px-5 py-4"
-        style={{ backgroundColor: headerBg }}
-      >
-        <div className="flex min-w-0 items-center gap-3">
+      <div className="flex items-center justify-between gap-3 px-4 py-3.5">
+        <div className="flex min-w-0 items-center gap-2.5">
           <AssetLogo kind="crypto" symbol={holding.symbol} />
           <div className="min-w-0">
-            <p className="font-black text-sm text-[#0F172A] dark:text-[#F8FAFC]">
-              {holding.symbol}
-            </p>
-            <p className="truncate text-[10px] text-[#704500]/75 dark:text-[#FFE9B0]/75">
-              {i18n.cryptoAsset}
-            </p>
+            <p className="font-black text-sm text-[#0F172A] dark:text-[#F8FAFC]">{holding.symbol}</p>
+            <p className="truncate text-[10px] text-[#64748B] dark:text-[#94A3B8]">{i18n.cryptoAsset}</p>
           </div>
         </div>
-        <span className="truncate text-right text-xs font-medium text-[#704500] dark:text-[#FFE9B0]">
-          {holding.account?.name || i18n.accountFallback}
-        </span>
+        <div className="flex shrink-0 flex-col items-end gap-0.5">
+          <span className="rounded-full border border-[#E5E7EB] px-2 py-0.5 text-[10px] font-semibold text-[#64748B] dark:border-[#27272A] dark:text-[#94A3B8]">{holding.account?.name || i18n.accountFallback}</span>
+          {marketVal !== undefined && (
+            <>
+              <span className="font-mono text-sm font-black text-[#0F172A] dark:text-[#F8FAFC] tnum">{fmt(marketVal, "IDR")}</span>
+              <span className={cn("font-mono text-[10px] font-bold", pnl >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400")}>
+                {pnl >= 0 ? "+" : ""}{pnlPct.toFixed(2)}%
+              </span>
+            </>
+          )}
+        </div>
       </div>
-      <div className="p-4 sm:p-5">
-        <div className="grid grid-cols-2 gap-3">
-          <AssetMetric
-            label={i18n.quantityLabel}
-            value={`${formatCryptoQuantity(holding.quantity)} ${holding.symbol}`}
-            valueClassName="break-all"
-          />
-          <AssetMetric
-            label={i18n.capitalLabel}
-            value={fmt(
-              Number(holding.cost_basis),
-              holding.price_currency,
-            )}
-            align="right"
-          />
-          <div className="col-span-2 flex items-baseline justify-between border-t border-[#E5E7EB] pt-2.5 dark:border-[#27272A]">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
-              {isEn
-                ? `Avg Buy Price / ${holding.symbol}`
-                : `Harga Rata-rata / ${holding.symbol}`}
-            </p>
-            <p className="font-mono text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-              {Number(holding.average_buy_price) > 0
-                ? fmt(
-                    Number(holding.average_buy_price),
-                    holding.price_currency,
-                  )
-                : "—"}
-            </p>
-          </div>
+      <div className="flex flex-col divide-y divide-[#F1F3F5] px-4 py-1 dark:divide-[#1E1E24]">
+        <div className="flex items-center justify-between py-2">
+          <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">{i18n.quantityLabel}</span>
+          <span className="font-mono text-xs font-bold tnum break-all">{formatCryptoQuantity(holding.quantity)} {holding.symbol}</span>
         </div>
+        <div className="flex items-center justify-between py-2">
+          <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">{i18n.capitalLabel}</span>
+          <span className="font-mono text-xs font-bold tnum">{fmt(cost, holding.price_currency)}</span>
+        </div>
+        <div className="flex items-center justify-between py-2">
+          <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">{isEn ? `Avg Buy Price / ${holding.symbol}` : `Harga Rata-rata / ${holding.symbol}`}</span>
+          <span className="font-mono text-xs font-bold tnum">{Number(holding.average_buy_price) > 0 ? fmt(Number(holding.average_buy_price), holding.price_currency) : "—"}</span>
+        </div>
+        {quote && (
+          <div className="flex items-center justify-between py-2">
+            <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">Market {marketDate}</span>
+            <span className="font-mono text-xs font-bold tnum">{fmt(quote.price, quote.currency)}</span>
+          </div>
+        )}
+      </div>
+      <div className="px-4 pb-4">
         <AssetActions onBuy={onBuy} onSell={onSell} />
       </div>
     </div>

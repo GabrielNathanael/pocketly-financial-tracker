@@ -287,7 +287,7 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
                 <ArrowDownRight className="w-3 h-3" />
               )}
               {trendDelta >= 0 ? "+" : ""}
-              {trendDelta.toFixed(1)}% ({range})
+              {trendDelta.toFixed(2)}% ({range})
             </span>
           )}
         </div>
@@ -353,12 +353,14 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
                 }
               />
               <YAxis
-                tick={{ fontSize: 10, fill: "#94A3B8" }}
+                tick={{ fontSize: 9, fill: "#94A3B8" }}
                 axisLine={false}
                 tickLine={false}
-                width={56}
+                width={52}
                 tickFormatter={(v: number) =>
-                  isPrivate ? "•••" : formatCurrency(v, displayCurrency).replace(/^(Rp|\$|S\$)\s?/, "")
+                  isPrivate
+                    ? "•••"
+                    : formatCurrency(v, displayCurrency, { compact: true }).replace(/^(Rp|\$|S\$)\s?/, "")
                 }
               />
               <Tooltip

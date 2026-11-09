@@ -79,6 +79,7 @@ export async function getLatestExchangeRate(
 }
 
 import { computeNetWorthForUser, type NetWorthBreakdownItem } from "@/lib/net-worth/compute";
+import { getAssetPrices } from "@/lib/net-worth/prices";
 
 export interface NetWorthSummary {
   totalAccountsIdr: number;
@@ -140,11 +141,16 @@ export async function getNetWorthData(
     };
   }
 
+  const prices = await getAssetPrices(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    supabase as any,
+  );
   const c = await computeNetWorthForUser(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     supabase as any,
     user.id,
     rates,
+    prices,
   );
 
   return {

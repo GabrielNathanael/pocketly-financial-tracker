@@ -84,6 +84,7 @@ interface ReportsViewProps {
   stocks?: import("@/types/database").EnrichedStockHolding[];
   cryptos?: import("@/types/database").EnrichedCryptoHolding[];
   etfs?: import("@/types/database").EnrichedEtfHolding[];
+  prices?: Array<{ kind: string; symbol: string; price: number; currency: string; fetchedAt: string }>;
 }
 
 type PeriodType = "this_month" | "last_month" | "this_year" | "custom";
@@ -109,6 +110,7 @@ export function ReportsView({
   stocks = [],
   cryptos = [],
   etfs = [],
+  prices = [],
 }: ReportsViewProps) {
   const { t, language } = useLanguage();
   const displayCurrency = usePreferredCurrency();
@@ -2735,31 +2737,54 @@ export function ReportsView({
               </span>
             </div>
             {(() => {
+              const priceMap = new Map(
+                prices.map((p) => [`${p.kind}:${p.symbol.toUpperCase()}`, p]),
+              );
+              const marketOrCost = (
+                kind: "stock" | "crypto" | "etf",
+                symbol: string,
+                quantity: number,
+                costIdr: number,
+              ): number => {
+                const cached = priceMap.get(`${kind}:${symbol.toUpperCase()}`);
+                if (!cached || cached.price <= 0 || quantity <= 0) return costIdr;
+                return convertAmount(quantity * cached.price, cached.currency, "IDR", rates);
+              };
               const rows = [
-                ...stocks.map((h) => ({
-                  kind: t.reports.pdfStockKind,
-                  symbol: h.ticker,
-                  qtyText: `${Number(h.lots) || Number(h.total_shares) / 100} lot (${Number(h.total_shares) || 0} lbr)`,
-                  cost: Number(h.total_cost) || 0,
-                  currency: h.account?.currency || "IDR",
-                })),
-                ...cryptos.map((h) => ({
-                  kind: t.reports.pdfCryptoKind,
-                  symbol: h.symbol,
-                  qtyText: `${Number(h.quantity)} ${h.symbol}`,
-                  cost: Number(h.cost_basis) || 0,
-                  currency: h.account?.currency || h.price_currency || "IDR",
-                })),
-                ...etfs.map((h) => ({
-                  kind: t.reports.pdfEtfKind,
-                  symbol: h.ticker,
-                  qtyText: `${Number(h.quantity)} unit`,
-                  cost: Number(h.total_cost) || 0,
-                  currency: h.account?.currency || "IDR",
-                })),
+                ...stocks.map((h) => {
+                  const costIdr = convertAmount(Number(h.total_cost) || 0, h.account?.currency || "IDR", "IDR", rates);
+                  const shares = Number((h as any).total_shares) || Number(h.lots || 0) * 100 || 0;
+                  return {
+                    kind: t.reports.pdfStockKind,
+                    symbol: h.ticker,
+                    qtyText: `${Number(h.lots) || Number(h.total_shares) / 100} lot (${Number(h.total_shares) || 0} lbr)`,
+                    cost: costIdr,
+                    valueIdr: marketOrCost("stock", h.ticker || "", shares, costIdr),
+                  };
+                }),
+                ...cryptos.map((h) => {
+                  const costIdr = convertAmount(Number(h.cost_basis) || 0, h.account?.currency || h.price_currency || "IDR", "IDR", rates);
+                  return {
+                    kind: t.reports.pdfCryptoKind,
+                    symbol: h.symbol,
+                    qtyText: `${Number(h.quantity)} ${h.symbol}`,
+                    cost: costIdr,
+                    valueIdr: marketOrCost("crypto", h.symbol || "", Number(h.quantity) || 0, costIdr),
+                  };
+                }),
+                ...etfs.map((h) => {
+                  const costIdr = convertAmount(Number(h.total_cost) || 0, h.account?.currency || "IDR", "IDR", rates);
+                  return {
+                    kind: t.reports.pdfEtfKind,
+                    symbol: h.ticker,
+                    qtyText: `${Number(h.quantity)} unit`,
+                    cost: costIdr,
+                    valueIdr: marketOrCost("etf", h.ticker || "", Number(h.quantity) || 0, costIdr),
+                  };
+                }),
               ].map((r) => ({
                 ...r,
-                costDisplay: convertAmount(r.cost, r.currency, displayCurrency, rates),
+                costDisplay: convertAmount(r.valueIdr, "IDR", displayCurrency, rates),
               }));
               const totalHoldingsCost = rows.reduce((s, r) => s + r.costDisplay, 0);
               return (

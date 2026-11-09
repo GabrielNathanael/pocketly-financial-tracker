@@ -5,18 +5,22 @@ import { getLatestForexRates } from '@/actions/exchange-rate'
 import { getInvestmentHoldings } from '@/actions/investments'
 import { getCryptoHoldings } from '@/actions/crypto'
 import { getEtfHoldings } from '@/actions/etf'
+import { getAssetPrices } from '@/lib/net-worth/prices'
+import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { ReportsView } from '@/components/reports/reports-view'
 
 export const dynamic = 'force-dynamic'
 
 export default async function ReportsPage() {
-  const [transactions, categories, rates, stocks, cryptos, etfs] = await Promise.all([
+  const supabase = await createServerSupabaseClient()
+  const [transactions, categories, rates, stocks, cryptos, etfs, priceMap] = await Promise.all([
     getTransactions(),
     getCategories(),
     getLatestForexRates(),
     getInvestmentHoldings(),
     getCryptoHoldings(),
     getEtfHoldings(),
+    getAssetPrices(supabase as any),
   ])
 
   return (
@@ -27,6 +31,7 @@ export default async function ReportsPage() {
       stocks={stocks}
       cryptos={cryptos}
       etfs={etfs}
+      prices={Array.from(priceMap.values())}
     />
   )
 }

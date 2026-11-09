@@ -1,4 +1,5 @@
 import { convertAmount, type ForexRatesMap } from "@/lib/utils/currency";
+import type { AssetPrice } from "@/lib/net-worth/prices";
 
 export interface NetWorthBreakdownItem {
   id: string;
@@ -39,6 +40,7 @@ export async function computeNetWorthForUser(
   supabase: AnyClient,
   userId: string,
   rates: ForexRatesMap,
+  prices?: Map<string, AssetPrice>,
 ): Promise<NetWorthComputation> {
   const toIdr = (amount: number, currency: string) =>
     convertAmount(amount, currency || "IDR", "IDR", rates);
@@ -52,18 +54,18 @@ export async function computeNetWorthForUser(
         .eq("is_active", true),
       supabase
         .from("stock_holdings")
-        .select("id, ticker, total_cost, account:accounts(currency)")
+        .select("id, ticker, total_cost, lots, total_shares, account:accounts(currency)")
         .eq("user_id", userId)
         .gt("total_cost", 0),
       supabase
         .from("crypto_holdings")
-        .select("id, symbol, cost_basis, price_currency")
+        .select("id, symbol, quantity, cost_basis, price_currency")
         .eq("user_id", userId)
         .gt("quantity", 0)
         .gt("cost_basis", 0),
       supabase
         .from("etf_holdings")
-        .select("id, ticker, total_cost, account:accounts(currency)")
+        .select("id, ticker, quantity, total_cost, account:accounts(currency)")
         .eq("user_id", userId)
         .gt("total_cost", 0),
       supabase
@@ -87,39 +89,72 @@ export async function computeNetWorthForUser(
   );
   const totalAccountsIdr = accounts.reduce((s, a) => s + a.amountIdr, 0);
 
+  // Market value if cached price exists, else fall back to cost basis.
+  const marketOrCost = (
+    kind: "stock" | "crypto" | "etf",
+    symbol: string,
+    quantity: number,
+    costIdr: number,
+  ): number => {
+    const cached = prices?.get(`${kind}:${symbol.toUpperCase()}`);
+    if (!cached || cached.price <= 0 || quantity <= 0) return costIdr;
+    return toIdr(quantity * cached.price, cached.currency);
+  };
+
   const stocks: NetWorthBreakdownItem[] = ((stocksRes.data || []) as any[]).map(
-    (h) => ({
-      id: h.id,
-      name: h.ticker || "Saham",
-      amountIdr: toIdr(
+    (h) => {
+      const costIdr = toIdr(
         Number(h.total_cost) || 0,
         h.account?.currency || "IDR",
-      ),
-    }),
+      );
+      const shares =
+        Number(h.total_shares) || Number(h.lots || 0) * 100 || 0;
+      return {
+        id: h.id,
+        name: h.ticker || "Saham",
+        amountIdr: marketOrCost("stock", h.ticker || "", shares, costIdr),
+      };
+    },
   );
   const totalStockHoldingsIdr = stocks.reduce((s, x) => s + x.amountIdr, 0);
 
   const crypto: NetWorthBreakdownItem[] = ((cryptoRes.data || []) as any[]).map(
-    (h) => ({
-      id: h.id,
-      name: h.symbol || "Kripto",
-      amountIdr: toIdr(
+    (h) => {
+      const costIdr = toIdr(
         Number(h.cost_basis) || 0,
         h.price_currency || "IDR",
-      ),
-    }),
+      );
+      return {
+        id: h.id,
+        name: h.symbol || "Kripto",
+        amountIdr: marketOrCost(
+          "crypto",
+          h.symbol || "",
+          Number(h.quantity) || 0,
+          costIdr,
+        ),
+      };
+    },
   );
   const totalCryptoHoldingsIdr = crypto.reduce((s, x) => s + x.amountIdr, 0);
 
   const etf: NetWorthBreakdownItem[] = ((etfRes.data || []) as any[]).map(
-    (h) => ({
-      id: h.id,
-      name: h.ticker || "ETF",
-      amountIdr: toIdr(
+    (h) => {
+      const costIdr = toIdr(
         Number(h.total_cost) || 0,
         h.account?.currency || "IDR",
-      ),
-    }),
+      );
+      return {
+        id: h.id,
+        name: h.ticker || "ETF",
+        amountIdr: marketOrCost(
+          "etf",
+          h.ticker || "",
+          Number(h.quantity) || 0,
+          costIdr,
+        ),
+      };
+    },
   );
   const totalEtfHoldingsIdr = etf.reduce((s, x) => s + x.amountIdr, 0);
 

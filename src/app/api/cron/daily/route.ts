@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { processOneRecurringPeriod } from "@/lib/recurring/process-due-recurring";
 import { fetchAndSaveForexRatesAdmin } from "@/lib/net-worth/forex";
+import { refreshAssetPrices } from "@/lib/net-worth/prices";
 import { snapshotNetWorthForUser } from "@/lib/net-worth/snapshot";
 import { getTodayDateStringInTimeZone } from "@/lib/utils/date";
 
@@ -40,6 +41,9 @@ export async function GET(req: NextRequest) {
 
   // 1) Forex rates (fresh for snapshot + all conversions today)
   const rates = await fetchAndSaveForexRatesAdmin(supabase);
+
+  // 1b) Market prices for owned assets (crypto/stock/ETF cache)
+  const prices = await refreshAssetPrices(supabase);
 
   // 2) Recurring auto-process (catch-up)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -115,6 +119,7 @@ export async function GET(req: NextRequest) {
     ok: true,
     today: todayStr,
     rates,
+    prices,
     recurring: { checked: (dueRules || []).length, processed, skipped, failed },
     snapshots: { users: userIds.length, snapshotted, failed: snapshotFailed },
   });

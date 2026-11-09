@@ -2,8 +2,7 @@
 export const investments = {
   id: {
       title: "Portofolio Investasi",
-      subtitle:
-        "Kelola Saham Indonesia, Kripto, ETF AS, Saldo Platform, dan Performa Investasimu",
+      subtitle: "Saham IDX, Kripto, ETF AS",
       crypto: {
         title: "Aset Kripto",
         subtitle: "Catat nominal, harga, fee, dan jumlah aktual dari broker",
@@ -216,8 +215,7 @@ export const investments = {
   },
   en: {
       title: "Investment Portfolio",
-      subtitle:
-        "Track Indonesian Stocks, Crypto, US ETFs, platform balances, and investment performance",
+      subtitle: "IDX Stocks, Crypto, US ETFs",
       crypto: {
         title: "Crypto Assets",
         subtitle: "Record the broker's actual amount, price, fee, and quantity",
