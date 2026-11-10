@@ -1560,7 +1560,16 @@ export function PortfolioInvestmentView({
                               year: "numeric",
                             },
                           )}{" "}
-                          · {activity.account?.name || "Platform"} · {settlementCurrency}
+                          {new Date(activity.trade_date).toLocaleTimeString(
+                            isEn ? "en-US" : "id-ID",
+                            {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            },
+                          )}
+                          <span className="block">
+                            {activity.account?.name || "Platform"} · {settlementCurrency}
+                          </span>
                         </p>
                       </div>
                     </div>

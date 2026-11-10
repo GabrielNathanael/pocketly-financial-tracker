@@ -88,8 +88,16 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
         >
           {maskCurrency(formattedAmount, isPrivate)}
         </span>
-        <span className="text-[10px] font-mono text-[#94A3B8]">
-          {formatDate(transaction.transaction_date, "dd MMM")}
+        <span className="text-right font-mono leading-tight text-[#94A3B8]">
+          <span className="block text-[10px]">
+            {formatDate(transaction.transaction_date, "dd MMM")}
+          </span>
+          <span className="block text-[9px]">
+            {new Date(transaction.transaction_date).toLocaleTimeString(
+              language === "en" ? "en-US" : "id-ID",
+              { hour: "2-digit", minute: "2-digit" },
+            )}
+          </span>
         </span>
       </div>
     </Link>
