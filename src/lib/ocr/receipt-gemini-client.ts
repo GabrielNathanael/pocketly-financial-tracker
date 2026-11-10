@@ -3,7 +3,7 @@
 import { scanReceiptWithGemini } from "@/actions/receipt-ai";
 import type { ParsedReceipt } from "@/lib/ocr/receipt-scanner";
 
-function fileToBase64(file: File): Promise<{ base64: string; mimeType: string }> {
+function fileToImageBlob(file: File): Promise<{ blob: Blob; mimeType: string }> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.src = URL.createObjectURL(file);
@@ -26,10 +26,17 @@ function fileToBase64(file: File): Promise<{ base64: string; mimeType: string }>
         return;
       }
       ctx.drawImage(img, 0, 0, w, h);
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.72);
-      const comma = dataUrl.indexOf(",");
-      const base64 = comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl;
-      resolve({ base64, mimeType: "image/jpeg" });
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error("Gagal memproses gambar struk"));
+            return;
+          }
+          resolve({ blob, mimeType: "image/jpeg" });
+        },
+        "image/jpeg",
+        0.72,
+      );
     };
     img.onerror = () => reject(new Error("Gagal membaca file"));
   });
@@ -37,18 +44,23 @@ function fileToBase64(file: File): Promise<{ base64: string; mimeType: string }>
 
 /**
  * Scan struk pakai Gemini Vision (struktur JSON: merchant, total, rincian item).
- * Return null kalau key belum diatur / error, biar caller bisa fallback ke Tesseract.
+ * Melempar error jika gagal agar caller bisa menampilkan status gagal & minta scan ulang.
  */
-export async function scanReceiptGemini(file: File): Promise<ParsedReceipt | null> {
-  try {
-    const { base64, mimeType } = await fileToBase64(file);
-    if (!base64) return null;
-    // AI Studio menerima gambar besar, tapi batasi ~7MB biar request nggak timeout
-    if (base64.length > 10_000_000) return null;
-    const parsed = await scanReceiptWithGemini(base64, mimeType);
-    return parsed;
-  } catch (err) {
-    console.warn("[receipt-gemini]", err);
-    return null;
+export async function scanReceiptGemini(
+  file: File,
+  currency: string = "IDR",
+): Promise<ParsedReceipt> {
+  const { blob, mimeType } = await fileToImageBlob(file);
+  if (!blob || blob.size === 0) throw new Error("Gagal memproses gambar struk");
+  // Batasi ~7MB biar request nggak timeout
+  if (blob.size > 7_000_000) {
+    throw new Error("Ukuran gambar terlalu besar, coba foto ulang lebih dekat/jelas");
   }
+
+  const formData = new FormData();
+  formData.append("file", blob, "receipt.jpg");
+  formData.append("mimeType", mimeType);
+  formData.append("currency", currency || "IDR");
+
+  return await scanReceiptWithGemini(formData);
 }
