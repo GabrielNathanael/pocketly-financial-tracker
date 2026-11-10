@@ -103,6 +103,16 @@ async function deleteEtfFee(supabase: any, tradeId: string) {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function syncEtfHolding(supabase: any, userId: string, accountId: string, ticker: string) {
   const clean = cleanTicker(ticker);
+
+  // Settlement currency follows the investment account.
+  const { data: account } = await supabase
+    .from("accounts")
+    .select("currency")
+    .eq("id", accountId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  const currency = account?.currency || "IDR";
+
   const { data: trades, error } = await supabase
     .from("etf_trades")
     .select("*")
@@ -140,6 +150,7 @@ async function syncEtfHolding(supabase: any, userId: string, accountId: string, 
     user_id: userId,
     account_id: accountId,
     ticker: clean,
+    currency,
     quantity,
     total_cost: costBasis,
     avg_buy_price: costBasis / quantity,
@@ -242,10 +253,11 @@ export async function recordEtfTrade(input: RecordEtfTradeInput) {
   let buyCost = 0;
   let realizedPnl = 0;
 
+  const currency = (account.currency as string) || "IDR";
   if (input.type === "buy") {
     if (balance < gross + fee - EPS) {
       return {
-        error: `Saldo ${account.name} tidak cukup. Dibutuhkan: ${gross + fee}, Tersedia: ${balance}`,
+        error: `Saldo ${account.name} tidak cukup. Dibutuhkan: ${gross + fee} ${currency}, Tersedia: ${balance} ${currency}`,
       };
     }
     buyCost = gross + fee;
@@ -284,6 +296,7 @@ export async function recordEtfTrade(input: RecordEtfTradeInput) {
       user_id: user.id,
       account_id: account.id,
       ticker,
+      currency: (account.currency as string) || "IDR",
       type: input.type,
       quantity: qty,
       price_per_unit: price,
@@ -550,6 +563,7 @@ export async function updateEtfTrade(input: {
   const { error: updErr } = await supabase
     .from("etf_trades")
     .update({
+      currency: account.currency || trade.currency || "IDR",
       quantity: qty,
       price_per_unit: price,
       gross_amount: gross,

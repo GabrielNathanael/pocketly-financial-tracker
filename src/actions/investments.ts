@@ -21,6 +21,15 @@ async function syncStockHolding(
 ) {
   const cleanTicker = ticker.trim().toUpperCase();
 
+  // Settlement currency follows the investment account.
+  const { data: account } = await supabase
+    .from("accounts")
+    .select("currency")
+    .eq("id", accountId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  const currency = account?.currency || "IDR";
+
   // 1. Fetch all trades for this user, account, and ticker ordered chronologically
   const { data: trades, error } = await supabase
     .from("stock_trades")
@@ -94,6 +103,7 @@ async function syncStockHolding(
       await supabase
         .from("stock_holdings")
         .update({
+          currency,
           lots: runningLots,
           total_shares: runningShares,
           total_cost: runningCost,
@@ -106,6 +116,7 @@ async function syncStockHolding(
         user_id: userId,
         account_id: accountId,
         ticker: cleanTicker,
+        currency,
         lots: runningLots,
         total_shares: runningShares,
         total_cost: runningCost,
@@ -341,6 +352,7 @@ export async function recordStockBuy(input: {
       account_id: acc.id,
       holding_id: null,
       ticker: cleanTicker,
+      currency: acc.currency || "IDR",
       type: "buy",
       net_amount: netAmount,
       buy_cost: netAmount,
@@ -525,6 +537,7 @@ export async function recordStockSell(input: {
       account_id: acc.id,
       holding_id: null,
       ticker: holding.ticker,
+      currency: acc.currency || "IDR",
       type: "sell",
       net_amount: netAmount,
       buy_cost: proportionalBuyCost,
@@ -762,6 +775,7 @@ export async function updateStockTrade(input: UpdateStockTradeInput) {
   const { error: updErr } = await (supabase.from("stock_trades") as any)
     .update({
       ticker: cleanTicker,
+      currency: acc?.currency || trade.currency || "IDR",
       lots: newLots,
       shares: newShares,
       price_per_share: newPricePerShare,

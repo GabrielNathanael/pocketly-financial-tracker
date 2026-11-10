@@ -1,6 +1,12 @@
 "use server";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { getAssetPrices, type AssetPrice } from "@/lib/net-worth/prices";
+import { getLatestForexRatesAdmin } from "@/lib/net-worth/forex";
+import {
+  convertAmount,
+  type ForexRatesMap,
+} from "@/lib/utils/currency";
 
 export type ExportSection =
   | "transactions"
@@ -12,7 +18,9 @@ export type ExportSection =
   | "stockHoldings"
   | "stockTrades"
   | "cryptoHoldings"
-  | "cryptoTrades";
+  | "cryptoTrades"
+  | "etfHoldings"
+  | "etfTrades";
 export type ExportFormat = "csv" | "json";
 
 // Catatan: file "use server" hanya boleh mengexport fungsi async (dan tipe),
@@ -28,6 +36,8 @@ const EXPORT_SECTIONS: Record<ExportFormat, ExportSection[]> = {
     "stockTrades",
     "cryptoHoldings",
     "cryptoTrades",
+    "etfHoldings",
+    "etfTrades",
   ],
   json: [
     "transactions",
@@ -40,6 +50,8 @@ const EXPORT_SECTIONS: Record<ExportFormat, ExportSection[]> = {
     "stockTrades",
     "cryptoHoldings",
     "cryptoTrades",
+    "etfHoldings",
+    "etfTrades",
   ],
 };
 
@@ -62,6 +74,8 @@ export interface ExportResult {
   csvStockTrades: string | null;
   csvCryptoHoldings: string | null;
   csvCryptoTrades: string | null;
+  csvEtfHoldings: string | null;
+  csvEtfTrades: string | null;
   jsonData: string | null;
 }
 
@@ -76,6 +90,80 @@ function parseBound(value?: string): string | undefined {
 
 function csvCell(value: string | null | undefined): string {
   return `"${(value ?? "").replace(/"/g, '""')}"`;
+}
+
+/** Blank for null/undefined so CSV cells don't show "null" or "NaN". */
+function numCell(value: number | null | undefined): string {
+  if (value === null || value === undefined || Number.isNaN(value)) return "";
+  return String(value);
+}
+
+function pctCell(value: number | null | undefined): string {
+  if (value === null || value === undefined || Number.isNaN(value)) return "";
+  return value.toFixed(2);
+}
+
+interface HoldingValuation {
+  marketPrice: number | null;
+  marketPriceCurrency: string | null;
+  marketValueIdr: number | null;
+  unrealizedPnlIdr: number | null;
+  unrealizedPnlPercent: number | null;
+  priceFetchedAt: string | null;
+  valuationSource: "market" | "cost";
+}
+
+/**
+ * Value one holding with the cached market price. The price cache is written
+ * by the daily cron / manual refresh — export never calls an external API.
+ * When no cached price exists we keep the fields empty instead of pretending
+ * the cost basis is a market value.
+ */
+function valueHolding(
+  prices: Map<string, AssetPrice>,
+  rates: ForexRatesMap | undefined,
+  kind: "stock" | "crypto" | "etf",
+  symbol: string,
+  quantity: number,
+  cost: number,
+  costCurrency: string,
+): HoldingValuation {
+  const empty: HoldingValuation = {
+    marketPrice: null,
+    marketPriceCurrency: null,
+    marketValueIdr: null,
+    unrealizedPnlIdr: null,
+    unrealizedPnlPercent: null,
+    priceFetchedAt: null,
+    valuationSource: "cost",
+  };
+
+  const cached = prices.get(`${kind}:${(symbol || "").toUpperCase()}`);
+  if (!cached || cached.price <= 0 || quantity <= 0) return empty;
+
+  const costIdr = convertAmount(
+    cost || 0,
+    costCurrency || "IDR",
+    "IDR",
+    rates,
+  );
+  const marketValueIdr = convertAmount(
+    quantity * cached.price,
+    cached.currency || "IDR",
+    "IDR",
+    rates,
+  );
+  const pnl = marketValueIdr - costIdr;
+
+  return {
+    marketPrice: cached.price,
+    marketPriceCurrency: cached.currency || "IDR",
+    marketValueIdr,
+    unrealizedPnlIdr: pnl,
+    unrealizedPnlPercent: costIdr > 0 ? (pnl / costIdr) * 100 : null,
+    priceFetchedAt: cached.fetchedAt || null,
+    valuationSource: "market",
+  };
 }
 
 export async function exportAllFinancialData(
@@ -176,11 +264,13 @@ export async function exportAllFinancialData(
     stockTradesRes,
     cryptoHoldingsRes,
     cryptoTradesRes,
+    etfHoldingsRes,
+    etfTradesRes,
   ] = await Promise.all([
     transferQuery ?? skipped,
     sections.includes("stockHoldings")
       ? (supabase.from("stock_holdings") as any)
-          .select("*, account:accounts(name)")
+          .select("*, account:accounts(name, currency)")
           .order("ticker", { ascending: true })
       : skipped,
     sections.includes("stockTrades")
@@ -193,6 +283,15 @@ export async function exportAllFinancialData(
       : skipped,
     sections.includes("cryptoTrades")
       ? dateQuery("crypto_trades", "trade_date")
+      : skipped,
+    sections.includes("etfHoldings")
+      ? (supabase as any)
+          .from("etf_holdings")
+          .select("*, account:accounts(name, currency)")
+          .order("ticker", { ascending: true })
+      : skipped,
+    sections.includes("etfTrades")
+      ? dateQuery("etf_trades", "trade_date")
       : skipped,
   ]);
 
@@ -208,6 +307,8 @@ export async function exportAllFinancialData(
     stockTradesRes,
     cryptoHoldingsRes,
     cryptoTradesRes,
+    etfHoldingsRes,
+    etfTradesRes,
   ]) {
     if (res.error) {
       throw new Error(`Export failed: ${res.error.message}`);
@@ -224,6 +325,26 @@ export async function exportAllFinancialData(
   const stockTrades = stockTradesRes.data || [];
   const cryptoHoldings = cryptoHoldingsRes.data || [];
   const cryptoTrades = cryptoTradesRes.data || [];
+  const etfHoldings = etfHoldingsRes.data || [];
+  const etfTrades = etfTradesRes.data || [];
+
+  // Valuation only needs the local cache (asset_prices) + stored forex rates.
+  const needsValuation = sections.some(
+    (s) =>
+      s === "stockHoldings" || s === "cryptoHoldings" || s === "etfHoldings",
+  );
+  const [prices, rates] = needsValuation
+    ? await Promise.all([
+        getAssetPrices(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          supabase as any,
+        ),
+        getLatestForexRatesAdmin(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          supabase as any,
+        ),
+      ])
+    : [new Map<string, AssetPrice>(), undefined];
 
   const result: ExportResult = {
     csvTransactions: null,
@@ -234,6 +355,8 @@ export async function exportAllFinancialData(
     csvStockTrades: null,
     csvCryptoHoldings: null,
     csvCryptoTrades: null,
+    csvEtfHoldings: null,
+    csvEtfTrades: null,
     jsonData: null,
   };
 
@@ -279,38 +402,96 @@ export async function exportAllFinancialData(
 
     if (sections.includes("stockHoldings")) {
       let csv =
-        "ID,Ticker,Account,Lots,Total_Shares,Total_Cost,Average_Buy_Price,Notes,Created_At,Updated_At\n";
+        "ID,Ticker,Account,Settlement_Currency,Lots,Total_Shares,Total_Cost,Average_Buy_Price,Market_Price,Market_Price_Currency,Market_Value_IDR,Unrealized_PnL_IDR,Unrealized_PnL_Pct,Price_Fetched_At,Valuation_Source,Notes,Created_At,Updated_At\n";
       for (const holding of stockHoldings as any[]) {
-        csv += `${holding.id},${holding.ticker},${csvCell(holding.account?.name)},${holding.lots},${holding.total_shares},${holding.total_cost},${holding.avg_buy_price},${csvCell(holding.notes)},${holding.created_at},${holding.updated_at}\n`;
+        const shares =
+          Number(holding.total_shares) || Number(holding.lots || 0) * 100 || 0;
+        const settlementCurrency =
+          holding.currency || holding.account?.currency || "IDR";
+        const v = valueHolding(
+          prices,
+          rates,
+          "stock",
+          holding.ticker || "",
+          shares,
+          Number(holding.total_cost) || 0,
+          settlementCurrency,
+        );
+        csv += `${holding.id},${holding.ticker},${csvCell(holding.account?.name)},${csvCell(settlementCurrency)},${holding.lots},${holding.total_shares},${holding.total_cost},${holding.avg_buy_price},${numCell(v.marketPrice)},${csvCell(v.marketPriceCurrency)},${numCell(v.marketValueIdr)},${numCell(v.unrealizedPnlIdr)},${pctCell(v.unrealizedPnlPercent)},${csvCell(v.priceFetchedAt)},${v.valuationSource},${csvCell(holding.notes)},${holding.created_at},${holding.updated_at}\n`;
       }
       result.csvStockHoldings = csv;
     }
 
     if (sections.includes("stockTrades")) {
       let csv =
-        "ID,Trade_Date,Ticker,Type,Account,Lots,Shares,Price_Per_Share,Net_Amount,Buy_Cost,Realized_PnL,Stamp_Duty,Notes\n";
+        "ID,Trade_Date,Ticker,Type,Account,Settlement_Currency,Lots,Shares,Price_Per_Share,Net_Amount,Buy_Cost,Realized_PnL,Stamp_Duty,Notes\n";
       for (const trade of stockTrades as any[]) {
-        csv += `${trade.id},${trade.trade_date},${trade.ticker},${trade.type},${csvCell(trade.account?.name)},${trade.lots},${trade.shares},${trade.price_per_share},${trade.net_amount},${trade.buy_cost},${trade.realized_pnl},${trade.stamp_duty},${csvCell(trade.notes)}\n`;
+        const settlementCurrency =
+          trade.currency || trade.account?.currency || "IDR";
+        csv += `${trade.id},${trade.trade_date},${trade.ticker},${trade.type},${csvCell(trade.account?.name)},${csvCell(settlementCurrency)},${trade.lots},${trade.shares},${trade.price_per_share},${trade.net_amount},${trade.buy_cost},${trade.realized_pnl},${trade.stamp_duty},${csvCell(trade.notes)}\n`;
       }
       result.csvStockTrades = csv;
     }
 
     if (sections.includes("cryptoHoldings")) {
       let csv =
-        "ID,Symbol,Name,Account,Quantity,Cost_Basis,Average_Buy_Price,Manual_Price,Price_Currency,Notes,Created_At,Updated_At\n";
+        "ID,Symbol,Name,Account,Settlement_Currency,Quantity,Cost_Basis,Average_Buy_Price,Manual_Price,Price_Currency,Market_Price,Market_Price_Currency,Market_Value_IDR,Unrealized_PnL_IDR,Unrealized_PnL_Pct,Price_Fetched_At,Valuation_Source,Notes,Created_At,Updated_At\n";
       for (const holding of cryptoHoldings as any[]) {
-        csv += `${holding.id},${holding.symbol},${csvCell(holding.name)},${csvCell(holding.account?.name)},${holding.quantity},${holding.cost_basis},${holding.average_buy_price},${holding.manual_price},${holding.price_currency},${csvCell(holding.notes)},${holding.created_at},${holding.updated_at}\n`;
+        const settlementCurrency = holding.price_currency || "IDR";
+        const v = valueHolding(
+          prices,
+          rates,
+          "crypto",
+          holding.symbol || "",
+          Number(holding.quantity) || 0,
+          Number(holding.cost_basis) || 0,
+          settlementCurrency,
+        );
+        csv += `${holding.id},${holding.symbol},${csvCell(holding.name)},${csvCell(holding.account?.name)},${csvCell(settlementCurrency)},${holding.quantity},${holding.cost_basis},${holding.average_buy_price},${holding.manual_price},${holding.price_currency},${numCell(v.marketPrice)},${csvCell(v.marketPriceCurrency)},${numCell(v.marketValueIdr)},${numCell(v.unrealizedPnlIdr)},${pctCell(v.unrealizedPnlPercent)},${csvCell(v.priceFetchedAt)},${v.valuationSource},${csvCell(holding.notes)},${holding.created_at},${holding.updated_at}\n`;
       }
       result.csvCryptoHoldings = csv;
     }
 
     if (sections.includes("cryptoTrades")) {
       let csv =
-        "ID,Trade_Date,Symbol,Type,Account,Quantity,Gross_Amount,Fee_Amount,Fee_Currency,Price_Per_Unit,Cost_Basis,Realized_PnL,Notes\n";
+        "ID,Trade_Date,Symbol,Type,Account,Settlement_Currency,Quantity,Gross_Amount,Fee_Amount,Fee_Currency,Price_Per_Unit,Cost_Basis,Realized_PnL,Notes\n";
       for (const trade of cryptoTrades as any[]) {
-        csv += `${trade.id},${trade.trade_date},${trade.symbol},${trade.type},${csvCell(trade.account?.name)},${trade.quantity},${trade.gross_amount},${trade.fee_amount},${trade.fee_currency},${trade.price_per_unit},${trade.cost_basis},${trade.realized_pnl},${csvCell(trade.notes)}\n`;
+        const settlementCurrency =
+          trade.currency || trade.fee_currency || "IDR";
+        csv += `${trade.id},${trade.trade_date},${trade.symbol},${trade.type},${csvCell(trade.account?.name)},${csvCell(settlementCurrency)},${trade.quantity},${trade.gross_amount},${trade.fee_amount},${trade.fee_currency},${trade.price_per_unit},${trade.cost_basis},${trade.realized_pnl},${csvCell(trade.notes)}\n`;
       }
       result.csvCryptoTrades = csv;
+    }
+
+    if (sections.includes("etfHoldings")) {
+      let csv =
+        "ID,Ticker,Account,Settlement_Currency,Quantity,Total_Cost,Average_Buy_Price,Broker,Market_Price,Market_Price_Currency,Market_Value_IDR,Unrealized_PnL_IDR,Unrealized_PnL_Pct,Price_Fetched_At,Valuation_Source,Notes,Created_At,Updated_At\n";
+      for (const holding of etfHoldings as any[]) {
+        const settlementCurrency =
+          holding.currency || holding.account?.currency || "IDR";
+        const v = valueHolding(
+          prices,
+          rates,
+          "etf",
+          holding.ticker || "",
+          Number(holding.quantity) || 0,
+          Number(holding.total_cost) || 0,
+          settlementCurrency,
+        );
+        csv += `${holding.id},${holding.ticker},${csvCell(holding.account?.name)},${csvCell(settlementCurrency)},${holding.quantity},${holding.total_cost},${holding.avg_buy_price},${csvCell(holding.broker_name)},${numCell(v.marketPrice)},${csvCell(v.marketPriceCurrency)},${numCell(v.marketValueIdr)},${numCell(v.unrealizedPnlIdr)},${pctCell(v.unrealizedPnlPercent)},${csvCell(v.priceFetchedAt)},${v.valuationSource},${csvCell(holding.notes)},${holding.created_at},${holding.updated_at}\n`;
+      }
+      result.csvEtfHoldings = csv;
+    }
+
+    if (sections.includes("etfTrades")) {
+      let csv =
+        "ID,Trade_Date,Ticker,Type,Account,Settlement_Currency,Quantity,Price_Per_Unit,Gross_Amount,Fee_Amount,Buy_Cost,Realized_PnL,Notes\n";
+      for (const trade of etfTrades as any[]) {
+        const settlementCurrency =
+          trade.currency || trade.account?.currency || "IDR";
+        csv += `${trade.id},${trade.trade_date},${trade.ticker},${trade.type},${csvCell(trade.account?.name)},${csvCell(settlementCurrency)},${trade.quantity},${trade.price_per_unit},${trade.gross_amount},${trade.fee_amount},${trade.buy_cost},${trade.realized_pnl},${csvCell(trade.notes)}\n`;
+      }
+      result.csvEtfTrades = csv;
     }
   } else {
     const payload: Record<string, unknown> = {
@@ -319,6 +500,42 @@ export async function exportAllFinancialData(
       filters: { rangeStart: rangeStart ?? null, rangeEnd: rangeEnd ?? null },
       includes: sections,
     };
+    const enrichHoldings = (
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      rows: any[],
+      kind: "stock" | "crypto" | "etf",
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      getSymbol: (h: any) => string,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      getQuantity: (h: any) => number,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      getCost: (h: any) => number,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      getCostCurrency: (h: any) => string,
+    ) =>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      rows.map((h: any) => {
+        const v = valueHolding(
+          prices,
+          rates,
+          kind,
+          getSymbol(h),
+          getQuantity(h),
+          getCost(h),
+          getCostCurrency(h),
+        );
+        return {
+          ...h,
+          marketPrice: v.marketPrice,
+          marketPriceCurrency: v.marketPriceCurrency,
+          marketValueIdr: v.marketValueIdr,
+          unrealizedPnlIdr: v.unrealizedPnlIdr,
+          unrealizedPnlPercent: v.unrealizedPnlPercent,
+          priceFetchedAt: v.priceFetchedAt,
+          valuationSource: v.valuationSource,
+        };
+      });
+
     if (sections.includes("accounts")) payload.accounts = accounts;
     if (sections.includes("categories")) payload.categories = categories;
     if (sections.includes("transactions")) payload.transactions = transactions;
@@ -326,11 +543,50 @@ export async function exportAllFinancialData(
     if (sections.includes("debts")) payload.debts = debts;
     if (sections.includes("transfers")) payload.transfers = transfers;
     if (sections.includes("stockHoldings"))
-      payload.stockHoldings = stockHoldings;
-    if (sections.includes("stockTrades")) payload.stockTrades = stockTrades;
+      payload.stockHoldings = enrichHoldings(
+        stockHoldings,
+        "stock",
+        (h) => h.ticker || "",
+        (h) =>
+          Number(h.total_shares) || Number(h.lots || 0) * 100 || 0,
+        (h) => Number(h.total_cost) || 0,
+        (h) => h.currency || h.account?.currency || "IDR",
+      );
+    if (sections.includes("stockTrades"))
+      payload.stockTrades = stockTrades.map((t: any) => ({
+        ...t,
+        settlementCurrency: t.currency || t.account?.currency || "IDR",
+      }));
     if (sections.includes("cryptoHoldings"))
-      payload.cryptoHoldings = cryptoHoldings;
-    if (sections.includes("cryptoTrades")) payload.cryptoTrades = cryptoTrades;
+      payload.cryptoHoldings = enrichHoldings(
+        cryptoHoldings,
+        "crypto",
+        (h) => h.symbol || "",
+        (h) => Number(h.quantity) || 0,
+        (h) => Number(h.cost_basis) || 0,
+        (h) => h.price_currency || "IDR",
+      );
+    if (sections.includes("cryptoTrades"))
+      payload.cryptoTrades = cryptoTrades.map((t: any) => ({
+        ...t,
+        settlementCurrency: t.currency || t.fee_currency || "IDR",
+      }));
+    if (sections.includes("etfHoldings"))
+      payload.etfHoldings = enrichHoldings(
+        etfHoldings,
+        "etf",
+        (h) => h.ticker || "",
+        (h) => Number(h.quantity) || 0,
+        (h) => Number(h.total_cost) || 0,
+        (h) => h.currency || h.account?.currency || "IDR",
+      );
+    if (sections.includes("etfTrades"))
+      payload.etfTrades = etfTrades.map((t: any) => ({
+        ...t,
+        settlementCurrency: t.currency || t.account?.currency || "IDR",
+      }));
+    // etfTrades handled above with settlementCurrency enrichment.
+    if (needsValuation) payload.rates = rates;
     result.jsonData = JSON.stringify(payload, null, 2);
   }
 

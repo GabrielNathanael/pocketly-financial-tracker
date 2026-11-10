@@ -1487,19 +1487,19 @@ export function ReportsView({
           kind: t.reports.pdfStockKind,
           symbol: h.ticker,
           qty: `${Number(h.lots) || Number(h.total_shares) / 100} lot`,
-          cost: convertAmount(Number(h.total_cost) || 0, h.account?.currency || "IDR", displayCurrency, rates),
+          cost: convertAmount(Number(h.total_cost) || 0, h.currency || h.account?.currency || "IDR", displayCurrency, rates),
         })),
         ...cryptos.map((h) => ({
           kind: t.reports.pdfCryptoKind,
           symbol: h.symbol,
           qty: `${Number(h.quantity)} ${h.symbol}`,
-          cost: convertAmount(Number(h.cost_basis) || 0, h.account?.currency || h.price_currency || "IDR", displayCurrency, rates),
+          cost: convertAmount(Number(h.cost_basis) || 0, h.price_currency || "IDR", displayCurrency, rates),
         })),
         ...etfs.map((h) => ({
           kind: t.reports.pdfEtfKind,
           symbol: h.ticker,
           qty: `${Number(h.quantity)} unit`,
-          cost: convertAmount(Number(h.total_cost) || 0, h.account?.currency || "IDR", displayCurrency, rates),
+          cost: convertAmount(Number(h.total_cost) || 0, h.currency || h.account?.currency || "IDR", displayCurrency, rates),
         })),
       ];
       if (holdingRows.length > 0) {
@@ -2723,63 +2723,84 @@ export function ReportsView({
         {/* Kepemilikan Portofolio — paling bawah, snapshot terakhir (tidak difilter tanggal) */}
         {(stocks.length > 0 || cryptos.length > 0 || etfs.length > 0) && (
           <div className="p-5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-3 shadow-2xs">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-md bg-[#F1F3F5] dark:bg-[#1A1A20] flex items-center justify-center text-[#0F172A] dark:text-[#FAFAFA] border border-[#E5E7EB] dark:border-[#27272A] shrink-0">
-                  <Wallet className="w-3.5 h-3.5" />
-                </div>
-                <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#FAFAFA]">
-                  {t.reports.portfolioHoldingsTitle}
-                </h2>
-              </div>
-              <span className="text-[10px] text-[#64748B] dark:text-[#94A3B8] font-mono">
-                {t.reports.snapshotToday}
-              </span>
-            </div>
             {(() => {
               const priceMap = new Map(
                 prices.map((p) => [`${p.kind}:${p.symbol.toUpperCase()}`, p]),
               );
+              const fmtFetched = (iso?: string | null) =>
+                iso
+                  ? new Date(iso).toLocaleString(
+                      language === "en" ? "en-US" : "id-ID",
+                      {
+                        day: "numeric",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      },
+                    )
+                  : null;
               const marketOrCost = (
                 kind: "stock" | "crypto" | "etf",
                 symbol: string,
                 quantity: number,
                 costIdr: number,
-              ): number => {
+              ): { valueIdr: number; fetchedAt: string | null } => {
                 const cached = priceMap.get(`${kind}:${symbol.toUpperCase()}`);
-                if (!cached || cached.price <= 0 || quantity <= 0) return costIdr;
-                return convertAmount(quantity * cached.price, cached.currency, "IDR", rates);
+                if (!cached || cached.price <= 0 || quantity <= 0) {
+                  return { valueIdr: costIdr, fetchedAt: null };
+                }
+                return {
+                  valueIdr: convertAmount(
+                    quantity * cached.price,
+                    cached.currency,
+                    "IDR",
+                    rates,
+                  ),
+                  fetchedAt: cached.fetchedAt || null,
+                };
               };
               const rows = [
                 ...stocks.map((h) => {
-                  const costIdr = convertAmount(Number(h.total_cost) || 0, h.account?.currency || "IDR", "IDR", rates);
+                  const settlementCurrency = h.currency || h.account?.currency || "IDR";
+                  const costIdr = convertAmount(Number(h.total_cost) || 0, settlementCurrency, "IDR", rates);
                   const shares = Number((h as any).total_shares) || Number(h.lots || 0) * 100 || 0;
+                  const mv = marketOrCost("stock", h.ticker || "", shares, costIdr);
                   return {
                     kind: t.reports.pdfStockKind,
                     symbol: h.ticker,
+                    settlementCurrency,
                     qtyText: `${Number(h.lots) || Number(h.total_shares) / 100} lot (${Number(h.total_shares) || 0} lbr)`,
                     cost: costIdr,
-                    valueIdr: marketOrCost("stock", h.ticker || "", shares, costIdr),
+                    valueIdr: mv.valueIdr,
+                    fetchedAt: mv.fetchedAt,
                   };
                 }),
                 ...cryptos.map((h) => {
-                  const costIdr = convertAmount(Number(h.cost_basis) || 0, h.account?.currency || h.price_currency || "IDR", "IDR", rates);
+                  const settlementCurrency = h.price_currency || "IDR";
+                  const costIdr = convertAmount(Number(h.cost_basis) || 0, settlementCurrency, "IDR", rates);
+                  const mv = marketOrCost("crypto", h.symbol || "", Number(h.quantity) || 0, costIdr);
                   return {
                     kind: t.reports.pdfCryptoKind,
                     symbol: h.symbol,
+                    settlementCurrency,
                     qtyText: `${Number(h.quantity)} ${h.symbol}`,
                     cost: costIdr,
-                    valueIdr: marketOrCost("crypto", h.symbol || "", Number(h.quantity) || 0, costIdr),
+                    valueIdr: mv.valueIdr,
+                    fetchedAt: mv.fetchedAt,
                   };
                 }),
                 ...etfs.map((h) => {
-                  const costIdr = convertAmount(Number(h.total_cost) || 0, h.account?.currency || "IDR", "IDR", rates);
+                  const settlementCurrency = h.currency || h.account?.currency || "IDR";
+                  const costIdr = convertAmount(Number(h.total_cost) || 0, settlementCurrency, "IDR", rates);
+                  const mv = marketOrCost("etf", h.ticker || "", Number(h.quantity) || 0, costIdr);
                   return {
                     kind: t.reports.pdfEtfKind,
                     symbol: h.ticker,
+                    settlementCurrency,
                     qtyText: `${Number(h.quantity)} unit`,
                     cost: costIdr,
-                    valueIdr: marketOrCost("etf", h.ticker || "", Number(h.quantity) || 0, costIdr),
+                    valueIdr: mv.valueIdr,
+                    fetchedAt: mv.fetchedAt,
                   };
                 }),
               ].map((r) => ({
@@ -2787,28 +2808,55 @@ export function ReportsView({
                 costDisplay: convertAmount(r.valueIdr, "IDR", displayCurrency, rates),
               }));
               const totalHoldingsCost = rows.reduce((s, r) => s + r.costDisplay, 0);
+              const latestFetched = rows.reduce<string | null>(
+                (m, r) => (r.fetchedAt && (!m || r.fetchedAt > m) ? r.fetchedAt : m),
+                null,
+              );
+              const latestFetchedLabel = fmtFetched(latestFetched);
               return (
-                <div className="divide-y divide-[#E5E7EB] dark:divide-[#27272A]">
-                  {rows.map((r, i) => (
-                    <div key={`${r.kind}-${r.symbol}-${i}`} className="flex items-center justify-between gap-3 py-2.5">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-black text-xs text-[#0F172A] dark:text-[#F8FAFC]">{r.symbol}</span>
-                          <span className="rounded-md bg-[#F1F3F5] px-1.5 py-0.5 text-[9px] font-bold text-[#64748B] dark:bg-[#27272A] dark:text-[#94A3B8]">{r.kind}</span>
-                        </div>
-                        <p className="truncate text-[10px] text-[#64748B] dark:text-[#94A3B8]">{r.qtyText}</p>
+                <>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-md bg-[#F1F3F5] dark:bg-[#1A1A20] flex items-center justify-center text-[#0F172A] dark:text-[#FAFAFA] border border-[#E5E7EB] dark:border-[#27272A] shrink-0">
+                        <Wallet className="w-3.5 h-3.5" />
                       </div>
-                      <div className="shrink-0 text-right">
-                        <p className="font-mono text-xs font-black text-[#0F172A] dark:text-[#F8FAFC]">
-                          {maskCurrency(formatCurrency(r.costDisplay, displayCurrency), isPrivate)}
-                        </p>
-                        <p className="font-mono text-[9px] text-[#94A3B8]">
-                          {totalHoldingsCost > 0 ? `${((r.costDisplay / totalHoldingsCost) * 100).toFixed(1)}%` : "—"}
-                        </p>
-                      </div>
+                      <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#FAFAFA]">
+                        {t.reports.portfolioHoldingsTitle}
+                      </h2>
                     </div>
-                  ))}
-                </div>
+                    <span className="text-[10px] text-[#64748B] dark:text-[#94A3B8] font-mono">
+                      {latestFetchedLabel
+                        ? `${language === "en" ? "Prices as of" : "Harga per"} ${latestFetchedLabel}`
+                        : t.reports.snapshotToday}
+                    </span>
+                  </div>
+                  <div className="divide-y divide-[#E5E7EB] dark:divide-[#27272A]">
+                    {rows.map((r, i) => (
+                      <div key={`${r.kind}-${r.symbol}-${i}`} className="flex items-center justify-between gap-3 py-2.5">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-black text-xs text-[#0F172A] dark:text-[#F8FAFC]">{r.symbol}</span>
+                            <span className="rounded-md bg-[#F1F3F5] px-1.5 py-0.5 text-[9px] font-bold text-[#64748B] dark:bg-[#27272A] dark:text-[#94A3B8]">{r.kind}</span>
+                          </div>
+                          <p className="truncate text-[10px] text-[#64748B] dark:text-[#94A3B8]">{r.qtyText}</p>
+                          {r.fetchedAt && (
+                            <p className="truncate text-[9px] text-[#94A3B8]">
+                              {language === "en" ? "Market" : "Harga"} {fmtFetched(r.fetchedAt)}
+                            </p>
+                          )}
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <p className="font-mono text-xs font-black text-[#0F172A] dark:text-[#F8FAFC]">
+                            {maskCurrency(formatCurrency(r.costDisplay, displayCurrency), isPrivate)}
+                          </p>
+                          <p className="font-mono text-[9px] text-[#94A3B8]">
+                            {totalHoldingsCost > 0 ? `${((r.costDisplay / totalHoldingsCost) * 100).toFixed(1)}%` : "—"}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
               );
             })()}
           </div>

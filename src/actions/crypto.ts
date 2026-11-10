@@ -47,6 +47,15 @@ async function syncCryptoHolding(
   accountId: string,
   symbol: string,
 ) {
+  // Settlement/cost currency follows the investment account.
+  const { data: account } = await supabase
+    .from("accounts")
+    .select("currency")
+    .eq("id", accountId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  const currency = account?.currency || "IDR";
+
   const { data: trades, error } = await supabase
     .from("crypto_trades")
     .select("*")
@@ -74,7 +83,7 @@ async function syncCryptoHolding(
 
   const { data: current } = await supabase
     .from("crypto_holdings")
-    .select("id, price_currency, name, notes")
+    .select("id, name, notes")
     .eq("user_id", userId)
     .eq("account_id", accountId)
     .ilike("symbol", symbol)
@@ -99,7 +108,7 @@ async function syncCryptoHolding(
     quantity,
     cost_basis: costBasis,
     average_buy_price: costBasis / quantity,
-    price_currency: current?.price_currency || "IDR",
+    price_currency: currency,
     notes: current?.notes || null,
     updated_at: new Date().toISOString(),
   };
@@ -296,6 +305,7 @@ async function recordCryptoTrade(input: {
       gross_amount: grossAmount,
       fee_amount: feeAmount,
       fee_currency: account.currency as CurrencyCode,
+      currency: account.currency as CurrencyCode,
       price_per_unit: pricePerUnit,
       cost_basis: costBasis,
       realized_pnl: realizedPnl,

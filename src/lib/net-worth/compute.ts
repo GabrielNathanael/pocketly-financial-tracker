@@ -54,7 +54,7 @@ export async function computeNetWorthForUser(
         .eq("is_active", true),
       supabase
         .from("stock_holdings")
-        .select("id, ticker, total_cost, lots, total_shares, account:accounts(currency)")
+        .select("id, ticker, currency, total_cost, lots, total_shares, account:accounts(currency)")
         .eq("user_id", userId)
         .gt("total_cost", 0),
       supabase
@@ -65,7 +65,7 @@ export async function computeNetWorthForUser(
         .gt("cost_basis", 0),
       supabase
         .from("etf_holdings")
-        .select("id, ticker, quantity, total_cost, account:accounts(currency)")
+        .select("id, ticker, currency, quantity, total_cost, account:accounts(currency)")
         .eq("user_id", userId)
         .gt("total_cost", 0),
       supabase
@@ -105,7 +105,7 @@ export async function computeNetWorthForUser(
     (h) => {
       const costIdr = toIdr(
         Number(h.total_cost) || 0,
-        h.account?.currency || "IDR",
+        h.currency || h.account?.currency || "IDR",
       );
       const shares =
         Number(h.total_shares) || Number(h.lots || 0) * 100 || 0;
@@ -142,7 +142,7 @@ export async function computeNetWorthForUser(
     (h) => {
       const costIdr = toIdr(
         Number(h.total_cost) || 0,
-        h.account?.currency || "IDR",
+        h.currency || h.account?.currency || "IDR",
       );
       return {
         id: h.id,

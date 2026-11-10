@@ -533,6 +533,7 @@ export interface Database {
           user_id: string;
           account_id: string;
           ticker: string;
+          currency: CurrencyCode;
           total_cost: number;
           lots: number;
           total_shares: number;
@@ -546,6 +547,7 @@ export interface Database {
           user_id: string;
           account_id: string;
           ticker: string;
+          currency?: CurrencyCode;
           total_cost: number;
           lots?: number;
           total_shares?: number;
@@ -559,6 +561,7 @@ export interface Database {
           user_id?: string;
           account_id?: string;
           ticker?: string;
+          currency?: CurrencyCode;
           total_cost?: number;
           lots?: number;
           total_shares?: number;
@@ -576,6 +579,7 @@ export interface Database {
           account_id: string;
           holding_id: string | null;
           ticker: string;
+          currency: CurrencyCode;
           type: "buy" | "sell";
           net_amount: number;
           buy_cost: number;
@@ -594,6 +598,7 @@ export interface Database {
           account_id: string;
           holding_id?: string | null;
           ticker: string;
+          currency?: CurrencyCode;
           type: "buy" | "sell";
           net_amount: number;
           buy_cost?: number;
@@ -612,6 +617,7 @@ export interface Database {
           account_id?: string;
           holding_id?: string | null;
           ticker?: string;
+          currency?: CurrencyCode;
           type?: "buy" | "sell";
           net_amount?: number;
           buy_cost?: number;
@@ -684,6 +690,7 @@ export interface Database {
           gross_amount: number;
           fee_amount: number;
           fee_currency: CurrencyCode;
+          currency: CurrencyCode;
           price_per_unit: number;
           cost_basis: number;
           realized_pnl: number;
@@ -703,6 +710,7 @@ export interface Database {
           gross_amount: number;
           fee_amount?: number;
           fee_currency?: CurrencyCode;
+          currency?: CurrencyCode;
           price_per_unit: number;
           cost_basis?: number;
           realized_pnl?: number;
@@ -722,6 +730,7 @@ export interface Database {
           gross_amount?: number;
           fee_amount?: number;
           fee_currency?: CurrencyCode;
+          currency?: CurrencyCode;
           price_per_unit?: number;
           cost_basis?: number;
           realized_pnl?: number;
@@ -800,6 +809,7 @@ export type EtfHolding = {
   user_id: string;
   account_id: string;
   ticker: string;
+  currency: CurrencyCode;
   quantity: number;
   total_cost: number;
   avg_buy_price: number;
@@ -813,6 +823,7 @@ export type EtfTrade = {
   user_id: string;
   account_id: string;
   ticker: string;
+  currency: CurrencyCode;
   type: "buy" | "sell";
   quantity: number;
   price_per_unit: number;

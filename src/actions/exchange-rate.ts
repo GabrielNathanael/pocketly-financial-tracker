@@ -92,6 +92,7 @@ export interface NetWorthSummary {
   netWorthIdr: number;
   exchangeRate: number;
   rates: ForexRatesMap;
+  latestPriceFetchedAt: string | null;
   accounts: NetWorthBreakdownItem[];
   stocks: NetWorthBreakdownItem[];
   crypto: NetWorthBreakdownItem[];
@@ -131,6 +132,7 @@ export async function getNetWorthData(
       netWorthIdr: 0,
       exchangeRate: rates.IDR || 16200,
       rates,
+      latestPriceFetchedAt: null,
       accounts: [],
       stocks: [],
       crypto: [],
@@ -144,6 +146,13 @@ export async function getNetWorthData(
   const prices = await getAssetPrices(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     supabase as any,
+  );
+  const latestPriceFetchedAt = Array.from(prices.values()).reduce<
+    string | null
+  >(
+    (latest, p) =>
+      !latest || p.fetchedAt > latest ? p.fetchedAt : latest,
+    null,
   );
   const c = await computeNetWorthForUser(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -167,6 +176,7 @@ export async function getNetWorthData(
     netWorthIdr: c.netWorthIdr,
     exchangeRate: rates.IDR || 16200,
     rates,
+    latestPriceFetchedAt,
     accounts: c.accounts,
     stocks: c.stocks,
     crypto: c.crypto,

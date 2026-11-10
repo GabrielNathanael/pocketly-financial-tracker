@@ -47,6 +47,8 @@ const SECTIONS_BY_FORMAT: Record<ExportFormat, ExportSection[]> = {
     "stockTrades",
     "cryptoHoldings",
     "cryptoTrades",
+    "etfHoldings",
+    "etfTrades",
   ],
   json: [
     "transactions",
@@ -59,6 +61,8 @@ const SECTIONS_BY_FORMAT: Record<ExportFormat, ExportSection[]> = {
     "stockTrades",
     "cryptoHoldings",
     "cryptoTrades",
+    "etfHoldings",
+    "etfTrades",
   ],
 };
 
@@ -140,6 +144,8 @@ export function ExportDataCard() {
     stockTrades: t.settings.exportSectionStockTrades,
     cryptoHoldings: t.settings.exportSectionCryptoHoldings,
     cryptoTrades: t.settings.exportSectionCryptoTrades,
+    etfHoldings: t.settings.exportSectionEtfHoldings,
+    etfTrades: t.settings.exportSectionEtfTrades,
   };
 
   const toggleSection = (fmt: ExportFormat, key: ExportSection) =>
@@ -195,6 +201,8 @@ export function ExportDataCard() {
           ["stock-trades", data.csvStockTrades],
           ["crypto-holdings", data.csvCryptoHoldings],
           ["crypto-trades", data.csvCryptoTrades],
+          ["etf-holdings", data.csvEtfHoldings],
+          ["etf-trades", data.csvEtfTrades],
         ] as const;
         for (const [name, content] of csvFiles) {
           if (content !== null) {

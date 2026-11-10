@@ -110,42 +110,96 @@ async function fetchCryptoPrices(
   return out;
 }
 
-async function fetchStooqPrices(
+async function fetchYahooPrice(
+  yahooSymbol: string,
+): Promise<{ price: number; currency: string } | null> {
+  const res = await fetch(
+    `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(
+      yahooSymbol,
+    )}?range=1d&interval=1d`,
+    {
+      cache: "no-store",
+      headers: {
+        // Yahoo rejects requests without a browser-like UA.
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+        Accept: "application/json",
+      },
+    },
+  );
+  if (!res.ok) throw new Error(`Yahoo HTTP ${res.status} (${yahooSymbol})`);
+
+  const data = (await res.json()) as {
+    chart?: {
+      result?: Array<{
+        meta?: {
+          currency?: string;
+          regularMarketPrice?: number;
+          chartPreviousClose?: number;
+        };
+        indicators?: { quote?: Array<{ close?: Array<number | null> }> };
+      }>;
+    };
+  };
+  const result = data.chart?.result?.[0];
+  const meta = result?.meta;
+  const closes = result?.indicators?.quote?.[0]?.close;
+  const lastClose = Array.isArray(closes)
+    ? [...closes].reverse().find((v) => typeof v === "number" && v > 0)
+    : undefined;
+  const price = Number(
+    meta?.regularMarketPrice ?? lastClose ?? meta?.chartPreviousClose,
+  );
+  if (!price || price <= 0) return null;
+
+  const fallbackCurrency = yahooSymbol.toUpperCase().endsWith(".JK")
+    ? "IDR"
+    : "USD";
+  return { price, currency: meta?.currency || fallbackCurrency };
+}
+
+/**
+ * Yahoo covers both IDX (`BBCA.JK`) and US ETFs (`SPY`). The chart endpoint is
+ * per-symbol, so fetch in small batches to stay polite with rate limits.
+ */
+async function fetchYahooPrices(
   kind: "stock" | "etf",
   symbols: string[],
 ): Promise<Array<{ symbol: string; price: number; currency: string }>> {
   if (symbols.length === 0) return [];
-  const suffix = kind === "stock" ? ".jk" : ".us";
-  const stooqSymbols = symbols.map(
-    (s) => `${s.toLowerCase()}${suffix}`,
-  );
-  const res = await fetch(
-    `https://stooq.com/q/l/?s=${stooqSymbols.join(",")}&f=sd2t2ohlcv&h&e=csv`,
-    { cache: "no-store" },
-  );
-  if (!res.ok) throw new Error(`Stooq HTTP ${res.status}`);
-  const text = await res.text();
-  const lines = text.trim().split("\n").slice(1); // skip header
+
   const out: Array<{ symbol: string; price: number; currency: string }> = [];
-  lines.forEach((line, i) => {
-    const parts = line.split(",");
-    // Symbol,Date,Time,Open,High,Low,Close,Volume
-    const close = Number(parts[6]);
-    const sym = symbols[i];
-    if (sym && close > 0) {
-      out.push({
-        symbol: sym.toUpperCase(),
-        price: close,
-        currency: kind === "stock" ? "IDR" : "USD",
-      });
+  const batchSize = 5;
+
+  for (let i = 0; i < symbols.length; i += batchSize) {
+    const chunk = symbols.slice(i, i + batchSize);
+    const results = await Promise.allSettled(
+      chunk.map(async (symbol) => {
+        const yahooSymbol =
+          kind === "stock"
+            ? `${symbol.replace(/\.JK$/i, "")}.JK`
+            : symbol.replace(/\.US$/i, "");
+        const quote = await fetchYahooPrice(yahooSymbol);
+        return quote
+          ? { symbol: symbol.toUpperCase(), price: quote.price, currency: quote.currency }
+          : null;
+      }),
+    );
+    for (const result of results) {
+      if (result.status === "fulfilled" && result.value) {
+        out.push(result.value);
+      } else if (result.status === "rejected") {
+        console.error("[prices] Yahoo fetch failed:", result.reason);
+      }
     }
-  });
+  }
+
   return out;
 }
 
 /**
  * Refresh cached market prices for tickers actually held by any user.
- * Global cache — one fetch per kind per day via cron, plus manual
+ * Global cache — one fetch per owned symbol per day via cron, plus manual
  * refresh reuses the same function with the admin client.
  */
 export async function refreshAssetPrices(
@@ -203,8 +257,8 @@ export async function refreshAssetPrices(
   };
 
   await tryFetch("crypto", cryptoSymbols, () => fetchCryptoPrices(cryptoSymbols));
-  await tryFetch("stock", stockSymbols, () => fetchStooqPrices("stock", stockSymbols));
-  await tryFetch("etf", etfSymbols, () => fetchStooqPrices("etf", etfSymbols));
+  await tryFetch("stock", stockSymbols, () => fetchYahooPrices("stock", stockSymbols));
+  await tryFetch("etf", etfSymbols, () => fetchYahooPrices("etf", etfSymbols));
 
   let updated = 0;
   for (const batch of batches) {
@@ -216,7 +270,7 @@ export async function refreshAssetPrices(
           symbol: row.symbol,
           price: row.price,
           currency: row.currency,
-          source: batch.kind === "crypto" ? "coingecko" : "stooq",
+          source: batch.kind === "crypto" ? "coingecko" : "yahoo",
           fetched_at: new Date().toISOString(),
         },
         { onConflict: "kind,symbol" },

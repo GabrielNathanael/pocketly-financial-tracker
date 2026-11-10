@@ -290,6 +290,23 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
               {trendDelta.toFixed(2)}% ({range})
             </span>
           )}
+          {data.latestPriceFetchedAt &&
+            (data.stocks.length > 0 ||
+              data.crypto.length > 0 ||
+              data.etf.length > 0) && (
+              <span className="text-[10px] text-slate-400">
+                {language === "en" ? "Prices as of " : "Harga per "}
+                {new Date(data.latestPriceFetchedAt).toLocaleString(
+                  language === "en" ? "en-US" : "id-ID",
+                  {
+                    day: "numeric",
+                    month: "short",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  },
+                )}
+              </span>
+            )}
         </div>
       </div>
 
