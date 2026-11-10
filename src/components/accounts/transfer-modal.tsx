@@ -87,11 +87,7 @@ function TransferForm({
     accounts.find((a) => a.is_default)?.id ||
     accounts[0]?.id ||
     "";
-  const initialTo =
-    accounts.find((a) => a.id !== initialFrom)?.id ||
-    accounts[1]?.id ||
-    accounts[0]?.id ||
-    "";
+  const initialTo = accounts.find((a) => a.id !== initialFrom)?.id || "";
   const [fromAccountId, setFromAccountId] = useState<string>(initialFrom);
   const [toAccountId, setToAccountId] = useState<string>(initialTo);
   const [amount, setAmount] = useState<string>("");
@@ -108,7 +104,9 @@ function TransferForm({
 
   const fromAccount =
     accounts.find((a) => a.id === fromAccountId) || accounts[0];
-  const toAccount = accounts.find((a) => a.id === toAccountId) || accounts[1];
+  const toAccount = accounts.find((a) => a.id === toAccountId);
+  // Never offer the source account as a destination
+  const destinationAccounts = accounts.filter((a) => a.id !== fromAccountId);
   const isCrossCurrency =
     fromAccount && toAccount && fromAccount.currency !== toAccount.currency;
 
@@ -175,10 +173,18 @@ function TransferForm({
 
   const handleFromChange = (id: string) => {
     setFromAccountId(id);
-    recalculateAmounts(id, toAccountId, amount, rates);
+    // If the new source was the destination, swap the destination to the
+    // previous source so the two selects can never hold the same account.
+    let nextTo = toAccountId;
+    if (id === toAccountId || !toAccountId) {
+      nextTo = accounts.find((a) => a.id !== id)?.id || "";
+      setToAccountId(nextTo);
+    }
+    recalculateAmounts(id, nextTo, amount, rates);
   };
 
   const handleToChange = (id: string) => {
+    if (id === fromAccountId) return;
     setToAccountId(id);
     recalculateAmounts(fromAccountId, id, amount, rates);
   };
@@ -363,7 +369,7 @@ function TransferForm({
             <SelectValue placeholder={t.transfer.destLabel} />
           </SelectTrigger>
           <SelectContent>
-            {accounts.map((a) => (
+            {destinationAccounts.map((a) => (
               <SelectItem key={a.id} value={a.id} className="text-xs">
                 <div className="flex items-center justify-between gap-2 w-full">
                   <span className="truncate">
@@ -520,6 +526,7 @@ function TransferForm({
         <Button
           type="submit"
           isLoading={isLoading}
+          disabled={!toAccountId}
           className="flex-1 font-bold"
         >
           <ArrowRightLeft className="w-3.5 h-3.5 mr-1" />

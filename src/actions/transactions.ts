@@ -479,6 +479,62 @@ export interface GlobalAuditLogsOptions {
   search?: string;
 }
 
+/**
+ * Audit rows only snapshot the transfer table, which stores account IDs —
+ * not names. Resolve them from `accounts` so the log shows real names
+ * instead of the generic "Source Account → Destination Account" fallback.
+ */
+async function attachTransferAccountNames(
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  logs: AuditLog[],
+): Promise<AuditLog[]> {
+  const transferLogs = logs.filter((log) => log.table_name === "transfers");
+  if (transferLogs.length === 0) return logs;
+
+  const ids = new Set<string>();
+  for (const log of transferLogs) {
+    for (const snapshot of [log.new_values, log.old_values]) {
+      if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) {
+        continue;
+      }
+      const row = snapshot as Record<string, unknown>;
+      if (typeof row.from_account_id === "string") ids.add(row.from_account_id);
+      if (typeof row.to_account_id === "string") ids.add(row.to_account_id);
+    }
+  }
+  if (ids.size === 0) return logs;
+
+  const { data: accounts } = await supabase
+    .from("accounts")
+    .select("id, name")
+    .in("id", Array.from(ids));
+
+  if (!accounts?.length) return logs;
+  const nameById = new Map(accounts.map((a) => [a.id, a.name]));
+
+  for (const log of transferLogs) {
+    for (const key of ["new_values", "old_values"] as const) {
+      const snapshot = log[key];
+      if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) {
+        continue;
+      }
+      const row = snapshot as Record<string, unknown>;
+      const fromName =
+        typeof row.from_account_id === "string"
+          ? nameById.get(row.from_account_id)
+          : undefined;
+      const toName =
+        typeof row.to_account_id === "string"
+          ? nameById.get(row.to_account_id)
+          : undefined;
+      if (fromName) row.from_account_name = fromName;
+      if (toName) row.to_account_name = toName;
+    }
+  }
+
+  return logs;
+}
+
 export async function getGlobalAuditLogs(
   options: GlobalAuditLogsOptions = {},
 ): Promise<{ logs: AuditLog[]; total: number }> {
@@ -555,7 +611,10 @@ export async function getGlobalAuditLogs(
   }
 
   return {
-    logs: (data as unknown as AuditLog[]) || [],
+    logs: await attachTransferAccountNames(
+      supabase,
+      (data as unknown as AuditLog[]) || [],
+    ),
     total: count ?? 0,
   };
 }
