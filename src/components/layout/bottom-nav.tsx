@@ -27,6 +27,7 @@ import {
   SunMoon,
   CalendarClock,
   TrendingUp,
+  Split,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { QuickAddSheet } from "@/components/layout/quick-add-sheet";
@@ -103,6 +104,7 @@ export function BottomNav({
       icon: Menu,
       isActive:
         pathname.startsWith("/budget") ||
+        pathname.startsWith("/split-bill") ||
         pathname.startsWith("/goals") ||
         pathname.startsWith("/due-center") ||
         pathname.startsWith("/investments") ||
@@ -134,10 +136,10 @@ export function BottomNav({
           isActive: pathname.startsWith("/transactions"),
         },
         {
-          label: t.nav.budget,
-          href: "/budget",
-          icon: PieChart,
-          isActive: pathname.startsWith("/budget"),
+          label: t.nav.splitBill,
+          href: "/split-bill",
+          icon: Split,
+          isActive: pathname.startsWith("/split-bill"),
         },
         {
           label: t.nav.reports,
@@ -155,6 +157,12 @@ export function BottomNav({
           href: "/due-center",
           icon: CalendarClock,
           isActive: pathname.startsWith("/due-center"),
+        },
+        {
+          label: t.nav.budget,
+          href: "/budget",
+          icon: PieChart,
+          isActive: pathname.startsWith("/budget"),
         },
         {
           label: t.investments.title,
@@ -227,10 +235,10 @@ export function BottomNav({
 
   const moreLinks = [
     {
-      label: t.investments.title,
-      href: "/investments",
-      icon: TrendingUp,
-      desc: t.nav.investmentsDesc,
+      label: t.nav.splitBill,
+      href: "/split-bill",
+      icon: Split,
+      desc: t.nav.splitBillDesc,
     },
     {
       label: t.nav.dueDatesBills,
@@ -243,6 +251,12 @@ export function BottomNav({
       href: "/budget",
       icon: PieChart,
       desc: t.nav.budgetDesc,
+    },
+    {
+      label: t.investments.title,
+      href: "/investments",
+      icon: TrendingUp,
+      desc: t.nav.investmentsDesc,
     },
     { label: t.nav.goals, href: "/goals", icon: Target, desc: t.nav.goalsDesc },
     {

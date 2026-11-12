@@ -169,6 +169,10 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
     const outerR = 84;
     const innerR = 62;
     const GAP = 2; // degrees between slices
+    const fmtN = (n: number) => {
+      const v = Math.round(n * 1e6) / 1e6;
+      return Number.isInteger(v) ? String(v) : String(v);
+    };
     const visible = assetCategories.filter((c) => c.total > 0);
     if (visible.length === 0) return [];
     // Single slice: draw a full ring as two half arcs.
@@ -202,7 +206,7 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
       const largeArc = endDeg - startDeg > 180 ? 1 : 0;
       return {
         ...c,
-        path: `M ${x1} ${y1} A ${outerR} ${outerR} 0 ${largeArc} 1 ${x2} ${y2} L ${ix2} ${iy2} A ${innerR} ${innerR} 0 ${largeArc} 0 ${ix1} ${iy1} Z`,
+        path: `M ${fmtN(x1)} ${fmtN(y1)} A ${outerR} ${outerR} 0 ${largeArc} 1 ${fmtN(x2)} ${fmtN(y2)} L ${fmtN(ix2)} ${fmtN(iy2)} A ${innerR} ${innerR} 0 ${largeArc} 0 ${fmtN(ix1)} ${fmtN(iy1)} Z`,
       };
     });
   }, [assetCategories]);

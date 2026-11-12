@@ -161,12 +161,35 @@ export function parseItemsFromDescription(
   return parseItemsSummary(match[1]);
 }
 
+/**
+ * Normalisasi isi kolom JSONB `transactions.items` jadi bentuk TransactionItem.
+ * Aman dipakai buat data yang ditulis versi lama / format tak terduga.
+ */
+export function normalizeStoredItems(raw: unknown): TransactionItem[] {
+  if (!Array.isArray(raw)) return [];
+  const out: TransactionItem[] = [];
+  for (const it of raw as any[]) {
+    if (!it || typeof it !== "object") continue;
+    const name = String(it.name ?? "").trim();
+    if (!name) continue;
+    const item: TransactionItem = {
+      name: name.slice(0, 200),
+      quantity: it.quantity != null ? String(it.quantity) : "1",
+      price: it.price != null ? String(it.price) : "",
+    };
+    if (it.subtotal != null && String(it.subtotal).trim() !== "") {
+      item.subtotal = String(it.subtotal);
+    }
+    out.push(item);
+  }
+  return out;
+}
+
 /** Format structured items back into the `[Items: ...]` inner text. */
 export function formatItemsSummary(
   items: TransactionItem[],
   currency: string,
-): string {
-  const validItems = items.filter(
+): string {  const validItems = items.filter(
     (i) => i.name.trim() && parseFloat(i.price) > 0,
   );
   return validItems

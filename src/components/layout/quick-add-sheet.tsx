@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
+import { ReceiptScanOverlay } from "@/components/ui/receipt-scan-overlay";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { NumberInput } from "@/components/ui/number-input";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
-import { DynamicIcon } from "@/components/ui/dynamic-icon";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Account, Category, TransactionType } from "@/types/database";
 import { formatCurrency } from "@/lib/utils/currency";
@@ -16,8 +17,7 @@ import {
 } from "@/lib/utils/transaction-items";
 import { formatCategoryName } from "@/lib/utils/category-i18n";
 import { createTransaction } from "@/actions/transactions";
-import { CameraCaptureModal } from "@/components/ui/camera-capture-modal";
-import { isMobileDevice } from "@/lib/utils/device";
+import { CameraLiveView } from "@/components/ui/camera-live-view";
 import { useLanguage } from "@/lib/i18n/language-context";
 import {
   getPinnedTemplates,
@@ -35,7 +35,6 @@ import {
   Plus,
   Trash2,
   ListPlus,
-  ChevronDown,
   AlignLeft,
   Hash,
   X,
@@ -43,11 +42,12 @@ import {
   Camera,
   Loader2,
   Calculator,
-  Search,
+  ScanLine,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { toast } from "sonner";
 import { scanReceiptGemini } from "@/lib/ocr/receipt-gemini-client";
+import { friendlyScanError } from "@/lib/ocr/scan-error";
 import { localDateToISO, getLocalDateString } from "@/lib/utils/date";
 interface QuickAddSheetProps {
   isOpen: boolean;
@@ -144,15 +144,15 @@ function QuickAddSheetContent({
   // OCR Scan State
   const [isScanning, setIsScanning] = useState(false);
   const [ocrProgress, setOcrProgress] = useState<number>(0);
-  const [ocrStatus, setOcrStatus] = useState<string>("");
-  const [scanPhase, setScanPhase] = useState<"scanning" | "success" | "error" | null>(null);
+  const [scanPhase, setScanPhase] = useState<
+    "preview" | "scanning" | "success" | "error" | null
+  >(null);
   const [scanErrorMsg, setScanErrorMsg] = useState<string>("");
-  const [showScanMenu, setShowScanMenu] = useState(false);
-  const [showCameraModal, setShowCameraModal] = useState(false);
+  const [isScanFullOpen, setIsScanFullOpen] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
   const [scanPreviewUrl, setScanPreviewUrl] = useState<string | null>(null);
   const [highlightScan, setHighlightScan] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const cameraInputRef = React.useRef<HTMLInputElement>(null);
   const scanPreviewUrlRef = React.useRef<string | null>(null);
   const lastScanFileRef = React.useRef<File | null>(null);
   const scanHideTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -182,11 +182,13 @@ function QuickAddSheetContent({
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [pinnedTemplates, setPinnedTemplates] =
+  const [pinnedTemplates] =
     useState<PinnedTemplate[]>(getPinnedTemplates);
 
   // Receipt OCR File Handler
-  const handleReceiptFile = async (file: File) => {
+  // Step 1: keep the photo & show a preview first, so the user can retake
+  // before we spend a scan request.
+  const prepareScanPreview = (file: File) => {
     if (!file) return;
 
     lastScanFileRef.current = file;
@@ -201,22 +203,30 @@ function QuickAddSheetContent({
     const previewUrl = URL.createObjectURL(file);
     scanPreviewUrlRef.current = previewUrl;
     setScanPreviewUrl(previewUrl);
-    setScanPhase("scanning");
     setScanErrorMsg("");
+    setOcrProgress(0);
+    setScanPhase("preview");
+  };
 
+  // Step 2: scan the confirmed photo.
+  const runReceiptScan = async () => {
+    const file = lastScanFileRef.current;
+    if (!file) return;
+
+    setScanPhase("scanning");
     setIsScanning(true);
-    setOcrProgress(15);
-    setOcrStatus(language === "id" ? "Membaca struk dengan AI..." : "Reading receipt with AI...");
+    setOcrProgress(6);
 
+    // Progress naik cepat di awal (biar terasa responsif), lalu mendekati 90%
+    // secara asymptotic sambil menunggu AI sungguhan. Hasil baru masuk => 100%.
     const progressTimer = setInterval(() => {
-      setOcrProgress((prev) => Math.min(90, prev + 8));
-    }, 500);
+      setOcrProgress((prev) => Math.min(90, prev + (90 - prev) * 0.14));
+    }, 260);
 
     try {
       const parsed = await scanReceiptGemini(file, currentCurrency);
       clearInterval(progressTimer);
       setOcrProgress(100);
-      setOcrStatus(language === "id" ? "Mengisi rincian..." : "Filling details...");
 
       const filledSomething =
         parsed.amount > 0 ||
@@ -243,26 +253,21 @@ function QuickAddSheetContent({
         setTimeout(() => setHighlightScan(false), 2200);
       }
 
-      clearScanPreview();
+      setScanPhase("success");
       toast.success(t.quickAdd.scanSuccess);
-    } catch (err: any) {
+      // Auto-close scan view and return to form (no separate success screen)
+      setIsScanFullOpen(false);
+      clearScanPreview();
+    } catch (err: unknown) {
       clearInterval(progressTimer);
-      const rawMsg = String((err as Error)?.message || "");
-      console.error("[quick-add] OCR Error:", rawMsg.slice(0, 300));
-      const isQuota =
-        /429|quota|rate.?limit|RESOURCE_EXHAUSTED/i.test(rawMsg);
-      const friendlyMsg =
-        language === "id"
-          ? isQuota
-            ? "Layanan AI sedang sibuk atau batas penggunaan tercapai. Coba lagi beberapa saat lagi."
-            : "Gagal membaca struk. Pastikan foto jelas lalu coba lagi."
-          : isQuota
-            ? "AI service is busy or usage limit reached. Please try again in a moment."
-            : "Failed to read receipt. Make sure the photo is clear and try again.";
+      console.error(
+        "[quick-add] OCR Error:",
+        String((err as Error)?.message || "").slice(0, 300),
+      );
+      // Pesan teknis (Gemini/Postgres) diterjemahkan jadi kalimat ramah user.
       setScanPhase("error");
-      setScanErrorMsg(friendlyMsg);
+      setScanErrorMsg(friendlyScanError(err, language));
       setOcrProgress(0);
-      setOcrStatus(language === "id" ? "Gagal membaca struk" : "Failed to read receipt");
     } finally {
       clearInterval(progressTimer);
       setIsScanning(false);
@@ -274,7 +279,7 @@ function QuickAddSheetContent({
   ) => {
     const file = e.target.files?.[0];
     if (e.target) e.target.value = "";
-    if (file) await handleReceiptFile(file);
+    if (file) prepareScanPreview(file);
   };
 
   // Resolve default category for a given account + type: prefer the
@@ -295,16 +300,16 @@ function QuickAddSheetContent({
 
   // Initialize defaults
   React.useEffect(() => {
-    if (true) {
-      const primary = accounts.find((a) => a.is_default) || accounts[0];
-      if (primary) setSelectedAccountId(primary.id);
+    const primary = accounts.find((a) => a.is_default) || accounts[0];
+    if (!primary) return;
 
-      const defaultCategoryId = resolveDefaultCategory(
-        primary?.id || "",
-        "expense",
-      );
+    const defaultCategoryId = resolveDefaultCategory(primary.id, "expense");
+    // Deferred so the state updates don't cascade synchronously inside the
+    // effect body.
+    queueMicrotask(() => {
+      setSelectedAccountId(primary.id);
       if (defaultCategoryId) setSelectedCategoryId(defaultCategoryId);
-    }
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accounts, categories]);
 
@@ -532,11 +537,11 @@ function QuickAddSheetContent({
         ? ` [Memo: ${freeTextMemo.trim().slice(0, 200)}]`
         : "";
 
+    const validItems = items.filter(
+      (i) => i.name.trim() && parseFloat(i.price) > 0,
+    );
     let itemsPart = "";
     if (showItemsBreakdown && items.length > 0) {
-      const validItems = items.filter(
-        (i) => i.name.trim() && parseFloat(i.price) > 0,
-      );
       const maxDescLen = 2000;
       const overhead = baseDesc.length + memoPart.length + " [Items: ]".length;
       const available = Math.max(0, maxDescLen - overhead);
@@ -596,6 +601,8 @@ function QuickAddSheetContent({
         currency: currentCurrency,
         description: finalDesc,
         tags: finalTags.length > 0 ? finalTags : undefined,
+        // Rincian item disimpan juga di kolom JSONB `transactions.items`
+        items: showItemsBreakdown && validItems.length > 0 ? validItems : undefined,
         transactionDate: localDateToISO(txDate),
       });
 
@@ -652,14 +659,6 @@ function QuickAddSheetContent({
           40%,
           80% {
             transform: translateX(4px);
-          }
-        }
-        @keyframes receipt-scan {
-          0% {
-            top: -15%;
-          }
-          100% {
-            top: 115%;
           }
         }
       `}</style>
@@ -815,16 +814,20 @@ function QuickAddSheetContent({
         </div>
       </div>
       {/* Scan receipt — beside Calculator, OUTSIDE the overflow-hidden card
-          so the dropdown isn't clipped at the card edge (like edit form) */}
+          so the button isn't clipped at the card edge (like edit form).
+          Opens the full-screen camera view directly. */}
       <div className="absolute right-[72px] top-2 z-20">
         <button
           type="button"
           disabled={isScanning}
           onClick={(e) => {
             e.stopPropagation();
-            setShowScanMenu((v) => !v);
+            setCameraError(null);
+            clearScanPreview();
+            setIsScanFullOpen(true);
           }}
           title={t.quickAdd.scanReceiptBtn}
+          aria-label={t.quickAdd.scanReceiptBtn}
           className="flex h-7 w-7 items-center justify-center rounded-lg text-[#94A3B8] transition-colors hover:bg-[#F1F3F5] hover:text-[#0F172A] dark:hover:bg-[#1A1A20] dark:hover:text-[#FAFAFA] disabled:opacity-60"
         >
           {isScanning ? (
@@ -833,52 +836,6 @@ function QuickAddSheetContent({
             <Camera className="h-4 w-4 text-indigo-500" />
           )}
         </button>
-        {showScanMenu && !isScanning && (
-          <>
-            <div
-              className="fixed inset-0 z-10"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowScanMenu(false);
-              }}
-            />
-            <div
-              className="absolute right-0 top-full z-20 mt-1 w-44 overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-lg dark:border-[#27272A] dark:bg-[#121215]"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowScanMenu(false);
-                  // Mobile: native camera (no permission prompt).
-                  // Desktop: webcam modal (capture is ignored there).
-                  if (isMobileDevice()) {
-                    cameraInputRef.current?.click();
-                  } else {
-                    setShowCameraModal(true);
-                  }
-                }}
-                className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-[#0F172A] hover:bg-[#F8F9FA] dark:text-[#F8FAFC] dark:hover:bg-[#1A1A20]"
-              >
-                <Camera className="h-3.5 w-3.5" />
-                {t.quickAdd.takePhoto}
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowScanMenu(false);
-                  fileInputRef.current?.click();
-                }}
-                className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-[#0F172A] hover:bg-[#F8F9FA] dark:text-[#F8FAFC] dark:hover:bg-[#1A1A20]"
-              >
-                <AlignLeft className="h-3.5 w-3.5" />
-                {t.quickAdd.uploadFromDevice}
-              </button>
-            </div>
-          </>
-        )}
       </div>
       </div>
 
@@ -1079,159 +1036,6 @@ function QuickAddSheetContent({
               className="hidden"
               onChange={handleReceiptUpload}
             />
-            <input
-              type="file"
-              ref={cameraInputRef}
-              accept="image/*"
-              capture="environment"
-              className="hidden"
-              onChange={handleReceiptUpload}
-            />
-
-            {/* Receipt scan popup: preview on top, status below image */}
-            {scanPreviewUrl && scanPhase && (
-              <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-                <div
-                  className="absolute inset-0 bg-black/60 backdrop-blur-[2px]"
-                  onClick={() => {
-                    if (scanPhase !== "scanning") clearScanPreview();
-                  }}
-                />
-                <div className="relative z-10 w-full max-w-sm overflow-hidden rounded-2xl border border-[#E5E7EB] dark:border-[#27272A] bg-white dark:bg-[#121215] shadow-2xl">
-                  {/* Image area */}
-                  <div className="relative bg-[#0B1220]">
-                    <img
-                      src={scanPreviewUrl}
-                      alt="Receipt preview"
-                      className="h-64 sm:h-72 w-full object-contain"
-                    />
-                    {scanPhase === "scanning" && (
-                      <div
-                        className="pointer-events-none absolute left-0 right-0 h-16"
-                        style={{
-                          background:
-                            "linear-gradient(to bottom, transparent, rgba(99,102,241,0.05) 30%, rgba(129,140,248,0.5) 50%, rgba(99,102,241,0.05) 70%, transparent)",
-                          boxShadow: "0 0 24px 4px rgba(129,140,248,0.25)",
-                          animation: "receipt-scan 2.2s ease-in-out infinite",
-                        }}
-                      />
-                    )}
-                    {scanPhase === "success" && (
-                      <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/10">
-                        <div className="flex items-center gap-1.5 rounded-full bg-emerald-500 px-3 py-1.5 text-white shadow-lg">
-                          <Check className="w-4 h-4 stroke-[3]" />
-                          <span className="text-xs font-bold">
-                            {language === "id" ? "Berhasil dibaca" : "Scan complete"}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                    {scanPhase !== "scanning" && (
-                      <button
-                        type="button"
-                        onClick={clearScanPreview}
-                        className="absolute right-2 top-2 rounded-full bg-black/45 p-1.5 text-white hover:bg-black/60 cursor-pointer"
-                        aria-label="Close"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Status below image (not overlay on image) */}
-                  <div className="px-4 py-3 border-t border-[#E5E7EB] dark:border-[#27272A] bg-white dark:bg-[#121215]">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <p
-                          className={cn(
-                            "text-sm font-semibold",
-                            scanPhase === "error"
-                              ? "text-[#E11D48]"
-                              : scanPhase === "success"
-                                ? "text-emerald-600 dark:text-emerald-400"
-                                : "text-[#0F172A] dark:text-[#FAFAFA]",
-                          )}
-                        >
-                          {scanPhase === "error"
-                            ? language === "id"
-                              ? "Gagal membaca struk"
-                              : "Failed to read receipt"
-                            : ocrStatus ||
-                              (scanPhase === "scanning"
-                                ? t.quickAdd.scanningReceipt
-                                : "")}
-                        </p>
-                        {scanPhase === "scanning" && (
-                          <p className="mt-0.5 text-[11px] text-[#64748B] dark:text-[#94A3B8]">
-                            {language === "id"
-                              ? "Mohon tunggu, AI sedang mengekstrak nominal & rincian."
-                              : "Please wait, AI is extracting amount & details."}
-                          </p>
-                        )}
-                        {scanPhase === "error" && scanErrorMsg && (
-                          <p className="mt-1 text-[11px] text-[#64748B] dark:text-[#94A3B8] break-words">
-                            {scanErrorMsg}
-                          </p>
-                        )}
-                      </div>
-                      {scanPhase === "scanning" && (
-                        <span className="text-xs font-mono font-bold text-indigo-600 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/40 px-2 py-1 rounded-md shrink-0">
-                          {ocrProgress}%
-                        </span>
-                      )}
-                    </div>
-
-                    {scanPhase === "scanning" && (
-                      <div className="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-[#E5E7EB] dark:bg-[#27272A]">
-                        <div
-                          className="h-full rounded-full bg-indigo-500 transition-all duration-300"
-                          style={{ width: `${Math.max(8, ocrProgress)}%` }}
-                        />
-                      </div>
-                    )}
-
-                    {scanPhase === "error" && (
-                      <div className="mt-3 flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (lastScanFileRef.current) {
-                              void handleReceiptFile(lastScanFileRef.current);
-                            }
-                          }}
-                          className="flex-1 px-3 py-2 rounded-xl bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] text-xs font-bold hover:opacity-90 cursor-pointer"
-                        >
-                          {language === "id" ? "Coba lagi" : "Retry scan"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={clearScanPreview}
-                          className="px-3 py-2 rounded-xl border border-[#E5E7EB] dark:border-[#27272A] text-xs font-semibold text-[#64748B] dark:text-[#CBD5E1] hover:bg-[#F8F9FA] dark:hover:bg-[#1A1A20] cursor-pointer"
-                        >
-                          {language === "id" ? "Tutup" : "Close"}
-                        </button>
-                      </div>
-                    )}
-                    {scanPhase === "success" && (
-                      <>
-                        <p className="mt-2 text-[11px] text-[#64748B] dark:text-[#94A3B8]">
-                          {language === "id"
-                            ? "Field yang terisi otomatis sudah disorot, silakan periksa sebelum simpan."
-                            : "Auto-filled fields are highlighted. Please review before saving."}
-                        </p>
-                        <button
-                          type="button"
-                          onClick={clearScanPreview}
-                          className="mt-3 w-full px-3 py-2 rounded-xl bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] text-xs font-bold hover:opacity-90 cursor-pointer"
-                        >
-                          {language === "id" ? "Selesai, cek hasil" : "Done, review"}
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* Action Toolbar Grid (3 Columns: Items, Memo, Tags) */}
             <div className="grid grid-cols-3 gap-1.5">
@@ -1584,11 +1388,107 @@ function QuickAddSheetContent({
           </div>
         </div>
       </div>
-      <CameraCaptureModal
-        isOpen={showCameraModal}
-        onClose={() => setShowCameraModal(false)}
-        onCapture={handleReceiptFile}
-      />
+
+      {/* Full-screen receipt scan (camera + scanning/error).
+          Portaled to <body> so it escapes the BottomSheet container
+          (the sheet has transform/will-change-transform, which would
+          otherwise make `fixed inset-0` resolve against the sheet box
+          and render the scan as a small modal card). */}
+      {isScanFullOpen &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <>
+            {scanPhase === null ? (
+            <CameraLiveView
+              isOpen={isScanFullOpen}
+              onClose={() => {
+                setIsScanFullOpen(false);
+                clearScanPreview();
+              }}
+              onCapture={prepareScanPreview}
+              onPickImage={() => fileInputRef.current?.click()}
+              error={cameraError}
+              onError={setCameraError}
+              onRetry={() => setCameraError(null)}
+            />
+          ) : scanPhase === "preview" ? (
+            /* Preview dulu: user bisa ganti foto sebelum struk dipindai */
+            <>
+              <ReceiptScanOverlay
+                imageUrl={scanPreviewUrl}
+                showStatus={false}
+                onClose={() => {
+                  setIsScanFullOpen(false);
+                  clearScanPreview();
+                }}
+                closeLabel={t.common.close}
+              />
+              <div className="absolute inset-x-0 bottom-0 z-[90] px-4 pt-6 pb-[max(1rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-black/85 via-black/50 to-transparent">
+                <p className="text-sm font-semibold text-white text-center">
+                  {t.quickAdd.scanPreviewTitle}
+                </p>
+                <p className="text-[11px] text-white/70 text-center mt-0.5 mb-3">
+                  {t.quickAdd.scanPreviewHint}
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      clearScanPreview();
+                      setCameraError(null);
+                    }}
+                    className="h-12 flex-1 rounded-xl border border-white/50 text-white text-xs font-semibold bg-black/25 active:scale-[0.98] transition-transform"
+                  >
+                    {t.quickAdd.retakePhoto}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void runReceiptScan()}
+                    className="h-12 flex-[2] rounded-xl bg-white text-black text-sm font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+                  >
+                    <ScanLine className="w-4 h-4" />
+                    {t.quickAdd.useThisPhoto}
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <ReceiptScanOverlay
+              imageUrl={scanPreviewUrl}
+              scanning={scanPhase === "scanning"}
+              progress={scanPhase === "scanning" ? ocrProgress : undefined}
+              status={
+                scanPhase === "error"
+                  ? language === "id"
+                    ? "Gagal membaca struk"
+                    : "Failed to read receipt"
+                  : ocrProgress < 30
+                    ? t.quickAdd.scanPreparing
+                    : ocrProgress < 72
+                      ? t.quickAdd.scanReading
+                      : t.quickAdd.scanBuilding
+              }
+              error={scanPhase === "error" ? scanErrorMsg : null}
+              onClose={() => {
+                setIsScanFullOpen(false);
+                clearScanPreview();
+              }}
+              onRetry={
+                scanPhase === "error"
+                  ? () => {
+                      // Back to the preview so the photo can be re-checked/confirmed
+                      setScanPhase("preview");
+                      setScanErrorMsg("");
+                    }
+                  : undefined
+              }
+              retryLabel={language === "id" ? "Coba lagi" : "Retry scan"}
+              closeLabel={language === "id" ? "Tutup" : "Close"}
+            />
+          )}
+          </>,
+          document.body,
+        )}
     </div>
   );
 }

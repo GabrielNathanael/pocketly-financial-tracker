@@ -19,6 +19,7 @@ import {
   formatItemsSummary,
   getItemTotal,
   parseItemsSummary,
+  normalizeStoredItems,
 } from "@/lib/utils/transaction-items";
 import { formatCategoryName } from "@/lib/utils/category-i18n";
 import {
@@ -133,6 +134,19 @@ export function TransactionForm({
     initialData?.tags,
   );
 
+  // Rincian item: pakai kolom JSONB `transactions.items` kalau ada (lebih baru),
+  // fallback ke parsing "[Items: ...]" dari description (transaksi lama).
+  const storedItems = normalizeStoredItems(initialData?.items);
+  const initialItems: ItemRow[] =
+    storedItems.length > 0
+      ? storedItems.map((it) => ({
+          name: it.name,
+          quantity: it.quantity ?? "1",
+          price: it.price ?? "",
+          ...(it.subtotal != null ? { subtotal: it.subtotal } : {}),
+        }))
+      : parsed.items;
+
   const [type, setType] = useState<TransactionType>(
     initialData?.type || "expense",
   );
@@ -176,9 +190,9 @@ export function TransactionForm({
   const [isPinned, setIsPinned] = useState<boolean>(false);
 
   // Sub-items breakdown
-  const [items, setItems] = useState<ItemRow[]>(parsed.items);
+  const [items, setItems] = useState<ItemRow[]>(initialItems);
   const [showItemsBreakdown, setShowItemsBreakdown] = useState<boolean>(
-    parsed.items.length > 0,
+    initialItems.length > 0,
   );
 
   // Free text memo
@@ -447,6 +461,16 @@ export function TransactionForm({
         currency: currentCurrency,
         description: finalDesc,
         tags: finalTags.length > 0 ? finalTags : undefined,
+        // Rincian item disimpan juga di kolom JSONB `transactions.items`
+        items:
+          showItemsBreakdown && items.length > 0
+            ? items.map((it) => ({
+                name: it.name,
+                quantity: it.quantity || "1",
+                price: it.price || "",
+                ...(it.subtotal ? { subtotal: it.subtotal } : {}),
+              }))
+            : undefined,
         transactionDate: localDateToISO(txDate),
       };
 

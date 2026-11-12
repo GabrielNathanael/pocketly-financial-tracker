@@ -122,6 +122,8 @@ export interface Database {
           currency: CurrencyCode;
           description: string | null;
           tags: string[];
+          /** Rincian item (JSONB): [{name, quantity, price, subtotal}] */
+          items: Json | null;
           transaction_date: string;
           created_at: string;
           updated_at: string;
@@ -140,6 +142,7 @@ export interface Database {
           currency?: CurrencyCode;
           description?: string | null;
           tags?: string[];
+          items?: Json | null;
           transaction_date?: string;
           created_at?: string;
           updated_at?: string;
@@ -158,6 +161,7 @@ export interface Database {
           currency?: CurrencyCode;
           description?: string | null;
           tags?: string[];
+          items?: Json | null;
           transaction_date?: string;
           created_at?: string;
           updated_at?: string;

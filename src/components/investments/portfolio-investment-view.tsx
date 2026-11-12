@@ -2404,12 +2404,7 @@ export function PortfolioInvestmentView({
               ))}
             </SelectContent>
           </Select>
-          <p className="rounded-xl border border-[#E5E7EB] bg-[#F8F9FA] px-3 py-2 text-[11px] font-medium text-[#64748B] dark:border-[#27272A] dark:bg-[#1A1A20] dark:text-[#94A3B8]">
-            {isEn ? "Settlement currency" : "Mata uang settlement"}: <span className="font-bold text-[#0F172A] dark:text-[#F8FAFC]">{formSettlementCurrency}</span>
-            {selectedAccount ? (
-              <span> · {isEn ? "amounts are entered in this account currency" : "nominal diinput dalam currency akun ini"}</span>
-            ) : null}
-          </p>
+ 
 
           {assetKind === "stock" ? (
             <>

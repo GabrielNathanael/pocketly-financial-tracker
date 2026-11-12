@@ -13,6 +13,7 @@ import { formatCurrency } from "@/lib/utils/currency";
 import {
   getItemTotal,
   parseItemsFromDescription,
+  normalizeStoredItems,
 } from "@/lib/utils/transaction-items";
 import { savePinnedTemplate } from "@/lib/storage/pinned-templates";
 import { useLanguage } from "@/lib/i18n/language-context";
@@ -74,7 +75,10 @@ export function TransactionDetailView({
 
   // Structured parse: handles "KOL BEIJING x0.414 (Rp 24.900) = Rp 10.309",
   // legacy "Beras (Rp 75.000)", and currencies with ,/. inside parens.
-  const itemsList = parseItemsFromDescription(rawDesc);
+  // Prioritas: kolom JSONB `transactions.items` (data baru), fallback parsing description.
+  const storedItems = normalizeStoredItems(transaction.items);
+  const itemsList =
+    storedItems.length > 0 ? storedItems : parseItemsFromDescription(rawDesc);
 
   const cleanDescription = rawDesc
     .replace(/\[Memo:\s*[^\]]+\]/g, "")
@@ -291,8 +295,8 @@ export function TransactionDetailView({
 
         {/* Free Text Memo */}
         {memoText && (
-          <div className="flex flex-col gap-1 p-3 rounded-lg bg-[#F0FDF4] dark:bg-[#052E16]/30 border border-[#BBF7D0] dark:border-[#166534]/40">
-            <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#15803D] dark:text-[#4ADE80]">
+          <div className="flex flex-col gap-1 p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A]">
+            <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
               <FileText className="w-3 h-3" />
               <span>{t.transactions.memoTitle}</span>
             </div>

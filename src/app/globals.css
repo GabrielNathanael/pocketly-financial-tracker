@@ -147,3 +147,28 @@ path:focus {
     print-color-adjust: exact !important;
   }
 }
+
+
+/* Receipt scan beam: travels once from the top edge to the bottom edge of the receipt.
+   `top` is relative to the receipt box, so the sweep always covers the full height. */
+@keyframes receipt-scan-sweep {
+  0% { top: -12%; opacity: 0; }
+  14% { opacity: 1; }
+  86% { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+
+.receipt-scan-trail {
+  top: 0;
+  animation: receipt-scan-sweep 2.6s cubic-bezier(0.4, 0.05, 0.3, 1) infinite;
+  will-change: top, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .receipt-scan-trail {
+    animation: none;
+    top: 48%;
+    opacity: 0.6;
+  }
+}
+

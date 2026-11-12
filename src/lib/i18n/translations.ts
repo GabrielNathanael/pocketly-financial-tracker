@@ -19,6 +19,7 @@ import { settings } from "./modules/settings";
 import { guide } from "./modules/guide";
 import { reports } from "./modules/reports";
 import { landing } from "./modules/landing";
+import { splitBill } from "./modules/splitBill";
 
 export type Language = "id" | "en";
 
@@ -45,6 +46,7 @@ export const translations = {
     guide: guide.id,
     reports: reports.id,
     landing: landing.id,
+    splitBill: splitBill.id,
   },
   en: {
     common: common.en,
@@ -68,5 +70,6 @@ export const translations = {
     guide: guide.en,
     reports: reports.en,
     landing: landing.en,
+    splitBill: splitBill.en,
   },
 };

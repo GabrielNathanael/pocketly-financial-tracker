@@ -10,6 +10,7 @@ import {
 } from "@/types/database";
 import { transactionSchema } from "@/lib/validations/transaction";
 import { formatCurrency } from "@/lib/utils/currency";
+import type { TransactionItem } from "@/lib/utils/transaction-items";
 import { getLocalDateRangeBoundsUTC } from "@/lib/utils/date";
 import { getUserTimeZone } from "@/lib/utils/timezone-server";
 
@@ -170,6 +171,8 @@ export async function createTransaction(input: {
   currency?: CurrencyCode;
   description?: string | null;
   tags?: string[];
+  /** Rincian item (disimpan di kolom JSONB `transactions.items`) */
+  items?: TransactionItem[];
   transactionDate: string;
 }) {
   const validation = transactionSchema.safeParse(input);
@@ -247,6 +250,8 @@ export async function createTransaction(input: {
       currency: txCurrency,
       description: input.description?.trim() || null,
       tags: computedTags,
+      // Rincian item (JSONB) — null kalau nggak ada item.
+      items: input.items && input.items.length > 0 ? input.items : null,
       transaction_date: input.transactionDate || new Date().toISOString(),
     })
     .select(`*, category:categories(*), account:accounts(*)`)
@@ -275,6 +280,8 @@ export async function updateTransaction(
     currency?: CurrencyCode;
     description?: string | null;
     tags?: string[];
+    /** Rincian item (disimpan di kolom JSONB `transactions.items`) */
+    items?: TransactionItem[];
     transactionDate: string;
   },
 ) {
@@ -387,6 +394,8 @@ export async function updateTransaction(
       currency: txCurrency,
       description: input.description?.trim() || null,
       tags: computedTags,
+      // Rincian item (JSONB) — null kalau nggak ada item.
+      items: input.items && input.items.length > 0 ? input.items : null,
       transaction_date: input.transactionDate,
       updated_at: new Date().toISOString(),
     })

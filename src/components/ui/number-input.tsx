@@ -135,7 +135,7 @@ export function NumberInput({
           {currency}
         </span>
       )}
-      <span className={cn("min-w-0 flex-1 truncate font-mono font-bold tracking-tight", bare && "text-right")}>
+      <span className={cn("min-w-0 flex-1 truncate font-mono font-bold tracking-tight text-right")}>
         {mainDisplayValue}
       </span>
       {suffix && <span className="ml-2 shrink-0">{suffix}</span>}

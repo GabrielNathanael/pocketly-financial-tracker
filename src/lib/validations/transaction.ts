@@ -1,5 +1,13 @@
 import { z } from 'zod'
 
+/** Rincian item transaksi (disimpan di kolom `transactions.items` JSONB). */
+const transactionItemSchema = z.object({
+  name: z.string().max(200),
+  quantity: z.string().max(40).optional(),
+  price: z.string().max(40).optional(),
+  subtotal: z.string().max(40).optional(),
+})
+
 export const transactionSchema = z.object({
   accountId: z.string().uuid('Please select a valid account'),
   categoryId: z.string().uuid('Please select a valid category'),
@@ -8,6 +16,8 @@ export const transactionSchema = z.object({
   currency: z.enum(['IDR', 'USD', 'SGD']).default('IDR'),
   description: z.string().max(2000, 'Description too long').optional().nullable(),
   tags: z.array(z.string()).default([]),
+  /** Rincian item opsional (JSONB) */
+  items: z.array(transactionItemSchema).max(200).optional(),
   transactionDate: z.string().min(1, 'Transaction date is required'),
 })
 
