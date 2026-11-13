@@ -5,10 +5,10 @@ export function NetWorthSkeleton() {
   return (
     <div className="flex flex-col gap-4 max-w-4xl mx-auto animate-in fade-in-50 duration-150" aria-busy="true">
       {/* Hero */}
-      <div className="p-5 sm:p-8 rounded-2xl bg-foreground dark:bg-surface flex flex-col gap-4">
-        <Skeleton className="h-3 w-40 rounded bg-white/10" />
-        <Skeleton className="h-10 w-64 rounded-lg bg-white/10" />
-        <Skeleton className="h-3 w-56 rounded bg-white/10" />
+      <div className="p-5 sm:p-8 rounded-2xl bg-linear-to-br from-foreground to-foreground/90 flex flex-col gap-4">
+        <Skeleton className="h-3 w-40 rounded bg-background/10" />
+        <Skeleton className="h-10 w-64 rounded-lg bg-background/10" />
+        <Skeleton className="h-3 w-56 rounded bg-background/10" />
       </div>
 
       {/* Trend chart */}

@@ -43,7 +43,7 @@ export function UndoSnackbar() {
       className="fixed z-50 bottom-20 md:bottom-6 left-4 right-4 md:left-1/2 md:-translate-x-1/2 md:w-auto md:min-w-85 md:max-w-md pointer-events-none"
     >
       <div
-        className={`pointer-events-auto relative overflow-hidden rounded-2xl border border-border-inverse/40 bg-surface-inverse/95 text-foreground-inverse shadow-[0_20px_50px_rgba(0,0,0,0.4)] backdrop-blur-xl px-4 py-3 flex items-center justify-between gap-3.5 ${
+        className={`pointer-events-auto relative overflow-hidden rounded-2xl border border-border-inverse/40 bg-surface-inverse/95 text-foreground-inverse shadow-2xl backdrop-blur-xl px-4 py-3 flex items-center justify-between gap-3.5 ${
           isClosing ? 'animate-pop-out' : 'animate-pop-in'
         }`}
       >

@@ -133,9 +133,9 @@ export function UnifiedDueReminder({
 
   if (items.length === 0) {
     return (
-      <div className="p-3.5 rounded-2xl bg-success-muted border border-success/30 flex items-center justify-between gap-3 text-xs text-success">
+      <div className="p-3.5 rounded-2xl bg-success-muted border border-success flex items-center justify-between gap-3 text-xs text-success">
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-xl bg-success/10 text-success flex items-center justify-center shrink-0">
+          <div className="w-7 h-7 rounded-xl bg-surface text-success flex items-center justify-center shrink-0 border border-border">
             <CheckCircle2 className="w-4 h-4" />
           </div>
           <span className="font-medium">{t.dueCenter.allClear}</span>
@@ -200,9 +200,9 @@ export function UnifiedDueReminder({
                   className={cn(
                     'p-3 rounded-xl border flex flex-col justify-between gap-3 transition-all',
                     isOverdue || isToday
-                      ? 'bg-destructive-muted border-destructive/30'
+                      ? 'bg-destructive-muted border-destructive'
                       : item.daysDiff <= 7
-                        ? 'bg-warning-muted border-warning/30'
+                        ? 'bg-warning-muted border-warning'
                         : 'bg-surface-subtle border-border'
                   )}
                 >
@@ -245,7 +245,7 @@ export function UnifiedDueReminder({
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/60">
+                  <div className="flex items-center justify-between gap-2 pt-1 border-t border-border">
                     <div>
                       <span className="text-[10px] uppercase font-bold tracking-wider text-foreground-muted block">
                         {item.source === 'goal' ? 'Sisa Target' : 'Nominal'}

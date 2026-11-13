@@ -3,56 +3,74 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --color-canvas: var(--token-canvas);
-  --color-surface: var(--token-surface);
-  --color-surface-subtle: var(--token-surface-subtle);
-  --color-surface-muted: var(--token-surface-muted);
-  --color-surface-inverse: var(--token-surface-inverse);
-  --color-surface-inverse-hover: var(--token-surface-inverse-hover);
-  --color-surface-contrast: var(--token-surface-contrast);
+  /*
+   * Semantic color tokens (single source of truth: --token-* in :root/.dark).
+   * Tailwind v4 generates utilities from --color-* (e.g. bg-canvas, text-foreground, border-border).
+   * Use by role, not by raw palette value.
+   */
 
-  --color-border: var(--token-border);
-  --color-border-strong: var(--token-border-strong);
-  --color-border-inverse: var(--token-border-inverse);
+  /* Surfaces / backgrounds */
+  --color-canvas: var(--token-canvas); /* App/page base background */
+  --color-surface: var(--token-surface); /* Default elevated surface (cards, panels, inputs) */
+  --color-surface-subtle: var(--token-surface-subtle); /* Slightly recessed/subtle section background */
+  --color-surface-muted: var(--token-surface-muted); /* Muted containers, tracks, chips, table stripes */
+  --color-surface-inverse: var(--token-surface-inverse); /* High-contrast/inverse surface (hero, dark-on-light blocks) */
+  --color-surface-inverse-hover: var(--token-surface-inverse-hover); /* Hover state for inverse surfaces */
+  --color-surface-contrast: var(--token-surface-contrast); /* Contrasting surface on inverse/dark contexts */
 
-  --color-foreground: var(--token-foreground);
-  --color-foreground-secondary: var(--token-foreground-secondary);
-  --color-foreground-muted: var(--token-foreground-muted);
-  --color-foreground-inverse: var(--token-foreground-inverse);
+  /* Borders / dividers */
+  --color-border: var(--token-border); /* Default borders and dividers */
+  --color-border-strong: var(--token-border-strong); /* Emphasized/active borders and outlines */
+  --color-border-inverse: var(--token-border-inverse); /* Borders on inverse surfaces */
 
-  --color-primary: var(--token-primary);
-  --color-primary-hover: var(--token-primary-hover);
-  --color-primary-foreground: var(--token-primary-foreground);
+  /* Text / foreground */
+  --color-foreground: var(--token-foreground); /* Primary text and icons */
+  --color-foreground-secondary: var(--token-foreground-secondary); /* Secondary/supporting text */
+  --color-foreground-muted: var(--token-foreground-muted); /* Tertiary/muted/helper text and placeholders */
+  --color-foreground-inverse: var(--token-foreground-inverse); /* Text/icons on inverse or filled surfaces */
 
-  --color-secondary: var(--token-secondary);
-  --color-secondary-hover: var(--token-secondary-hover);
-  --color-secondary-foreground: var(--token-secondary-foreground);
+  /* Primary actions / brand emphasis */
+  --color-primary: var(--token-primary); /* Primary actions, active/selected emphasis */
+  --color-primary-hover: var(--token-primary-hover); /* Hover state for primary */
+  --color-primary-foreground: var(--token-primary-foreground); /* Text/icons on primary backgrounds */
 
-  --color-accent: var(--token-accent);
-  --color-accent-foreground: var(--token-accent-foreground);
+  /* Secondary actions / neutral emphasis */
+  --color-secondary: var(--token-secondary); /* Secondary/subtle controls and surfaces */
+  --color-secondary-hover: var(--token-secondary-hover); /* Hover state for secondary */
+  --color-secondary-foreground: var(--token-secondary-foreground); /* Text/icons on secondary backgrounds */
 
-  --color-muted: var(--token-muted);
-  --color-muted-foreground: var(--token-muted-foreground);
+  /* Accent highlights */
+  --color-accent: var(--token-accent); /* Soft accent/highlight backgrounds */
+  --color-accent-foreground: var(--token-accent-foreground); /* Text/icons on accent backgrounds */
 
-  --color-destructive: var(--token-destructive);
-  --color-destructive-hover: var(--token-destructive-hover);
-  --color-destructive-foreground: var(--token-destructive-foreground);
-  --color-destructive-muted: var(--token-destructive-muted);
+  /* Muted UI */
+  --color-muted: var(--token-muted); /* Muted backgrounds for low-emphasis UI */
+  --color-muted-foreground: var(--token-muted-foreground); /* Text/icons on or alongside muted UI */
 
-  --color-success: var(--token-success);
-  --color-success-foreground: var(--token-success-foreground);
-  --color-success-muted: var(--token-success-muted);
+  /* Status: destructive (errors, negative, danger) */
+  --color-destructive: var(--token-destructive); /* Destructive actions, errors, negative values */
+  --color-destructive-hover: var(--token-destructive-hover); /* Hover state for destructive */
+  --color-destructive-foreground: var(--token-destructive-foreground); /* Text/icons on destructive backgrounds */
+  --color-destructive-muted: var(--token-destructive-muted); /* Soft destructive background/badge tint */
 
-  --color-warning: var(--token-warning);
-  --color-warning-foreground: var(--token-warning-foreground);
-  --color-warning-muted: var(--token-warning-muted);
+  /* Status: success (positive, completed) */
+  --color-success: var(--token-success); /* Success states, positive values, confirmations */
+  --color-success-foreground: var(--token-success-foreground); /* Text/icons on success backgrounds */
+  --color-success-muted: var(--token-success-muted); /* Soft success background/badge tint */
 
-  --color-info: var(--token-info);
-  --color-info-foreground: var(--token-info-foreground);
-  --color-info-muted: var(--token-info-muted);
+  /* Status: warning (caution, attention) */
+  --color-warning: var(--token-warning); /* Warning/caution states and highlights */
+  --color-warning-foreground: var(--token-warning-foreground); /* Text/icons on warning backgrounds */
+  --color-warning-muted: var(--token-warning-muted); /* Soft warning background/badge tint */
 
-  --color-ring: var(--token-ring);
-  --color-overlay: var(--token-overlay);
+  /* Status: info (neutral informational) */
+  --color-info: var(--token-info); /* Informational states and accents */
+  --color-info-foreground: var(--token-info-foreground); /* Text/icons on info backgrounds */
+  --color-info-muted: var(--token-info-muted); /* Soft info background/badge tint */
+
+  /* Focus & overlays */
+  --color-ring: var(--token-ring); /* Focus ring / outline color */
+  --color-overlay: var(--token-overlay); /* Modal/scrim/backdrop overlay */
 }
 
 @layer base {
@@ -61,130 +79,130 @@
     --font-mono: var(--font-mono), monospace;
 
     /* Backward-compatible aliases */
-    --canvas: #F8F9FA;
+    --canvas: #FFFFFF;
     --surface: #FFFFFF;
-    --surface-sub: #F1F3F5;
-    --border: #E5E7EB;
-    --border-active: #0F172A;
-    --ink-primary: #0F172A;
-    --ink-secondary: #475569;
-    --ink-muted: #94A3B8;
+    --surface-sub: #F4F8F5;
+    --border: #DCE6E0;
+    --border-active: #3E5B4E;
+    --ink-primary: #1E2A25;
+    --ink-secondary: #5E7067;
+    --ink-muted: #8A9A91;
 
-    /* Semantic tokens (light) */
-    --token-canvas: #F8F9FA;
+    /* Semantic tokens (light) - White + Soft Sage */
+    --token-canvas: #FFFFFF;
     --token-surface: #FFFFFF;
-    --token-surface-subtle: #F1F3F5;
-    --token-surface-muted: #E9ECEF;
-    --token-surface-inverse: #0F172A;
-    --token-surface-inverse-hover: #1E293B;
-    --token-surface-contrast: #F8F9FA;
+    --token-surface-subtle: #F4F8F5;
+    --token-surface-muted: #E9F1EC;
+    --token-surface-inverse: #2F4A3F;
+    --token-surface-inverse-hover: #385748;
+    --token-surface-contrast: #FFFFFF;
 
-    --token-border: #E5E7EB;
-    --token-border-strong: #0F172A;
-    --token-border-inverse: #1E293B;
+    --token-border: #DCE6E0;
+    --token-border-strong: #3E5B4E;
+    --token-border-inverse: #4C675B;
 
-    --token-foreground: #0F172A;
-    --token-foreground-secondary: #475569;
-    --token-foreground-muted: #94A3B8;
+    --token-foreground: #1E2A25;
+    --token-foreground-secondary: #5E7067;
+    --token-foreground-muted: #8A9A91;
     --token-foreground-inverse: #FFFFFF;
 
-    --token-primary: #0F172A;
-    --token-primary-hover: #1E293B;
+    --token-primary: #4E6F60;
+    --token-primary-hover: #425F52;
     --token-primary-foreground: #FFFFFF;
 
-    --token-secondary: #F1F3F5;
-    --token-secondary-hover: #E9ECEF;
-    --token-secondary-foreground: #0F172A;
+    --token-secondary: #F4F8F5;
+    --token-secondary-hover: #E3EDE7;
+    --token-secondary-foreground: #2F4A3F;
 
-    --token-accent: #E2E8F0;
-    --token-accent-foreground: #0F172A;
+    --token-accent: #E1EBE5;
+    --token-accent-foreground: #2F4A3F;
 
-    --token-muted: #F1F3F5;
-    --token-muted-foreground: #64748B;
+    --token-muted: #F4F8F5;
+    --token-muted-foreground: #6C7D74;
 
-    --token-destructive: #E11D48;
-    --token-destructive-hover: #BE123C;
+    --token-destructive: #B85C5C;
+    --token-destructive-hover: #A24E4E;
     --token-destructive-foreground: #FFFFFF;
-    --token-destructive-muted: #FFF1F2;
+    --token-destructive-muted: #FAF0EF;
 
-    --token-success: #059669;
+    --token-success: #5F8F74;
     --token-success-foreground: #FFFFFF;
-    --token-success-muted: #ECFDF5;
+    --token-success-muted: #EEF6F1;
 
-    --token-warning: #D97706;
+    --token-warning: #B8874A;
     --token-warning-foreground: #FFFFFF;
-    --token-warning-muted: #FFFBEB;
+    --token-warning-muted: #F8F2E8;
 
-    --token-info: #2563EB;
+    --token-info: #5F84A8;
     --token-info-foreground: #FFFFFF;
-    --token-info-muted: #EFF6FF;
+    --token-info-muted: #EDF3F8;
 
-    --token-ring: #0F172A;
-    --token-overlay: rgba(15, 23, 42, 0.5);
+    --token-ring: #4E6F60;
+    --token-overlay: rgba(30, 42, 37, 0.45);
   }
 
   .dark {
     /* Backward-compatible aliases */
-    --canvas: #09090B;
-    --surface: #121215;
-    --surface-sub: #1A1A20;
-    --border: #27272A;
-    --border-active: #FAFAFA;
-    --ink-primary: #F8FAFC;
-    --ink-secondary: #94A3B8;
-    --ink-muted: #64748B;
+    --canvas: #0F1311;
+    --surface: #151A17;
+    --surface-sub: #1A211D;
+    --border: #2A332D;
+    --border-active: #CFE0D5;
+    --ink-primary: #EAF3EE;
+    --ink-secondary: #AAB8B0;
+    --ink-muted: #7E8C84;
 
-    /* Semantic tokens (dark) */
-    --token-canvas: #09090B;
-    --token-surface: #121215;
-    --token-surface-subtle: #1A1A20;
-    --token-surface-muted: #26262E;
-    --token-surface-inverse: #F8FAFC;
-    --token-surface-inverse-hover: #E2E8F0;
-    --token-surface-contrast: #1E293B;
+    /* Semantic tokens (dark) - Dark + Soft Sage */
+    --token-canvas: #0F1311;
+    --token-surface: #151A17;
+    --token-surface-subtle: #1A211D;
+    --token-surface-muted: #202923;
+    --token-surface-inverse: #EAF3EE;
+    --token-surface-inverse-hover: #DCE8E1;
+    --token-surface-contrast: #202923;
 
-    --token-border: #27272A;
-    --token-border-strong: #FAFAFA;
-    --token-border-inverse: #334155;
+    --token-border: #2A332D;
+    --token-border-strong: #CFE0D5;
+    --token-border-inverse: #3C4A43;
 
-    --token-foreground: #F8FAFC;
-    --token-foreground-secondary: #94A3B8;
-    --token-foreground-muted: #64748B;
-    --token-foreground-inverse: #0F172A;
+    --token-foreground: #EAF3EE;
+    --token-foreground-secondary: #AAB8B0;
+    --token-foreground-muted: #7E8C84;
+    --token-foreground-inverse: #151A17;
 
-    --token-primary: #F8FAFC;
-    --token-primary-hover: #E2E8F0;
-    --token-primary-foreground: #0F172A;
+    --token-primary: #9FC3AF;
+    --token-primary-hover: #B2D1C0;
+    --token-primary-foreground: #122019;
 
-    --token-secondary: #1A1A20;
-    --token-secondary-hover: #26262E;
-    --token-secondary-foreground: #F8FAFC;
+    --token-secondary: #1A211D;
+    --token-secondary-hover: #243029;
+    --token-secondary-foreground: #EAF3EE;
 
-    --token-accent: #27272A;
-    --token-accent-foreground: #F8FAFC;
+    --token-accent: #243029;
+    --token-accent-foreground: #EAF3EE;
 
-    --token-muted: #1A1A20;
-    --token-muted-foreground: #94A3B8;
+    --token-muted: #1A211D;
+    --token-muted-foreground: #8F9E96;
 
-    --token-destructive: #F43F5E;
-    --token-destructive-hover: #E11D48;
-    --token-destructive-foreground: #FFFFFF;
-    --token-destructive-muted: rgba(244, 63, 94, 0.15);
+    --token-destructive: #D48787;
+    --token-destructive-hover: #C97878;
+    --token-destructive-foreground: #1A1010;
+    --token-destructive-muted: rgba(212, 135, 135, 0.16);
 
-    --token-success: #34D399;
-    --token-success-foreground: #022C22;
-    --token-success-muted: rgba(52, 211, 153, 0.15);
+    --token-success: #88B89A;
+    --token-success-foreground: #102018;
+    --token-success-muted: rgba(136, 184, 154, 0.16);
 
-    --token-warning: #FBBF24;
-    --token-warning-foreground: #422006;
-    --token-warning-muted: rgba(251, 191, 36, 0.15);
+    --token-warning: #D4AA72;
+    --token-warning-foreground: #1F170D;
+    --token-warning-muted: rgba(212, 170, 114, 0.16);
 
-    --token-info: #60A5FA;
-    --token-info-foreground: #172554;
-    --token-info-muted: rgba(96, 165, 250, 0.15);
+    --token-info: #90ABC4;
+    --token-info-foreground: #101A24;
+    --token-info-muted: rgba(144, 171, 196, 0.16);
 
-    --token-ring: #FAFAFA;
-    --token-overlay: rgba(0, 0, 0, 0.6);
+    --token-ring: #9FC3AF;
+    --token-overlay: rgba(8, 12, 10, 0.62);
   }
 }
 

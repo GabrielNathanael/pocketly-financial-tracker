@@ -82,7 +82,7 @@ export function SplitBillHomeClient({ bills }: { bills: SplitBill[] }) {
       {/* Pilihan cara mulai */}
       <div className="grid sm:grid-cols-2 gap-3">
         <Link href="/split-bill?mode=scan" className={cardPrimary}>
-          <span className="w-11 h-11 rounded-xl bg-white/15 text-primary-foreground flex items-center justify-center">
+          <span className="w-11 h-11 rounded-xl bg-primary-foreground/15 text-primary-foreground flex items-center justify-center">
             <Camera className="w-5 h-5" />
           </span>
           <span className="block text-base font-bold mt-4 text-primary-foreground">

@@ -308,9 +308,9 @@ export default function LandingPage() {
           {/* Top Window Bar (No fake URL, clean controls) */}
           <div className="px-4 py-3 bg-canvas dark:bg-surface-subtle border-b border-border flex items-center justify-between gap-3">
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-[#EF4444]/80" />
-              <div className="w-3 h-3 rounded-full bg-[#F59E0B]/80" />
-              <div className="w-3 h-3 rounded-full bg-[#10B981]/80" />
+              <div className="w-3 h-3 rounded-full bg-destructive/80" />
+              <div className="w-3 h-3 rounded-full bg-warning/80" />
+              <div className="w-3 h-3 rounded-full bg-success/80" />
             </div>
 
             {/* Currency Pill Switcher */}
@@ -719,14 +719,14 @@ export default function LandingPage() {
 
       {/* 5. Final CTA Section */}
       <section className="py-16 sm:py-24 px-4 sm:px-6 max-w-4xl mx-auto w-full text-center">
-        <div className="p-8 sm:p-14 rounded-3xl bg-[#0F172A] text-white dark:bg-[#121215] border border-[#334155] dark:border-[#27272A] flex flex-col items-center gap-6 shadow-2xl relative overflow-hidden">
+        <div className="p-8 sm:p-14 rounded-3xl bg-surface-inverse text-foreground-inverse border border-border-inverse flex flex-col items-center gap-6 shadow-2xl relative overflow-hidden">
           <div className="flex flex-col gap-2.5 max-w-md mx-auto">
             <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight">
               {language === "id"
                 ? "Jelajahi Pocketly Sekarang"
                 : "Experience Pocketly Today"}
             </h2>
-            <p className="text-xs sm:text-sm text-foreground-muted leading-relaxed">
+            <p className="text-xs sm:text-sm text-foreground-inverse/80 leading-relaxed">
               {language === "id"
                 ? "Gunakan akun demo publik untuk mencoba seluruh fitur secara langsung tanpa perlu mendaftar."
                 : "Explore all modules instantly with the public pre-seeded demo account."}
@@ -735,7 +735,7 @@ export default function LandingPage() {
 
           <Link
             href="/login"
-            className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl text-sm font-bold bg-surface text-foreground hover:bg-[#F1F3F5] transition-all active:scale-95 shadow-lg"
+            className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl text-sm font-bold bg-surface text-foreground hover:bg-surface-subtle transition-all active:scale-95 shadow-lg"
           >
             <span>{language === "id" ? "Coba Demo" : "Try Live Demo"}</span>
             <ChevronRight className="w-4 h-4" />

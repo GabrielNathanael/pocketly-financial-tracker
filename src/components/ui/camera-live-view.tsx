@@ -264,7 +264,7 @@ export function CameraLiveView({
         >
           <span className="flex h-14.5 w-14.5 items-center justify-center rounded-full bg-white">
             {isCapturing && (
-              <Loader2 className="h-6 w-6 animate-spin text-[#0F172A]" />
+              <Loader2 className="h-6 w-6 animate-spin text-foreground" />
             )}
           </span>
         </button>

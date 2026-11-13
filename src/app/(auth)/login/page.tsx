@@ -115,7 +115,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => handleCopy("demo@pocketly.app", "email")}
-                className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 text-muted-foreground transition-colors cursor-pointer shrink-0"
+                className="p-1.5 rounded-lg hover:bg-foreground/5 text-muted-foreground transition-colors cursor-pointer shrink-0"
                 title="Copy Email"
               >
                 {copiedField === "email" ? (
@@ -139,7 +139,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => handleCopy("pocketlydemo123", "password")}
-                className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 text-muted-foreground transition-colors cursor-pointer shrink-0"
+                className="p-1.5 rounded-lg hover:bg-foreground/5 text-muted-foreground transition-colors cursor-pointer shrink-0"
                 title="Copy Password"
               >
                 {copiedField === "password" ? (

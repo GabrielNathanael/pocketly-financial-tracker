@@ -459,7 +459,7 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
         <div className="grid grid-cols-1 sm:grid-cols-[220px_1fr] gap-5 items-center">
           <div className="relative mx-auto h-50 w-50 shrink-0">
             <svg width="200" height="200" viewBox="0 0 200 200" className="select-none">
-              <circle cx="100" cy="100" r="73" fill="none" stroke="var(--color-surface-subtle)" strokeWidth="22" />
+              <circle cx="100" cy="100" r="73" fill="none" stroke="var(--token-surface-subtle)" strokeWidth="22" />
               {donut.map((seg) => (
                 <path
                   key={seg.id}

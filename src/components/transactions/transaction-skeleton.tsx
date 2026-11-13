@@ -12,8 +12,8 @@ export function TransactionSkeletonList({ count = 5 }: TransactionSkeletonListPr
     <div className="flex flex-col gap-4 animate-in fade-in-50 duration-200">
       {/* Group Header Skeleton */}
       <div className="flex items-center justify-between px-1">
-        <Skeleton className="h-3.5 w-32 rounded-md bg-slate-200 dark:bg-[#27272A]" />
-        <Skeleton className="h-3.5 w-20 rounded-md bg-slate-200 dark:bg-[#27272A]" />
+        <Skeleton className="h-3.5 w-32 rounded-md bg-surface-muted" />
+        <Skeleton className="h-3.5 w-20 rounded-md bg-surface-muted" />
       </div>
 
       {/* Cards Skeleton */}
@@ -25,17 +25,17 @@ export function TransactionSkeletonList({ count = 5 }: TransactionSkeletonListPr
           >
             {/* Left side: Icon + Titles */}
             <div className="flex items-center gap-3 min-w-0">
-              <Skeleton className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-[#1A1A20] shrink-0" />
+              <Skeleton className="w-8 h-8 rounded-lg bg-surface-subtle shrink-0" />
               <div className="flex flex-col gap-1.5 min-w-0">
-                <Skeleton className="h-3.5 w-28 sm:w-36 rounded-md bg-slate-200 dark:bg-[#27272A]" />
-                <Skeleton className="h-2.5 w-20 sm:w-28 rounded-md bg-slate-100 dark:bg-[#1E1E24]" />
+                <Skeleton className="h-3.5 w-28 sm:w-36 rounded-md bg-surface-muted" />
+                <Skeleton className="h-2.5 w-20 sm:w-28 rounded-md bg-surface-subtle" />
               </div>
             </div>
 
             {/* Right side: Amount + Badge */}
             <div className="flex flex-col items-end gap-1.5 shrink-0">
-              <Skeleton className="h-4 w-24 sm:w-28 rounded-md bg-slate-200 dark:bg-[#27272A]" />
-              <Skeleton className="h-2.5 w-12 rounded-md bg-slate-100 dark:bg-[#1E1E24]" />
+              <Skeleton className="h-4 w-24 sm:w-28 rounded-md bg-surface-muted" />
+              <Skeleton className="h-2.5 w-12 rounded-md bg-surface-subtle" />
             </div>
           </div>
         ))}

@@ -639,7 +639,7 @@ export function TransactionForm({
             disabled={isScanning}
             onClick={() => setShowScanMenu((v) => !v)}
             title={t.quickAdd.scanReceiptBtn}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-foreground-muted transition-colors hover:bg-[#F1F3F5] hover:text-[#0F172A] dark:hover:bg-[#1A1A20] dark:hover:text-[#FAFAFA] disabled:opacity-60"
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-foreground-muted transition-colors hover:bg-secondary hover:text-foreground disabled:opacity-60"
           >
             {isScanning ? (
               <Loader2 className="h-4 w-4 animate-spin text-info" />
@@ -653,7 +653,7 @@ export function TransactionForm({
                 className="fixed inset-0 z-10"
                 onClick={() => setShowScanMenu(false)}
               />
-              <div className="absolute right-0 top-full z-20 mt-1 w-44 overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-lg dark:border-[#27272A] dark:bg-[#121215]">
+              <div className="absolute right-0 top-full z-20 mt-1 w-44 overflow-hidden rounded-xl border border-border bg-surface shadow-lg">
                 <button
                   type="button"
                   onClick={() => {
@@ -666,7 +666,7 @@ export function TransactionForm({
                       setShowCameraModal(true);
                     }
                   }}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-[#0F172A] hover:bg-[#F8F9FA] dark:text-[#F8FAFC] dark:hover:bg-[#1A1A20]"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-foreground hover:bg-secondary"
                 >
                   <Camera className="h-3.5 w-3.5" />
                   {t.transactions.takePhoto}
@@ -677,7 +677,7 @@ export function TransactionForm({
                     setShowScanMenu(false);
                     fileInputRef.current?.click();
                   }}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-[#0F172A] hover:bg-[#F8F9FA] dark:text-[#F8FAFC] dark:hover:bg-[#1A1A20]"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-foreground hover:bg-secondary"
                 >
                   <AlignLeft className="h-3.5 w-3.5" />
                   {t.transactions.uploadFromDevice}
@@ -691,14 +691,14 @@ export function TransactionForm({
         className={cn(
           "relative hidden rounded-xl bg-surface border shadow-2xs overflow-hidden transition-all group",
           isNumpadOpen
-            ? "border-[#0F172A] dark:border-[#FAFAFA] ring-2 ring-[#0F172A]/10 dark:ring-[#FAFAFA]/10"
+            ? "border-primary ring-2 ring-ring/20"
             : "border-border",
         )}
       >
         <button
           type="button"
           onClick={() => setIsNumpadOpen(!isNumpadOpen)}
-          className="w-full p-3.5 sm:p-4 flex flex-col gap-1 text-left cursor-pointer hover:bg-[#F8F9FA] dark:hover:bg-[#16161A] transition-colors"
+          className="w-full p-3.5 sm:p-4 flex flex-col gap-1 text-left cursor-pointer hover:bg-secondary transition-colors"
         >
           <div className="flex items-center justify-between pr-8">
             <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary">
@@ -710,7 +710,7 @@ export function TransactionForm({
                 "w-4 h-4 transition-colors",
                 isNumpadOpen
                   ? "text-foreground"
-                  : "text-foreground-muted group-hover:text-blue-500",
+                  : "text-foreground-muted group-hover:text-info",
               )}
             />
           </div>
@@ -762,7 +762,7 @@ export function TransactionForm({
                 key={n}
                 type="button"
                 onClick={() => handleKeypadPress(n)}
-                className="py-3.5 sm:py-4 rounded-xl bg-secondary font-mono font-bold text-base sm:text-lg hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-foreground border border-border active:scale-95 transition-all cursor-pointer select-none"
+                className="py-3.5 sm:py-4 rounded-xl bg-secondary font-mono font-bold text-base sm:text-lg hover:bg-secondary-hover text-foreground border border-border active:scale-95 transition-all cursor-pointer select-none"
               >
                 {n}
               </button>
@@ -770,7 +770,7 @@ export function TransactionForm({
             <button
               type="button"
               onClick={handleKeypadBackspace}
-              className="py-3.5 sm:py-4 rounded-xl bg-secondary flex items-center justify-center text-[#64748B] hover:text-foreground hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] border border-border active:scale-95 transition-all cursor-pointer select-none"
+              className="py-3.5 sm:py-4 rounded-xl bg-secondary flex items-center justify-center text-foreground-muted hover:text-foreground hover:bg-secondary-hover border border-border active:scale-95 transition-all cursor-pointer select-none"
             >
               <Delete className="w-5 h-5" />
             </button>
@@ -780,7 +780,7 @@ export function TransactionForm({
                 key={n}
                 type="button"
                 onClick={() => handleKeypadPress(n)}
-                className="py-3.5 sm:py-4 rounded-xl bg-secondary font-mono font-bold text-base sm:text-lg hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-foreground border border-border active:scale-95 transition-all cursor-pointer select-none"
+                className="py-3.5 sm:py-4 rounded-xl bg-secondary font-mono font-bold text-base sm:text-lg hover:bg-secondary-hover text-foreground border border-border active:scale-95 transition-all cursor-pointer select-none"
               >
                 {n}
               </button>
@@ -788,7 +788,7 @@ export function TransactionForm({
             <button
               type="button"
               onClick={() => handleKeypadPress("000")}
-              className="py-3.5 sm:py-4 rounded-xl bg-secondary font-mono font-bold text-xs sm:text-sm hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-foreground border border-border active:scale-95 transition-all cursor-pointer select-none"
+              className="py-3.5 sm:py-4 rounded-xl bg-secondary font-mono font-bold text-xs sm:text-sm hover:bg-secondary-hover text-foreground border border-border active:scale-95 transition-all cursor-pointer select-none"
             >
               .000
             </button>
@@ -798,7 +798,7 @@ export function TransactionForm({
                 key={n}
                 type="button"
                 onClick={() => handleKeypadPress(n)}
-                className="py-3.5 sm:py-4 rounded-xl bg-secondary font-mono font-bold text-base sm:text-lg hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-foreground border border-border active:scale-95 transition-all cursor-pointer select-none"
+                className="py-3.5 sm:py-4 rounded-xl bg-secondary font-mono font-bold text-base sm:text-lg hover:bg-secondary-hover text-foreground border border-border active:scale-95 transition-all cursor-pointer select-none"
               >
                 {n}
               </button>
@@ -814,21 +814,21 @@ export function TransactionForm({
             <button
               type="button"
               onClick={() => handleKeypadPress("00")}
-              className="py-3.5 sm:py-4 rounded-xl bg-secondary font-mono font-bold text-sm hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-foreground border border-border active:scale-95 transition-all cursor-pointer select-none"
+              className="py-3.5 sm:py-4 rounded-xl bg-secondary font-mono font-bold text-sm hover:bg-secondary-hover text-foreground border border-border active:scale-95 transition-all cursor-pointer select-none"
             >
               00
             </button>
             <button
               type="button"
               onClick={() => handleKeypadPress("0")}
-              className="py-3.5 sm:py-4 rounded-xl bg-secondary font-mono font-bold text-base sm:text-lg hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-foreground border border-border active:scale-95 transition-all cursor-pointer select-none"
+              className="py-3.5 sm:py-4 rounded-xl bg-secondary font-mono font-bold text-base sm:text-lg hover:bg-secondary-hover text-foreground border border-border active:scale-95 transition-all cursor-pointer select-none"
             >
               0
             </button>
             <button
               type="button"
               onClick={() => setIsNumpadOpen(false)}
-              className="col-span-2 py-3.5 sm:py-4 rounded-xl bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] font-bold text-xs flex items-center justify-center gap-1.5 hover:opacity-90 active:scale-95 shadow-md transition-all cursor-pointer select-none"
+              className="col-span-2 py-3.5 sm:py-4 rounded-xl bg-primary text-primary-foreground font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-primary-hover active:scale-95 shadow-md transition-all cursor-pointer select-none"
             >
               <Check className="w-4 h-4 stroke-3" />
               <span>{t.transactions.doneLabel}</span>
@@ -911,7 +911,7 @@ export function TransactionForm({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder={t.quickAdd.notePlaceholder}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-surface border border-border text-xs font-medium text-foreground placeholder:text-foreground-muted focus:outline-none focus:border-[#0F172A] dark:focus:border-[#FAFAFA]"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-surface border border-border text-xs font-medium text-foreground placeholder:text-foreground-muted focus:outline-none focus:border-primary"
             />
 
             {/* Hidden File Input for Receipt Photo */}
@@ -955,14 +955,14 @@ export function TransactionForm({
                 className={cn(
                   "py-2 px-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none",
                   showItemsBreakdown
-                    ? "bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A] shadow-xs"
-                    : "bg-canvas dark:bg-surface-subtle text-[#64748B] hover:text-foreground border-border",
+                    ? "bg-primary text-primary-foreground border-transparent shadow-xs"
+                    : "bg-canvas dark:bg-surface-subtle text-foreground-muted hover:text-foreground border-border",
                 )}
               >
                 <ListPlus className="w-3.5 h-3.5 shrink-0" />
                 <span className="truncate">{t.transactions.itemsLabel}</span>
                 {items.length > 0 && (
-                  <span className="px-1 py-0.2 rounded-full bg-white/20 text-[9px] font-bold">
+                  <span className="px-1 py-0.2 rounded-full bg-primary-foreground/20 text-[9px] font-bold">
                     {items.length}
                   </span>
                 )}
@@ -975,8 +975,8 @@ export function TransactionForm({
                 className={cn(
                   "py-2 px-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none",
                   showFreeMemo
-                    ? "bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A] shadow-xs"
-                    : "bg-canvas dark:bg-surface-subtle text-[#64748B] hover:text-foreground border-border",
+                    ? "bg-primary text-primary-foreground border-transparent shadow-xs"
+                    : "bg-canvas dark:bg-surface-subtle text-foreground-muted hover:text-foreground border-border",
                 )}
               >
                 <AlignLeft className="w-3.5 h-3.5 shrink-0" />
@@ -990,14 +990,14 @@ export function TransactionForm({
                 className={cn(
                   "py-2 px-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none",
                   showTags
-                    ? "bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A] shadow-xs"
-                    : "bg-canvas dark:bg-surface-subtle text-[#64748B] hover:text-foreground border-border",
+                    ? "bg-primary text-primary-foreground border-transparent shadow-xs"
+                    : "bg-canvas dark:bg-surface-subtle text-foreground-muted hover:text-foreground border-border",
                 )}
               >
                 <Hash className="w-3.5 h-3.5 shrink-0" />
                 <span className="truncate">Tags</span>
                 {tags.length > 0 && (
-                  <span className="px-1 py-0.2 rounded-full bg-white/20 text-[9px] font-bold">
+                  <span className="px-1 py-0.2 rounded-full bg-primary-foreground/20 text-[9px] font-bold">
                     {tags.length}
                   </span>
                 )}
@@ -1065,7 +1065,7 @@ export function TransactionForm({
                 <button
                   type="button"
                   onClick={handleAddItem}
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-surface border border-border text-[11px] font-bold text-foreground hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] active:scale-95 transition-all cursor-pointer shrink-0"
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-surface border border-border text-[11px] font-bold text-foreground hover:bg-secondary active:scale-95 transition-all cursor-pointer shrink-0"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">{t.quickAdd.addItem}</span>
@@ -1352,7 +1352,7 @@ export function TransactionForm({
             <button
               type="submit"
               disabled={isLoading}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer disabled:opacity-60"
+              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold bg-primary text-primary-foreground hover:bg-primary-hover active:scale-95 transition-all shadow-sm cursor-pointer disabled:opacity-60"
             >
               <Check className="w-3.5 h-3.5 stroke-3" />
               <span>{isLoading ? t.common.loading : t.common.save}</span>

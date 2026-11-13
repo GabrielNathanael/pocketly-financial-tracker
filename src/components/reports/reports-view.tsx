@@ -2923,7 +2923,7 @@ export function ReportsView({
             >
               <span>{t.reports.expenses}</span>
               {excludedExpenseCount > 0 && (
-                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-destructive text-white">
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-destructive text-destructive-foreground">
                   {excludedExpenseCount}
                 </span>
               )}
@@ -2940,7 +2940,7 @@ export function ReportsView({
             >
               <span>{t.reports.income}</span>
               {excludedIncomeCount > 0 && (
-                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-success text-white">
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-success text-success-foreground">
                   {excludedIncomeCount}
                 </span>
               )}
@@ -3011,7 +3011,7 @@ export function ReportsView({
                         className={cn(
                           "w-4 h-4 rounded-md flex items-center justify-center border transition-colors shrink-0",
                           isExcluded
-                            ? "bg-destructive border-destructive text-white"
+                            ? "bg-destructive border-destructive text-destructive-foreground"
                             : "border-border bg-transparent",
                         )}
                       >

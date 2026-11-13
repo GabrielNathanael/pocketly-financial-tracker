@@ -86,17 +86,17 @@ export function ReportsPrintView({
 
   return (
     <div className="hidden print:block print-only w-full">
-      <div className="print-section border-b-2 border-slate-900 pb-4 mb-4">
+      <div className="print-section border-b-2 border-foreground pb-4 mb-4">
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-2xl font-black tracking-tight text-slate-900">
+            <h1 className="text-2xl font-black tracking-tight text-foreground">
               POCKETLY
             </h1>
-            <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mt-0.5">
+            <p className="text-xs font-bold text-foreground-secondary uppercase tracking-wider mt-0.5">
               {t.reports.statementHeader}
             </p>
           </div>
-          <div className="text-right font-mono text-xs text-slate-600">
+          <div className="text-right font-mono text-xs text-foreground-secondary">
             <div>
               <strong>{t.reports.periodLabel}:</strong>{" "}
               {format(intervalStart, "dd MMMM yyyy", { locale: dateFnsLocale })}{" "}
@@ -114,12 +114,12 @@ export function ReportsPrintView({
       </div>
 
       <div className="print-section">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-2 border-b pb-1">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-foreground mb-2 border-b border-border pb-1">
           1. {t.reports.summarySection}
         </h2>
         <table className="text-xs">
           <thead>
-            <tr className="bg-slate-100 font-bold text-slate-800">
+            <tr className="bg-muted font-bold text-foreground">
               <th className="text-left">{t.reports.printHeaderMetric}</th>
               <th className="text-right">
                 {t.reports.printHeaderAmount.replace("{currency}", displayCurrency)}
@@ -148,7 +148,7 @@ export function ReportsPrintView({
                 {t.reports.expenses} {t.reports.transactionCount} tercatat
               </td>
             </tr>
-            <tr className="bg-slate-50 font-bold">
+            <tr className="bg-surface-subtle font-bold">
               <td>{t.reports.netSavingsLabel}</td>
               <td className={cn("text-right font-mono tnum", netSavings >= 0 ? "text-success" : "text-destructive")}>
                 {netSavings >= 0 ? "+" : ""}
@@ -175,8 +175,8 @@ export function ReportsPrintView({
               <td>{t.reports.calculatedForDays.replace("{days}", String(elapsedDays))}</td>
             </tr>
             {excludedCategoryIds.length > 0 && (
-              <tr className="bg-slate-50">
-                <td colSpan={3} className="text-slate-600 text-[11px] italic">
+              <tr className="bg-surface-subtle">
+                <td colSpan={3} className="text-foreground-secondary text-[11px] italic">
                   {t.reports.noteExcluded
                     .replace("{count}", String(excludedCategoryIds.length))
                     .replace("{categories}", excludedCategoryNames.join(", "))}
@@ -189,19 +189,19 @@ export function ReportsPrintView({
 
       {smartInsights.length > 0 && (
         <div className="print-section">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-2 border-b pb-1">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-foreground mb-2 border-b border-border pb-1">
             2. {t.reports.smartInsightsPrintTitle}
           </h2>
           <div className="grid grid-cols-2 gap-2 text-xs">
             {smartInsights.map((insight) => (
-              <div key={insight.id} className="p-2.5 border border-slate-300 rounded-lg bg-slate-50 flex flex-col justify-between gap-1">
-                <div className="font-bold text-slate-900 flex justify-between items-center">
+              <div key={insight.id} className="p-2.5 border border-border rounded-lg bg-surface-subtle flex flex-col justify-between gap-1">
+                <div className="font-bold text-foreground flex justify-between items-center">
                   <span>{insight.title}</span>
-                  <span className="text-[10px] font-mono px-1.5 py-0.5 border border-slate-400 rounded uppercase font-semibold">
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 border border-border-strong rounded uppercase font-semibold">
                     {insight.badge}
                   </span>
                 </div>
-                <div className="text-slate-700 text-[11px] leading-relaxed">{insight.description}</div>
+                <div className="text-foreground-secondary text-[11px] leading-relaxed">{insight.description}</div>
               </div>
             ))}
           </div>
@@ -209,12 +209,12 @@ export function ReportsPrintView({
       )}
 
       <div className="print-section">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-2 border-b pb-1">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-foreground mb-2 border-b border-border pb-1">
           3. {t.reports.periodComparison} ({currentPeriodLabel} vs {priorPeriodLabel})
         </h2>
         <table className="text-xs">
           <thead>
-            <tr className="bg-slate-100 font-bold text-slate-800">
+            <tr className="bg-muted font-bold text-foreground">
               <th className="text-left">{t.reports.financialPosition}</th>
               <th className="text-right">{currentPeriodLabel} ({t.reports.activePeriod})</th>
               <th className="text-right">{priorPeriodLabel} ({t.reports.previousPeriod})</th>
@@ -234,7 +234,7 @@ export function ReportsPrintView({
               <td className="text-right font-mono tnum">-{formatCurrency(priorTotalExpense, displayCurrency)}</td>
               <td className="text-right font-mono font-bold tnum">{expenseGrowthPct >= 0 ? `+${expenseGrowthPct.toFixed(1)}%` : `${expenseGrowthPct.toFixed(1)}%`}</td>
             </tr>
-            <tr className="bg-slate-50 font-bold">
+            <tr className="bg-surface-subtle font-bold">
               <td>{t.reports.netSavings}</td>
               <td className="text-right font-mono tnum">{formatCurrency(netSavings, displayCurrency)}</td>
               <td className="text-right font-mono tnum">{formatCurrency(priorNetSavings, displayCurrency)}</td>
@@ -272,12 +272,12 @@ export function ReportsPrintView({
       />
 
       <div className="print-section">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-2 border-b pb-1">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-foreground mb-2 border-b border-border pb-1">
           6. {t.reports.topOutflowsPrint}
         </h2>
         <table className="text-xs">
           <thead>
-            <tr className="bg-slate-100 font-bold text-slate-800">
+            <tr className="bg-muted font-bold text-foreground">
               <th className="text-left w-24">{t.reports.date}</th>
               <th className="text-left">{t.reports.descriptionPosition}</th>
               <th className="text-left">{t.common.category}</th>
@@ -287,14 +287,14 @@ export function ReportsPrintView({
           </thead>
           <tbody>
             {topExpenses.length === 0 ? (
-              <tr><td colSpan={5} className="text-center text-slate-400 py-4">{t.reports.noTransactions}</td></tr>
+              <tr><td colSpan={5} className="text-center text-foreground-muted py-4">{t.reports.noTransactions}</td></tr>
             ) : (
               topExpenses.map((tx) => (
                 <tr key={tx.id}>
-                  <td className="font-mono text-slate-600">{format(parseISO(tx.transaction_date), "dd/MM/yyyy")}</td>
+                  <td className="font-mono text-foreground-secondary">{format(parseISO(tx.transaction_date), "dd/MM/yyyy")}</td>
                   <td className="font-semibold">{getCleanDescription(tx.description) || tx.category?.name || "-"}</td>
                   <td>{tx.category?.name || "-"}</td>
-                  <td className="text-slate-600">{tx.account?.name || "-"}</td>
+                  <td className="text-foreground-secondary">{tx.account?.name || "-"}</td>
                   <td className="text-right font-mono font-bold text-destructive tnum">-{formatCurrency(tx.convertedAmount, displayCurrency)}</td>
                 </tr>
               ))
@@ -303,7 +303,7 @@ export function ReportsPrintView({
         </table>
       </div>
 
-      <div className="print-section mt-8 pt-4 border-t text-center font-mono text-[9px] text-slate-400">
+      <div className="print-section mt-8 pt-4 border-t border-border text-center font-mono text-[9px] text-foreground-muted">
         {t.reports.footer}
       </div>
     </div>
@@ -333,12 +333,12 @@ function CategoryPrintTable({
 
   return (
     <div className="print-section">
-      <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-2 border-b pb-1">
+      <h2 className="text-xs font-bold uppercase tracking-wider text-foreground mb-2 border-b border-border pb-1">
         {number}. {title} ({categories.length} {t.reports.categoryCount})
       </h2>
       <table className="text-xs">
         <thead>
-          <tr className="bg-slate-100 font-bold text-slate-800">
+          <tr className="bg-muted font-bold text-foreground">
             <th className="text-left w-8">{t.reports.number}</th>
             <th className="text-left">{nameLabel}</th>
             <th className="text-center w-24">{t.reports.transactionCountLabel}</th>
@@ -348,7 +348,7 @@ function CategoryPrintTable({
         </thead>
         <tbody>
           {categories.length === 0 ? (
-            <tr><td colSpan={5} className="text-center text-slate-400 py-4">{emptyText}</td></tr>
+            <tr><td colSpan={5} className="text-center text-foreground-muted py-4">{emptyText}</td></tr>
           ) : (
             categories.map((cat, idx) => (
               <tr key={idx}>

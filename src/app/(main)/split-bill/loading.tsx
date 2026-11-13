@@ -62,10 +62,10 @@ export default function SplitBillLoading() {
       </div>
       <div className="grid sm:grid-cols-2 gap-3">
         <div className="rounded-2xl border border-foreground bg-surface-inverse p-5 flex flex-col gap-3">
-          <Skeleton className="w-11 h-11 rounded-xl bg-white/15 dark:bg-black/10" />
-          <Skeleton className="h-4 w-28 rounded-md bg-white/25 dark:bg-black/10" />
-          <Skeleton className="h-3 w-full max-w-[220px] rounded-md bg-white/10 dark:bg-black/10" />
-          <Skeleton className="h-2.5 w-12 rounded-md bg-white/15 dark:bg-black/10" />
+          <Skeleton className="w-11 h-11 rounded-xl bg-foreground-inverse/15" />
+          <Skeleton className="h-4 w-28 rounded-md bg-foreground-inverse/25" />
+          <Skeleton className="h-3 w-full max-w-[220px] rounded-md bg-foreground-inverse/10" />
+          <Skeleton className="h-2.5 w-12 rounded-md bg-foreground-inverse/15" />
         </div>
         <div className="rounded-2xl border border-border bg-surface p-5 flex flex-col gap-3">
           <Skeleton className="w-11 h-11 rounded-xl bg-surface-subtle" />

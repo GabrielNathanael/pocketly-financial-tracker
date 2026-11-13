@@ -115,7 +115,7 @@ export function CompactDueBanner({
     <div
       className={
         totalUrgentCount > 0
-          ? 'p-3.5 sm:p-4 rounded-2xl bg-surface border border-destructive/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'
+          ? 'p-3.5 sm:p-4 rounded-2xl bg-surface border border-destructive flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'
           : 'p-3.5 sm:p-4 rounded-2xl bg-surface border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'
       }
     >

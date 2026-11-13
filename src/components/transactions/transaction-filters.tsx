@@ -122,7 +122,7 @@ export function TransactionFilters({
       <div className="flex items-center gap-2">
         <div className="relative flex-1 min-w-0">
           {isPending ? (
-            <Loader2 className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-blue-500 animate-spin pointer-events-none" />
+            <Loader2 className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-info animate-spin pointer-events-none" />
           ) : (
             <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-foreground-muted pointer-events-none" />
           )}
@@ -138,8 +138,8 @@ export function TransactionFilters({
               return () => clearTimeout(timer);
             }}
             className={cn(
-              "w-full pl-8.5 pr-3 py-1.5 sm:py-2 text-xs bg-canvas dark:bg-surface-subtle border border-border rounded-lg text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-foreground-muted focus:outline-none focus:border-[#0F172A] dark:focus:border-white transition-all",
-              isPending && "bg-blue-50/20 dark:bg-blue-950/10 border-blue-200 dark:border-blue-900/40"
+              "w-full pl-8.5 pr-3 py-1.5 sm:py-2 text-xs bg-canvas dark:bg-surface-subtle border border-border rounded-lg text-foreground placeholder:text-foreground-muted focus:outline-none focus:border-primary transition-all",
+              isPending && "bg-info-muted/40 border-info/30"
             )}
           />
         </div>
@@ -150,8 +150,8 @@ export function TransactionFilters({
           className={cn(
             "p-1.5 sm:p-2 rounded-lg border transition-colors shrink-0 flex items-center justify-center cursor-pointer",
             hasAdvancedFilters || isOpen
-              ? "bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A] border-transparent"
-              : "bg-[#F8F9FA] dark:bg-[#1A1A20] text-foreground-secondary border-border hover:bg-[#F1F3F5] dark:hover:bg-[#26262E]",
+              ? "bg-primary text-primary-foreground border-transparent"
+              : "bg-secondary text-foreground-secondary border-border hover:bg-secondary-hover",
           )}
           title={t.common.filter}
         >
@@ -169,8 +169,8 @@ export function TransactionFilters({
             className={cn(
               "px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-md text-[11px] font-semibold transition-colors shrink-0 cursor-pointer border",
               currentType === "all"
-                ? "bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A] border-transparent"
-                : "bg-white dark:bg-[#121215] text-foreground-secondary border-border hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20]",
+                ? "bg-primary text-primary-foreground border-transparent"
+                : "bg-surface text-foreground-secondary border-border hover:bg-secondary",
             )}
           >
             {t.common.all}
@@ -321,7 +321,7 @@ export function TransactionFilters({
           {/* 4. Tagar (#tags) Filter */}
           <div className="flex flex-col gap-1">
             <label className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary flex items-center gap-1">
-              <Hash className="w-3 h-3 text-[#64748B]" />
+              <Hash className="w-3 h-3 text-foreground-muted" />
               <span>{t.transactions.tagLabel}</span>
             </label>
             <SearchableSelect

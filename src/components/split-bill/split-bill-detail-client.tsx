@@ -2680,7 +2680,7 @@ export function SplitBillDetailClient({
                           size="sm"
                           className={cn(
                             active
-                              ? "ring-2 ring-white/70 dark:ring-black/25"
+                              ? "ring-2 ring-primary-foreground/70"
                               : "ring-2 ring-transparent",
                           )}
                         />

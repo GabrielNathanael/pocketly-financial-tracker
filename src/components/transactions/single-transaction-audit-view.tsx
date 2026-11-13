@@ -84,7 +84,7 @@ export function SingleTransactionAuditView({
                   </div>
                 </div>
 
-                <p className="text-xs text-[#475569] dark:text-[#CBD5E1] leading-relaxed">
+                <p className="text-xs text-foreground-secondary leading-relaxed">
                   {h.summary}
                 </p>
 

@@ -1099,7 +1099,7 @@ function QuickAddSheetContent({
                 <ListPlus className="w-3 h-3 shrink-0" />
                 <span className="truncate">{t.quickAdd.items}</span>
                 {items.length > 0 && (
-                  <span className="px-1 py-0.2 rounded-full bg-white/20 text-[9px] font-bold">
+                  <span className="px-1 py-0.2 rounded-full bg-primary-foreground/20 text-[9px] font-bold">
                     {items.length}
                   </span>
                 )}
@@ -1134,7 +1134,7 @@ function QuickAddSheetContent({
                 <Hash className="w-3 h-3 shrink-0" />
                 <span className="truncate">Tags</span>
                 {tags.length > 0 && (
-                  <span className="px-1 py-0.2 rounded-full bg-white/20 text-[9px] font-bold">
+                  <span className="px-1 py-0.2 rounded-full bg-primary-foreground/20 text-[9px] font-bold">
                     {tags.length}
                   </span>
                 )}

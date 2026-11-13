@@ -424,7 +424,7 @@ export function GoalsManager({
                             </span>
                           )}
                           {goal.status === 'paused' && (
-                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-foreground-secondary shrink-0">
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-surface-muted text-foreground-secondary shrink-0">
                               {t.goals.statusPaused}
                             </span>
                           )}
