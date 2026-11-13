@@ -863,14 +863,15 @@ export async function recordMyPortion(input: {
       items: input.items && input.items.length > 0 ? input.items : undefined,
       transactionDate: new Date(input.date + "T12:00:00").toISOString(),
     });
-    if (res.error || !res.data?.id) {
+    const createdTx: any = (res as any).data;
+    if (res.error || !createdTx?.id) {
       return { error: friendlySaveError(res.error, "Gagal mencatat transaksi. Coba lagi ya.") };
     }
 
     const { error: markerError } = await sb
       .from("split_bills")
       .update({
-        my_recorded_transaction_id: res.data.id,
+        my_recorded_transaction_id: createdTx.id,
         my_recorded_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
@@ -879,7 +880,7 @@ export async function recordMyPortion(input: {
     if (markerError) {
       // Avoid leaving an unlinked recorded transaction if we failed to mark the split bill.
       try {
-        await sb.from("transactions").delete().eq("id", res.data.id).eq("user_id", user.id);
+        await sb.from("transactions").delete().eq("id", createdTx.id).eq("user_id", user.id);
       } catch {
         // best effort
       }
@@ -889,7 +890,7 @@ export async function recordMyPortion(input: {
     revalidatePath("/split-bill");
     revalidatePath(`/split-bill/${input.splitBillId}`);
     revalidatePath("/transactions");
-    return { transactionId: res.data.id };
+    return { transactionId: createdTx.id };
   } catch (e: any) {
     return { error: friendlySaveError(e, "Gagal mencatat porsi. Coba lagi ya.") };
   }

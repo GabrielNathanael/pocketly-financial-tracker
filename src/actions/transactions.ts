@@ -248,7 +248,7 @@ export async function createTransaction(input: {
       description: input.description?.trim() || null,
       tags: computedTags,
       // Rincian item (JSONB) — null kalau nggak ada item.
-      items: input.items && input.items.length > 0 ? input.items : null,
+      items: (input.items && input.items.length > 0 ? input.items : null) as any,
       transaction_date: input.transactionDate || new Date().toISOString(),
     })
     .select(`*, category:categories(*), account:accounts(*)`)
@@ -297,16 +297,17 @@ export async function updateTransaction(
   }
 
   // 1. Fetch Existing Transaction
-  const { data: oldTx, error: oldTxErr } = await supabase
+  const { data: oldTxRaw, error: oldTxErr } = await supabase
     .from("transactions")
     .select("*, account:accounts(*)")
     .eq("id", id)
     .eq("user_id", user.id)
     .single();
 
-  if (oldTxErr || !oldTx) {
+  if (oldTxErr || !oldTxRaw) {
     return { error: "Transaksi tidak ditemukan" };
   }
+  const oldTx = oldTxRaw as any;
 
   // 2. Fetch Target Account
   const { data: targetAcc, error: targetAccErr } = await supabase
@@ -388,7 +389,7 @@ export async function updateTransaction(
       description: input.description?.trim() || null,
       tags: computedTags,
       // Rincian item (JSONB) — null kalau nggak ada item.
-      items: input.items && input.items.length > 0 ? input.items : null,
+      items: (input.items && input.items.length > 0 ? input.items : null) as any,
       transaction_date: input.transactionDate,
       updated_at: new Date().toISOString(),
     })
@@ -412,15 +413,16 @@ export async function deleteTransaction(id: string) {
   const supabase = await createServerSupabaseClient();
 
   // 1. Fetch transaction and account before delete
-  const { data: tx, error: txErr } = await supabase
+  const { data: txRaw, error: txErr } = await supabase
     .from("transactions")
     .select("*, account:accounts(*)")
     .eq("id", id)
     .single();
 
-  if (txErr || !tx) {
+  if (txErr || !txRaw) {
     return { error: "Transaksi tidak ditemukan" };
   }
+  const tx = txRaw as any;
 
   // 2. Strict Guard: Deleting an Income transaction reduces account balance
   if (tx.type === "income" && tx.account) {

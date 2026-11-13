@@ -3151,7 +3151,7 @@ function StockCard({
           ) : (
             marketVal !== undefined && (
               <>
-                <span className="font-mono text-sm font-black text-[#0F172A] dark:text-[#F8FAFC] tnum">{fmtDisplay(marketVal, "IDR")}</span>
+                <span className="font-mono text-sm font-black text-[#0F172A] dark:text-[#F8FAFC] tnum">{fmt(marketVal, "IDR")}</span>
                 <span className={cn("font-mono text-[10px] font-bold", pnl >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400")}>
                   {pnl >= 0 ? "+" : ""}{pnlPct.toFixed(2)}%
                 </span>
@@ -3252,7 +3252,7 @@ function CryptoCard({
           ) : (
             marketVal !== undefined && (
               <>
-                <span className="font-mono text-sm font-black text-[#0F172A] dark:text-[#F8FAFC] tnum">{fmtDisplay(marketVal, "IDR")}</span>
+                <span className="font-mono text-sm font-black text-[#0F172A] dark:text-[#F8FAFC] tnum">{fmt(marketVal, "IDR")}</span>
                 <span className={cn("font-mono text-[10px] font-bold", pnl >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400")}>
                   {pnl >= 0 ? "+" : ""}{pnlPct.toFixed(2)}%
                 </span>

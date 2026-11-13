@@ -14,7 +14,7 @@ export async function refreshAssetPricesAction() {
 
   try {
     const admin = createAdminSupabaseClient();
-    const result = await refreshAssetPrices(admin);
+    const result = await refreshAssetPrices(admin as any);
     revalidatePath("/investments");
     revalidatePath("/net-worth");
     return { success: true, ...result };

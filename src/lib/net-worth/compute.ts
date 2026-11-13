@@ -140,7 +140,7 @@ export async function computeNetWorthForUser(
         .gt("current_amount", 0),
     ]);
 
-  const accountRows = (accountsRes.data || []) as AccountRow[];
+  const accountRows = (accountsRes.data || []) as unknown as AccountRow[];
   const accounts: NetWorthBreakdownItem[] = accountRows.map((a) => ({
     id: a.id,
     name: a.name || "Akun",
@@ -160,7 +160,7 @@ export async function computeNetWorthForUser(
     return toIdr(quantity * cached.price, cached.currency);
   };
 
-  const stockRows = (stocksRes.data || []) as StockRow[];
+  const stockRows = (stocksRes.data || []) as unknown as StockRow[];
   const stocks: NetWorthBreakdownItem[] = stockRows.map((h) => {
     const costIdr = toIdr(
       Number(h.total_cost) || 0,
@@ -176,7 +176,7 @@ export async function computeNetWorthForUser(
   });
   const totalStockHoldingsIdr = stocks.reduce((s, x) => s + x.amountIdr, 0);
 
-  const cryptoRows = (cryptoRes.data || []) as CryptoRow[];
+  const cryptoRows = (cryptoRes.data || []) as unknown as CryptoRow[];
   const crypto: NetWorthBreakdownItem[] = cryptoRows.map((h) => {
     const costIdr = toIdr(
       Number(h.cost_basis) || 0,
@@ -195,7 +195,7 @@ export async function computeNetWorthForUser(
   });
   const totalCryptoHoldingsIdr = crypto.reduce((s, x) => s + x.amountIdr, 0);
 
-  const etfRows = (etfRes.data || []) as EtfRow[];
+  const etfRows = (etfRes.data || []) as unknown as EtfRow[];
   const etf: NetWorthBreakdownItem[] = etfRows.map((h) => {
     const costIdr = toIdr(
       Number(h.total_cost) || 0,
@@ -218,7 +218,7 @@ export async function computeNetWorthForUser(
   const debts: NetWorthBreakdownItem[] = [];
   let totalReceivablesIdr = 0;
   let totalDebtsIdr = 0;
-  const debtRows = (debtsRes.data || []) as DebtRow[];
+  const debtRows = (debtsRes.data || []) as unknown as DebtRow[];
   for (const d of debtRows) {
     const amt = toIdr(Number(d.remaining_amount) || 0, d.currency || "IDR");
     const item = {
@@ -235,7 +235,7 @@ export async function computeNetWorthForUser(
     }
   }
 
-  const goalRows = (goalsRes.data || []) as GoalRow[];
+  const goalRows = (goalsRes.data || []) as unknown as GoalRow[];
   const goals: NetWorthBreakdownItem[] = goalRows.map((g) => ({
     id: g.id,
     name: g.name || "Target",

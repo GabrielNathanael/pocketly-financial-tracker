@@ -276,6 +276,10 @@ export async function adjustAccountBalance(input: {
     cat = anyCat;
   }
 
+  if (!cat?.id) {
+    return { error: "Kategori transaksi tidak ditemukan." };
+  }
+
   // 3. Create adjustment transaction
   const noteSuffix = input.notes?.trim() ? ` - ${input.notes.trim()}` : "";
   const isEn = input.language === "en";
@@ -286,7 +290,7 @@ export async function adjustAccountBalance(input: {
   const { error: txErr } = await supabase.from("transactions").insert({
     user_id: user.id,
     account_id: account.id,
-    category_id: cat?.id || null,
+    category_id: cat.id,
     type: txType,
     amount: absAmount,
     currency: account.currency,

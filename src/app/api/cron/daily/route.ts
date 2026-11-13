@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
-import { processOneRecurringPeriod } from "@/lib/recurring/process-due-recurring";
+import {
+  processOneRecurringPeriod,
+  type DueRecurringRule,
+  type RecurringSupabaseClient,
+} from "@/lib/recurring/process-due-recurring";
 import { fetchAndSaveForexRatesAdmin } from "@/lib/net-worth/forex";
 import { refreshAssetPrices } from "@/lib/net-worth/prices";
 import { snapshotNetWorthForUser } from "@/lib/net-worth/snapshot";
@@ -36,17 +40,23 @@ export async function GET(req: NextRequest) {
       { status: 500 },
     );
   }
+  const admin = supabase as unknown as RecurringSupabaseClient;
 
   const todayStr = getTodayDateStringInTimeZone(CRON_TIME_ZONE);
 
   // 1) Forex rates (fresh for snapshot + all conversions today)
-  const rates = await fetchAndSaveForexRatesAdmin(supabase);
+  const rates = await fetchAndSaveForexRatesAdmin(
+    supabase as unknown as Parameters<typeof fetchAndSaveForexRatesAdmin>[0],
+  );
 
   // 1b) Market prices for owned assets (crypto/stock/ETF cache)
-  const prices = await refreshAssetPrices(supabase);
+  const prices = await refreshAssetPrices(
+    supabase as unknown as Parameters<typeof refreshAssetPrices>[0],
+  );
 
   // 2) Recurring auto-process (catch-up)
-  const { data: dueRules, error: dueErr } = await (supabase.from("recurring_transactions") as never)
+  const { data: dueRules, error: dueErr } = await supabase
+    .from("recurring_transactions")
     .select("*")
     .eq("is_active", true)
     .eq("auto_process", true)
@@ -64,7 +74,7 @@ export async function GET(req: NextRequest) {
   const failed: Array<{ id: string; name: string; error: string }> = [];
 
   for (const initialRule of dueRules || []) {
-    let rule = initialRule;
+    let rule = initialRule as DueRecurringRule;
     let iterations = 0;
     while (
       rule &&
@@ -76,8 +86,8 @@ export async function GET(req: NextRequest) {
     ) {
       iterations++;
       const result = await processOneRecurringPeriod(
-        supabase as never,
-        rule as never,
+        admin,
+        rule,
         CRON_TIME_ZONE,
       );
       if (!result.ok) {
@@ -95,7 +105,8 @@ export async function GET(req: NextRequest) {
   }
 
   // 3) Net worth snapshot per user (distinct owners with an account)
-  const { data: accountOwners } = await (supabase.from("accounts") as never)
+  const { data: accountOwners } = await supabase
+    .from("accounts")
     .select("user_id")
     .eq("is_active", true)
     .limit(1000);
@@ -111,7 +122,12 @@ export async function GET(req: NextRequest) {
   let snapshotted = 0;
   const snapshotFailed: Array<{ userId: string; error: string }> = [];
   for (const userId of userIds) {
-    const res = await snapshotNetWorthForUser(supabase, userId, todayStr, rates);
+    const res = await snapshotNetWorthForUser(
+      supabase as unknown as Parameters<typeof snapshotNetWorthForUser>[0],
+      userId,
+      todayStr,
+      rates,
+    );
     if (res.ok) snapshotted++;
     else snapshotFailed.push({ userId, error: res.error || "failed" });
   }

@@ -13,6 +13,7 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { seedUserDefaultCategories } from '@/actions/categories'
 import { revalidatePath } from 'next/cache'
+import type { Database } from '@/types/database'
 
 export async function seedDemoData(): Promise<{ success: boolean; error?: string }> {
   const supabase = await createServerSupabaseClient()
@@ -100,15 +101,15 @@ export async function seedDemoData(): Promise<{ success: boolean; error?: string
 
     const getCat = (name: string, type: 'income' | 'expense' = 'expense') => {
       const canonical = categoryLookup[name] || name
-      const found = (categories || []).find((c: { name?: string; type?: string }) => c.name.toLowerCase() === canonical.toLowerCase() && c.type === type)
-        || (categories || []).find((c: { name?: string; type?: string }) => c.name.toLowerCase() === canonical.toLowerCase())
+      const found = (categories || []).find((c: { name?: string; type?: string }) => (c.name || '').toLowerCase() === canonical.toLowerCase() && c.type === type)
+        || (categories || []).find((c: { name?: string; type?: string }) => (c.name || '').toLowerCase() === canonical.toLowerCase())
         || (categories || []).find((c: { name?: string; type?: string }) => c.type === type && c.name !== 'Discrepancy')
         || categories?.[0]
       return found?.id || ''
     }
 
     // 2. Create Realistic Multi-Currency Accounts (IDR, USD, SGD)
-    const demoAccounts = [
+    const demoAccounts: Database['public']['Tables']['accounts']['Insert'][] = [
       {
         name: 'BCA Utama',
         type: 'bank',
@@ -217,7 +218,7 @@ export async function seedDemoData(): Promise<{ success: boolean; error?: string
       return target.toISOString().split('T')[0]
     }
 
-    const demoTransactions = [
+    const demoTransactions: Database['public']['Tables']['transactions']['Insert'][] = [
       // Income
       {
         user_id: user.id,
@@ -408,7 +409,7 @@ export async function seedDemoData(): Promise<{ success: boolean; error?: string
     await supabase.from('transactions').insert(demoTransactions)
 
     // 4. Create Cross-Currency Transfers with Snapshot Rates
-    const demoTransfers = [
+    const demoTransfers: Database['public']['Tables']['transfers']['Insert'][] = [
       {
         user_id: user.id,
         from_account_id: bcaAcc.id,
@@ -448,7 +449,7 @@ export async function seedDemoData(): Promise<{ success: boolean; error?: string
 
     // 5. Create Active Category Budgets for Current Period
     const currentPeriodStr = `${yyyy}-${mm}-01`
-    const demoBudgets = [
+    const demoBudgets: Database['public']['Tables']['budgets']['Insert'][] = [
       {
         user_id: user.id,
         category_id: getCat('Makanan & Minuman'),
@@ -486,7 +487,7 @@ export async function seedDemoData(): Promise<{ success: boolean; error?: string
     })
 
     // 6. Create Multi-Currency Debts & Receivables with Payment History
-    const demoDebts = [
+    const demoDebts: Database['public']['Tables']['debts']['Insert'][] = [
       {
         user_id: user.id,
         counterparty_name: 'Koperasi Kantor (Cicilan Laptop MacBook)',
@@ -526,7 +527,7 @@ export async function seedDemoData(): Promise<{ success: boolean; error?: string
 
     if (createdDebts && createdDebts.length > 0) {
       // Add payment records
-      const demoPayments = [
+      const demoPayments: Database['public']['Tables']['debt_payments']['Insert'][] = [
         {
           debt_id: createdDebts[0].id,
           amount: 3000000,
@@ -552,7 +553,7 @@ export async function seedDemoData(): Promise<{ success: boolean; error?: string
     }
 
     // 7. Create Recurring Transactions & Subscriptions (Phase 2 Feature)
-    const demoRecurring = [
+    const demoRecurring: Database['public']['Tables']['recurring_transactions']['Insert'][] = [
       {
         user_id: user.id,
         name: 'Indihome Fiber 100Mbps',
@@ -638,7 +639,7 @@ export async function seedDemoData(): Promise<{ success: boolean; error?: string
     await supabase.from('recurring_transactions').insert(demoRecurring)
 
     // 8. Create Savings Goals & Deposits History (Phase 3 Feature)
-    const demoGoals = [
+    const demoGoals: Database['public']['Tables']['savings_goals']['Insert'][] = [
       {
         user_id: user.id,
         name: 'Dana Darurat 6 Bulan',
@@ -695,7 +696,7 @@ export async function seedDemoData(): Promise<{ success: boolean; error?: string
 
     const { data: createdGoals } = await supabase.from('savings_goals').insert(demoGoals).select()
 
-    let demoDeposits: Array<Record<string, unknown>> = []
+    let demoDeposits: Database['public']['Tables']['savings_goal_deposits']['Insert'][] = []
 
     if (createdGoals && createdGoals.length > 0) {
       const emergencyGoal = createdGoals.find((g: { name: string }) => g.name === 'Dana Darurat 6 Bulan') || createdGoals[0]
@@ -808,7 +809,7 @@ export async function seedDemoData(): Promise<{ success: boolean; error?: string
 
     // 8. Create Realistic Stock Holdings & Trade Logs (RDN)
     if (rdnAcc) {
-      const demoHoldings = [
+      const demoHoldings: Database['public']['Tables']['stock_holdings']['Insert'][] = [
         {
           user_id: user.id,
           account_id: rdnAcc.id,
@@ -833,7 +834,7 @@ export async function seedDemoData(): Promise<{ success: boolean; error?: string
 
       await supabase.from('stock_holdings').insert(demoHoldings)
 
-      const demoTrades = [
+      const demoTrades: Database['public']['Tables']['stock_trades']['Insert'][] = [
         {
           user_id: user.id,
           account_id: rdnAcc.id,
@@ -843,7 +844,7 @@ export async function seedDemoData(): Promise<{ success: boolean; error?: string
           shares: 700,
           price_per_share: 9285,
           net_amount: 6500000,
-          realized_pnl: null,
+          realized_pnl: undefined,
           notes: 'Beli BBCA 6.500.000 (bersih + fee broker)',
           trade_date: dDate(12),
         },
@@ -856,7 +857,7 @@ export async function seedDemoData(): Promise<{ success: boolean; error?: string
           shares: 800,
           price_per_share: 4687,
           net_amount: 3750000,
-          realized_pnl: null,
+          realized_pnl: undefined,
           notes: 'Beli BBRI 3.750.000 (bersih + fee broker)',
           trade_date: dDate(8),
         },
@@ -869,7 +870,7 @@ export async function seedDemoData(): Promise<{ success: boolean; error?: string
           shares: 800,
           price_per_share: 3125,
           net_amount: 2500000,
-          realized_pnl: null,
+          realized_pnl: undefined,
           notes: 'Beli swing entry (bersih + fee broker)',
           trade_date: dDate(20),
         },
@@ -995,7 +996,7 @@ export async function seedStockTestData(): Promise<{ success: boolean; error?: s
     await supabase.from('stock_holdings').delete().eq('user_id', user.id)
 
     // Insert sample holdings
-    const demoHoldings = [
+    const demoHoldings: Database['public']['Tables']['stock_holdings']['Insert'][] = [
       {
         user_id: user.id,
         account_id: rdnAcc.id,
@@ -1027,7 +1028,7 @@ export async function seedStockTestData(): Promise<{ success: boolean; error?: s
     }
 
     // Insert sample trades
-    const demoTrades = [
+    const demoTrades: Database['public']['Tables']['stock_trades']['Insert'][] = [
       {
         user_id: user.id,
         account_id: rdnAcc.id,
@@ -1037,7 +1038,7 @@ export async function seedStockTestData(): Promise<{ success: boolean; error?: s
         shares: 700,
         price_per_share: 9285,
         net_amount: 6500000,
-        realized_pnl: null,
+        realized_pnl: undefined,
         notes: 'Beli BBCA 6.500.000 (bersih + fee broker)',
         trade_date: dDate(12),
       },
@@ -1050,7 +1051,7 @@ export async function seedStockTestData(): Promise<{ success: boolean; error?: s
         shares: 800,
         price_per_share: 4687,
         net_amount: 3750000,
-        realized_pnl: null,
+        realized_pnl: undefined,
         notes: 'Beli BBRI 3.750.000 (bersih + fee broker)',
         trade_date: dDate(8),
       },
@@ -1063,7 +1064,7 @@ export async function seedStockTestData(): Promise<{ success: boolean; error?: s
         shares: 800,
         price_per_share: 3125,
         net_amount: 2500000,
-        realized_pnl: null,
+        realized_pnl: undefined,
         notes: 'Beli swing entry (bersih + fee broker)',
         trade_date: dDate(20),
       },

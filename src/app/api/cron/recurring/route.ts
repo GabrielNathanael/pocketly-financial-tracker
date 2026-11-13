@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
-import { processOneRecurringPeriod } from "@/lib/recurring/process-due-recurring";
+import {
+  processOneRecurringPeriod,
+  type DueRecurringRule,
+  type RecurringSupabaseClient,
+} from "@/lib/recurring/process-due-recurring";
 import { getTodayDateStringInTimeZone } from "@/lib/utils/date";
 
 // Cron runs in the background without a user session. Personal app:
@@ -36,10 +40,12 @@ export async function GET(req: NextRequest) {
       { status: 500 },
     );
   }
+  const admin = supabase as unknown as RecurringSupabaseClient;
 
   const todayStr = getTodayDateStringInTimeZone(CRON_TIME_ZONE);
 
-  const { data: dueRules, error: dueErr } = await (supabase.from("recurring_transactions") as never)
+  const { data: dueRules, error: dueErr } = await supabase
+    .from("recurring_transactions")
     .select("*")
     .eq("is_active", true)
     .eq("auto_process", true)
@@ -57,7 +63,7 @@ export async function GET(req: NextRequest) {
   const failed: Array<{ id: string; name: string; error: string }> = [];
 
   for (const initialRule of dueRules || []) {
-    let rule = initialRule;
+    let rule = initialRule as DueRecurringRule;
     let iterations = 0;
     // Catch-up: a rule missed for several periods inserts one transaction
     // per missed due date, each dated on its own due date.
@@ -71,8 +77,8 @@ export async function GET(req: NextRequest) {
     ) {
       iterations++;
       const result = await processOneRecurringPeriod(
-        supabase as never,
-        rule as never,
+        admin,
+        rule,
         CRON_TIME_ZONE,
       );
       if (!result.ok) {

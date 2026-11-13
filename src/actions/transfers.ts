@@ -142,12 +142,12 @@ export async function createTransfer(input: {
     if (expCat) {
       // Pakai timestamp yang sama persis dengan transfernya (bukan jam 12.00 UTC
       // yang dipatok), supaya biaya admin tercatat di waktu transfer sebenarnya.
-      const feeTxDate = data.transfer_date || new Date().toISOString();
+      const feeTxDate = (data as any).transfer_date || new Date().toISOString();
       const { error: feeErr } = await supabase.from("transactions").insert({
         user_id: user.id,
         account_id: input.fromAccountId,
         category_id: expCat.id,
-        transfer_id: data.id,
+        transfer_id: (data as any).id,
         type: "expense",
         amount: fee,
         currency: fromCurrency,
@@ -181,15 +181,16 @@ export async function deleteTransfer(id: string) {
   if (!user) return { error: "Unauthorized" };
 
   // 1. Fetch Transfer before delete to check receiver balance
-  const { data: transfer, error: tErr } = await supabase.from("transfers")
+  const { data: transferRaw, error: tErr } = await supabase.from("transfers")
     .select("*, to_account:accounts!transfers_to_account_id_fkey(*)")
     .eq("id", id)
     .eq("user_id", user.id)
     .single();
 
-  if (tErr || !transfer) {
+  if (tErr || !transferRaw) {
     return { error: "Data transfer tidak ditemukan" };
   }
+  const transfer = transferRaw as any;
 
   if (transfer.to_account) {
     const toBal = Number(transfer.to_account.current_balance) || 0;

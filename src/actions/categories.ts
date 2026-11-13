@@ -160,7 +160,7 @@ export async function seedUserDefaultCategories(userId?: string) {
       ...DEFAULT_EXPENSE_CATEGORIES.map((c) => ({
         user_id: targetUserId!,
         name: c.name,
-        type: c.type,
+        type: c.type as TransactionType,
         icon: c.icon,
         color: c.color,
         is_default: true,
@@ -168,7 +168,7 @@ export async function seedUserDefaultCategories(userId?: string) {
       ...DEFAULT_INCOME_CATEGORIES.map((c) => ({
         user_id: targetUserId!,
         name: c.name,
-        type: c.type,
+        type: c.type as TransactionType,
         icon: c.icon,
         color: c.color,
         is_default: true,
@@ -189,7 +189,14 @@ export async function seedUserDefaultCategories(userId?: string) {
             name.toLowerCase()),
     );
 
-  const missingCategories = [];
+  const missingCategories: Array<{
+    user_id: string;
+    name: string;
+    type: TransactionType;
+    icon: string;
+    color: string;
+    is_default: boolean;
+  }> = [];
   if (!checkHasCategory("Discrepancy", "expense")) {
     missingCategories.push({
       user_id: targetUserId,

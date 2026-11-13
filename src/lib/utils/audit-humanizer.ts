@@ -7,6 +7,36 @@ import {
   parseItemsSummary,
 } from "@/lib/utils/transaction-items";
 
+type AuditRow = Record<string, unknown>;
+
+const str = (v: unknown, fallback = ""): string => {
+  if (typeof v === "string") return v;
+  if (v == null) return fallback;
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  return fallback;
+};
+
+const optStr = (v: unknown): string | undefined => {
+  if (v == null) return undefined;
+  if (typeof v === "string") return v;
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  return undefined;
+};
+
+const num = (v: unknown, fallback = 0): number => {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (typeof v === "string" && v.trim() !== "") {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : fallback;
+  }
+  return fallback;
+};
+
+const bool = (v: unknown): boolean => v === true;
+
+const strArr = (v: unknown): string[] =>
+  Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+
 export interface HumanizedAuditLog {
   title: string;
   summary: string;
@@ -29,8 +59,8 @@ export function humanizeAuditLog(
   lang: "id" | "en" = "id",
 ): HumanizedAuditLog {
   const isId = lang === "id";
-  const oldVal = (log.old_values || {}) as Record<string, unknown>;
-  const newVal = (log.new_values || {}) as Record<string, unknown>;
+  const oldVal = (log.old_values || {}) as Record<string, any>;
+  const newVal = (log.new_values || {}) as Record<string, any>;
   const table = log.table_name;
 
   // ==========================================
