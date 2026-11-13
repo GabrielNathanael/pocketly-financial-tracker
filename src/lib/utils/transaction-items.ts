@@ -23,6 +23,10 @@ export interface TransactionItem {
   price: string;
   /** Printed line total as plain string number, if stored */
   subtotal?: string;
+  /** Number of people sharing this line item (for split/patungan). Optional. */
+  shareCount?: string;
+  /** User's own portion of this line item (manual / rounded override). Optional. */
+  mySubtotal?: string;
 }
 
 /**
@@ -69,6 +73,29 @@ export function getItemTotal(
   const decimals = SUPPORTED_CURRENCIES[code]?.decimals ?? 0;
   const factor = 10 ** decimals;
   return Math.round(q * p * factor) / factor;
+}
+
+/**
+ * User's own portion for a line item.
+ * Prefer explicit mySubtotal, else split subtotal by shareCount (rounded),
+ * else fall back to the full receipt subtotal.
+ */
+export function getItemMyTotal(
+  item: TransactionItem,
+  currency: string = "IDR",
+): number {
+  const explicit = parseFloat(item.mySubtotal ?? "");
+  if (!isNaN(explicit) && explicit > 0) return explicit;
+
+  const full = getItemTotal(item, currency);
+  const shares = parseFloat(item.shareCount ?? "");
+  if (!isNaN(shares) && shares >= 2) {
+    const code = (currency || "IDR").toUpperCase() as keyof typeof SUPPORTED_CURRENCIES;
+    const decimals = SUPPORTED_CURRENCIES[code]?.decimals ?? 0;
+    const factor = 10 ** decimals;
+    return Math.ceil((full / shares) * factor) / factor;
+  }
+  return full;
 }
 
 /**
@@ -180,6 +207,12 @@ export function normalizeStoredItems(raw: unknown): TransactionItem[] {
     };
     if (rec.subtotal != null && String(rec.subtotal).trim() !== "") {
       item.subtotal = String(rec.subtotal);
+    }
+    if (rec.shareCount != null && String(rec.shareCount).trim() !== "") {
+      item.shareCount = String(rec.shareCount);
+    }
+    if (rec.mySubtotal != null && String(rec.mySubtotal).trim() !== "") {
+      item.mySubtotal = String(rec.mySubtotal);
     }
     out.push(item);
   }

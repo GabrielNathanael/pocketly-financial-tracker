@@ -123,6 +123,7 @@ export default function LandingPage() {
               onClick={() => setLanguage(language === "id" ? "en" : "id")}
               className="px-2.5 py-1.5 text-xs font-mono font-bold rounded-lg border border-[#E5E7EB] dark:border-[#27272A] bg-white dark:bg-[#1A1A20] text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] transition-colors cursor-pointer"
               title="Ganti Bahasa / Switch Language"
+              suppressHydrationWarning
             >
               {language === "id" ? "ID" : "EN"}
             </button>
@@ -138,7 +139,7 @@ export default function LandingPage() {
               aria-label="Pengaturan Tampilan & Bahasa"
             >
               <SlidersHorizontal className="w-3.5 h-3.5" />
-              <span className="font-mono text-[11px]">
+              <span className="font-mono text-[11px]" suppressHydrationWarning>
                 {language.toUpperCase()}
               </span>
             </button>

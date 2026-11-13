@@ -24,7 +24,9 @@ export function DemoNoticeBanner({ userEmail }: DemoNoticeBannerProps) {
       <div className="flex items-center gap-2.5 max-w-4xl mx-auto flex-1">
         <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
         <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-          <span className="font-bold">{t.dashboard.demoAccountLabel}</span>
+          <span className="font-bold" suppressHydrationWarning>
+            {t.dashboard.demoAccountLabel}
+          </span>
           <span className="text-amber-800 dark:text-amber-300">
             {t.dashboard.demoAccountDesc}
           </span>

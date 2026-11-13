@@ -36,6 +36,7 @@ export function CompactDueBanner({
   let overdueCount = 0
   let todayCount = 0
   let upcomingWeekCount = 0
+  let nearestUpcomingDays: number | null = null
   let totalUrgentAmount = 0
 
   // 1. Recurring
@@ -53,6 +54,7 @@ export function CompactDueBanner({
       totalUrgentAmount += amt
     } else if (diff <= 7) {
       upcomingWeekCount++
+      nearestUpcomingDays = nearestUpcomingDays === null ? diff : Math.min(nearestUpcomingDays, diff)
     }
   })
 
@@ -71,16 +73,17 @@ export function CompactDueBanner({
       totalUrgentAmount += amt
     } else if (diff <= 7) {
       upcomingWeekCount++
+      nearestUpcomingDays = nearestUpcomingDays === null ? diff : Math.min(nearestUpcomingDays, diff)
     }
   })
 
-  // 3. Goals
+  // 3. Goals (same 7-day upcoming window as bills/recurring)
   let upcomingGoalsCount = 0
   goals.forEach((goal) => {
     if (goal.status !== 'in_progress' || !goal.target_date) return
     const dueDate = parseISO(goal.target_date)
     const diff = differenceInCalendarDays(dueDate, today)
-    if (diff >= 0 && diff <= 30) {
+    if (diff >= 0 && diff <= 7) {
       upcomingGoalsCount++
     }
   })
@@ -148,7 +151,13 @@ export function CompactDueBanner({
             {[
               overdueCount > 0 ? `${overdueCount} ${t.dashboard.overdueLabel}` : null,
               todayCount > 0 ? `${todayCount} ${t.dashboard.dueTodayLabel}` : null,
-              upcomingWeekCount > 0 ? `${upcomingWeekCount} ${t.dashboard.next7DaysLabel}` : null,
+              upcomingWeekCount > 0
+                ? `${upcomingWeekCount} ${
+                    nearestUpcomingDays !== null
+                      ? t.dashboard.upcomingInDays.replace('{days}', String(nearestUpcomingDays))
+                      : t.dashboard.next7DaysLabel
+                  }`
+                : null,
               upcomingGoalsCount > 0 ? `${upcomingGoalsCount} ${t.dashboard.goalsDeadlineLabel}` : null,
             ]
               .filter(Boolean)

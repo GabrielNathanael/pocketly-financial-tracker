@@ -11,7 +11,9 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Account, Category, TransactionType } from "@/types/database";
 import { formatCurrency } from "@/lib/utils/currency";
+import { SUPPORTED_CURRENCIES } from "@/lib/constants/currencies";
 import {
+  getItemMyTotal,
   getItemTotal as getSharedItemTotal,
   formatItemsSummary,
 } from "@/lib/utils/transaction-items";
@@ -74,6 +76,10 @@ interface ItemRow {
    * Cleared whenever user edits quantity / price.
    */
   subtotal?: string;
+  /** Number of people sharing this line item (patungan). */
+  shareCount?: string;
+  /** User's own portion (manual/rounded override). */
+  mySubtotal?: string;
 }
 
 interface QuickAddSheetContentProps {
@@ -330,19 +336,24 @@ function QuickAddSheetContent({
 
   // Sub-items calculation
   const itemsTotal = items.reduce((sum, item) => sum + getItemTotal(item), 0);
+  // Personal portion total (handles patungan/share + manual override/rounding)
+  const myPortionTotal = items.reduce(
+    (sum, item) => sum + getItemMyTotal(item, currentCurrency),
+    0,
+  );
 
   // Numeric amount is strictly driven by the main amountStr input/keypad
   const numericAmount = parseFloat(amountStr) || 0;
-  const remainingAmount = numericAmount - itemsTotal;
+  const remainingAmount = numericAmount - myPortionTotal;
   const isItemsExceeding =
     showItemsBreakdown &&
     items.length > 0 &&
-    itemsTotal > numericAmount &&
+    myPortionTotal > numericAmount &&
     numericAmount > 0;
   const isItemsMatching =
     showItemsBreakdown &&
     items.length > 0 &&
-    itemsTotal === numericAmount &&
+    myPortionTotal === numericAmount &&
     numericAmount > 0;
   const hasRemainingUnitemized =
     showItemsBreakdown &&
@@ -445,6 +456,24 @@ function QuickAddSheetContent({
   ) => {
     setItems((prev) => {
       const updated = [...prev];
+      const current = { ...updated[index] };
+
+      if (field === "shareCount") {
+        const shares = parseFloat(value);
+        const full = getItemTotal(current);
+        if (!isNaN(shares) && shares >= 2 && full > 0) {
+          const code = currentCurrency.toUpperCase() as keyof typeof SUPPORTED_CURRENCIES;
+          const decimals = SUPPORTED_CURRENCIES[code]?.decimals ?? 0;
+          const factor = 10 ** decimals;
+          current.mySubtotal = String(Math.ceil((full / shares) * factor) / factor);
+        } else if (value.trim() === "" || shares < 2) {
+          current.mySubtotal = undefined;
+        }
+      }
+      if (field === "mySubtotal" && value.trim() === "") {
+        current.mySubtotal = undefined;
+      }
+
       // Once the user edits qty/price, the OCR-copied printed subtotal
       // is stale — drop it so the total falls back to qty * price.
       // Clearing the subtotal field itself also reverts to qty * price.
@@ -453,7 +482,7 @@ function QuickAddSheetContent({
         field === "price" ||
         (field === "subtotal" && value === "");
       updated[index] = {
-        ...updated[index],
+        ...current,
         [field]: value,
         ...(clearSubtotal ? { subtotal: undefined } : {}),
       };
@@ -495,11 +524,11 @@ function QuickAddSheetContent({
     if (
       showItemsBreakdown &&
       items.length > 0 &&
-      itemsTotal > numericAmount &&
+      myPortionTotal > numericAmount &&
       numericAmount > 0
     ) {
       setError(
-        `${t.quickAdd.itemsExceedWarning} ${formatCurrency(itemsTotal - numericAmount, currentCurrency)}`,
+        `${t.quickAdd.itemsExceedWarning} ${formatCurrency(myPortionTotal - numericAmount, currentCurrency)}`,
       );
       return;
     }
@@ -608,7 +637,16 @@ function QuickAddSheetContent({
         tags: finalTags.length > 0 ? finalTags : undefined,
         // Rincian item disimpan juga di kolom JSONB `transactions.items`
         items:
-          showItemsBreakdown && validItems.length > 0 ? validItems : undefined,
+          showItemsBreakdown && validItems.length > 0
+            ? validItems.map((it) => ({
+                name: it.name,
+                quantity: it.quantity || "1",
+                price: it.price || "",
+                ...(it.subtotal ? { subtotal: it.subtotal } : {}),
+                ...(it.shareCount ? { shareCount: it.shareCount } : {}),
+                ...(it.mySubtotal ? { mySubtotal: it.mySubtotal } : {}),
+              }))
+            : undefined,
         transactionDate: localDateToISO(txDate),
       });
 
@@ -1285,6 +1323,64 @@ function QuickAddSheetContent({
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
+
+                      {/* Row 3: Split/patungan controls (optional) */}
+                      <div className="flex items-center gap-2 pt-1">
+                        <span className="text-[10px] text-[#64748B] dark:text-[#94A3B8] shrink-0">
+                          {language === "id" ? "Dibagi ke" : "Split with"}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const cur = parseInt(item.shareCount ?? "1", 10) || 1;
+                            handleUpdateItem(idx, "shareCount", String(Math.max(1, cur - 1)));
+                          }}
+                          className="flex h-5 w-5 items-center justify-center rounded border border-[#E5E7EB] dark:border-[#27272A] text-[#64748B] dark:text-[#94A3B8] text-xs"
+                        >
+                          −
+                        </button>
+                        <span className="w-5 text-center text-xs font-medium text-[#0F172A] dark:text-[#FAFAFA]">
+                          {Math.max(1, parseInt(item.shareCount ?? "1", 10) || 1)}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const cur = parseInt(item.shareCount ?? "1", 10) || 1;
+                            handleUpdateItem(idx, "shareCount", String(cur + 1));
+                          }}
+                          className="flex h-5 w-5 items-center justify-center rounded border border-[#E5E7EB] dark:border-[#27272A] text-[#64748B] dark:text-[#94A3B8] text-xs"
+                        >
+                          +
+                        </button>
+                        <span className="text-[10px] text-[#64748B] dark:text-[#94A3B8] shrink-0">
+                          {language === "id" ? "orang" : "people"}
+                        </span>
+
+                        <div className="flex-1 min-w-0 flex items-center justify-end gap-1.5">
+                          <span className="text-[10px] text-[#64748B] dark:text-[#94A3B8] shrink-0">
+                            {t.quickAdd.myPortionTotalLabel}:
+                          </span>
+                          <div className="w-24">
+                            <NumberInput
+                              value={
+                                item.mySubtotal ??
+                                String(getItemMyTotal(item, currentCurrency))
+                              }
+                              onValueChange={(value) =>
+                                handleUpdateItem(idx, "mySubtotal", value)
+                              }
+                              allowDecimal={false}
+                              maxDigits={12}
+                              placeholder="0"
+                              currency={currentCurrency}
+                              compact
+                              showCurrency={false}
+                              bare
+                              className="w-full text-right"
+                            />
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1293,13 +1389,21 @@ function QuickAddSheetContent({
               {/* Smart Allocation Summary Bar */}
               {items.length > 0 && (
                 <div className="pt-2 border-t border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-2">
-                  <div className="flex items-center justify-between text-[11px] font-mono">
-                    <span className="text-[#64748B] dark:text-[#94A3B8]">
-                      {t.quickAdd.itemizedTotal}:{" "}
-                      <strong className="text-[#0F172A] dark:text-[#FAFAFA]">
-                        {formatCurrency(itemsTotal, currentCurrency)}
-                      </strong>
-                    </span>
+                  <div className="flex flex-col gap-1 text-[11px] font-mono">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[#64748B] dark:text-[#94A3B8]">
+                        {t.quickAdd.receiptTotalLabel}:{" "}
+                        <strong className="text-[#0F172A] dark:text-[#FAFAFA]">
+                          {formatCurrency(itemsTotal, currentCurrency)}
+                        </strong>
+                      </span>
+                      <span className="text-[#64748B] dark:text-[#94A3B8]">
+                        {t.quickAdd.myPortionTotalLabel}:{" "}
+                        <strong className="text-[#0D9488] dark:text-emerald-400">
+                          {formatCurrency(myPortionTotal, currentCurrency)}
+                        </strong>
+                      </span>
+                    </div>
 
                     {isItemsMatching ? (
                       <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
@@ -1317,7 +1421,7 @@ function QuickAddSheetContent({
                         <span>
                           +
                           {formatCurrency(
-                            itemsTotal - numericAmount,
+                            myPortionTotal - numericAmount,
                             currentCurrency,
                           )}{" "}
                           ({t.quickAdd.exceeds})
@@ -1327,11 +1431,11 @@ function QuickAddSheetContent({
                   </div>
 
                   {/* Sync Button when total does not match */}
-                  {itemsTotal > 0 && itemsTotal !== numericAmount && (
+                  {myPortionTotal > 0 && myPortionTotal !== numericAmount && (
                     <button
                       type="button"
                       onClick={() => {
-                        setAmountStr(String(Math.round(itemsTotal)));
+                        setAmountStr(String(Math.round(myPortionTotal)));
                         setError(null);
                       }}
                       className="w-full py-1.5 px-2 rounded-lg bg-white dark:bg-[#121215] border border-dashed border-[#CBD5E1] dark:border-[#334155] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] text-[11px] font-medium text-[#475569] dark:text-[#CBD5E1] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
@@ -1340,7 +1444,7 @@ function QuickAddSheetContent({
                       <span>
                         {t.quickAdd.syncTotalWithItems}:{" "}
                         <strong>
-                          {formatCurrency(itemsTotal, currentCurrency)}
+                          {formatCurrency(myPortionTotal, currentCurrency)}
                         </strong>
                       </span>
                     </button>

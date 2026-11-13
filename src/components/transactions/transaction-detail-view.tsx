@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { formatCurrency } from "@/lib/utils/currency";
 import {
+  getItemMyTotal,
   getItemTotal,
   parseItemsFromDescription,
   normalizeStoredItems,
@@ -339,6 +340,9 @@ export function TransactionDetailView({
                 const qty = parseFloat(item.quantity) || 1;
                 const unit = parseFloat(item.price) || 0;
                 const subtotal = getItemTotal(item, transaction.currency);
+                const mySubtotal = getItemMyTotal(item, transaction.currency);
+                const shares = parseFloat(item.shareCount ?? "");
+                const isShared = (!isNaN(shares) && shares >= 2) || (item.mySubtotal != null && mySubtotal !== subtotal);
                 return (
                   <div
                     key={idx}
@@ -351,27 +355,62 @@ export function TransactionDetailView({
                       <span className="text-[11px] text-[#64748B] dark:text-[#94A3B8] font-mono">
                         {`${qty} × ${formatCurrency(unit, transaction.currency)}`}
                       </span>
+                      {isShared && (
+                        <span className="text-[10px] text-emerald-700 dark:text-emerald-400">
+                          {(!isNaN(shares) && shares >= 2)
+                            ? (language === "id" ? `Dibagi ${shares} orang` : `Shared by ${shares} people`)
+                            : `${t.quickAdd.myPortionTotalLabel}: ${formatCurrency(mySubtotal, transaction.currency)}`}
+                        </span>
+                      )}
                     </div>
-                    <span className="shrink-0 font-mono font-semibold text-[#0F172A] dark:text-[#FAFAFC]">
-                      {formatCurrency(subtotal, transaction.currency)}
-                    </span>
+                    <div className="shrink-0 flex flex-col items-end">
+                      <span className="font-mono font-semibold text-[#0F172A] dark:text-[#FAFAFC]">
+                        {formatCurrency(subtotal, transaction.currency)}
+                      </span>
+                      {isShared && (
+                        <span className="text-[10px] font-mono text-emerald-700 dark:text-emerald-400">
+                          {formatCurrency(mySubtotal, transaction.currency)}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 );
               })}
             </div>
-            <div className="flex items-center justify-between pt-1 border-t border-[#E5E7EB] dark:border-[#27272A] text-[11px] font-mono">
-              <span className="text-[#64748B] dark:text-[#94A3B8]">
-                {t.transactions.itemsTotalLabel}
-              </span>
-              <span className="font-bold text-[#0F172A] dark:text-[#FAFAFA]">
-                {formatCurrency(
-                  itemsList.reduce(
-                    (s, i) => s + getItemTotal(i, transaction.currency),
-                    0,
-                  ),
-                  transaction.currency,
-                )}
-              </span>
+            <div className="flex flex-col gap-1 pt-1 border-t border-[#E5E7EB] dark:border-[#27272A] text-[11px] font-mono">
+              <div className="flex items-center justify-between">
+                <span className="text-[#64748B] dark:text-[#94A3B8]">
+                  {t.quickAdd.receiptTotalLabel}
+                </span>
+                <span className="font-semibold text-[#0F172A] dark:text-[#FAFAFA]">
+                  {formatCurrency(
+                    itemsList.reduce(
+                      (s, i) => s + getItemTotal(i, transaction.currency),
+                      0,
+                    ),
+                    transaction.currency,
+                  )}
+                </span>
+              </div>
+              {itemsList.some((i) => {
+                const shares = parseFloat(i.shareCount ?? "");
+                return (!isNaN(shares) && shares >= 2) || i.mySubtotal != null;
+              }) && (
+                <div className="flex items-center justify-between">
+                  <span className="text-[#64748B] dark:text-[#94A3B8]">
+                    {t.quickAdd.myPortionTotalLabel}
+                  </span>
+                  <span className="font-bold text-emerald-700 dark:text-emerald-400">
+                    {formatCurrency(
+                      itemsList.reduce(
+                        (s, i) => s + getItemMyTotal(i, transaction.currency),
+                        0,
+                      ),
+                      transaction.currency,
+                    )}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         )}

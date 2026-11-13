@@ -6,6 +6,8 @@ const transactionItemSchema = z.object({
   quantity: z.string().max(40).optional(),
   price: z.string().max(40).optional(),
   subtotal: z.string().max(40).optional(),
+  shareCount: z.string().max(40).optional(),
+  mySubtotal: z.string().max(40).optional(),
 })
 
 export const transactionSchema = z.object({

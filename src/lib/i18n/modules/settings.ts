@@ -48,7 +48,7 @@ export const settings = {
       exportSectionEtfTrades: "Riwayat Transaksi ETF",
       exportSectionsError: "Pilih minimal satu data.",
       exportDateHint:
-        "Filter tanggal berlaku untuk transaksi, transfer, dan riwayat trading. Holding adalah snapshot saat ini; market price & floating P&L memakai cache terakhir (lihat Price_Fetched_At).",
+        "Filter tanggal berlaku untuk transaksi, transfer, dan riwayat perdagangan. Data kepemilikan (holding) menampilkan posisi saat ini; harga pasar dan laba/rugi mengambang menggunakan data harga terakhir yang tersimpan (lihat waktu pembaruan harga).",
       exportConfirm: "Unduh",
       exportCancel: "Batal",
       demoTitle: "Data Contoh & Seeder Demo",
@@ -125,7 +125,7 @@ export const settings = {
       exportSectionEtfTrades: "ETF Trade History",
       exportSectionsError: "Select at least one dataset.",
       exportDateHint:
-        "Date filter applies to transactions, transfers, and trade history. Holdings are current snapshots; market price & floating P&L use the latest cache (see Price_Fetched_At).",
+        "The date filter applies to transactions, transfers, and trade history. Holdings show the current position; market prices and unrealized P/L use the latest saved price data (see the price update time).",
       exportConfirm: "Download",
       exportCancel: "Cancel",
       demoTitle: "Demo Data Seeder",
