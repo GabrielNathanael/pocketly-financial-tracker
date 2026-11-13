@@ -2,26 +2,16 @@
   <img src="public/logo.png" alt="Pocketly Logo" width="120" style="border-radius: 24px;" />
 </p>
 
-<h1 align="center">Pocketly — Smart Multi-Currency Financial Tracker</h1>
+<h1 align="center">Pocketly — Multi-Currency Personal Finance Tracker</h1>
 
 <p align="center">
-  <strong>A modern, privacy-first personal finance application with real-time multi-currency support, investment portfolio tracking, debt reconciliation, intelligent recurring bills, OCR receipt scanning, and full universal audit logs.</strong>
-</p>
-
-<p align="center">
-  <a href="#overview">Overview</a> •
-  <a href="#key-features">Key Features</a> •
-  <a href="#tech-stack">Tech Stack</a> •
-  <a href="#database-architecture">Database Architecture</a> •
-  <a href="#getting-started">Getting Started</a> •
-  <a href="#project-structure">Project Structure</a> •
-  <a href="#license">License</a>
+  <strong>A privacy-first personal finance app built with Next.js and Supabase for multi-currency ledgers, budgeting, investments, net worth, recurring bills, split bills, receipt OCR, and auditable financial workflows.</strong>
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Next.js-16.3-black?style=flat-square&logo=next.js" alt="Next.js" />
   <img src="https://img.shields.io/badge/React-19.2-61DAFB?style=flat-square&logo=react" alt="React" />
-  <img src="https://img.shields.io/badge/TypeScript-5.0-blue?style=flat-square&logo=typescript" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript" alt="TypeScript" />
   <img src="https://img.shields.io/badge/TailwindCSS-4.0-38B2AC?style=flat-square&logo=tailwind-css" alt="Tailwind CSS" />
   <img src="https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=flat-square&logo=supabase" alt="Supabase" />
   <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License" />
@@ -31,181 +21,171 @@
 
 ## Overview
 
-**Pocketly** is an end-to-end financial companion engineered for individuals, freelancers, and global travelers who handle multiple bank accounts, e-wallets, and foreign currencies (IDR, USD, SGD, EUR, JPY, GBP, etc.).
+**Pocketly** is an end-to-end personal finance companion for managing cash and non-cash accounts, multi-currency transactions, budgets, debts, savings goals, recurring obligations, investments, and net worth in one place.
 
-Built with **Next.js 16 App Router**, **Supabase (PostgreSQL with Row Level Security & Triggers)**, and **Tailwind CSS 4**, Pocketly provides complete transparency over your financial life with bank-grade auditability and instant liquidity insights.
-
----
+The app uses **Next.js 16 App Router + Server Actions**, **Supabase (PostgreSQL, Auth, RLS, triggers, Storage)**, and **Tailwind CSS 4**, with domain logic for currency conversion, cached market pricing, receipt OCR, split-bill calculations, and auditability.
 
 ## Key Features
 
-### 1. Account & Multi-Wallet Liquidity
-* **Unlimited Wallets**: Manage Bank Accounts, Cash Wallets, E-Wallets, Credit Cards, and Investment RDNs.
-* **1-Tap Pinned Presets (Fast Logging)**: Pin frequent transactions (coffee, fuel, daily commute) to the dashboard for 1-second 1-tap recording.
-* **Auto-Balance Calculation & Physical Reconciliation**: Database triggers compute realtime current balances. Use the 1-click **Adjust Balance (Sesuaikan Saldo)** feature to seamlessly reconcile Pocketly with physical bank balances via the Discrepancy category.
-* **Inter-Account Transfers & Smart Natural Forex**: Move funds between wallets with pre-filled source accounts, natural human-friendly forex rates (`1 SGD = Rp 12,000` / `1 USD = Rp 16,200`), two-way real-time calculations, optional admin fees, and interactive mutation details.
+### Accounts, transactions, and transfers
+- **Multi-wallet accounts:** bank, cash, e-wallet, credit card, and investment accounts (IDR/USD/SGD support)
+- **Transaction ledger:** income/expense tracking with categories, tags, itemized breakdowns, filters, detail views, and per-transaction audit history
+- **Transfers:** inter-account transfers with exchange-rate handling, optional fees, and balance/accounting safeguards
+- **Balance tools:** current balance tracking, reconciliation/adjustment flows, and account mutation history
 
-### 2. Real-Time Multi-Currency Engine
-* **Native & Global Currencies**: Transact in IDR, USD, and SGD with precision floating-point conversions.
-* **Live Exchange Rates**: Automated currency conversions for global net-worth computation and consolidated reporting.
-* **Dynamic Display Switcher**: Toggle preferred base currency on the fly across the entire dashboard.
+### Budgeting, categories, and insights
+- **Categories:** default/system categories, category management, and canonicalization/dedupe logic
+- **Budgets:** monthly/category budgets with actuals, carryover behavior, and budget history
+- **Reports & analytics:** cashflow and breakdown views with charts, filters, and export/report outputs
+- **Global audit log:** filterable activity trail across modules plus transaction-level audit views
 
-### 3. Analytics & Interactive Cashflow Charts
-* **Income vs. Expense Analytics**: Visual breakdown of your monthly cash flow with interactive charts.
-* **Category Breakdown**: Granular spending insights with customizable icons and color palettes.
-* **Net Worth Progression**: Historical tracking of total assets and liabilities over customizable periods.
+### Debts, goals, and recurring obligations
+- **Debts & receivables:** track liabilities/receivables, payments, statuses, and linked ledger effects
+- **Savings goals:** targets, progress tracking, deposits/withdrawals, and goal-linked transactions
+- **Recurring transactions:** schedules (daily/weekly/monthly/quarterly/annual), due handling, manual processing, and payment history
+- **Due center:** consolidated view of upcoming/overdue recurring items, debts, and goal-related due items
 
-### 4. Investment Portfolio & Stock Trades
-* **Holdings Tracking**: Track equities, mutual funds, and crypto balances with average buy price and realized gains.
-* **Integrated Cash Accounts**: Buy/Sell transactions directly debited or credited to dedicated RDN / bank wallets.
-* **Floq Crypto Ledger**: Record decimal crypto quantities, manual per-unit prices, trading fees, realized P&L, and platform cash movements without treating asset purchases as consumption expenses.
-* **Fee-Aware Floq Withdrawals**: Enter the gross amount debited from Floq and the actual withdrawal fee; Pocketly records the net amount received by the destination account and the fee separately.
+### Investments and net worth
+- **Portfolio tracking:** stock, crypto, and ETF holdings/trades with settlement currencies, fees/cost basis, and holding synchronization
+- **Market-aware valuation:** cached asset prices and forex rates with market-vs-cost fallback where pricing is unavailable
+- **Net worth:** canonical net-worth computation, asset/liability breakdowns, and historical snapshots
+- **Background refresh:** cron/maintenance flows for forex rates, asset prices, recurring catch-up, and net-worth snapshots
 
-### 5. Savings Goals & Deposit Allocation
-* **Milestone Tracking**: Set target amounts and target dates for dream purchases, emergency funds, or vacations.
-* **Smart Allocations**: Deposit funds directly into savings goals with linked source wallets.
+### Split bill and receipt OCR
+- **Split bill module:** create/manage drafts and balanced bills, participants/contacts/avatars, items and assignments, charges (tax/service/discount/other), item discounts (fixed/percent), proportional/equal split modes, history/detail flows
+- **Receipt scanning:** Gemini-backed receipt extraction for transaction drafts and structured split-bill drafts (merchant/date/currency/items/charges/totals normalization)
+- **Record your share:** record or sync the user's portion into transactions with linkage-aware behavior
 
-### 6. Recurring Transactions & Due Date Center
-* **Automated Bill Reminders**: Never miss subscription renewals, utility bills, or salary disbursements.
-* **Flexible Schedules**: Daily, weekly, monthly, quarterly, and annual recurrences with auto-execution.
-* **Unified Due Center**: Compact banner and dedicated management view for upcoming bills and debt maturities.
-
-### 7. Debt & Receivable Management (Hutang & Piutang)
-* **Borrow & Lend Tracking**: Track who owes you money and who you owe with full installment logs.
-* **Currency-Matched Account Filter & Balance Sync**: Disbursement/receipt accounts automatically match the selected currency with optional immediate cash balance debiting/crediting.
-* **Compact & Flexible Interface**: Streamlined type switchers (`Payables` / `Receivables`) and versatile free-text notes.
-
-### 8. Intelligent Receipt OCR Scanner
-* **Camera / Upload Scanning**: Upload photos or PDFs of physical receipts.
-* **Auto-Extraction**: Automatically extracts merchant name, date, itemized list, and total amount.
-
-### 9. Universal Audit Trail & Privacy Mode
-* **Complete Audit Log**: Every creation, update, and deletion is recorded immutably via PostgreSQL triggers.
-* **Masking Privacy Mode**: Quick toggle to blur sensitive balance amounts in public spaces.
-
-### 10. Advanced Financial Reports & CSV Export
-* **Custom Date Ranges**: Filter by date range, account, type, or category.
-* **Instant Export**: Download structured CSV and financial summaries ready for spreadsheet analysis.
-
-### 11. Progressive Web App (PWA) & Mobile-First Experience
-* **Installable Application**: Install Pocketly directly onto iOS, Android, macOS, and Windows without app store downloads.
-* **Standalone Experience**: Runs full-screen with native app feel, smooth touch gestures, and instant launch.
-
----
-
-## Installation as PWA (iOS & Android)
-
-Pocketly is built as a Progressive Web App (PWA), meaning you can install it directly to your home screen with a standalone app experience:
-
-### iOS (iPhone & iPad)
-1. Open your deployed Pocketly URL in **Safari**.
-2. Tap the **Share** button (the square with an arrow pointing up at the bottom toolbar).
-3. Scroll down and tap **Add to Home Screen** (`Tambahkan ke Layar Utama`).
-4. Tap **Add** in the top right corner. Pocketly will now appear on your Home Screen like a native app.
-
-### Android
-1. Open your deployed Pocketly URL in **Google Chrome**.
-2. Tap the **three dots menu** (`⋮`) in the top right corner (or tap the **Install app** prompt banner if shown).
-3. Tap **Install app** or **Add to Home screen** (`Instal aplikasi` / `Tambahkan ke layar utama`).
-4. Follow the prompt to confirm installation. Pocketly will be added to your app drawer and home screen.
-
-### Desktop (Chrome / Edge / Brave)
-1. Open the website in your browser.
-2. Click the **Install Pocketly** icon in the address bar (or browser menu -> Apps -> Install Pocketly).
-
----
+### Experience and privacy
+- **PWA:** installable standalone experience (manifest, icons, mobile-first UI)
+- **i18n:** Indonesian and English language support
+- **Privacy mode:** mask sensitive currency values in the UI
+- **Quick actions:** quick-add flows, pinned templates, global search/navigation aids, and in-app guide/settings
 
 ## Tech Stack
 
 | Layer | Technologies |
-| :--- | :--- |
-| **Framework** | Next.js 16 (App Router, Server Actions, React Server Components) |
-| **Language** | TypeScript 5 (Strict Mode) |
-| **Styling & UI** | Tailwind CSS 4, Lucide React Icons, Radix UI Primitives |
-| **Database & Auth** | Supabase (PostgreSQL, Row Level Security, Triggers & PL/pgSQL) |
+| --- | --- |
+| **Framework** | Next.js 16.3 (App Router, Server Actions, Route Handlers) |
+| **UI** | React 19.2, Tailwind CSS 4, Radix UI, Lucide React, cmdk, sonner, Recharts |
+| **Language** | TypeScript 5 (strict) |
+| **Backend** | Supabase (PostgreSQL, Auth, RLS, triggers/functions, Storage) |
 | **Validation** | Zod 4 |
-| **OCR & AI** | Tesseract.js 7 / Google Gemini Vision API |
-
----
+| **OCR / AI** | Gemini Vision-based scan flows (`src/lib/ocr/*`, scan actions), Tesseract.js dependency available |
+| **Exports / docs** | jsPDF, jspdf-autotable, html2canvas, JSZip, CSV export |
+| **Utilities** | date-fns, DiceBear avatars, Vercel Analytics |
 
 ## Project Structure
 
-```
+```text
 pocketly/
-├── public/                     # Static assets, logos, and report templates
-├── src/
-│   ├── actions/                # Next.js Server Actions (Transactions, Accounts, Goals, etc.)
-│   ├── app/                    # Next.js 16 App Router pages & layouts
-│   │   ├── (auth)/             # Authentication routes (Login, Signup, Reset Password)
-│   │   └── (main)/             # Main application views (Dashboard, Accounts, Analytics, etc.)
-│   ├── components/             # Reusable UI components & feature modules
-│   │   ├── accounts/           # Account management & transfer modals
-│   │   ├── dashboard/          # Summary cards, charts, and due banners
-│   │   ├── debts/              # Debt & receivable views and payment sheets
-│   │   ├── goals/              # Savings goals tracker and deposit dialogs
-│   │   ├── investments/        # Stock holdings and trade forms
-│   │   ├── layout/             # Top navbar, bottom navigation, and quick-add sheet
-│   │   ├── recurring/          # Recurring transaction modals and banners
-│   │   ├── reports/            # Financial reporting and CSV export
-│   │   └── transactions/       # Transaction lists, cards, and filter sheets
-│   ├── lib/                    # Core utilities, Supabase client, i18n, validations
-│   └── types/                  # Database schemas and TypeScript type definitions
-├── supabase/
-│   └── migrations/             # Full PostgreSQL schema migrations & trigger scripts
-└── package.json
+├─ public/                       # Static assets (logos, icons, etc.)
+├─ src/
+│  ├─ actions/                   # Server Actions (domain queries/mutations)
+│  ├─ app/                       # App Router routes, layouts, loading UI, API routes
+│  │  ├─ (auth)/                 # Login/register routes
+│  │  ├─ (main)/                 # Authenticated app routes (dashboard, accounts, transactions, split-bill, net-worth, etc.)
+│  │  └─ api/cron/              # Scheduled/maintenance route handlers
+│  ├─ components/                # Feature UI modules, layout, shared ui primitives, pwa
+│  ├─ lib/                       # Supabase clients, i18n, utils, validations, net-worth, OCR, recurring, storage, context
+│  ├─ types/                     # DB and domain types
+│  └─ proxy.ts                   # Request proxy -> session/auth middleware helper
+├─ supabase/
+│  ├─ migrations/                # Ordered SQL migrations (001..027)
+│  └─ functions/                 # Edge Functions (e.g. fetch-exchange-rate)
+├─ architecture.md               # Architecture overview
+├─ agents.md                     # Repository/agent contributor guidance
+└─ package.json
 ```
 
----
+> For deeper implementation details (routing, actions, domain flows, schema evolution, cron/OCR/net-worth behavior), see [`architecture.md`](architecture.md).
 
 ## Getting Started
 
 ### Prerequisites
-* **Node.js** `>= 18.18.0`
-* **npm**, **pnpm**, or **yarn**
-* A free Supabase project
+- **Node.js** `>= 18.18.0`
+- **npm** (or pnpm/yarn)
+- A **Supabase** project
 
-### 1. Clone Repository
+### 1. Clone and install
 ```bash
-git clone https://github.com/GabrielNathanael/pocketly-financial-tracker.git
-cd pocketly-financial-tracker
-```
-
-### 2. Install Dependencies
-```bash
+git clone <your-repo-url>
+cd pocketly
 npm install
 ```
 
-### 3. Setup Environment Variables
-Create a `.env.local` file in the project root:
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+### 2. Configure environment variables
+Create `.env.local` in the project root:
 
-# Optional for OCR receipt scanning
+```env
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-or-publishable-key
+
+# Server-only / privileged operations (admin client, cron, maintenance)
+SUPABASE_SECRET_KEY=your-service-role-or-secret-key
+# or legacy name used by some code paths:
+# SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# Receipt / split-bill OCR (Gemini)
 GEMINI_API_KEY=your-gemini-api-key
+
+# Cron protection (recommended in deployed environments)
+CRON_SECRET=your-cron-secret
 ```
 
-### 4. Run Database Migrations
-Execute the SQL migrations found in `supabase/migrations/` in order within your Supabase SQL Editor:
-1. `001_initial_schema.sql`
-2. `002_multi_currency_support.sql`
-3. `003_multi_currency_budgets.sql`
-4. `004_universal_audit_triggers.sql`
-5. `005_fix_universal_audit_trigger.sql`
-6. `006_recurring_transactions.sql`
-7. `007_savings_goals.sql`
-8. `008_transaction_tags.sql`
-9. `009_fix_audit_trigger_user_id.sql`
-10. `010_investments_support.sql`
+> Notes:
+> - Some OCR/config features depend on Gemini credentials; scanning behavior and limits depend on provider availability.
+> - `SUPABASE_SECRET_KEY` / `SUPABASE_SERVICE_ROLE_KEY` is required for admin/cron operations (e.g. price/rate refresh, snapshots, recurring catch-up).
 
-### 5. Launch Development Server
+### 3. Apply database migrations
+Run the SQL files in `supabase/migrations/` **in numeric order** against your Supabase/Postgres database.
+
+Current migration range: **`001_initial_schema.sql` through `027_split_bill_item_discount_mode.sql`**.
+
+Key milestones include:
+- `001`–`005`: core schema, multi-currency/budget updates, audit triggers/fixes
+- `006`–`011`: recurring transactions, savings goals/deposits, tags, investments (stocks), pinned templates
+- `012`–`019`: crypto/ETF support, fee/settlement/linkage fields, ledger precision and balance/audit fixes
+- `020`–`023`: net worth snapshots, asset prices, transfer guards, settlement currency
+- `024`–`027`: split bill domain (tables/RLS/storage), avatars/items enrichments, transaction items, split-bill discount modes
+
+### 4. Run the app
 ```bash
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000).
 
----
+## Scripts
+
+```bash
+npm run dev    # Start development server
+npm run build  # Production build
+npm run start  # Start production server
+npm run lint   # Run ESLint
+```
+
+## Background jobs (cron)
+
+The app includes route handlers for scheduled maintenance:
+- `/api/cron/daily`: refreshes forex rates and asset prices, performs recurring auto-processing catch-up, and writes net-worth snapshots
+- `/api/cron/recurring`: performs recurring auto-processing catch-up
+
+`vercel.json` schedules `/api/cron/daily` (`0 17 * * *` UTC, region `sin1`). Protect cron endpoints with `CRON_SECRET` and configure required server-side Supabase credentials in deployed environments.
+
+## PWA install
+
+Pocketly ships as a PWA (manifest + standalone experience):
+
+- **iOS (Safari):** Share → Add to Home Screen
+- **Android (Chrome):** Menu → Install app / Add to Home screen
+- **Desktop:** Browser install prompt/menu (when supported)
+
+## Notes
+
+- This is an actively evolving codebase; feature behavior is defined by the current implementation in `src/`, `supabase/`, and migrations.
+- Financial operations are protected by a combination of app-level guards and database RLS/triggers—preserve these invariants when modifying flows.
+- See [`architecture.md`](architecture.md) and [`agents.md`](agents.md) for contributor/agent guidance and system details.
 
 ## License
 

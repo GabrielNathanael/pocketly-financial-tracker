@@ -583,7 +583,7 @@ export function PortfolioInvestmentView({
           id: `crypto-${tr.id}`,
           date: tr.trade_date,
           type: i18n.feesCrypto,
-          reference: `${tr.symbol} Â· ${tr.type === "buy" ? i18n.buy : i18n.sell}`,
+          reference: `${tr.symbol} · ${tr.type === "buy" ? i18n.buy : i18n.sell}`,
           amount: toIdr(
             Number(tr.fee_amount),
             tr.fee_currency || tradeCurrency(tr, "crypto"),
@@ -595,7 +595,7 @@ export function PortfolioInvestmentView({
           id: `etf-${tr.id}`,
           date: tr.trade_date,
           type: isEn ? "US ETF broker fee" : "Fee broker ETF AS",
-          reference: `${tr.ticker} Â· ${tr.type === "buy" ? i18n.buy : i18n.sell}`,
+          reference: `${tr.ticker} · ${tr.type === "buy" ? i18n.buy : i18n.sell}`,
           amount: toIdr(Number(tr.fee_amount), tradeCurrency(tr, "etf")),
         })),
       ...reportTransfers
@@ -606,7 +606,7 @@ export function PortfolioInvestmentView({
           type: i18n.feesTransfer,
           reference:
             tr.description ||
-            `${tr.from_account?.name || "â€”"} â†’ ${tr.to_account?.name || "â€”"}`,
+            `${tr.from_account?.name || "—"} → ${tr.to_account?.name || "—"}`,
           amount: toIdr(
             Number(tr.fee_amount),
             (tr as { from_currency?: string | null; fee_currency?: string | null }).from_currency ||
@@ -634,7 +634,7 @@ export function PortfolioInvestmentView({
     };
   }, [reportStockTrades, reportCryptoTrades, reportEtfTrades, reportTransfers, i18n, isEn, toIdr]);
 
-  // Donut chart data â€” warna paten per jenis aset (biar ETF & Kas beda,
+  // Donut chart data — warna paten per jenis aset (biar ETF & Kas beda,
   // dan nggak geser kalau salah satu nilainya 0)
   const allocationData = useMemo(
     () =>
@@ -647,7 +647,7 @@ export function PortfolioInvestmentView({
     [cashValue, stockValue, cryptoValue, etfValue, isEn],
   );
 
-  // Bar chart data â€” P&L per aset (dari reportingStats yang sudah ada)
+  // Bar chart data — P&L per aset (dari reportingStats yang sudah ada)
   const [showAllPnl, setShowAllPnl] = useState(false);
   const pnlBarDataFull = useMemo(
     () =>
@@ -667,7 +667,7 @@ export function PortfolioInvestmentView({
     [pnlBarDataFull, showAllPnl],
   );
 
-  // Line chart â€” kumulatif P&L over time (ikut filter periode), normalized to IDR
+  // Line chart — kumulatif P&L over time (ikut filter periode), normalized to IDR
   const cumulativePnlData = useMemo(() => {
     const dailyPnl = new Map<string, number>();
     const tradeCurrency = (
@@ -1595,7 +1595,7 @@ export function PortfolioInvestmentView({
                             },
                           )}
                           <span className="block">
-                            {activity.account?.name || "Platform"} Â· {settlementCurrency}
+                            {activity.account?.name || "Platform"} · {settlementCurrency}
                           </span>
                         </p>
                       </div>
@@ -1947,10 +1947,10 @@ export function PortfolioInvestmentView({
             </div>
           </div>
 
-          {/* Charts Row â€” stretch aja biar tinggi sama,
+          {/* Charts Row — stretch aja biar tinggi sama,
               whitespace di P&L dipindah ke atas, chart nempel bawah */}
           <div className="grid gap-3 sm:grid-cols-2">
-            {/* Donut â€” Alokasi Portofolio */}
+            {/* Donut — Alokasi Portofolio */}
             <div className="flex flex-col gap-3 rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-2xs dark:border-[#27272A] dark:bg-[#121215]">
               <h3 className="text-xs font-black uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
                 {isEn ? "Portfolio Allocation" : "Alokasi Portofolio"}
@@ -2012,18 +2012,18 @@ export function PortfolioInvestmentView({
                         <span className="font-mono text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
                           {totalPortfolioValue > 0
                             ? `${Math.round((d.value / totalPortfolioValue) * 100)}%`
-                            : "â€”"}
+                            : "—"}
                         </span>
                       </div>
                     ))}
                   </div>
                 </>
               ) : (
-                <p className="text-center text-xs text-[#94A3B8] py-8">â€”</p>
+                <p className="text-center text-xs text-[#94A3B8] py-8">—</p>
               )}
             </div>
 
-            {/* Bar Chart â€” P&L per Aset */}
+            {/* Bar Chart — P&L per Aset */}
             <div className="flex flex-col gap-3 rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-2xs dark:border-[#27272A] dark:bg-[#121215]">
               <h3 className="text-xs font-black uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
                 {isEn ? "P&L by Asset" : "P&L per Aset"}
@@ -2116,7 +2116,7 @@ export function PortfolioInvestmentView({
             </div>
           </div>
 
-          {/* Line Chart â€” Kumulatif P&L */}
+          {/* Line Chart — Kumulatif P&L */}
           {cumulativePnlData.length > 0 && (
             <div className="flex flex-col gap-3 rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-2xs dark:border-[#27272A] dark:bg-[#121215]">
               <h3 className="text-xs font-black uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
@@ -2249,7 +2249,7 @@ export function PortfolioInvestmentView({
                             </span>
                           </div>
                           <p className="truncate text-[10px] text-[#64748B] dark:text-[#94A3B8]">
-                            {asset.tradesCount} {isEn ? "sales" : "penjualan"} Â·{" "}
+                            {asset.tradesCount} {isEn ? "sales" : "penjualan"} ·{" "}
                             {asset.winCount} {isEn ? "wins" : "cuan"}
                           </p>
                         </div>
@@ -2349,10 +2349,10 @@ export function PortfolioInvestmentView({
         title={
           modal === "edit"
             ? assetKind === "crypto"
-              ? `${i18n.editCryptoTrade || "Edit Kripto"} Â· ${editTradeType === "buy" ? i18n.buy : i18n.sell}`
+              ? `${i18n.editCryptoTrade || "Edit Kripto"} · ${editTradeType === "buy" ? i18n.buy : i18n.sell}`
               : assetKind === "etf"
-                ? `${i18n.etf.editTitle} Â· ${editTradeType === "buy" ? i18n.buy : i18n.sell}`
-                : `${i18n.modalEditTradeTitle} Â· ${editTradeType === "buy" ? i18n.buy : i18n.sell}`
+                ? `${i18n.etf.editTitle} · ${editTradeType === "buy" ? i18n.buy : i18n.sell}`
+                : `${i18n.modalEditTradeTitle} · ${editTradeType === "buy" ? i18n.buy : i18n.sell}`
             : modal === "buy"
               ? assetKind === "stock"
                 ? i18n.modalBuyTitle
@@ -2410,7 +2410,7 @@ export function PortfolioInvestmentView({
 
           {modal === "buy" && selectedId && (
             <div className="rounded-xl bg-emerald-50 p-2.5 text-[11px] font-bold text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200">
-              {assetKind === "stock" ? ticker || i18n.stock : symbol || "BTC"} Â·{" "}
+              {assetKind === "stock" ? ticker || i18n.stock : symbol || "BTC"} ·{" "}
               {i18n.addPosition}
             </div>
           )}
@@ -2425,7 +2425,7 @@ export function PortfolioInvestmentView({
             <SelectContent>
               {investmentAccounts.map((account) => (
                 <SelectItem key={account.id} value={account.id}>
-                  {account.name} ({account.currency}) Â·{" "}
+                  {account.name} ({account.currency}) ·{" "}
                   {fmt(account.current_balance, account.currency)}
                 </SelectItem>
               ))}
@@ -2915,7 +2915,7 @@ function PercentageSlider({
           />
         ))}
 
-        {/* Native range input â€” sits on top, invisible, handles drag */}
+        {/* Native range input — sits on top, invisible, handles drag */}
         <input
           type="range"
           min={0}
@@ -2962,7 +2962,7 @@ function PercentageSlider({
 
 function formatCryptoQuantity(value: number | string): string {
   const numericValue = Number(value);
-  if (!Number.isFinite(numericValue)) return "â€”";
+  if (!Number.isFinite(numericValue)) return "—";
   return numericValue.toFixed(8).replace(/\.?0+$/, "");
 }
 
@@ -3068,13 +3068,13 @@ function EtfCard({
         </div>
         <div className="flex items-center justify-between py-2">
           <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">{isEn ? "Avg Price / Share" : "Harga Rata-rata / Unit"}</span>
-          <span className="font-mono text-xs font-bold tnum">{Number(holding.avg_buy_price) > 0 ? `${formatCurrency(Number(holding.avg_buy_price), settlementCurrency)} (${settlementCurrency})` : "â€”"}</span>
+          <span className="font-mono text-xs font-bold tnum">{Number(holding.avg_buy_price) > 0 ? `${formatCurrency(Number(holding.avg_buy_price), settlementCurrency)} (${settlementCurrency})` : "—"}</span>
         </div>
         {(isRefreshing || quote) && (
           <div className="flex items-center justify-between py-2">
             <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">
               {isEn ? "Market price" : "Harga pasar"}
-              {!isRefreshing && marketDate ? ` Â· ${marketDate}` : ""}
+              {!isRefreshing && marketDate ? ` · ${marketDate}` : ""}
             </span>
             {isRefreshing ? (
               <span className="inline-block h-3.5 w-20 animate-pulse rounded bg-slate-200 dark:bg-[#27272A]" />
@@ -3171,13 +3171,13 @@ function StockCard({
         </div>
         <div className="flex items-center justify-between py-2">
           <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">{isEn ? "Avg Price / Share" : "Harga Rata-rata / Lembar"}</span>
-          <span className="font-mono text-xs font-bold tnum">{Number(holding.avg_buy_price) > 0 ? `${formatCurrency(Number(holding.avg_buy_price), settlementCurrency)} (${settlementCurrency}) / lbr` : "â€”"}</span>
+          <span className="font-mono text-xs font-bold tnum">{Number(holding.avg_buy_price) > 0 ? `${formatCurrency(Number(holding.avg_buy_price), settlementCurrency)} (${settlementCurrency}) / lbr` : "—"}</span>
         </div>
         {(isRefreshing || quote) && (
           <div className="flex items-center justify-between py-2">
             <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">
               {isEn ? "Market price" : "Harga pasar"}
-              {!isRefreshing && marketDate ? ` Â· ${marketDate}` : ""}
+              {!isRefreshing && marketDate ? ` · ${marketDate}` : ""}
             </span>
             {isRefreshing ? (
               <span className="inline-block h-3.5 w-20 animate-pulse rounded bg-slate-200 dark:bg-[#27272A]" />
@@ -3272,13 +3272,13 @@ function CryptoCard({
         </div>
         <div className="flex items-center justify-between py-2">
           <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">{isEn ? `Avg Buy Price / ${holding.symbol}` : `Harga Rata-rata / ${holding.symbol}`}</span>
-          <span className="font-mono text-xs font-bold tnum">{Number(holding.average_buy_price) > 0 ? `${formatCurrency(Number(holding.average_buy_price), settlementCurrency)} (${settlementCurrency})` : "â€”"}</span>
+          <span className="font-mono text-xs font-bold tnum">{Number(holding.average_buy_price) > 0 ? `${formatCurrency(Number(holding.average_buy_price), settlementCurrency)} (${settlementCurrency})` : "—"}</span>
         </div>
         {(isRefreshing || quote) && (
           <div className="flex items-center justify-between py-2">
             <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">
               {isEn ? "Market price" : "Harga pasar"}
-              {!isRefreshing && marketDate ? ` Â· ${marketDate}` : ""}
+              {!isRefreshing && marketDate ? ` · ${marketDate}` : ""}
             </span>
             {isRefreshing ? (
               <span className="inline-block h-3.5 w-20 animate-pulse rounded bg-slate-200 dark:bg-[#27272A]" />

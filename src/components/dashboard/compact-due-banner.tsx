@@ -112,7 +112,7 @@ export function CompactDueBanner({
     <div
       className={
         totalUrgentCount > 0
-          ? 'p-3.5 sm:p-4 rounded-2xl bg-linear-to-r from-rose-500/10 via-amber-500/10 to-transparent border border-rose-500/30 dark:border-rose-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'
+          ? 'p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-[#121215] border border-rose-500/30 dark:border-rose-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'
           : 'p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'
       }
     >
@@ -120,7 +120,7 @@ export function CompactDueBanner({
         <div
           className={
             totalUrgentCount > 0
-              ? 'w-9 h-9 rounded-xl bg-rose-500 text-white flex items-center justify-center shrink-0 shadow-sm animate-pulse'
+              ? 'w-9 h-9 rounded-xl bg-rose-500/15 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0'
               : 'w-9 h-9 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0'
           }
         >
