@@ -43,20 +43,20 @@ export function UndoSnackbar() {
       className="fixed z-50 bottom-20 md:bottom-6 left-4 right-4 md:left-1/2 md:-translate-x-1/2 md:w-auto md:min-w-85 md:max-w-md pointer-events-none"
     >
       <div
-        className={`pointer-events-auto relative overflow-hidden rounded-2xl border border-white/10 dark:border-[#27272A] bg-[#121316]/95 dark:bg-[#09090B]/95 text-white shadow-[0_20px_50px_rgba(0,0,0,0.4)] backdrop-blur-xl px-4 py-3 flex items-center justify-between gap-3.5 ${
+        className={`pointer-events-auto relative overflow-hidden rounded-2xl border border-border-inverse/40 bg-surface-inverse/95 text-foreground-inverse shadow-[0_20px_50px_rgba(0,0,0,0.4)] backdrop-blur-xl px-4 py-3 flex items-center justify-between gap-3.5 ${
           isClosing ? 'animate-pop-out' : 'animate-pop-in'
         }`}
       >
         {/* Left Icon & Message */}
         <div className="flex items-center gap-2.5 min-w-0 pr-1">
-          <div className="w-7 h-7 rounded-lg bg-white/5 text-zinc-300 border border-white/10 flex items-center justify-center shrink-0">
+          <div className="w-7 h-7 rounded-lg bg-foreground-inverse/10 text-foreground-inverse/80 border border-foreground-inverse/20 flex items-center justify-center shrink-0">
             <Trash2 className="w-3.5 h-3.5" />
           </div>
           <div className="flex flex-col min-w-0">
-            <span className="text-xs font-semibold text-zinc-100 truncate">
+            <span className="text-xs font-semibold text-foreground-inverse truncate">
               {pendingAction.title || t.undo.transactionDeleted}
             </span>
-            <span className="text-[10px] text-zinc-400 truncate">
+            <span className="text-[10px] text-foreground-inverse/70 truncate">
               {t.undo.transactionDeleted}
             </span>
           </div>
@@ -67,7 +67,7 @@ export function UndoSnackbar() {
           <button
             type="button"
             onClick={handleUndo}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-white text-zinc-900 hover:bg-zinc-100 active:scale-95 transition-all shadow-sm cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-surface text-foreground hover:bg-canvas active:scale-95 transition-all shadow-sm cursor-pointer"
           >
             <Undo2 className="w-3.5 h-3.5 stroke-[2.5]" />
             <span>{t.undo.undoBtn}</span>
@@ -77,17 +77,17 @@ export function UndoSnackbar() {
             type="button"
             onClick={handleDismiss}
             aria-label="Close"
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 active:scale-90 transition-all cursor-pointer"
+            className="p-1.5 rounded-lg text-foreground-inverse/70 hover:text-foreground-inverse hover:bg-foreground-inverse/10 active:scale-90 transition-all cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
 
         {/* Linear Countdown Progress Bar */}
-        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white/5 overflow-hidden">
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-foreground-inverse/10 overflow-hidden">
           <div
             key={progressKey}
-            className="h-full bg-white/40 origin-left"
+            className="h-full bg-foreground-inverse/50 origin-left"
             style={{
               animation: 'shrinkWidth 5s linear forwards',
             }}

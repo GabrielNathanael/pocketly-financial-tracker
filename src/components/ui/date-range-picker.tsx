@@ -162,12 +162,12 @@ export function DateRangePicker({
         <button
           type="button"
           className={cn(
-            'flex items-center justify-between gap-2 px-3 py-1.5 sm:py-2 rounded-lg text-xs font-semibold bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] hover:bg-[#F8F9FA] dark:hover:bg-[#1A1A20] focus:outline-none focus:border-[#0F172A] dark:focus:border-white transition-colors cursor-pointer w-full text-left',
+            'flex items-center justify-between gap-2 px-3 py-1.5 sm:py-2 rounded-lg text-xs font-semibold bg-surface border border-border text-foreground hover:bg-canvas dark:hover:bg-surface-subtle focus:outline-none focus:border-border-strong transition-colors cursor-pointer w-full text-left',
             className
           )}
         >
           <div className="flex items-center gap-2 truncate">
-            <CalendarIcon className="w-3.5 h-3.5 text-[#94A3B8] shrink-0" />
+            <CalendarIcon className="w-3.5 h-3.5 text-foreground-muted shrink-0" />
             <span className={cn('truncate', (startDate || endDate) && 'font-mono')}>
               {formattedLabel}
             </span>
@@ -178,7 +178,7 @@ export function DateRangePicker({
               role="button"
               tabIndex={0}
               onClick={handleClear}
-              className="p-0.5 rounded hover:bg-[#E2E8F0] dark:hover:bg-[#27272A] text-[#94A3B8] hover:text-[#E11D48] transition-colors cursor-pointer shrink-0"
+              className="p-0.5 rounded hover:bg-accent text-foreground-muted hover:text-destructive transition-colors cursor-pointer shrink-0"
               title="Reset"
             >
               <X className="w-3 h-3" />
@@ -191,35 +191,35 @@ export function DateRangePicker({
         <PopoverPrimitive.Content
           align="start"
           sideOffset={4}
-          className="z-50 w-72 p-3 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] shadow-xl animate-in fade-in-0 zoom-in-95"
+          className="z-50 w-72 p-3 rounded-xl bg-surface border border-border text-foreground shadow-xl animate-in fade-in-0 zoom-in-95"
         >
           {/* Quick Preset Chips */}
-          <div className="grid grid-cols-2 gap-1.5 mb-2.5 pb-2 border-b border-[#E5E7EB] dark:border-[#27272A]">
+          <div className="grid grid-cols-2 gap-1.5 mb-2.5 pb-2 border-b border-border">
             <button
               type="button"
               onClick={() => applyPreset('today')}
-              className="px-2 py-1 rounded-md text-[11px] font-semibold bg-[#F1F3F5] dark:bg-[#1A1A20] hover:bg-[#E2E8F0] dark:hover:bg-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] transition-colors cursor-pointer text-center"
+              className="px-2 py-1 rounded-md text-[11px] font-semibold bg-secondary hover:bg-accent text-foreground transition-colors cursor-pointer text-center"
             >
               {t.common.today}
             </button>
             <button
               type="button"
               onClick={() => applyPreset('this_month')}
-              className="px-2 py-1 rounded-md text-[11px] font-semibold bg-[#F1F3F5] dark:bg-[#1A1A20] hover:bg-[#E2E8F0] dark:hover:bg-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] transition-colors cursor-pointer text-center"
+              className="px-2 py-1 rounded-md text-[11px] font-semibold bg-secondary hover:bg-accent text-foreground transition-colors cursor-pointer text-center"
             >
               {t.dashboard.periodThisMonth}
             </button>
             <button
               type="button"
               onClick={() => applyPreset('last_month')}
-              className="px-2 py-1 rounded-md text-[11px] font-semibold bg-[#F1F3F5] dark:bg-[#1A1A20] hover:bg-[#E2E8F0] dark:hover:bg-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] transition-colors cursor-pointer text-center"
+              className="px-2 py-1 rounded-md text-[11px] font-semibold bg-secondary hover:bg-accent text-foreground transition-colors cursor-pointer text-center"
             >
               {t.dashboard.periodLastMonth}
             </button>
             <button
               type="button"
               onClick={() => applyPreset('this_year')}
-              className="px-2 py-1 rounded-md text-[11px] font-semibold bg-[#F1F3F5] dark:bg-[#1A1A20] hover:bg-[#E2E8F0] dark:hover:bg-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] transition-colors cursor-pointer text-center"
+              className="px-2 py-1 rounded-md text-[11px] font-semibold bg-secondary hover:bg-accent text-foreground transition-colors cursor-pointer text-center"
             >
               {t.dashboard.periodThisYear}
             </button>
@@ -230,7 +230,7 @@ export function DateRangePicker({
             <button
               type="button"
               onClick={() => setNavMonth(subMonths(navMonth, 1))}
-              className="p-1 rounded-md hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] transition-colors cursor-pointer"
+              className="p-1 rounded-md hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -242,14 +242,14 @@ export function DateRangePicker({
             <button
               type="button"
               onClick={() => setNavMonth(addMonths(navMonth, 1))}
-              className="p-1 rounded-md hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] transition-colors cursor-pointer"
+              className="p-1 rounded-md hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
 
           {/* Day of Week Headers */}
-          <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-[#94A3B8] mb-1">
+          <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-foreground-muted mb-1">
             {(language === 'en'
               ? ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
               : ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
@@ -296,10 +296,10 @@ export function DateRangePicker({
                   className={cn(
                     'h-7.5 w-full rounded-md text-xs font-mono flex items-center justify-center transition-colors cursor-pointer',
                     (isStart || isEnd)
-                      ? 'bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A] font-bold shadow-2xs'
+                      ? 'bg-primary text-primary-foreground font-bold shadow-2xs'
                       : isInRange
-                      ? 'bg-[#F1F3F5] dark:bg-[#27272A] text-[#0F172A] dark:text-[#FAFAFA]'
-                      : 'hover:bg-[#F8F9FA] dark:hover:bg-[#1A1A20] text-[#0F172A] dark:text-[#F8FAFC]'
+                      ? 'bg-secondary dark:bg-accent text-foreground'
+                      : 'hover:bg-canvas dark:hover:bg-surface-subtle text-foreground'
                   )}
                 >
                   {format(day, 'd')}
@@ -309,7 +309,7 @@ export function DateRangePicker({
           </div>
 
           {selectingStart && (
-            <div className="mt-2 pt-2 border-t border-[#E5E7EB] dark:border-[#27272A] text-center text-[10px] text-[#64748B] dark:text-[#94A3B8]">
+            <div className="mt-2 pt-2 border-t border-border text-center text-[10px] text-muted-foreground dark:text-foreground-muted">
               {language === 'en' ? 'Select end date...' : 'Pilih tanggal selesai...'}
             </div>
           )}

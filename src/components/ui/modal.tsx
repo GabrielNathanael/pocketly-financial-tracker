@@ -47,35 +47,35 @@ export function Modal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Crisp Solid Backdrop */}
       <div
-        className="fixed inset-0 bg-[#0F172A]/70 dark:bg-black/80 transition-opacity"
+        className="fixed inset-0 bg-overlay transition-opacity"
         onClick={onClose}
       />
 
       {/* Modal Box */}
       <div
         className={cn(
-          'relative w-full bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] rounded-xl shadow-2xl z-10 overflow-hidden flex flex-col max-h-[90vh]',
+          'relative w-full bg-surface border border-border rounded-xl shadow-2xl z-10 overflow-hidden flex flex-col max-h-[90vh]',
           maxWidths[maxWidth],
           className
         )}
       >
         {(title || description) && (
-          <div className="flex items-center justify-between px-5 py-4 border-b border-[#E5E7EB] dark:border-[#27272A]">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border">
             <div>
               {title && (
-                <h3 className="font-bold text-base text-[#0F172A] dark:text-[#F8FAFC]">
+                <h3 className="font-bold text-base text-foreground">
                   {title}
                 </h3>
               )}
               {description && (
-                <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   {description}
                 </p>
               )}
             </div>
             <button
               onClick={onClose}
-              className="text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#F8FAFC] p-1 rounded-md hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] transition-colors"
+              className="text-foreground-muted hover:text-foreground p-1 rounded-md hover:bg-secondary transition-colors"
             >
               <X className="w-4 h-4" />
             </button>

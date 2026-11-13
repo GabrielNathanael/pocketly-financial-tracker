@@ -162,7 +162,6 @@ export async function seedUserDefaultCategories(userId?: string) {
         name: c.name,
         type: c.type as TransactionType,
         icon: c.icon,
-        color: c.color,
         is_default: true,
       })),
       ...DEFAULT_INCOME_CATEGORIES.map((c) => ({
@@ -170,7 +169,6 @@ export async function seedUserDefaultCategories(userId?: string) {
         name: c.name,
         type: c.type as TransactionType,
         icon: c.icon,
-        color: c.color,
         is_default: true,
       })),
     ];
@@ -194,7 +192,6 @@ export async function seedUserDefaultCategories(userId?: string) {
     name: string;
     type: TransactionType;
     icon: string;
-    color: string;
     is_default: boolean;
   }> = [];
   if (!checkHasCategory("Discrepancy", "expense")) {
@@ -203,7 +200,6 @@ export async function seedUserDefaultCategories(userId?: string) {
       name: "Discrepancy",
       type: "expense",
       icon: "Scale",
-      color: "#64748B",
       is_default: true,
     });
   }
@@ -213,7 +209,6 @@ export async function seedUserDefaultCategories(userId?: string) {
       name: "Discrepancy",
       type: "income",
       icon: "Scale",
-      color: "#64748B",
       is_default: true,
     });
   }
@@ -223,7 +218,6 @@ export async function seedUserDefaultCategories(userId?: string) {
       name: "Loan & Debt",
       type: "expense",
       icon: "HandCoins",
-      color: "#F97316",
       is_default: true,
     });
   }
@@ -233,7 +227,6 @@ export async function seedUserDefaultCategories(userId?: string) {
       name: "Loan & Debt",
       type: "income",
       icon: "HandCoins",
-      color: "#F97316",
       is_default: true,
     });
   }
@@ -243,7 +236,6 @@ export async function seedUserDefaultCategories(userId?: string) {
       name: "Transfer Fee",
       type: "expense",
       icon: "Send",
-      color: "#6366F1",
       is_default: true,
     });
   }
@@ -253,7 +245,6 @@ export async function seedUserDefaultCategories(userId?: string) {
       name: "Savings",
       type: "expense",
       icon: "PiggyBank",
-      color: "#0D9488",
       is_default: true,
     });
   }
@@ -263,7 +254,6 @@ export async function seedUserDefaultCategories(userId?: string) {
       name: "Savings",
       type: "income",
       icon: "PiggyBank",
-      color: "#0D9488",
       is_default: true,
     });
   }
@@ -273,7 +263,6 @@ export async function seedUserDefaultCategories(userId?: string) {
       name: "Stamp Duty",
       type: "expense",
       icon: "Stamp",
-      color: "#8B5CF6",
       is_default: true,
     });
   }
@@ -290,7 +279,6 @@ export async function createCategory(formData: {
   name: string;
   type: TransactionType;
   icon: string;
-  color?: string;
 }) {
   const supabase = await createServerSupabaseClient();
   const {
@@ -308,7 +296,6 @@ export async function createCategory(formData: {
       name: formData.name.trim(),
       type: formData.type,
       icon: formData.icon || "Tag",
-      color: formData.color || "#3B82F6",
       is_default: false,
     })
     .select()
@@ -329,7 +316,6 @@ export async function updateCategory(
     name: string;
     type: TransactionType;
     icon: string;
-    color?: string;
   },
 ) {
   const supabase = await createServerSupabaseClient();
@@ -357,7 +343,6 @@ export async function updateCategory(
       name: finalName,
       type: formData.type,
       icon: formData.icon,
-      color: formData.color,
     })
     .eq("id", id);
 

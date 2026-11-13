@@ -346,7 +346,7 @@ export async function getAccountMutations(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let txQuery: any = (supabase.from("transactions") as any)
     .select(
-      "id, amount, currency, type, description, transaction_date, categories(name, icon, color)",
+      "id, amount, currency, type, description, transaction_date, categories(name, icon)",
       { count: "exact" },
     )
     .eq("account_id", accountId)
@@ -402,7 +402,6 @@ export async function getAccountMutations(
         title: cat?.name || (t.type === "income" ? "Income" : "Expense"),
         description: getCleanDescription(t.description),
         counterpartyOrCategory: cat?.name,
-        color: cat?.color,
         icon: cat?.icon,
       });
     }

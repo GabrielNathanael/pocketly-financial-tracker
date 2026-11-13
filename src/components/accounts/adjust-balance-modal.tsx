@@ -88,35 +88,35 @@ export function AdjustBalanceModal({
       maxWidth="sm"
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">
+        <p className="text-xs text-foreground-secondary">
           {t.accounts.adjustBalanceDesc}
         </p>
 
         {error && (
-          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2">
+          <div className="p-3 rounded-xl bg-destructive-muted border border-destructive/20 text-destructive text-xs flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
         {/* Current Recorded Balance */}
-        <div className="p-3.5 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-between">
+        <div className="p-3.5 rounded-xl bg-canvas dark:bg-surface-subtle border border-border flex items-center justify-between">
           <div className="flex flex-col gap-0.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary">
               {t.accounts.recordedBalanceLabel}
             </span>
-            <span className="text-xs text-[#0F172A] dark:text-[#FAFAFA] font-medium">
+            <span className="text-xs text-foreground font-medium">
               {account.name}
             </span>
           </div>
-          <span className="text-sm sm:text-base font-mono font-bold text-[#0F172A] dark:text-[#F8FAFC] tnum">
+          <span className="text-sm sm:text-base font-mono font-bold text-foreground tnum">
             {formatCurrency(currentBal, account.currency)}
           </span>
         </div>
 
         {/* Actual Real Physical Balance Input */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+          <label className="text-xs font-bold text-foreground">
             {t.accounts.actualBalanceLabel} ({account.currency}) *
           </label>
           <Input
@@ -140,8 +140,8 @@ export function AdjustBalanceModal({
             className={cn(
               'p-3 rounded-xl border flex items-center justify-between text-xs font-mono tnum',
               delta > 0
-                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
-                : 'bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-400'
+                ? 'bg-success-muted border-success/20 text-success'
+                : 'bg-destructive-muted border-destructive/20 text-destructive'
             )}
           >
             <div className="flex items-center gap-1.5 font-sans font-bold">
@@ -157,7 +157,7 @@ export function AdjustBalanceModal({
 
         {/* Notes (Optional) */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-[#64748B] dark:text-[#94A3B8]">
+          <label className="text-xs font-semibold text-foreground-secondary">
             {t.accounts.reasonNoteLabel}
           </label>
           <Input
@@ -170,7 +170,7 @@ export function AdjustBalanceModal({
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#E5E7EB] dark:border-[#27272A]">
+        <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
           <Button
             type="button"
             variant="outline"

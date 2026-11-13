@@ -18,7 +18,7 @@ export function AccountEditTrigger({ account }: { account: Account }) {
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="p-2 rounded-xl text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+        className="p-2 rounded-xl text-foreground-secondary hover:text-foreground hover:bg-surface-subtle transition-colors cursor-pointer"
         title={t.accounts.modalEditTitle || 'Edit Account'}
       >
         <Settings className="w-5 h-5" />

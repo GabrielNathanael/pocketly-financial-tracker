@@ -11,7 +11,7 @@ export function TransactionDetailSkeleton() {
       </div>
 
       {/* Hero Detail Card Skeleton */}
-      <div className="p-5 sm:p-6 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] shadow-2xs flex flex-col gap-4">
+      <div className="p-5 sm:p-6 rounded-xl bg-surface border border-border shadow-2xs flex flex-col gap-4">
         {/* Amount & Type */}
         <div className="flex flex-col gap-1.5">
           <Skeleton className="h-3.5 w-20 rounded-md bg-slate-200 dark:bg-[#27272A]" />
@@ -19,9 +19,9 @@ export function TransactionDetailSkeleton() {
         </div>
 
         {/* Info Items Stack (Account, Category, Date) */}
-        <div className="flex flex-col gap-2.5 pt-2 border-t border-[#E5E7EB] dark:border-[#27272A]">
+        <div className="flex flex-col gap-2.5 pt-2 border-t border-border">
           {/* Account item */}
-          <div className="p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex items-center gap-3">
+          <div className="p-3 rounded-lg bg-canvas dark:bg-surface-subtle border border-border flex items-center gap-3">
             <Skeleton className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-[#27272A] shrink-0" />
             <div className="flex flex-col gap-1.5 min-w-0 flex-1">
               <Skeleton className="h-2.5 w-16 rounded-md bg-slate-200 dark:bg-[#27272A]" />
@@ -30,7 +30,7 @@ export function TransactionDetailSkeleton() {
           </div>
 
           {/* Category item */}
-          <div className="p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex items-center gap-3">
+          <div className="p-3 rounded-lg bg-canvas dark:bg-surface-subtle border border-border flex items-center gap-3">
             <Skeleton className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-[#27272A] shrink-0" />
             <div className="flex flex-col gap-1.5 min-w-0 flex-1">
               <Skeleton className="h-2.5 w-16 rounded-md bg-slate-200 dark:bg-[#27272A]" />
@@ -39,14 +39,14 @@ export function TransactionDetailSkeleton() {
           </div>
 
           {/* Date item */}
-          <div className="p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex items-center gap-2.5">
+          <div className="p-3 rounded-lg bg-canvas dark:bg-surface-subtle border border-border flex items-center gap-2.5">
             <Skeleton className="w-4 h-4 rounded bg-slate-200 dark:bg-[#27272A] shrink-0" />
             <Skeleton className="h-3.5 w-44 rounded-md bg-slate-200 dark:bg-[#27272A]" />
           </div>
         </div>
 
         {/* Action Buttons Toolbar Skeleton */}
-        <div className="flex items-center gap-2 pt-2 border-t border-[#E5E7EB] dark:border-[#27272A]">
+        <div className="flex items-center gap-2 pt-2 border-t border-border">
           <Skeleton className="h-9 flex-1 rounded-xl bg-slate-200 dark:bg-[#27272A]" />
           <Skeleton className="h-9 w-20 rounded-xl bg-slate-100 dark:bg-[#1E1E24]" />
           <Skeleton className="h-9 w-10 rounded-xl bg-slate-100 dark:bg-[#1E1E24]" />

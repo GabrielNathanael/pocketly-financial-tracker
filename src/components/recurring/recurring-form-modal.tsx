@@ -213,14 +213,14 @@ export function RecurringFormModal({
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {/* Error Alert Banner */}
         {errorMsg && (
-          <div className="p-3 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 flex items-center gap-2 text-xs text-rose-600 dark:text-rose-400">
+          <div className="p-3 rounded-lg bg-destructive-muted border border-destructive/30 flex items-center gap-2 text-xs text-destructive">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{errorMsg}</span>
           </div>
         )}
 
         {/* Type Switcher */}
-        <div className="grid grid-cols-2 p-1 bg-[#F1F3F5] dark:bg-[#1A1A20] rounded-xl border border-[#E5E7EB] dark:border-[#27272A]">
+        <div className="grid grid-cols-2 p-1 bg-surface-subtle rounded-xl border border-border">
           <button
             type="button"
             onClick={() => {
@@ -231,8 +231,8 @@ export function RecurringFormModal({
             className={cn(
               "py-1.5 text-xs font-bold rounded-lg transition-all text-center cursor-pointer",
               type === "expense"
-                ? "bg-white dark:bg-[#121215] text-[#E11D48] shadow-xs"
-                : "text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8]",
+                ? "bg-surface text-destructive shadow-xs"
+                : "text-foreground-secondary hover:text-foreground",
             )}
           >
             {t.quickAdd.expense}
@@ -247,8 +247,8 @@ export function RecurringFormModal({
             className={cn(
               "py-1.5 text-xs font-bold rounded-lg transition-all text-center cursor-pointer",
               type === "income"
-                ? "bg-white dark:bg-[#121215] text-[#0D9488] shadow-xs"
-                : "text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8]",
+                ? "bg-surface text-success shadow-xs"
+                : "text-foreground-secondary hover:text-foreground",
             )}
           >
             {t.quickAdd.income}
@@ -257,8 +257,8 @@ export function RecurringFormModal({
 
         {/* Name Input with Memo Trigger Button */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA]">
-            {t.recurring.nameLabel} <span className="text-rose-500">*</span>
+          <label className="text-xs font-semibold text-foreground">
+            {t.recurring.nameLabel} <span className="text-destructive">*</span>
           </label>
           <div className="flex items-center gap-2">
             <Input
@@ -275,8 +275,8 @@ export function RecurringFormModal({
               className={cn(
                 "h-9 px-3 rounded-lg border transition-colors cursor-pointer shrink-0 flex items-center justify-center gap-1.5 text-xs font-medium",
                 showMemo
-                  ? "bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A]"
-                  : "bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]",
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-canvas dark:bg-surface-subtle text-foreground-secondary hover:text-foreground border-border",
               )}
             >
               <AlignLeft className="w-3.5 h-3.5" />
@@ -287,7 +287,7 @@ export function RecurringFormModal({
 
         {/* Expandable Free Text Memo Box (Matching Transaction Form) */}
         {showMemo && (
-          <div className="p-3 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] animate-in fade-in duration-150">
+          <div className="p-3 rounded-xl bg-canvas dark:bg-surface-subtle border border-border animate-in fade-in duration-150">
             <textarea
               rows={2}
               value={notes}
@@ -296,7 +296,7 @@ export function RecurringFormModal({
                 t.quickAdd.memoPlaceholder ||
                 "Catatan tambahan / nomor pelanggan..."
               }
-              className="w-full p-2 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs text-[#0F172A] dark:text-[#F8FAFC] placeholder:text-[#94A3B8] focus:outline-none"
+              className="w-full p-2 rounded-lg bg-surface border border-border text-xs text-foreground placeholder:text-foreground-muted focus:outline-none"
             />
           </div>
         )}
@@ -304,8 +304,8 @@ export function RecurringFormModal({
         {/* Amount & Currency Selection Grid (Like Create Account) */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="sm:col-span-2 flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA]">
-              {t.common.amount} <span className="text-rose-500">*</span>
+            <label className="text-xs font-semibold text-foreground">
+              {t.common.amount} <span className="text-destructive">*</span>
             </label>
             <Input
               type="number"
@@ -320,7 +320,7 @@ export function RecurringFormModal({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA]">
+            <label className="text-xs font-semibold text-foreground">
               {t.common.currency}
             </label>
             <Select
@@ -343,10 +343,10 @@ export function RecurringFormModal({
 
         {/* Frequency Selector */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA]">
+          <label className="text-xs font-semibold text-foreground">
             {t.recurring.frequencyLabel}
           </label>
-          <div className="grid grid-cols-4 gap-1 p-1 bg-[#F1F3F5] dark:bg-[#1A1A20] rounded-xl border border-[#E5E7EB] dark:border-[#27272A]">
+          <div className="grid grid-cols-4 gap-1 p-1 bg-surface-subtle rounded-xl border border-border">
             {(
               ["daily", "weekly", "monthly", "yearly"] as RecurringFrequency[]
             ).map((f) => (
@@ -357,8 +357,8 @@ export function RecurringFormModal({
                 className={cn(
                   "py-1.5 text-xs font-bold rounded-lg transition-all text-center cursor-pointer capitalize",
                   frequency === f
-                    ? "bg-white dark:bg-[#121215] text-[#0F172A] dark:text-[#FAFAFA] shadow-xs"
-                    : "text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8]",
+                    ? "bg-surface text-foreground shadow-xs"
+                    : "text-foreground-secondary hover:text-foreground",
                 )}
               >
                 {f === "daily"
@@ -375,8 +375,8 @@ export function RecurringFormModal({
 
         {/* Account Selection */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA]">
-            {t.common.account} <span className="text-rose-500">*</span>
+          <label className="text-xs font-semibold text-foreground">
+            {t.common.account} <span className="text-destructive">*</span>
           </label>
           <Select value={accountId} onValueChange={handleAccountChange}>
             <SelectTrigger className="w-full min-w-0 text-xs">
@@ -394,10 +394,10 @@ export function RecurringFormModal({
                 <SelectItem key={a.id} value={a.id}>
                   <div className="flex items-center justify-between gap-3 w-full">
                     <div className="flex items-center gap-2">
-                      <Wallet className="w-3.5 h-3.5 text-[#94A3B8]" />
+                      <Wallet className="w-3.5 h-3.5 text-foreground-muted" />
                       <span>{a.name}</span>
                     </div>
-                    <span className="text-[10px] font-mono font-bold text-[#64748B] dark:text-[#94A3B8] tnum">
+                    <span className="text-[10px] font-mono font-bold text-foreground-secondary tnum">
                       {formatCurrency(a.current_balance, a.currency)}
                     </span>
                   </div>
@@ -409,7 +409,7 @@ export function RecurringFormModal({
 
         {/* Category Selector */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA]">
+          <label className="text-xs font-semibold text-foreground">
             {t.common.category}
           </label>
           <Select value={categoryId} onValueChange={setCategoryId}>
@@ -425,14 +425,14 @@ export function RecurringFormModal({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="none">
-                <span className="text-[#64748B]">{t.common.custom}</span>
+                <span className="text-foreground-secondary">{t.common.custom}</span>
               </SelectItem>
               {filteredCategories.map((cat) => (
                 <SelectItem key={cat.id} value={cat.id}>
                   <div className="flex items-center gap-2">
                     <DynamicIcon
                       name={cat.icon || "Tag"}
-                      className="w-3.5 h-3.5 text-[#64748B]"
+                      className="w-3.5 h-3.5 text-foreground-secondary"
                     />
                     <span>{cat.name}</span>
                   </div>
@@ -444,8 +444,8 @@ export function RecurringFormModal({
 
         {/* Next Due Date Picker */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA]">
-            {t.recurring.nextDueLabel} <span className="text-rose-500">*</span>
+          <label className="text-xs font-semibold text-foreground">
+            {t.recurring.nextDueLabel} <span className="text-destructive">*</span>
           </label>
           <DatePicker
             value={nextDueDate}
@@ -456,7 +456,7 @@ export function RecurringFormModal({
 
         {/* End Date Picker */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA]">
+          <label className="text-xs font-semibold text-foreground">
             {t.recurring.endDateLabel}
           </label>
           <DatePicker
@@ -467,7 +467,7 @@ export function RecurringFormModal({
         </div>
 
         {/* Footer Actions */}
-        <div className="pt-3 border-t border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-end gap-2">
+        <div className="pt-3 border-t border-border flex items-center justify-end gap-2">
           <Button
             type="button"
             variant="outline"
@@ -481,7 +481,7 @@ export function RecurringFormModal({
             type="submit"
             size="sm"
             disabled={loading}
-            className="text-xs font-bold bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] cursor-pointer"
+            className="text-xs font-bold bg-primary text-primary-foreground cursor-pointer"
           >
             {loading ? t.common.loading : t.common.save}
           </Button>

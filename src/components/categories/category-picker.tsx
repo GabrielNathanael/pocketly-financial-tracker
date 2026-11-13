@@ -26,7 +26,7 @@ export function CategoryPicker({
 
   if (filtered.length === 0) {
     return (
-      <div className="py-4 text-center text-xs text-[#94A3B8]">
+      <div className="py-4 text-center text-xs text-foreground-muted">
         {t.quickAdd.noCategoriesForType}
       </div>
     )
@@ -44,16 +44,16 @@ export function CategoryPicker({
             className={cn(
               'flex flex-col items-center justify-center p-1 sm:p-1.5 rounded-lg border transition-all select-none group cursor-pointer text-center',
               isSelected
-                ? 'border-[#0F172A] bg-[#0F172A] text-white dark:border-[#FAFAFA] dark:bg-[#FAFAFA] dark:text-[#0F172A] font-bold shadow-2xs'
-                : 'border-[#E5E7EB] dark:border-[#27272A] bg-[#F8F9FA] dark:bg-[#1A1A20] hover:bg-[#F1F3F5] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC]'
+                ? 'border-primary bg-primary text-primary-foreground font-bold shadow-2xs'
+                : 'border-border bg-surface-subtle hover:bg-surface-muted text-foreground'
             )}
           >
             <div
               className={cn(
                 'w-6 h-6 sm:w-7 sm:h-7 rounded-md flex items-center justify-center mb-1 transition-transform',
                 isSelected
-                  ? 'bg-white/20 dark:bg-[#0F172A]/15 text-white dark:text-[#0F172A]'
-                  : 'bg-white dark:bg-[#121215] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A]'
+                  ? 'bg-primary-foreground/20 text-primary-foreground'
+                  : 'bg-surface text-foreground border border-border'
               )}
             >
               <DynamicIcon name={cat.icon} className="w-3 h-3 sm:w-3.5 sm:h-3.5" />

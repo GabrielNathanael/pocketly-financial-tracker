@@ -844,7 +844,7 @@ export function CategoryForm({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       {error && (
-        <div className="p-3 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 text-xs font-medium flex items-start gap-2">
+        <div className="p-3 rounded-lg bg-destructive-muted border border-destructive/20 text-destructive text-xs font-medium flex items-start gap-2">
           <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
           <span className="leading-relaxed">{error}</span>
         </div>
@@ -852,15 +852,15 @@ export function CategoryForm({
 
       {/* Type Toggle */}
       {!isEditing && (
-        <div className="grid grid-cols-2 p-1 bg-[#F1F3F5] dark:bg-[#1A1A20] rounded-lg border border-[#E5E7EB] dark:border-[#27272A]">
+        <div className="grid grid-cols-2 p-1 bg-surface-subtle rounded-lg border border-border">
           <button
             type="button"
             onClick={() => setType("expense")}
             className={cn(
               "py-2 rounded-md font-bold text-xs transition-colors cursor-pointer text-center",
               type === "expense"
-                ? "bg-[#E11D48] text-white"
-                : "text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#F8FAFC]",
+                ? "bg-destructive text-destructive-foreground"
+                : "text-foreground-secondary hover:text-foreground",
             )}
           >
             {t.quickAdd.expense}
@@ -871,8 +871,8 @@ export function CategoryForm({
             className={cn(
               "py-2 rounded-md font-bold text-xs transition-colors cursor-pointer text-center",
               type === "income"
-                ? "bg-[#0D9488] text-white"
-                : "text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#F8FAFC]",
+                ? "bg-success text-success-foreground"
+                : "text-foreground-secondary hover:text-foreground",
             )}
           >
             {t.quickAdd.income}
@@ -883,10 +883,10 @@ export function CategoryForm({
       {isSystemProtected ? (
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary">
               {t.categories.nameLabel}
             </label>
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md">
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-warning bg-warning-muted px-2 py-0.5 rounded-md">
               <ShieldCheck className="w-3 h-3" />
               {t.categories.systemProtected}
             </span>
@@ -895,7 +895,7 @@ export function CategoryForm({
             type="text"
             value={formatCategoryName(name, language)}
             disabled
-            className="w-full px-3.5 py-2.5 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-xs text-[#64748B] dark:text-[#94A3B8] font-bold opacity-80 cursor-not-allowed"
+            className="w-full px-3.5 py-2.5 rounded-xl bg-surface-subtle border border-border text-xs text-foreground-secondary font-bold opacity-80 cursor-not-allowed"
           />
         </div>
       ) : (
@@ -911,7 +911,7 @@ export function CategoryForm({
 
       {/* Icon Picker with Search */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+        <label className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary">
           {t.categories.iconLabel}
         </label>
 
@@ -926,7 +926,7 @@ export function CategoryForm({
               <button
                 type="button"
                 onClick={() => setIconSearch("")}
-                className="pointer-events-auto cursor-pointer hover:text-[#0F172A] dark:hover:text-[#FAFAFA]"
+                className="pointer-events-auto cursor-pointer hover:text-foreground"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -936,14 +936,14 @@ export function CategoryForm({
         />
 
         {groupedIcons.length === 0 ? (
-          <div className="py-6 text-center text-xs text-[#94A3B8]">
+          <div className="py-6 text-center text-xs text-foreground-muted">
             {t.categories.noIconsMatch}
           </div>
         ) : (
           <div className="flex flex-col gap-3 max-h-52 overflow-y-auto p-0.5">
             {groupedIcons.map((group) => (
               <div key={group.label} className="flex flex-col gap-1.5">
-                <span className="text-[9px] font-bold uppercase tracking-wider text-[#94A3B8] px-0.5">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-foreground-muted px-0.5">
                   {group.label}
                 </span>
                 <div className="grid grid-cols-6 sm:grid-cols-8 gap-2">
@@ -956,8 +956,8 @@ export function CategoryForm({
                       className={cn(
                         "p-2 rounded-lg border flex items-center justify-center transition-colors cursor-pointer",
                         icon === entry.name
-                          ? "border-[#0F172A] bg-[#0F172A] text-white dark:border-[#FAFAFA] dark:bg-[#FAFAFA] dark:text-[#0F172A]"
-                          : "border-[#E5E7EB] dark:border-[#27272A] bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#0F172A] dark:text-[#F8FAFC] hover:bg-[#F1F3F5] dark:hover:bg-[#26262E]",
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-surface-subtle text-foreground hover:bg-surface-muted",
                       )}
                     >
                       <DynamicIcon name={entry.name} className="w-4 h-4" />

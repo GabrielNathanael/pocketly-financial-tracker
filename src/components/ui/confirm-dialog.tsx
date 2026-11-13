@@ -5,6 +5,7 @@ import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/lib/i18n/language-context'
 import { AlertTriangle } from 'lucide-react'
+import { cn } from '@/lib/utils/cn'
 
 interface ConfirmDialogProps {
   isOpen: boolean
@@ -37,11 +38,18 @@ export function ConfirmDialog({
   return (
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="sm">
       <div className="flex flex-col items-center text-center p-2">
-        <div className="w-12 h-12 rounded-full bg-rose-500/10 text-rose-500 flex items-center justify-center mb-4">
+        <div
+          className={cn(
+            'w-12 h-12 rounded-full flex items-center justify-center mb-4',
+            variant === 'danger'
+              ? 'bg-destructive/10 text-destructive'
+              : 'bg-info/10 text-info'
+          )}
+        >
           <AlertTriangle className="w-6 h-6" />
         </div>
-        <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{title}</h3>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2 mb-6">{message}</p>
+        <h3 className="text-lg font-bold text-foreground">{title}</h3>
+        <p className="text-sm text-foreground-secondary mt-2 mb-6">{message}</p>
         <div className="flex items-center gap-3 w-full">
           <Button variant="outline" className="flex-1" onClick={onClose} disabled={isLoading}>
             {finalCancelText}

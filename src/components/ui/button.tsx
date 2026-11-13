@@ -16,17 +16,17 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variants = {
       primary:
-        'bg-[#0F172A] hover:bg-[#1E293B] text-white dark:bg-[#F8FAFC] dark:hover:bg-[#E2E8F0] dark:text-[#0F172A] border border-transparent shadow-none',
+        'bg-primary hover:bg-primary-hover text-primary-foreground border border-transparent shadow-none',
       secondary:
-        'bg-[#F1F3F5] hover:bg-[#E9ECEF] text-[#0F172A] dark:bg-[#1A1A20] dark:hover:bg-[#26262E] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A]',
+        'bg-secondary hover:bg-secondary-hover text-secondary-foreground border border-border',
       outline:
-        'border border-[#E5E7EB] dark:border-[#27272A] hover:bg-[#F8F9FA] dark:hover:bg-[#1A1A20] text-[#0F172A] dark:text-[#F8FAFC] bg-white dark:bg-[#121215]',
+        'border border-border hover:bg-canvas bg-surface text-foreground',
       danger:
-        'bg-[#E11D48] hover:bg-[#BE123C] text-white border border-transparent',
+        'bg-destructive hover:bg-destructive-hover text-destructive-foreground border border-transparent',
       ghost:
-        'text-[#475569] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#F8FAFC] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20]',
+        'text-foreground-secondary hover:text-foreground hover:bg-secondary',
       flat:
-        'bg-[#0F172A]/5 hover:bg-[#0F172A]/10 text-[#0F172A] dark:bg-white/10 dark:hover:bg-white/15 dark:text-[#F8FAFC]',
+        'bg-primary/5 hover:bg-primary/10 text-foreground dark:bg-primary/10 dark:hover:bg-primary/15',
     }
 
     const sizes = {

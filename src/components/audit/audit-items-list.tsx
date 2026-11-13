@@ -47,27 +47,27 @@ export function AuditItemsList({
         return (
           <div
             key={idx}
-            className="flex items-center justify-between gap-2 rounded bg-white p-2 text-xs dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A]"
+            className="flex items-center justify-between gap-2 rounded border border-border bg-surface p-2 text-xs"
           >
             <div className="flex min-w-0 flex-col">
-              <span className="truncate font-medium text-[#0F172A] dark:text-[#FAFAFA]">
+              <span className="truncate font-medium text-foreground">
                 {item.name}
               </span>
-              <span className="font-mono text-[11px] text-[#64748B] dark:text-[#94A3B8]">
+              <span className="font-mono text-[11px] text-foreground-secondary">
                 {`${qty} × ${formatCurrency(unit, currency)}`}
               </span>
               {isShared && (
-                <span className="text-[10px] text-emerald-700 dark:text-emerald-400">
+                <span className="text-[10px] text-success">
                   {!isNaN(shares) && shares >= 2 ? `÷${shares}` : "split"} · my {formatCurrency(mySubtotal, currency)}
                 </span>
               )}
             </div>
             <div className="shrink-0 flex flex-col items-end">
-              <span className="font-mono text-xs font-semibold text-[#0F172A] dark:text-[#F8FAFC]">
+              <span className="font-mono text-xs font-semibold text-foreground">
                 {formatCurrency(subtotal, currency)}
               </span>
               {isShared && (
-                <span className="font-mono text-[10px] text-emerald-700 dark:text-emerald-400">
+                <span className="font-mono text-[10px] text-success">
                   {formatCurrency(mySubtotal, currency)}
                 </span>
               )}
@@ -76,17 +76,17 @@ export function AuditItemsList({
         );
       })}
       {!muted && (
-        <div className="flex flex-col gap-0.5 border-t border-[#E5E7EB] pt-1 font-mono text-[11px] dark:border-[#27272A]">
+        <div className="flex flex-col gap-0.5 border-t border-border pt-1 font-mono text-[11px]">
           <div className="flex items-center justify-between">
-            <span className="text-[#64748B] dark:text-[#94A3B8]">Total</span>
-            <span className="font-bold text-[#0F172A] dark:text-[#FAFAFA]">
+            <span className="text-foreground-secondary">Total</span>
+            <span className="font-bold text-foreground">
               {formatCurrency(total, currency)}
             </span>
           </div>
           {hasSplit && (
             <div className="flex items-center justify-between">
-              <span className="text-[#64748B] dark:text-[#94A3B8]">My portion</span>
-              <span className="font-bold text-emerald-700 dark:text-emerald-400">
+              <span className="text-foreground-secondary">My portion</span>
+              <span className="font-bold text-success">
                 {formatCurrency(myTotal, currency)}
               </span>
             </div>

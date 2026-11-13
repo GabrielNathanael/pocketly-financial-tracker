@@ -55,22 +55,22 @@ export function RecurringDueBanner({ recurringTransactions }: RecurringDueBanner
   const diffDays = differenceInCalendarDays(parseISO(firstItem.next_due_date), today)
 
   return (
-    <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+    <div className="p-4 rounded-2xl bg-warning/10 border border-warning/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
       <div className="flex items-center gap-3 min-w-0">
-        <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+        <div className="w-9 h-9 rounded-xl bg-warning text-warning-foreground flex items-center justify-center shrink-0 shadow-xs">
           <Flame className="w-5 h-5 animate-pulse" />
         </div>
         <div className="flex flex-col min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-[#0F172A] dark:text-[#FAFAFA]">
+            <span className="text-xs font-bold text-foreground">
               {t.recurring.dueBannerTitle}
             </span>
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500 text-white">
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-warning text-warning-foreground">
               {dueItems.length}
             </span>
           </div>
-          <p className="text-[11px] text-[#64748B] dark:text-[#94A3B8] truncate">
-            <strong className="text-[#0F172A] dark:text-[#FAFAFA]">{firstItem.name}</strong> (
+          <p className="text-[11px] text-foreground-secondary truncate">
+            <strong className="text-foreground">{firstItem.name}</strong> (
             {maskCurrency(formatCurrency(firstItem.amount, firstItem.currency), isPrivate)}){' '}
             {diffDays < 0
               ? `• ${t.recurring.overdue.replace('{days}', String(Math.abs(diffDays)))}`
@@ -86,7 +86,7 @@ export function RecurringDueBanner({ recurringTransactions }: RecurringDueBanner
           type="button"
           disabled={processingId === firstItem.id}
           onClick={(e) => handleQuickPay(firstItem.id, e)}
-          className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white flex items-center gap-1.5 cursor-pointer shadow-xs"
+          className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-warning hover:bg-warning/90 text-warning-foreground flex items-center gap-1.5 cursor-pointer shadow-xs"
         >
           {processingId === firstItem.id ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -98,7 +98,7 @@ export function RecurringDueBanner({ recurringTransactions }: RecurringDueBanner
 
         <Link
           href="/recurring"
-          className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8] dark:hover:text-[#FAFAFA] hover:bg-amber-500/10 flex items-center gap-1 cursor-pointer transition-colors"
+          className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-foreground-secondary hover:text-foreground hover:bg-warning/10 flex items-center gap-1 cursor-pointer transition-colors"
         >
           <span>{t.recurring.viewAllBtn}</span>
           <ArrowRight className="w-3 h-3" />

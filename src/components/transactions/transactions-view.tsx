@@ -69,9 +69,9 @@ export function TransactionsView({
 
       {/* Active Tag Summary Pill */}
       {activeTag && activeTag !== 'all' && (
-        <div className="p-3.5 rounded-xl bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 flex items-center justify-between shadow-xs">
+        <div className="p-3.5 rounded-xl bg-surface-inverse text-foreground-inverse flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-white/10 dark:bg-black/10">
+            <div className="p-1.5 rounded-lg bg-foreground-inverse/10">
               <Hash className="w-4 h-4" />
             </div>
             <div>

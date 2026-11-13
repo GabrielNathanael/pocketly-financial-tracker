@@ -81,7 +81,7 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
       id: "accounts",
       name: t.netWorth.cashBank,
       total: totalAccounts,
-      color: "#0EA5E9",
+      color: "var(--token-info)",
       href: "/accounts",
       icon: <Wallet className="w-3.5 h-3.5" />,
       items: data.accounts.map((a) => ({
@@ -94,7 +94,7 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
       id: "stocks",
       name: t.netWorth.stocks,
       total: totalStocks,
-      color: "#8B5CF6",
+      color: "var(--token-info)",
       href: "/investments",
       icon: <TrendingUp className="w-3.5 h-3.5" />,
       items: data.stocks.map((a) => ({
@@ -107,7 +107,7 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
       id: "crypto",
       name: t.netWorth.crypto,
       total: totalCrypto,
-      color: "#F59E0B",
+      color: "var(--token-warning)",
       href: "/investments",
       icon: <Bitcoin className="w-3.5 h-3.5" />,
       items: data.crypto.map((a) => ({
@@ -120,7 +120,7 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
       id: "etf",
       name: "ETF",
       total: totalEtf,
-      color: "#EC4899",
+      color: "var(--token-info)",
       href: "/investments",
       icon: <LineChart className="w-3.5 h-3.5" />,
       items: data.etf.map((a) => ({
@@ -133,7 +133,7 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
       id: "goals",
       name: t.netWorth.savingsGoals,
       total: totalGoals,
-      color: "#14B8A6",
+      color: "var(--token-success)",
       href: "/goals",
       icon: <Target className="w-3.5 h-3.5" />,
       items: data.goals.map((a) => ({
@@ -146,7 +146,7 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
       id: "receivables",
       name: t.netWorth.receivables,
       total: totalReceivables,
-      color: "#22C55E",
+      color: "var(--token-success)",
       href: "/debts",
       icon: <ArrowUpRight className="w-3.5 h-3.5" />,
       items: data.receivables.map((a) => ({
@@ -244,7 +244,7 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
       <div>
         <Link
           href="/dashboard"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-foreground-secondary hover:text-foreground"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>{t.netWorth.backToHome}</span>
@@ -252,26 +252,26 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
       </div>
 
       {/* HERO — dark balance-sheet card */}
-      <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-[#0F172A] to-[#1E293B] p-5 sm:p-8 text-white shadow-md">
-        <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-sky-500/20 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-indigo-500/20 blur-3xl" />
+      <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-foreground to-foreground/90 p-5 sm:p-8 text-background shadow-md">
+        <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-info/20 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-info/20 blur-3xl" />
         <div className="relative flex flex-col gap-3">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-300">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-background/70">
             {t.netWorth.netWorthLabel} ({displayCurrency})
           </span>
           <h1 className="font-mono text-4xl sm:text-5xl font-black tracking-tight tnum leading-none wrap-break-word">
             {fmt(netWorth)}
           </h1>
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-xs">
-            <span className="font-bold text-emerald-300">
+            <span className="font-bold text-success">
               +{fmt(totalAssets)} {t.netWorth.assets}
             </span>
-            <span className="text-slate-400">−</span>
-            <span className="font-bold text-rose-300">
+            <span className="text-background/60">−</span>
+            <span className="font-bold text-destructive">
               {fmt(totalDebts)} {t.netWorth.debts}
             </span>
             {displayCurrency !== "IDR" && (
-              <span className="text-slate-400 tnum">
+              <span className="text-background/60 tnum">
                 (≈ {maskCurrency(formatCurrency(data.netWorthIdr, "IDR"), isPrivate)})
               </span>
             )}
@@ -281,8 +281,8 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
               className={cn(
                 "inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold",
                 trendDelta >= 0
-                  ? "bg-emerald-400/15 text-emerald-300"
-                  : "bg-rose-400/15 text-rose-300",
+                  ? "bg-success-muted text-success"
+                  : "bg-destructive-muted text-destructive",
               )}
             >
               {trendDelta >= 0 ? (
@@ -298,7 +298,7 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
             (data.stocks.length > 0 ||
               data.crypto.length > 0 ||
               data.etf.length > 0) && (
-              <span className="text-[10px] text-slate-400">
+              <span className="text-[10px] text-background/60">
                 {language === "en" ? "Prices as of " : "Harga per "}
                 {new Date(data.latestPriceFetchedAt).toLocaleString(
                   language === "en" ? "en-US" : "id-ID",
@@ -315,9 +315,9 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
       </div>
 
       {/* TREND CHART */}
-      <div className="rounded-2xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] p-4 sm:p-5 flex flex-col gap-3 shadow-2xs">
+      <div className="rounded-2xl bg-surface border border-border p-4 sm:p-5 flex flex-col gap-3 shadow-2xs">
         <div className="flex items-center justify-between gap-2 flex-wrap">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">
             {t.netWorth.trendTitle}
           </h2>
           <div className="flex items-center gap-1">
@@ -329,8 +329,8 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
                 className={cn(
                   "px-2 py-1 rounded-md text-[11px] font-bold transition-colors cursor-pointer",
                   range === r
-                    ? "bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A]"
-                    : "text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]",
+                    ? "bg-primary text-primary-foreground"
+                    : "text-foreground-secondary hover:text-foreground",
                 )}
               >
                 {r}
@@ -341,12 +341,12 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
 
         {trendData.length < 2 ? (
           <div className="flex flex-col items-center gap-1 py-8 text-center">
-            <Coins className="w-6 h-6 text-[#94A3B8]" />
-            <p className="text-xs text-[#64748B] dark:text-[#94A3B8] max-w-xs">
+            <Coins className="w-6 h-6 text-foreground-muted" />
+            <p className="text-xs text-foreground-secondary max-w-xs">
               {t.netWorth.trendEmpty}
             </p>
             {trendData.length === 1 && (
-              <span className="font-mono text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+              <span className="font-mono text-sm font-bold text-foreground">
                 {fmt(trendData[0].netWorth)}
               </span>
             )}
@@ -356,14 +356,14 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
             <AreaChart data={trendData} margin={{ top: 4, right: 8, left: 8, bottom: 0 }}>
               <defs>
                 <linearGradient id="nwFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#0EA5E9" stopOpacity={0.35} />
-                  <stop offset="100%" stopColor="#0EA5E9" stopOpacity={0} />
+                  <stop offset="0%" stopColor="var(--token-info)" stopOpacity={0.35} />
+                  <stop offset="100%" stopColor="var(--token-info)" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--token-border)" vertical={false} />
               <XAxis
                 dataKey="date"
-                tick={{ fontSize: 10, fill: "#94A3B8" }}
+                tick={{ fontSize: 10, fill: "var(--token-foreground-muted)" }}
                 axisLine={false}
                 tickLine={false}
                 tickFormatter={(d: string) =>
@@ -374,7 +374,7 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
                 }
               />
               <YAxis
-                tick={{ fontSize: 9, fill: "#94A3B8" }}
+                tick={{ fontSize: 9, fill: "var(--token-foreground-muted)" }}
                 axisLine={false}
                 tickLine={false}
                 width={52}
@@ -396,37 +396,39 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
                   return (
                     <div
                       style={{ fontSize: 11, borderRadius: 12 }}
-                      className="border border-[#E5E7EB] bg-white px-2.5 py-2 shadow-lg dark:border-[#27272A] dark:bg-[#121215]"
+                      className="border border-border bg-surface px-2.5 py-2 shadow-lg"
                     >
-                      <div className="mb-1 font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                      <div className="mb-1 font-bold text-foreground">
                         {new Date(String(label ?? "")).toLocaleDateString(
                           language === "en" ? "en-US" : "id-ID",
                           { day: "numeric", month: "long", year: "numeric" },
                         )}
                       </div>
                       <div className="flex items-center justify-between gap-4">
-                        <span className="text-[#0EA5E9]">
+                        <span className="text-info">
                           {t.netWorth.assets}
                         </span>
-                        <span className="font-mono font-bold text-[#0EA5E9] tnum">
+                        <span className="font-mono font-bold text-info tnum">
                           {fmt(assets)}
                         </span>
                       </div>
                       <div className="flex items-center justify-between gap-4">
-                        <span className="text-[#E11D48]">
+                        <span className="text-destructive">
                           {t.netWorth.debts}
                         </span>
-                        <span className="font-mono font-bold text-[#E11D48] tnum">
+                        <span className="font-mono font-bold text-destructive tnum">
                           {fmt(liabilities)}
                         </span>
                       </div>
-                      <div className="mt-1 flex items-center justify-between gap-4 border-t border-[#E5E7EB] pt-1 dark:border-[#27272A]">
-                        <span className="text-[#64748B] dark:text-[#94A3B8]">
+                      <div className="mt-1 flex items-center justify-between gap-4 border-t border-border pt-1">
+                        <span className="text-foreground-secondary">
                           {t.netWorth.netWorthLabel}
                         </span>
                         <span
-                          className="font-mono font-bold tnum"
-                          style={{ color: netWorth >= 0 ? "#0D9488" : "#E11D48" }}
+                          className={cn(
+                            "font-mono font-bold tnum",
+                            netWorth >= 0 ? "text-success" : "text-destructive",
+                          )}
                         >
                           {fmt(netWorth)}
                         </span>
@@ -438,7 +440,7 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
               <Area
                 type="monotone"
                 dataKey="netWorth"
-                stroke="#0EA5E9"
+                stroke="var(--token-info)"
                 strokeWidth={2}
                 fill="url(#nwFill)"
                 dot={trendData.length <= 10}
@@ -450,14 +452,14 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
       </div>
 
       {/* ALLOCATION — donut + legend/bars */}
-      <div className="rounded-2xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] p-4 sm:p-5 shadow-2xs">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC] pb-3">
+      <div className="rounded-2xl bg-surface border border-border p-4 sm:p-5 shadow-2xs">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-foreground pb-3">
           {t.netWorth.allocationTitle}
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-[220px_1fr] gap-5 items-center">
           <div className="relative mx-auto h-50 w-50 shrink-0">
             <svg width="200" height="200" viewBox="0 0 200 200" className="select-none">
-              <circle cx="100" cy="100" r="73" fill="none" stroke="#F1F3F5" strokeWidth="22" className="dark:stroke-[#1E1E24]" />
+              <circle cx="100" cy="100" r="73" fill="none" stroke="var(--color-surface-subtle)" strokeWidth="22" />
               {donut.map((seg) => (
                 <path
                   key={seg.id}
@@ -472,10 +474,10 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
               ))}
             </svg>
             <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center px-8">
-              <span className="max-w-full truncate text-[9px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+              <span className="max-w-full truncate text-[9px] font-bold uppercase tracking-wider text-foreground-secondary">
                 {activeCategory ? activeCategory.name : t.netWorth.totalAssets}
               </span>
-              <span className="mt-0.5 max-w-full truncate font-mono text-sm font-black text-[#0F172A] dark:text-[#F8FAFC] tnum">
+              <span className="mt-0.5 max-w-full truncate font-mono text-sm font-black text-foreground tnum">
                 {(() => {
                   const v = activeCategory ? activeCategory.total : totalAssets;
                   const full = fmt(v);
@@ -488,7 +490,7 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
                     : full;
                 })()}
               </span>
-              <span className="font-mono text-xs font-bold text-amber-500">
+              <span className="font-mono text-xs font-bold text-warning">
                 {activeCategory ? `${activeCategory.percentage.toFixed(1)}%` : "100%"}
               </span>
             </div>
@@ -503,20 +505,20 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
                 className={cn(
                   "flex flex-col gap-1 rounded-xl border p-2.5 text-left transition-all cursor-pointer",
                   selectedSlice === c.id
-                    ? "border-[#0F172A] dark:border-[#FAFAFA] bg-[#F8F9FA] dark:bg-[#1A1A20]"
-                    : "border-[#E5E7EB] dark:border-[#27272A] hover:border-[#CBD5E1]",
+                    ? "border-border-strong bg-canvas"
+                    : "border-border hover:border-foreground-muted",
                 )}
               >
                 <span className="flex items-center justify-between gap-2">
-                  <span className="flex items-center gap-1.5 text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                  <span className="flex items-center gap-1.5 text-xs font-bold text-foreground">
                     <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
                     {c.name}
                   </span>
                   <span className="font-mono text-xs font-bold tnum">
-                    {fmt(c.total)} <span className="text-[#94A3B8] font-semibold">{c.percentage.toFixed(1)}%</span>
+                    {fmt(c.total)} <span className="text-foreground-muted font-semibold">{c.percentage.toFixed(1)}%</span>
                   </span>
                 </span>
-                <span className="h-1.5 w-full overflow-hidden rounded-full bg-[#F1F3F5] dark:bg-[#1E1E24]">
+                <span className="h-1.5 w-full overflow-hidden rounded-full bg-surface-subtle">
                   <span
                     className="block h-full rounded-full transition-all"
                     style={{ width: `${Math.min(100, c.percentage)}%`, backgroundColor: c.color }}
@@ -530,8 +532,8 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
 
       {/* BREAKDOWN 2-col */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="rounded-2xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] p-4 sm:p-5 flex flex-col gap-3 shadow-2xs">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
+        <div className="rounded-2xl bg-surface border border-border p-4 sm:p-5 flex flex-col gap-3 shadow-2xs">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">
             {t.netWorth.assets} — {fmt(totalAssets)}
           </h2>
           {assetCategories.map((c) => {
@@ -540,7 +542,7 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
             <div key={c.id} className="flex flex-col gap-1">
               <div className="flex items-center justify-between gap-2">
                 <Link href={c.href} className="flex items-center gap-2 group min-w-0">
-                  <span className="flex items-center gap-2 text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC] group-hover:underline truncate">
+                  <span className="flex items-center gap-2 text-xs font-bold text-foreground group-hover:underline truncate">
                     <span className="flex h-6 w-6 items-center justify-center rounded-lg shrink-0" style={{ backgroundColor: `${c.color}1A`, color: c.color }}>
                       {c.icon}
                     </span>
@@ -555,7 +557,7 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
                       onClick={() => toggleExpanded(c.id)}
                       aria-expanded={isExpanded}
                       aria-label={isExpanded ? "Collapse" : "Expand"}
-                      className="rounded-md p-1 text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] transition-colors cursor-pointer"
+                      className="rounded-md p-1 text-foreground-muted hover:text-foreground transition-colors cursor-pointer"
                     >
                       <ChevronDown className={cn("w-4 h-4 transition-transform", isExpanded && "rotate-180")} />
                     </button>
@@ -565,7 +567,7 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
               {isExpanded && c.items.length > 0 && (
                 <div className="flex flex-col gap-0.5 pl-8 pr-0.5">
                   {c.items.map((it) => (
-                    <div key={it.id} className="flex items-center justify-between gap-2 text-[11px] text-[#64748B] dark:text-[#94A3B8]">
+                    <div key={it.id} className="flex items-center justify-between gap-2 text-[11px] text-foreground-secondary">
                       <span className="truncate">{it.name}</span>
                       <span className="font-mono shrink-0 tnum">{fmt(it.amount)}</span>
                     </div>
@@ -577,24 +579,24 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
           })}
         </div>
 
-        <div className="rounded-2xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] p-4 sm:p-5 flex flex-col gap-3 shadow-2xs">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
+        <div className="rounded-2xl bg-surface border border-border p-4 sm:p-5 flex flex-col gap-3 shadow-2xs">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">
             {t.netWorth.liabilitiesTitle} — {fmt(totalDebts)}
           </h2>
           {data.debts.length === 0 ? (
-            <p className="text-xs text-[#94A3B8] py-4 text-center">
+            <p className="text-xs text-foreground-muted py-4 text-center">
               {t.netWorth.noActiveDebts}
             </p>
           ) : (
             data.debts.map((d) => (
               <Link key={d.id} href="/debts" className="flex items-center justify-between gap-2 group">
-                <span className="flex items-center gap-2 text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC] group-hover:underline">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-rose-500/10 text-rose-500">
+                <span className="flex items-center gap-2 text-xs font-bold text-foreground group-hover:underline">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-destructive-muted text-destructive">
                     <ArrowDownRight className="w-3.5 h-3.5" />
                   </span>
                   {d.name}
                 </span>
-                <span className="font-mono text-xs font-bold text-rose-500 tnum">
+                <span className="font-mono text-xs font-bold text-destructive tnum">
                   -{fmt(convert(d.amountIdr))}
                 </span>
               </Link>

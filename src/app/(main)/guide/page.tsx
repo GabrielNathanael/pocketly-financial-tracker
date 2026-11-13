@@ -56,84 +56,84 @@ export default function GuidePage() {
       icon: Zap,
       data: g.sections.quickStart,
       badge: "Speed of Input",
-      color: "text-[#0D9488] bg-[#0D9488]/10 border-[#0D9488]/20",
+      color: "text-success bg-success/10 border-success/20",
     },
     {
       key: "ocrReceiptScanner",
       icon: Camera,
       data: g.sections.ocrReceiptScanner,
       badge: "AI Smart OCR",
-      color: "text-[#0284C7] bg-[#0284C7]/10 border-[#0284C7]/20",
+      color: "text-info bg-info/10 border-info/20",
     },
     {
       key: "dueCenter",
       icon: CalendarClock,
       data: g.sections.dueCenter,
       badge: "Obligation Hub",
-      color: "text-[#F59E0B] bg-[#F59E0B]/10 border-[#F59E0B]/20",
+      color: "text-warning bg-warning/10 border-warning/20",
     },
     {
       key: "investments",
       icon: TrendingUp,
       data: g.sections.investments,
       badge: "IDX Stock Portfolio",
-      color: "text-[#10B981] bg-[#10B981]/10 border-[#10B981]/20",
+      color: "text-success bg-success/10 border-success/20",
     },
     {
       key: "savingsGoals",
       icon: Target,
       data: g.sections.savingsGoals,
       badge: "Goal Milestone",
-      color: "text-[#8B5CF6] bg-[#8B5CF6]/10 border-[#8B5CF6]/20",
+      color: "text-info bg-info/10 border-info/20",
     },
     {
       key: "recurring",
       icon: RefreshCw,
       data: g.sections.recurring,
       badge: "Subscriptions",
-      color: "text-[#0D9488] bg-[#0D9488]/10 border-[#0D9488]/20",
+      color: "text-success bg-success/10 border-success/20",
     },
     {
       key: "accounts",
       icon: Wallet,
       data: g.sections.accounts,
       badge: "Multi-Currency",
-      color: "text-[#0284C7] bg-[#0284C7]/10 border-[#0284C7]/20",
+      color: "text-info bg-info/10 border-info/20",
     },
     {
       key: "debts",
       icon: Scale,
       data: g.sections.debts,
       badge: "Payables & Receivables",
-      color: "text-[#E11D48] bg-[#E11D48]/10 border-[#E11D48]/20",
+      color: "text-destructive bg-destructive/10 border-destructive/20",
     },
     {
       key: "budgets",
       icon: PieChart,
       data: g.sections.budgets,
       badge: "Multi-Currency Budget",
-      color: "text-[#8B5CF6] bg-[#8B5CF6]/10 border-[#8B5CF6]/20",
+      color: "text-info bg-info/10 border-info/20",
     },
     {
       key: "netWorth",
       icon: Coins,
       data: g.sections.netWorth,
       badge: "Balance Sheet",
-      color: "text-[#10B981] bg-[#10B981]/10 border-[#10B981]/20",
+      color: "text-success bg-success/10 border-success/20",
     },
     {
       key: "cashflowAnalytics",
       icon: BarChart3,
       data: g.sections.cashflowAnalytics,
       badge: "Analytics",
-      color: "text-[#10B981] bg-[#10B981]/10 border-[#10B981]/20",
+      color: "text-success bg-success/10 border-success/20",
     },
     {
       key: "auditTrail",
       icon: History,
       data: g.sections.auditTrail,
       badge: g.auditTrailBadge,
-      color: "text-[#6366F1] bg-[#6366F1]/10 border-[#6366F1]/20",
+      color: "text-info bg-info/10 border-info/20",
     },
     {
       key: "search",
@@ -141,14 +141,14 @@ export default function GuidePage() {
       data: g.sections.search,
       badge: "⌘K / Ctrl+K",
       color:
-        "text-[#0F172A] dark:text-[#FAFAFA] bg-[#F1F3F5] dark:bg-[#1A1A20] border-[#E5E7EB] dark:border-[#27272A]",
+        "text-foreground bg-surface-muted border-border",
     },
     {
       key: "backup",
       icon: Download,
       data: g.sections.backup,
       badge: "Privacy & Backup",
-      color: "text-[#475569] bg-[#475569]/10 border-[#475569]/20",
+      color: "text-info bg-info/10 border-info/20",
     },
   ];
 
@@ -158,27 +158,27 @@ export default function GuidePage() {
       <div className="flex items-center justify-between">
         <Link
           href="/dashboard"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-foreground-muted hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>{t.common.back}</span>
         </Link>
-        <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded bg-[#F1F3F5] dark:bg-[#1A1A20] text-[#64748B] dark:text-[#94A3B8] border border-[#E5E7EB] dark:border-[#27272A]">
+        <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded bg-surface-muted text-foreground-muted border border-border">
           {g.badge}
         </span>
       </div>
 
       {/* Hero Header */}
-      <div className="p-5 sm:p-6 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-2.5">
+      <div className="p-5 sm:p-6 rounded-xl bg-surface border border-border flex flex-col gap-2.5">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-lg bg-surface-inverse text-foreground-inverse flex items-center justify-center shrink-0">
             <BookOpen className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-lg sm:text-xl font-bold tracking-tight text-[#0F172A] dark:text-[#F8FAFC]">
+            <h1 className="text-lg sm:text-xl font-bold tracking-tight text-foreground">
               {g.title}
             </h1>
-            <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-0.5">
+            <p className="text-xs text-foreground-muted mt-0.5">
               {g.subtitle}
             </p>
           </div>
@@ -195,13 +195,13 @@ export default function GuidePage() {
           return (
             <div
               key={sec.key}
-              className="rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] overflow-hidden transition-all"
+              className="rounded-xl bg-surface border border-border overflow-hidden transition-all"
             >
               {/* Header Accordion Toggle */}
               <button
                 type="button"
                 onClick={() => toggleSection(sec.key)}
-                className="w-full flex items-center justify-between p-4 sm:p-5 text-left hover:bg-[#F8F9FA] dark:hover:bg-[#1A1A20]/50 transition-colors cursor-pointer"
+                className="w-full flex items-center justify-between p-4 sm:p-5 text-left hover:bg-surface-subtle/50 transition-colors cursor-pointer"
               >
                 <div className="flex items-center gap-3.5 min-w-0 pr-2">
                   <div
@@ -214,20 +214,20 @@ export default function GuidePage() {
                   </div>
                   <div className="flex flex-col min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h2 className="text-xs sm:text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate">
+                      <h2 className="text-xs sm:text-sm font-bold text-foreground truncate">
                         {sec.data.title}
                       </h2>
-                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-[#F1F3F5] dark:bg-[#1A1A20] text-[#64748B] dark:text-[#94A3B8] border border-[#E5E7EB] dark:border-[#27272A]">
+                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-surface-muted text-foreground-muted border border-border">
                         {sec.badge}
                       </span>
                     </div>
-                    <p className="text-[11px] text-[#64748B] dark:text-[#94A3B8] mt-0.5 leading-relaxed">
+                    <p className="text-[11px] text-foreground-muted mt-0.5 leading-relaxed">
                       {sec.data.subtitle}
                     </p>
                   </div>
                 </div>
 
-                <div className="shrink-0 text-[#94A3B8]">
+                <div className="shrink-0 text-foreground-muted">
                   {isOpen ? (
                     <ChevronUp className="w-4 h-4" />
                   ) : (
@@ -238,20 +238,20 @@ export default function GuidePage() {
 
               {/* Collapsible Content */}
               {isOpen && (
-                <div className="px-4 pb-4 sm:px-5 sm:pb-5 pt-1 border-t border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-3">
-                  <p className="text-xs text-[#334155] dark:text-[#CBD5E1] leading-relaxed">
+                <div className="px-4 pb-4 sm:px-5 sm:pb-5 pt-1 border-t border-border flex flex-col gap-3">
+                  <p className="text-xs text-foreground-secondary leading-relaxed">
                     {sec.data.content}
                   </p>
 
                   {/* Step by step checklist */}
-                  <div className="flex flex-col gap-2 p-3.5 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A]">
+                  <div className="flex flex-col gap-2 p-3.5 rounded-lg bg-surface-subtle border border-border">
                     {sec.data.steps.map((step, sIdx) => (
                       <div
                         key={sIdx}
                         className="flex items-start gap-2 text-xs"
                       >
-                        <CheckCircle2 className="w-4 h-4 text-[#0D9488] shrink-0 mt-0.5" />
-                        <span className="text-[#0F172A] dark:text-[#F8FAFC]">
+                        <CheckCircle2 className="w-4 h-4 text-success shrink-0 mt-0.5" />
+                        <span className="text-foreground">
                           {step}
                         </span>
                       </div>

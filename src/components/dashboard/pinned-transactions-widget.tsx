@@ -63,8 +63,8 @@ export function PinnedTransactionsWidget() {
   return (
     <div className="flex flex-col gap-2.5">
       <div className="flex items-center justify-between px-0.5">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC] flex items-center gap-1.5">
-          <Pin className="w-3.5 h-3.5 text-[#0F172A] dark:text-[#FAFAFA]" />
+        <h2 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+          <Pin className="w-3.5 h-3.5 text-foreground" />
           <span>{t.dashboard.pinnedTitle}</span>
         </h2>
 
@@ -74,7 +74,7 @@ export function PinnedTransactionsWidget() {
             <button
               type="button"
               onClick={scrollLeft}
-              className="p-1 rounded-md bg-[#F1F3F5] dark:bg-[#1A1A20] hover:bg-[#E2E8F0] dark:hover:bg-[#27272A] text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8] dark:hover:text-[#FAFAFA] border border-[#E5E7EB] dark:border-[#27272A] transition-colors cursor-pointer"
+              className="p-1 rounded-md bg-surface-muted hover:bg-secondary-hover text-foreground-secondary hover:text-foreground border border-border transition-colors cursor-pointer"
               title={t.dashboard.scrollLeft || "Scroll Left"}
             >
               <ChevronLeft className="w-3.5 h-3.5" />
@@ -82,7 +82,7 @@ export function PinnedTransactionsWidget() {
             <button
               type="button"
               onClick={scrollRight}
-              className="p-1 rounded-md bg-[#F1F3F5] dark:bg-[#1A1A20] hover:bg-[#E2E8F0] dark:hover:bg-[#27272A] text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8] dark:hover:text-[#FAFAFA] border border-[#E5E7EB] dark:border-[#27272A] transition-colors cursor-pointer"
+              className="p-1 rounded-md bg-surface-muted hover:bg-secondary-hover text-foreground-secondary hover:text-foreground border border-border transition-colors cursor-pointer"
               title={t.dashboard.scrollRight || "Scroll Right"}
             >
               <ChevronRight className="w-3.5 h-3.5" />
@@ -102,7 +102,7 @@ export function PinnedTransactionsWidget() {
           return (
             <div
               key={tpl.id}
-              className="relative min-w-40 sm:min-w-47.5 shrink-0 p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors flex flex-col justify-between group shadow-2xs"
+              className="relative min-w-40 sm:min-w-47.5 shrink-0 p-3.5 rounded-xl bg-surface border border-border hover:border-foreground transition-colors flex flex-col justify-between group shadow-2xs"
             >
               <button
                 type="button"
@@ -118,7 +118,7 @@ export function PinnedTransactionsWidget() {
                     })
                     .finally(() => setRemovingId(null));
                 }}
-                className="absolute right-1.5 top-1.5 p-2 rounded-full text-[#94A3B8] hover:text-[#E11D48] active:text-[#E11D48] opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-20 touch-manipulation"
+                className="absolute right-1.5 top-1.5 p-2 rounded-full text-foreground-muted hover:text-destructive active:text-destructive opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-20 touch-manipulation"
                 title={t.dashboard.deletePinnedTitle || "Remove pin"}
                 disabled={removingId === tpl.id}
               >
@@ -131,20 +131,20 @@ export function PinnedTransactionsWidget() {
                 disabled={isLogging}
                 className="flex flex-col text-left w-full cursor-pointer select-none"
               >
-                <span className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate pr-4">
+                <span className="text-xs font-bold text-foreground truncate pr-4">
                   {tpl.name}
                 </span>
-                <span className="text-[11px] text-[#64748B] dark:text-[#94A3B8] truncate mt-0.5">
+                <span className="text-[11px] text-foreground-secondary truncate mt-0.5">
                   {tpl.categoryName || t.common.category} •{" "}
                   {tpl.accountName || t.common.account}
                 </span>
 
-                <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-[#E5E7EB] dark:border-[#27272A]">
+                <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-border">
                   <span
                     className={`text-xs font-mono font-bold tnum truncate ${
                       tpl.type === "income"
-                        ? "text-[#0D9488]"
-                        : "text-[#E11D48]"
+                        ? "text-success"
+                        : "text-destructive"
                     }`}
                   >
                     {maskCurrency(
@@ -153,9 +153,9 @@ export function PinnedTransactionsWidget() {
                     )}
                   </span>
 
-                  <div className="w-5 h-5 rounded bg-[#F1F3F5] dark:bg-[#1A1A20] flex items-center justify-center text-[#0F172A] dark:text-[#FAFAFA] shrink-0 ml-1">
+                  <div className="w-5 h-5 rounded bg-surface-muted flex items-center justify-center text-foreground shrink-0 ml-1">
                     {isSuccess ? (
-                      <Check className="w-3 h-3 text-[#0D9488]" />
+                      <Check className="w-3 h-3 text-success" />
                     ) : isLogging ? (
                       <span className="w-2.5 h-2.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
                     ) : (

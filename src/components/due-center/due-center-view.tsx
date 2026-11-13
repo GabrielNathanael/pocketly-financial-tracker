@@ -87,7 +87,7 @@ export function DueCenterView({
       dueDate: rec.next_due_date,
       daysDiff,
       icon: rec.category?.icon || 'Repeat',
-      color: '#64748B',
+      color: 'var(--token-muted-foreground)',
       link: '/recurring',
       ctaText: t.dueCenter.payBill,
       accountName: rec.account?.name,
@@ -113,7 +113,7 @@ export function DueCenterView({
       dueDate: debt.due_date,
       daysDiff,
       icon: 'Scale',
-      color: debt.type === 'debt' ? '#E11D48' : '#10B981',
+      color: debt.type === 'debt' ? 'var(--token-destructive)' : 'var(--token-success)',
       link: `/debts/${debt.id}`,
       ctaText: t.dueCenter.payInstallment,
     })
@@ -137,7 +137,7 @@ export function DueCenterView({
       dueDate: goal.target_date,
       daysDiff,
       icon: goal.icon || 'Target',
-      color: goal.color || '#0D9488',
+      color: goal.color || 'var(--token-info)',
       link: '/goals',
       ctaText: t.dueCenter.depositGoal,
       categoryName: goal.category?.name,
@@ -197,28 +197,28 @@ export function DueCenterView({
     <div className="flex flex-col gap-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[#0F172A] dark:text-[#F8FAFC] flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+        <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-warning-muted text-warning flex items-center justify-center shrink-0">
             <CalendarClock className="w-5 h-5" />
           </div>
           <span>{t.dueCenter.centerTitle}</span>
         </h1>
-        <p className="text-xs sm:text-sm text-[#64748B] dark:text-[#94A3B8] mt-1">
+        <p className="text-xs sm:text-sm text-muted-foreground mt-1">
           {t.dueCenter.subtitle}
         </p>
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 sm:p-4 rounded-2xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] shadow-xs">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 sm:p-4 rounded-2xl bg-surface border border-border shadow-xs">
         {/* Search Bar */}
         <div className="relative flex-1 min-w-50">
-          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground-muted" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={t.dueCenter.searchPlaceholder}
-            className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-xs font-medium text-[#0F172A] dark:text-[#F8FAFC] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#0F172A] dark:focus:border-[#FAFAFA] transition-colors"
+            className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-canvas dark:bg-surface-subtle border border-border text-xs font-medium text-foreground placeholder:text-foreground-muted focus:outline-none focus:border-border-strong transition-colors"
           />
         </div>
 
@@ -232,7 +232,7 @@ export function DueCenterView({
                 setFilterSource(val as "all" | "recurring" | "debt" | "goal")
               }
             >
-              <SelectTrigger className="px-3 py-2 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] text-xs font-semibold">
+              <SelectTrigger className="px-3 py-2 rounded-xl bg-canvas dark:bg-surface-subtle text-xs font-semibold">
                 <SelectValue placeholder={t.dueCenter.allSources} />
               </SelectTrigger>
               <SelectContent>
@@ -260,7 +260,7 @@ export function DueCenterView({
                 setFilterUrgency(val as "all" | "overdue" | "today" | "soon" | "later")
               }
             >
-              <SelectTrigger className="px-3 py-2 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] text-xs font-semibold">
+              <SelectTrigger className="px-3 py-2 rounded-xl bg-canvas dark:bg-surface-subtle text-xs font-semibold">
                 <SelectValue placeholder={t.dueCenter.allUrgencies} />
               </SelectTrigger>
               <SelectContent>
@@ -287,15 +287,15 @@ export function DueCenterView({
 
       {/* Main Schedule List */}
       {filteredItems.length === 0 ? (
-        <div className="p-10 rounded-2xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-center flex flex-col items-center justify-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+        <div className="p-10 rounded-2xl bg-surface border border-border text-center flex flex-col items-center justify-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-success-muted text-success flex items-center justify-center">
             <CheckCircle2 className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+            <h3 className="text-sm font-bold text-foreground">
               {t.dueCenter.allClear}
             </h3>
-            <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-1 max-w-md">
+            <p className="text-xs text-muted-foreground mt-1 max-w-md">
               {t.dueCenter.noMatches}
             </p>
           </div>
@@ -313,29 +313,29 @@ export function DueCenterView({
                 className={cn(
                   'p-4 rounded-2xl border transition-all flex flex-col justify-between gap-3 shadow-2xs hover:shadow-sm',
                   isOverdue
-                    ? 'bg-rose-50/40 dark:bg-rose-950/15 border-rose-200 dark:border-rose-900/40'
+                    ? 'bg-destructive-muted border-destructive/30'
                     : isToday
-                    ? 'bg-amber-50/40 dark:bg-amber-950/15 border-amber-200 dark:border-amber-900/40'
-                    : 'bg-white dark:bg-[#121215] border-[#E5E7EB] dark:border-[#27272A]'
+                    ? 'bg-warning-muted border-warning/30'
+                    : 'bg-surface border-border'
                 )}
               >
                 {/* Header row */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
                     <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0 shadow-xs"
-                      style={{ backgroundColor: item.color || '#6366F1' }}
+                      className="w-10 h-10 rounded-xl flex items-center justify-center text-primary-foreground shrink-0 shadow-xs"
+                      style={{ backgroundColor: item.color || 'var(--token-info)' }}
                     >
                       <DynamicIcon name={item.icon} className="w-5 h-5" />
                     </div>
 
                     <div className="flex flex-col min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate">
+                        <span className="text-xs font-bold text-foreground truncate">
                           {item.title}
                         </span>
                       </div>
-                      <span className="text-[11px] text-[#64748B] dark:text-[#94A3B8] truncate mt-0.5">
+                      <span className="text-[11px] text-muted-foreground truncate mt-0.5">
                         {item.subtitle}
                         {item.accountName && ` • ${item.accountName}`}
                       </span>
@@ -347,12 +347,12 @@ export function DueCenterView({
                     className={cn(
                       'px-2.5 py-1 rounded-lg text-[10px] font-bold shrink-0 flex items-center gap-1',
                       isOverdue
-                        ? 'bg-rose-500 text-white'
+                        ? 'bg-destructive text-destructive-foreground'
                         : isToday
-                        ? 'bg-amber-500 text-white'
+                        ? 'bg-warning text-warning-foreground'
                         : isUrgent
-                        ? 'bg-sky-500/15 text-sky-700 dark:text-sky-300'
-                        : 'bg-gray-100 dark:bg-[#27272A] text-[#64748B] dark:text-[#94A3B8]'
+                        ? 'bg-info-muted text-info'
+                        : 'bg-muted dark:bg-accent text-muted-foreground'
                     )}
                   >
                     {isOverdue && <AlertTriangle className="w-3 h-3" />}
@@ -368,12 +368,12 @@ export function DueCenterView({
                 </div>
 
                 {/* Amount & Action Row */}
-                <div className="pt-3 border-t border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-between gap-3">
+                <div className="pt-3 border-t border-border flex items-center justify-between gap-3">
                   <div>
-                    <span className="text-[9px] uppercase font-bold text-[#94A3B8] block leading-none">
+                    <span className="text-[9px] uppercase font-bold text-foreground-muted block leading-none">
                       {t.dueCenter.amountDue}
                     </span>
-                    <span className="font-mono font-black text-sm sm:text-base text-[#0F172A] dark:text-[#F8FAFC] mt-0.5 block">
+                    <span className="font-mono font-black text-sm sm:text-base text-foreground mt-0.5 block">
                       {formatCurrency(item.amount, item.currency)}
                     </span>
                   </div>
@@ -383,7 +383,7 @@ export function DueCenterView({
                       type="button"
                       disabled={processingId === item.rawId}
                       onClick={() => handleQuickPayRecurring(item.rawId)}
-                      className="px-3.5 py-1.5 rounded-xl bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] text-xs font-bold hover:opacity-90 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5 shrink-0"
+                      className="px-3.5 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold hover:bg-primary-hover active:scale-95 transition-all cursor-pointer flex items-center gap-1.5 shrink-0"
                     >
                       {processingId === item.rawId ? (
                         <span>{t.dueCenter.processing}</span>
@@ -397,7 +397,7 @@ export function DueCenterView({
                   ) : (
                     <Link
                       href={item.link}
-                      className="px-3.5 py-1.5 rounded-xl bg-white dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] text-xs font-bold hover:bg-[#F1F3F5] dark:hover:bg-[#26262E] active:scale-95 transition-all cursor-pointer flex items-center gap-1 shrink-0 shadow-2xs"
+                      className="px-3.5 py-1.5 rounded-xl bg-surface dark:bg-surface-subtle border border-border text-foreground text-xs font-bold hover:bg-surface-subtle dark:hover:bg-surface-muted active:scale-95 transition-all cursor-pointer flex items-center gap-1 shrink-0 shadow-2xs"
                     >
                       <span>{item.ctaText}</span>
                       <ArrowRight className="w-3.5 h-3.5" />

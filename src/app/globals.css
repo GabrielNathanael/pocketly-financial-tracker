@@ -2,10 +2,65 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+@theme {
+  --color-canvas: var(--token-canvas);
+  --color-surface: var(--token-surface);
+  --color-surface-subtle: var(--token-surface-subtle);
+  --color-surface-muted: var(--token-surface-muted);
+  --color-surface-inverse: var(--token-surface-inverse);
+  --color-surface-inverse-hover: var(--token-surface-inverse-hover);
+  --color-surface-contrast: var(--token-surface-contrast);
+
+  --color-border: var(--token-border);
+  --color-border-strong: var(--token-border-strong);
+  --color-border-inverse: var(--token-border-inverse);
+
+  --color-foreground: var(--token-foreground);
+  --color-foreground-secondary: var(--token-foreground-secondary);
+  --color-foreground-muted: var(--token-foreground-muted);
+  --color-foreground-inverse: var(--token-foreground-inverse);
+
+  --color-primary: var(--token-primary);
+  --color-primary-hover: var(--token-primary-hover);
+  --color-primary-foreground: var(--token-primary-foreground);
+
+  --color-secondary: var(--token-secondary);
+  --color-secondary-hover: var(--token-secondary-hover);
+  --color-secondary-foreground: var(--token-secondary-foreground);
+
+  --color-accent: var(--token-accent);
+  --color-accent-foreground: var(--token-accent-foreground);
+
+  --color-muted: var(--token-muted);
+  --color-muted-foreground: var(--token-muted-foreground);
+
+  --color-destructive: var(--token-destructive);
+  --color-destructive-hover: var(--token-destructive-hover);
+  --color-destructive-foreground: var(--token-destructive-foreground);
+  --color-destructive-muted: var(--token-destructive-muted);
+
+  --color-success: var(--token-success);
+  --color-success-foreground: var(--token-success-foreground);
+  --color-success-muted: var(--token-success-muted);
+
+  --color-warning: var(--token-warning);
+  --color-warning-foreground: var(--token-warning-foreground);
+  --color-warning-muted: var(--token-warning-muted);
+
+  --color-info: var(--token-info);
+  --color-info-foreground: var(--token-info-foreground);
+  --color-info-muted: var(--token-info-muted);
+
+  --color-ring: var(--token-ring);
+  --color-overlay: var(--token-overlay);
+}
+
 @layer base {
   :root {
     --font-sans: var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --font-mono: var(--font-mono), monospace;
+
+    /* Backward-compatible aliases */
     --canvas: #F8F9FA;
     --surface: #FFFFFF;
     --surface-sub: #F1F3F5;
@@ -14,9 +69,62 @@
     --ink-primary: #0F172A;
     --ink-secondary: #475569;
     --ink-muted: #94A3B8;
+
+    /* Semantic tokens (light) */
+    --token-canvas: #F8F9FA;
+    --token-surface: #FFFFFF;
+    --token-surface-subtle: #F1F3F5;
+    --token-surface-muted: #E9ECEF;
+    --token-surface-inverse: #0F172A;
+    --token-surface-inverse-hover: #1E293B;
+    --token-surface-contrast: #F8F9FA;
+
+    --token-border: #E5E7EB;
+    --token-border-strong: #0F172A;
+    --token-border-inverse: #1E293B;
+
+    --token-foreground: #0F172A;
+    --token-foreground-secondary: #475569;
+    --token-foreground-muted: #94A3B8;
+    --token-foreground-inverse: #FFFFFF;
+
+    --token-primary: #0F172A;
+    --token-primary-hover: #1E293B;
+    --token-primary-foreground: #FFFFFF;
+
+    --token-secondary: #F1F3F5;
+    --token-secondary-hover: #E9ECEF;
+    --token-secondary-foreground: #0F172A;
+
+    --token-accent: #E2E8F0;
+    --token-accent-foreground: #0F172A;
+
+    --token-muted: #F1F3F5;
+    --token-muted-foreground: #64748B;
+
+    --token-destructive: #E11D48;
+    --token-destructive-hover: #BE123C;
+    --token-destructive-foreground: #FFFFFF;
+    --token-destructive-muted: #FFF1F2;
+
+    --token-success: #059669;
+    --token-success-foreground: #FFFFFF;
+    --token-success-muted: #ECFDF5;
+
+    --token-warning: #D97706;
+    --token-warning-foreground: #FFFFFF;
+    --token-warning-muted: #FFFBEB;
+
+    --token-info: #2563EB;
+    --token-info-foreground: #FFFFFF;
+    --token-info-muted: #EFF6FF;
+
+    --token-ring: #0F172A;
+    --token-overlay: rgba(15, 23, 42, 0.5);
   }
 
   .dark {
+    /* Backward-compatible aliases */
     --canvas: #09090B;
     --surface: #121215;
     --surface-sub: #1A1A20;
@@ -25,12 +133,64 @@
     --ink-primary: #F8FAFC;
     --ink-secondary: #94A3B8;
     --ink-muted: #64748B;
+
+    /* Semantic tokens (dark) */
+    --token-canvas: #09090B;
+    --token-surface: #121215;
+    --token-surface-subtle: #1A1A20;
+    --token-surface-muted: #26262E;
+    --token-surface-inverse: #F8FAFC;
+    --token-surface-inverse-hover: #E2E8F0;
+    --token-surface-contrast: #1E293B;
+
+    --token-border: #27272A;
+    --token-border-strong: #FAFAFA;
+    --token-border-inverse: #334155;
+
+    --token-foreground: #F8FAFC;
+    --token-foreground-secondary: #94A3B8;
+    --token-foreground-muted: #64748B;
+    --token-foreground-inverse: #0F172A;
+
+    --token-primary: #F8FAFC;
+    --token-primary-hover: #E2E8F0;
+    --token-primary-foreground: #0F172A;
+
+    --token-secondary: #1A1A20;
+    --token-secondary-hover: #26262E;
+    --token-secondary-foreground: #F8FAFC;
+
+    --token-accent: #27272A;
+    --token-accent-foreground: #F8FAFC;
+
+    --token-muted: #1A1A20;
+    --token-muted-foreground: #94A3B8;
+
+    --token-destructive: #F43F5E;
+    --token-destructive-hover: #E11D48;
+    --token-destructive-foreground: #FFFFFF;
+    --token-destructive-muted: rgba(244, 63, 94, 0.15);
+
+    --token-success: #34D399;
+    --token-success-foreground: #022C22;
+    --token-success-muted: rgba(52, 211, 153, 0.15);
+
+    --token-warning: #FBBF24;
+    --token-warning-foreground: #422006;
+    --token-warning-muted: rgba(251, 191, 36, 0.15);
+
+    --token-info: #60A5FA;
+    --token-info-foreground: #172554;
+    --token-info-muted: rgba(96, 165, 250, 0.15);
+
+    --token-ring: #FAFAFA;
+    --token-overlay: rgba(0, 0, 0, 0.6);
   }
 }
 
 body {
-  background-color: var(--canvas);
-  color: var(--ink-primary);
+  background-color: var(--token-canvas);
+  color: var(--token-foreground);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

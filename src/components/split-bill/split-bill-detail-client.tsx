@@ -1242,27 +1242,27 @@ export function SplitBillDetailClient({
   /** Strip foto struk + tombol hapus (dipakai di Step 1, Step 4 & di tampilan hasil). */
   const renderReceiptPhotos = () => (
     <div className="flex flex-col gap-2">
-      <span className="text-xs font-semibold text-[#64748B] dark:text-[#94A3B8]">
+      <span className="text-xs font-semibold text-foreground-secondary">
         {language === "id" ? "Foto struk" : "Receipt photos"} ({images.length}/3)
       </span>
       <div className="flex items-center gap-2 overflow-x-auto scrollbar-none [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden pb-1">
         {images.map((img) => (
           <div
             key={img.id}
-            className="relative w-16 h-16 rounded-lg overflow-hidden border border-[#E5E7EB] dark:border-[#27272A] shrink-0 bg-[#F8F9FA] dark:bg-[#1A1A20] group"
+            className="relative w-16 h-16 rounded-lg overflow-hidden border border-border shrink-0 bg-canvas dark:bg-surface-subtle group"
           >
             {img.signed_url ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={img.signed_url} alt="" className="w-full h-full object-cover cursor-pointer" onClick={() => window.open(img.signed_url, "_blank")} />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-[10px] text-[#94A3B8]">...</div>
+              <div className="w-full h-full flex items-center justify-center text-[10px] text-foreground-muted">...</div>
             )}
             {/* Hapus foto (patungan tetap ada, hanya gambarnya yang dibuang) */}
             {billId && (
               <button
                 type="button"
                 onClick={() => setImageToDelete(img)}
-                className="absolute top-0 right-0 w-5 h-5 rounded-bl-lg bg-black/65 text-white flex items-center justify-center hover:bg-rose-600 transition-colors"
+                className="absolute top-0 right-0 w-5 h-5 rounded-bl-lg bg-black/65 text-white flex items-center justify-center hover:bg-destructive transition-colors"
                 title={language === "id" ? "Hapus foto" : "Delete photo"}
                 aria-label={language === "id" ? "Hapus foto" : "Delete photo"}
               >
@@ -1715,7 +1715,7 @@ export function SplitBillDetailClient({
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={img.previewUrl} alt="" className="max-h-full max-w-full object-contain rounded-xl" />
                     {img.status === "error" && (
-                      <div className="absolute top-6 right-6 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full">!</div>
+                      <div className="absolute top-6 right-6 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-1 rounded-full">!</div>
                     )}
                   </div>
                 ))}
@@ -1777,7 +1777,7 @@ export function SplitBillDetailClient({
                     <button
                       type="button"
                       onClick={() => removeScanImageEntry(img.id)}
-                      className="absolute top-0 right-0 bg-black/70 text-white rounded-bl-md p-0.5 hover:bg-rose-600 transition-colors"
+                      className="absolute top-0 right-0 bg-black/70 text-white rounded-bl-md p-0.5 hover:bg-destructive transition-colors"
                       aria-label={language === "id" ? "Hapus foto" : "Remove photo"}
                     >
                       <X className="w-3 h-3" />
@@ -1803,7 +1803,7 @@ export function SplitBillDetailClient({
             </div>
           )}
           {!isScanning && scanImages.some((x) => x.status === "error") && (
-            <p className="text-[11px] text-amber-300">
+            <p className="text-[11px] text-warning">
               {language === "id" ? "Ada foto gagal dipindai. Hapus lalu pindai ulang." : "Some photos failed. Remove and scan again."}
             </p>
           )}
@@ -1912,23 +1912,23 @@ export function SplitBillDetailClient({
     return (
       <div className="max-w-2xl mx-auto flex flex-col gap-4">
         <div className="flex items-center gap-2 py-2">
-          <Link href="/split-bill" className="p-2 rounded-lg hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20]"><ArrowLeft className="w-4 h-4" /></Link>
+          <Link href="/split-bill" className="p-2 rounded-lg hover:bg-surface-subtle"><ArrowLeft className="w-4 h-4" /></Link>
           <h1 className="text-lg font-bold">{t.splitBill.newBill}</h1>
         </div>
-        <div className="rounded-2xl border border-[#E5E7EB] dark:border-[#27272A] bg-white dark:bg-[#121215] p-5 sm:p-6 flex flex-col gap-4">
+        <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6 flex flex-col gap-4">
           <div>
             <h2 className="text-base font-bold">{t.splitBill.chooseStart}</h2>
-            <p className="text-sm text-[#64748B] dark:text-[#94A3B8] mt-1">{t.splitBill.chooseStartDesc}</p>
+            <p className="text-sm text-foreground-secondary mt-1">{t.splitBill.chooseStartDesc}</p>
           </div>
           {/* inputs moved into full-screen scan sheet */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <button
               onClick={openScanSheet}
-              className="text-left p-4 rounded-xl border border-[#E5E7EB] dark:border-[#27272A] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] hover:bg-[#F8F9FA] dark:hover:bg-[#1A1A20] transition-all"
+              className="text-left p-4 rounded-xl border border-border hover:border-border-strong hover:bg-canvas dark:hover:bg-surface-subtle transition-all"
             >
-              <div className="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-300 flex items-center justify-center mb-3"><Camera className="w-5 h-5" /></div>
+              <div className="w-10 h-10 rounded-lg bg-info-muted text-info flex items-center justify-center mb-3"><Camera className="w-5 h-5" /></div>
               <p className="font-bold text-sm">{t.splitBill.startScan}</p>
-              <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-1">{t.splitBill.startScanDesc}</p>
+              <p className="text-xs text-foreground-secondary mt-1">{t.splitBill.startScanDesc}</p>
             </button>
             <button
               onClick={() => {
@@ -1936,11 +1936,11 @@ export function SplitBillDetailClient({
                 setStep(1);
                 void ensureBillCreated({ manual: true });
               }}
-              className="text-left p-4 rounded-xl border border-[#E5E7EB] dark:border-[#27272A] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] hover:bg-[#F8F9FA] dark:hover:bg-[#1A1A20] transition-all"
+              className="text-left p-4 rounded-xl border border-border hover:border-border-strong hover:bg-canvas dark:hover:bg-surface-subtle transition-all"
             >
-              <div className="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-300 flex items-center justify-center mb-3"><PenLine className="w-5 h-5" /></div>
+              <div className="w-10 h-10 rounded-lg bg-success-muted text-success flex items-center justify-center mb-3"><PenLine className="w-5 h-5" /></div>
               <p className="font-bold text-sm">{t.splitBill.startManual}</p>
-              <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-1">{t.splitBill.startManualDesc}</p>
+              <p className="text-xs text-foreground-secondary mt-1">{t.splitBill.startManualDesc}</p>
             </button>
           </div>
         </div>
@@ -1954,7 +1954,7 @@ export function SplitBillDetailClient({
     // Belum ada peserta "Saya" -> kasih petunjuk cara menandainya.
     if (!meParticipant) {
       return (
-        <p className="text-[10px] text-[#94A3B8]">
+        <p className="text-[10px] text-foreground-muted">
           {language === "id"
             ? "Tandai salah satu peserta sebagai 'Saya' (tahan avatar / klik 2×) untuk mencatat porsi kamu ke transaksi."
             : "Mark a participant as 'You' (long-press the avatar / double-click) to record your portion as a transaction."}
@@ -1964,7 +1964,7 @@ export function SplitBillDetailClient({
     // Belum pernah dicatat -> petunjuk cara menc Catat (swipe / tombol ↑).
     if (!myRecordedTxId) {
       return (
-        <p className="text-[10px] text-[#94A3B8]">
+        <p className="text-[10px] text-foreground-muted">
           {language === "id"
             ? "Geser ke atas pada hasil (atau klik ↑ di baris porsi kamu) untuk mencatatnya ke transaksi."
             : "Swipe up on the result (or click ↑ on your row) to record it as a transaction."}
@@ -1983,17 +1983,17 @@ export function SplitBillDetailClient({
   const renderResultView = (opts?: { showShare?: boolean }) => (
     <div className="flex flex-col gap-4">
       <div
-        className="rounded-2xl border border-[#E5E7EB] dark:border-[#27272A] bg-white dark:bg-[#121215] p-4 sm:p-5 flex flex-col gap-4 shadow-sm"
+        className="rounded-2xl border border-border bg-surface p-4 sm:p-5 flex flex-col gap-4 shadow-sm"
         onTouchStart={handleResultTouchStart}
         onTouchEnd={handleResultTouchEnd}
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-lg font-bold text-[#0F172A] dark:text-[#FAFAFA]">{title || t.splitBill.title}</p>
-            <p className="text-xs text-[#64748B]">{formatBillDate(billDate)} · {currency}</p>
+            <p className="text-lg font-bold text-foreground">{title || t.splitBill.title}</p>
+            <p className="text-xs text-foreground-secondary">{formatBillDate(billDate)} · {currency}</p>
           </div>
           {splitMode === "equal" && (
-            <span className="shrink-0 inline-flex items-center gap-1 rounded-full border border-[#E5E7EB] dark:border-[#27272A] px-2.5 py-1 text-[10px] font-bold text-[#64748B] dark:text-[#94A3B8]">
+            <span className="shrink-0 inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-1 text-[10px] font-bold text-foreground-secondary">
               {t.splitBill.equalSplit}
             </span>
           )}
@@ -2001,39 +2001,39 @@ export function SplitBillDetailClient({
         {/* Angka struk */}
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between gap-3 text-sm">
-            <span className="text-[#64748B]">{t.splitBill.subtotal}</span>
+            <span className="text-foreground-secondary">{t.splitBill.subtotal}</span>
             <span className="font-mono font-semibold">{formatCurrency(calc.items_subtotal, currency)}</span>
           </div>
           {chargeTotals.map((c) => (
             <div key={c.kind} className="flex items-center justify-between gap-3 text-sm">
-              <span className="text-[#64748B]">{c.label}</span>
-              <span className={cn("font-mono font-semibold", c.kind === "discount" && "text-rose-600")}>
+              <span className="text-foreground-secondary">{c.label}</span>
+              <span className={cn("font-mono font-semibold", c.kind === "discount" && "text-destructive")}>
                 {formatCurrency(c.amount, currency)}
               </span>
             </div>
           ))}
           {hasTargetMismatch && (
             <div className="flex items-center justify-between gap-3 text-sm">
-              <span className="text-[#64748B]">{t.splitBill.computedTotal}</span>
-              <span className="font-mono font-semibold text-amber-600">{formatCurrency(calc.computed_grand_total, currency)}</span>
+              <span className="text-foreground-secondary">{t.splitBill.computedTotal}</span>
+              <span className="font-mono font-semibold text-warning">{formatCurrency(calc.computed_grand_total, currency)}</span>
             </div>
           )}
         </div>
 
         {/* Total akhir */}
-        <div className="flex items-end justify-between gap-3 border-y border-[#E5E7EB] dark:border-[#27272A] py-3">
-          <span className="text-sm text-[#64748B]">{t.splitBill.billTotalLabel}</span>
+        <div className="flex items-end justify-between gap-3 border-y border-border py-3">
+          <span className="text-sm text-foreground-secondary">{t.splitBill.billTotalLabel}</span>
           <span className="text-xl font-bold font-mono">{formatCurrency(targetGrand, currency)}</span>
         </div>
 
         {hasTargetMismatch && (
-          <div className="text-[11px] text-amber-600 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-lg px-2 py-1.5 -mt-2">
+          <div className="text-[11px] text-warning bg-warning-muted border border-warning/30 rounded-lg px-2 py-1.5 -mt-2">
             {t.splitBill.targetMismatch.replace("{diff}", formatCurrency(computedVsTargetDiff, currency))}
           </div>
         )}
 
         {!canMarkBalanced && (
-          <div className="text-xs font-semibold text-amber-600 -mt-2">
+          <div className="text-xs font-semibold text-warning -mt-2">
             {calc.unassigned_item_ids.length > 0 && (
               <p>{`${t.splitBill.unassigned}: ${calc.unassigned_item_ids.length} item.`}</p>
             )}
@@ -2045,9 +2045,9 @@ export function SplitBillDetailClient({
 
         {/* Rincian per orang */}
         <div className="flex flex-col gap-3">
-          <p className="text-[10px] font-bold uppercase tracking-wide text-[#64748B]">{language === "id" ? "Per Orang" : "Per Person"}</p>
+          <p className="text-[10px] font-bold uppercase tracking-wide text-foreground-secondary">{language === "id" ? "Per Orang" : "Per Person"}</p>
           {calc.per_person.length === 0 ? (
-            <p className="text-xs text-[#94A3B8]">{language === "id" ? "Belum ada pembagian." : "No split yet."}</p>
+            <p className="text-xs text-foreground-muted">{language === "id" ? "Belum ada pembagian." : "No split yet."}</p>
           ) : calc.per_person.map((p) => (
             <div key={p.participant_id} className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between gap-3">
@@ -2067,7 +2067,7 @@ export function SplitBillDetailClient({
                     <button
                       type="button"
                       onClick={() => (canMarkBalanced ? openRecord() : toast.error(t.splitBill.mustBalance))}
-                      className="hidden sm:flex w-5 h-5 rounded-full border border-[#E5E7EB] dark:border-[#27272A] text-[#64748B] dark:text-[#94A3B8] items-center justify-center hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] transition-colors shrink-0"
+                      className="hidden sm:flex w-5 h-5 rounded-full border border-border text-foreground-secondary items-center justify-center hover:bg-surface-subtle transition-colors shrink-0"
                       title={t.splitBill.recordMyPortion}
                       aria-label={t.splitBill.recordMyPortion}
                     >
@@ -2078,7 +2078,7 @@ export function SplitBillDetailClient({
               </div>
               <div className="pl-1 flex flex-col gap-1">
                 {p.item_lines.map((l, idx) => (
-                  <div key={`${l.item_id}-${idx}`} className="flex justify-between text-xs text-[#64748B] gap-3">
+                  <div key={`${l.item_id}-${idx}`} className="flex justify-between text-xs text-foreground-secondary gap-3">
                     <span className="truncate">
                       {l.name}
                       {splitMode !== "equal" && ` × ${formatQty(l.share_quantity)}`}
@@ -2095,25 +2095,25 @@ export function SplitBillDetailClient({
                   </div>
                 ))}
                 {p.charges_breakdown.tax !== 0 && (
-                  <div className="flex justify-between text-xs text-[#64748B] gap-3">
+                  <div className="flex justify-between text-xs text-foreground-secondary gap-3">
                     <span className="truncate">{language === "id" ? "Pajak" : "Tax"}</span>
                     <span className="font-mono shrink-0">{formatCurrency(p.charges_breakdown.tax, currency)}</span>
                   </div>
                 )}
                 {p.charges_breakdown.service !== 0 && (
-                  <div className="flex justify-between text-xs text-[#64748B] gap-3">
+                  <div className="flex justify-between text-xs text-foreground-secondary gap-3">
                     <span className="truncate">{language === "id" ? "Service" : "Service"}</span>
                     <span className="font-mono shrink-0">{formatCurrency(p.charges_breakdown.service, currency)}</span>
                   </div>
                 )}
                 {p.charges_breakdown.other !== 0 && (
-                  <div className="flex justify-between text-xs text-[#64748B] gap-3">
+                  <div className="flex justify-between text-xs text-foreground-secondary gap-3">
                     <span className="truncate">{language === "id" ? "Biaya lain" : "Other charges"}</span>
                     <span className="font-mono shrink-0">{formatCurrency(p.charges_breakdown.other, currency)}</span>
                   </div>
                 )}
                 {p.charges_breakdown.discount !== 0 && (
-                  <div className="flex justify-between text-xs text-rose-600 gap-3">
+                  <div className="flex justify-between text-xs text-destructive gap-3">
                     <span className="truncate">{language === "id" ? "Diskon" : "Discount"}</span>
                     <span className="font-mono shrink-0">{formatCurrency(p.charges_breakdown.discount, currency)}</span>
                   </div>
@@ -2123,7 +2123,7 @@ export function SplitBillDetailClient({
           ))}
         </div>
 
-        <div className="pt-1 flex items-center justify-center gap-1.5 text-[10px] text-[#94A3B8]">
+        <div className="pt-1 flex items-center justify-center gap-1.5 text-[10px] text-foreground-muted">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo.png" alt="" className="w-3.5 h-3.5 rounded object-contain" />
           <span>{language === "id" ? "Dihitung dengan Pocketly" : "Calculated with Pocketly"}</span>
@@ -2140,28 +2140,28 @@ export function SplitBillDetailClient({
   );
 
   return (
-    <div className={cn("flex flex-col w-full", (billId && !isEditing) ? "max-w-4xl mx-auto gap-4" : "max-w-3xl mx-auto bg-[#F8FAFC] dark:bg-[#09090B]")}>
+    <div className={cn("flex flex-col w-full", (billId && !isEditing) ? "max-w-4xl mx-auto gap-4" : "max-w-3xl mx-auto bg-canvas")}>
       {/* View mode for saved bills: the result IS the summary */}
       {billId && !isEditing ? (
         <>
           <div className="flex items-center justify-between gap-2 py-3 px-1 shrink-0">
             <div className="flex items-center gap-2 min-w-0">
-              <Link href="/split-bill" className="p-2 rounded-lg hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] shrink-0"><ArrowLeft className="w-4 h-4" /></Link>
+              <Link href="/split-bill" className="p-2 rounded-lg hover:bg-surface-subtle shrink-0"><ArrowLeft className="w-4 h-4" /></Link>
               <div className="min-w-0">
                 <h1 className="text-lg font-bold truncate">{title || t.splitBill.title}</h1>
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-[#64748B]">{formatBillDate(billDate)} · {currency}</span>
+                  <span className="text-[11px] text-foreground-secondary">{formatBillDate(billDate)} · {currency}</span>
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <Button variant="secondary" onClick={() => { setIsEditing(true); setStep(1); }} className="h-9 text-xs"><PenLine className="w-4 h-4 mr-1" />{t.splitBill.edit}</Button>
-              <button onClick={() => setShowDeleteConfirm(true)} className="p-2 rounded-lg text-[#94A3B8] hover:text-[#E11D48]" title={t.splitBill.delete}><Trash2 className="w-4 h-4" /></button>
+              <button onClick={() => setShowDeleteConfirm(true)} className="p-2 rounded-lg text-foreground-muted hover:text-destructive" title={t.splitBill.delete}><Trash2 className="w-4 h-4" /></button>
             </div>
           </div>
           <div className="flex flex-col gap-4 overflow-y-auto">
             {images.length > 0 && (
-              <div className="rounded-2xl border border-[#E5E7EB] dark:border-[#27272A] bg-white dark:bg-[#121215] p-4">
+              <div className="rounded-2xl border border-border bg-surface p-4">
                 {renderReceiptPhotos()}
               </div>
             )}
@@ -2178,13 +2178,13 @@ export function SplitBillDetailClient({
                 <button
                   type="button"
                   onClick={() => setEditingDetails(false)}
-                  className="w-10 h-10 rounded-full border border-[#E5E7EB] dark:border-[#27272A] bg-white dark:bg-[#121215] flex items-center justify-center hover:bg-[#F8F9FA] dark:hover:bg-[#1A1A20] shrink-0"
+                  className="w-10 h-10 rounded-full border border-border bg-surface flex items-center justify-center hover:bg-canvas dark:hover:bg-surface-subtle shrink-0"
                   aria-label={language === "id" ? "Kembali" : "Back"}
                 >
                   <ArrowLeft className="w-4 h-4" />
                 </button>
               ) : (
-                <Link href="/split-bill" className="w-10 h-10 rounded-full border border-[#E5E7EB] dark:border-[#27272A] bg-white dark:bg-[#121215] flex items-center justify-center hover:bg-[#F8F9FA] dark:hover:bg-[#1A1A20] shrink-0">
+                <Link href="/split-bill" className="w-10 h-10 rounded-full border border-border bg-surface flex items-center justify-center hover:bg-canvas dark:hover:bg-surface-subtle shrink-0">
                   <ArrowLeft className="w-4 h-4" />
                 </Link>
               )}
@@ -2194,14 +2194,14 @@ export function SplitBillDetailClient({
                   onClick={() => setShowDeleteConfirm(true)}
                   title={t.splitBill.delete}
                   aria-label={t.splitBill.delete}
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-[#94A3B8] hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 shrink-0"
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-foreground-muted hover:text-destructive hover:bg-destructive-muted shrink-0"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
               )}
               <div className="min-w-0">
-                <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight truncate min-w-0 text-[#0F172A] dark:text-[#FAFAFA]">{title || t.splitBill.newBill}</h1>
-                <p className="text-[11px] text-[#64748B] truncate mt-0.5">
+                <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight truncate min-w-0 text-foreground">{title || t.splitBill.newBill}</h1>
+                <p className="text-[11px] text-foreground-secondary truncate mt-0.5">
                   {billDate
                     ? new Date(billDate + "T00:00:00").toLocaleDateString(language === "id" ? "id-ID" : "en-US", { day: "numeric", month: "short", year: "numeric" })
                     : `${steps.find((s) => s.id === step)?.label} · ${step}/4`}
@@ -2210,12 +2210,12 @@ export function SplitBillDetailClient({
             </div>
             <div ref={actionsRef} className="flex items-center gap-1.5 shrink-0">
               {saveStatus === "dirty" || saveStatus === "saving" ? (
-                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#64748B] dark:text-[#94A3B8] mr-1">
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-foreground-secondary mr-1">
                   <Loader2 className="w-3 h-3 animate-spin" />
                   {language === "id" ? "Menyimpan" : "Saving"}
                 </span>
               ) : saveStatus === "saved" ? (
-                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 mr-1">
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-success mr-1">
                   <Check className="w-3 h-3" />
                   {language === "id" ? "Tersimpan" : "Saved"}
                 </span>
@@ -2227,7 +2227,7 @@ export function SplitBillDetailClient({
                   disabled={isScanning}
                   title={t.splitBill.scanReceipt}
                   aria-label={t.splitBill.scanReceipt}
-                  className="w-10 h-10 rounded-full border border-[#E5E7EB] dark:border-[#27272A] bg-white dark:bg-[#121215] flex items-center justify-center hover:bg-[#F8F9FA] dark:hover:bg-[#1A1A20] disabled:opacity-50"
+                  className="w-10 h-10 rounded-full border border-border bg-surface flex items-center justify-center hover:bg-canvas dark:hover:bg-surface-subtle disabled:opacity-50"
                 >
                   <Camera className="w-4 h-4" />
                 </button>
@@ -2244,7 +2244,7 @@ export function SplitBillDetailClient({
                   }}
                   title={editingDetails ? (language === "id" ? "Selesai ubah" : "Done") : (language === "id" ? "Ubah item" : "Edit item")}
                   aria-label={editingDetails ? (language === "id" ? "Selesai ubah" : "Done") : (language === "id" ? "Ubah item" : "Edit item")}
-                  className="w-10 h-10 rounded-full border border-[#E5E7EB] dark:border-[#27272A] bg-white dark:bg-[#121215] flex items-center justify-center hover:bg-[#F8F9FA] dark:hover:bg-[#1A1A20]"
+                  className="w-10 h-10 rounded-full border border-border bg-surface flex items-center justify-center hover:bg-canvas dark:hover:bg-surface-subtle"
                 >
                   {editingDetails ? <Check className="w-4 h-4" /> : <PenLine className="w-4 h-4" />}
                 </button>
@@ -2253,7 +2253,7 @@ export function SplitBillDetailClient({
           </div>
 
           {/* Stepper (sticky) */}
-          <div className="sticky top-0 z-20 bg-[#F8FAFC]/95 dark:bg-[#09090B]/95 backdrop-blur border-b border-[#E5E7EB]/70 dark:border-[#27272A]/70 px-1 py-2">
+          <div className="sticky top-0 z-20 bg-canvas/95 backdrop-blur border-b border-border/70 px-1 py-2">
             <div className="flex items-center gap-1 overflow-x-auto scrollbar-none [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
               {steps.map((s, i) => (
                 <React.Fragment key={s.id}>
@@ -2262,14 +2262,14 @@ export function SplitBillDetailClient({
                     className={cn(
                       "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border transition-colors",
                       step === s.id
-                        ? "bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A] border-transparent"
-                        : "bg-white dark:bg-[#121215] text-[#64748B] dark:text-[#94A3B8] border-[#E5E7EB] dark:border-[#27272A] hover:border-[#94A3B8]"
+                        ? "bg-primary text-primary-foreground border-transparent"
+                        : "bg-surface text-foreground-secondary border-border hover:border-foreground-muted"
                     )}
                   >
-                    <span className={cn("w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold", step === s.id ? "bg-white/20 dark:bg-black/10" : "bg-[#F1F3F5] dark:bg-[#1A1A20]")}>{s.id}</span>
+                    <span className={cn("w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold", step === s.id ? "bg-primary-foreground/20" : "bg-surface-subtle")}>{s.id}</span>
                     {s.label}
                   </button>
-                  {i < steps.length - 1 && <ChevronRight className="w-4 h-4 text-[#CBD5E1] shrink-0" />}
+                  {i < steps.length - 1 && <ChevronRight className="w-4 h-4 text-border-strong/30 shrink-0" />}
                 </React.Fragment>
               ))}
             </div>
@@ -2279,23 +2279,23 @@ export function SplitBillDetailClient({
           <div className="px-1 py-2" onTouchStart={handleStepTouchStart} onTouchEnd={handleStepTouchEnd}>
       {/* Step 1: Review items/prices (read-only by default), edit only when needed */}
       {step === 1 && (
-        <div className="rounded-xl border border-[#E5E7EB] dark:border-[#27272A] bg-white dark:bg-[#121215] p-4 flex flex-col gap-4">
+        <div className="rounded-xl border border-border bg-surface p-4 flex flex-col gap-4">
           {/* Receipt photos - hanya muncul kalau patungan ini punya foto */}
           {images.length > 0 && renderReceiptPhotos()}
 
           {editingDetails ? (
             <div className="flex flex-col gap-3">
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-[#64748B] dark:text-[#94A3B8]">{t.splitBill.billTitle}</label>
-                <input value={title} onChange={(e) => setTitle(e.target.value)} className="px-3 py-2.5 rounded-lg border border-[#E5E7EB] dark:border-[#27272A] bg-transparent text-sm" placeholder={t.splitBill.merchantPlaceholder} />
+                <label className="text-xs font-semibold text-foreground-secondary">{t.splitBill.billTitle}</label>
+                <input value={title} onChange={(e) => setTitle(e.target.value)} className="px-3 py-2.5 rounded-lg border border-border bg-transparent text-sm" placeholder={t.splitBill.merchantPlaceholder} />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-[#64748B] dark:text-[#94A3B8]">{t.common.date}</label>
+                  <label className="text-xs font-semibold text-foreground-secondary">{t.common.date}</label>
                   <DatePicker value={billDate} onChange={(v) => setBillDate(v)} />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-[#64748B] dark:text-[#94A3B8]">{t.splitBill.currency}</label>
+                  <label className="text-xs font-semibold text-foreground-secondary">{t.splitBill.currency}</label>
                   <SearchableSelect
                     value={currency}
                     onValueChange={(v) => setCurrency(normalizeCurrency(v))}
@@ -2309,7 +2309,7 @@ export function SplitBillDetailClient({
               </div>
             </div>
           ) : (
-            <span className="text-sm font-bold text-[#0F172A] dark:text-[#FAFAFA]">{t.splitBill.items}</span>
+            <span className="text-sm font-bold text-foreground">{t.splitBill.items}</span>
           )}
 
           {/* Items */}
@@ -2321,20 +2321,20 @@ export function SplitBillDetailClient({
               </div>
             )}
             {items.length === 0 ? (
-              <p className="text-xs text-[#94A3B8] py-2">{t.splitBill.addItemHint}</p>
+              <p className="text-xs text-foreground-muted py-2">{t.splitBill.addItemHint}</p>
             ) : !editingDetails ? (
               <div className="flex flex-col">
                 {items.map((it, idx) => {
                   const disc = toNum(it.item_discount);
                   const net = Math.max(0, toNum(it.line_subtotal) - disc);
                   return (
-                    <div key={it.key} className="flex items-start justify-between gap-3 py-3 border-b border-[#F1F3F5] dark:border-[#1A1A20]">
+                    <div key={it.key} className="flex items-start justify-between gap-3 py-3 border-b border-surface-subtle">
                       <div className="min-w-0">
                         <p className="text-sm font-semibold truncate">{it.name || `${t.splitBill.item} ${idx + 1}`}</p>
                         <div className="flex flex-wrap items-center gap-2 mt-1">
-                          <span className="text-[11px] text-[#64748B]">{formatQty(toNum(it.quantity))} × {formatCurrency(toNum(it.unit_price), currency)}</span>
+                          <span className="text-[11px] text-foreground-secondary">{formatQty(toNum(it.quantity))} × {formatCurrency(toNum(it.unit_price), currency)}</span>
                           {disc > 0 && (
-                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300">
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-success-muted text-success">
                               −{formatCurrency(disc, currency)}
                             </span>
                           )}
@@ -2348,19 +2348,19 @@ export function SplitBillDetailClient({
             ) : (
               <div className="flex flex-col gap-2">
                 {items.map((it, idx) => (
-                  <div key={it.key} className="rounded-lg border border-[#E5E7EB] dark:border-[#27272A] bg-[#F8F9FA] dark:bg-[#1A1A20] p-3 flex flex-col gap-2">
+                  <div key={it.key} className="rounded-lg border border-border bg-canvas dark:bg-surface-subtle p-3 flex flex-col gap-2">
                     <div className="flex items-center gap-2">
-                      <input value={it.name} onChange={(e) => setItems((prev) => prev.map((x) => x.key === it.key ? { ...x, name: e.target.value } : x))} placeholder={`${t.splitBill.item} ${idx + 1}`} className="flex-1 min-w-0 px-2.5 py-2 rounded-md border border-[#E5E7EB] dark:border-[#27272A] bg-white dark:bg-[#121215] text-sm font-medium" />
-                      <button onClick={() => { setItems((prev) => prev.filter((x) => x.key !== it.key)); setAssignments((prev) => prev.filter((a) => a.item_key !== it.key)); }} className="p-1.5 text-[#94A3B8] hover:text-rose-500 shrink-0" title={t.splitBill.delete}><Trash2 className="w-4 h-4" /></button>
+                      <input value={it.name} onChange={(e) => setItems((prev) => prev.map((x) => x.key === it.key ? { ...x, name: e.target.value } : x))} placeholder={`${t.splitBill.item} ${idx + 1}`} className="flex-1 min-w-0 px-2.5 py-2 rounded-md border border-border bg-surface text-sm font-medium" />
+                      <button onClick={() => { setItems((prev) => prev.filter((x) => x.key !== it.key)); setAssignments((prev) => prev.filter((a) => a.item_key !== it.key)); }} className="p-1.5 text-foreground-muted hover:text-destructive shrink-0" title={t.splitBill.delete}><Trash2 className="w-4 h-4" /></button>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                       <div className="flex flex-col gap-1">
-                        <label className="text-[10px] font-semibold text-[#64748B]">{t.splitBill.qty}</label>
+                        <label className="text-[10px] font-semibold text-foreground-secondary">{t.splitBill.qty}</label>
                         <div className="flex items-center gap-1">
                           <button
                             type="button"
                             onClick={() => { const q = Math.max(0, toNum(it.quantity, 0) - 1); setItems((prev) => prev.map((x) => x.key === it.key ? { ...x, quantity: q, line_subtotal: toNum(x.unit_price) * q } : x)); }}
-                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[#E5E7EB] dark:border-[#27272A] bg-white dark:bg-[#121215] text-[#64748B] dark:text-[#94A3B8] text-sm hover:bg-[#F8F9FA] dark:hover:bg-[#1A1A20]"
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-surface text-foreground-secondary text-sm hover:bg-canvas dark:hover:bg-surface-subtle"
                           >
                             −
                           </button>
@@ -2369,21 +2369,21 @@ export function SplitBillDetailClient({
                             inputMode="decimal"
                             value={it.quantity ?? ""}
                             onChange={(e) => { const q = toNum(e.target.value, 0); setItems((prev) => prev.map((x) => x.key === it.key ? { ...x, quantity: q, line_subtotal: toNum(x.unit_price) * q } : x)); }}
-                            className="h-8 w-full min-w-0 rounded-md border border-[#E5E7EB] dark:border-[#27272A] bg-white dark:bg-[#121215] text-xs text-center text-[#0F172A] dark:text-[#FAFAFA] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            className="h-8 w-full min-w-0 rounded-md border border-border bg-surface text-xs text-center text-foreground focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                           />
                           <button
                             type="button"
                             onClick={() => { const q = toNum(it.quantity, 0) + 1; setItems((prev) => prev.map((x) => x.key === it.key ? { ...x, quantity: q, line_subtotal: toNum(x.unit_price) * q } : x)); }}
-                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[#E5E7EB] dark:border-[#27272A] bg-white dark:bg-[#121215] text-[#64748B] dark:text-[#94A3B8] text-sm hover:bg-[#F8F9FA] dark:hover:bg-[#1A1A20]"
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-surface text-foreground-secondary text-sm hover:bg-canvas dark:hover:bg-surface-subtle"
                           >
                             +
                           </button>
                         </div>
                       </div>
-                      <div className="flex flex-col gap-1"><label className="text-[10px] font-semibold text-[#64748B]">{t.splitBill.price}</label><NumberInput value={String(it.unit_price ?? "")} onValueChange={(v) => { const p = toNum(v, 0); setItems((prev) => prev.map((x) => x.key === it.key ? { ...x, unit_price: p, line_subtotal: p * toNum(x.quantity) } : x)); }} currency={currency} compact className="w-full" /></div>
-                      <div className="flex flex-col gap-1"><label className="text-[10px] font-semibold text-[#64748B]">{t.splitBill.subtotal}</label><NumberInput value={String(it.line_subtotal ?? "")} onValueChange={(v) => setItems((prev) => prev.map((x) => x.key === it.key ? { ...x, line_subtotal: toNum(v, 0) } : x))} currency={currency} compact className="w-full" /></div>
+                      <div className="flex flex-col gap-1"><label className="text-[10px] font-semibold text-foreground-secondary">{t.splitBill.price}</label><NumberInput value={String(it.unit_price ?? "")} onValueChange={(v) => { const p = toNum(v, 0); setItems((prev) => prev.map((x) => x.key === it.key ? { ...x, unit_price: p, line_subtotal: p * toNum(x.quantity) } : x)); }} currency={currency} compact className="w-full" /></div>
+                      <div className="flex flex-col gap-1"><label className="text-[10px] font-semibold text-foreground-secondary">{t.splitBill.subtotal}</label><NumberInput value={String(it.line_subtotal ?? "")} onValueChange={(v) => setItems((prev) => prev.map((x) => x.key === it.key ? { ...x, line_subtotal: toNum(v, 0) } : x))} currency={currency} compact className="w-full" /></div>
                       <div className="flex flex-col gap-1">
-                        <label className="text-[10px] font-semibold text-[#64748B]">{t.splitBill.perItemDiscount}</label>
+                        <label className="text-[10px] font-semibold text-foreground-secondary">{t.splitBill.perItemDiscount}</label>
                         <div className="flex items-center gap-1">
                           <div className="min-w-17.5">
                             <SearchableSelect
@@ -2398,7 +2398,7 @@ export function SplitBillDetailClient({
                               inputMode="decimal"
                               value={it.item_discount ?? ""}
                               onChange={(e) => { const raw = toNum(e.target.value, 0); const clamped = Math.max(0, Math.min(raw, 100)); setItems((prev) => prev.map((x) => x.key === it.key ? { ...x, item_discount: clamped } : x)); }}
-                              className="h-9 w-full min-w-0 rounded-md border border-[#E5E7EB] dark:border-[#27272A] bg-white dark:bg-[#121215] px-2.5 text-sm text-right"
+                              className="h-9 w-full min-w-0 rounded-md border border-border bg-surface px-2.5 text-sm text-right"
                             />
                           ) : (
                             <NumberInput
@@ -2412,7 +2412,7 @@ export function SplitBillDetailClient({
                         </div>
                       </div>
                     </div>
-                    <div className="text-[11px] text-[#64748B] font-mono">= {formatCurrency(getItemNetSubtotal({ line_subtotal: toNum(it.line_subtotal), item_discount: toNum(it.item_discount), item_discount_mode: it.item_discount_mode === "percent" ? "percent" : "fixed" }), currency)}</div>
+                    <div className="text-[11px] text-foreground-secondary font-mono">= {formatCurrency(getItemNetSubtotal({ line_subtotal: toNum(it.line_subtotal), item_discount: toNum(it.item_discount), item_discount_mode: it.item_discount_mode === "percent" ? "percent" : "fixed" }), currency)}</div>
                   </div>
                 ))}
               </div>
@@ -2421,7 +2421,7 @@ export function SplitBillDetailClient({
 
           {/* Subtotal */}
           <div className="flex items-center justify-between text-sm">
-            <span className="text-[#64748B]">{t.splitBill.subtotal}</span>
+            <span className="text-foreground-secondary">{t.splitBill.subtotal}</span>
             <span className="font-mono font-semibold">{formatCurrency(calc.items_subtotal, currency)}</span>
           </div>
 
@@ -2431,12 +2431,12 @@ export function SplitBillDetailClient({
               <div className="flex items-center justify-between gap-2">
                 <div>
                   <span className="text-sm font-bold">{t.splitBill.charges}</span>
-                  <p className="text-[10px] text-[#94A3B8] mt-0.5">{t.splitBill.chargesHint}</p>
+                  <p className="text-[10px] text-foreground-muted mt-0.5">{t.splitBill.chargesHint}</p>
                 </div>
                 <Button variant="secondary" className="h-8 text-xs shrink-0" onClick={addCharge}><Plus className="w-4 h-4 mr-1" />{t.splitBill.addCharge}</Button>
               </div>
               {charges.length === 0 ? (
-                <p className="text-xs text-[#94A3B8]">{language === "id" ? "Tidak ada biaya tambahan." : "No extra charges."}</p>
+                <p className="text-xs text-foreground-muted">{language === "id" ? "Tidak ada biaya tambahan." : "No extra charges."}</p>
               ) : (
                 <div className="flex flex-col gap-2">
                   {charges.map((c) => {
@@ -2451,10 +2451,10 @@ export function SplitBillDetailClient({
                       { value: "fixed", label: t.splitBill.fixed },
                     ];
                     return (
-                      <div key={c.key} className="rounded-lg border border-[#E5E7EB] dark:border-[#27272A] bg-[#F8F9FA] dark:bg-[#1A1A20] p-3 flex flex-col gap-2">
+                      <div key={c.key} className="rounded-lg border border-border bg-canvas dark:bg-surface-subtle p-3 flex flex-col gap-2">
                         <div className="flex items-center gap-2">
-                          <input value={c.name} onChange={(e) => setCharges((prev) => prev.map((x) => x.key === c.key ? { ...x, name: e.target.value } : x))} className="flex-1 min-w-0 px-2.5 py-2 rounded-md border border-[#E5E7EB] dark:border-[#27272A] bg-white dark:bg-[#121215] text-sm" placeholder={t.splitBill.other} />
-                          <button onClick={() => setCharges((prev) => prev.filter((x) => x.key !== c.key))} className="p-1.5 text-[#94A3B8] hover:text-rose-500 shrink-0" title={t.splitBill.delete}><Trash2 className="w-4 h-4" /></button>
+                          <input value={c.name} onChange={(e) => setCharges((prev) => prev.map((x) => x.key === c.key ? { ...x, name: e.target.value } : x))} className="flex-1 min-w-0 px-2.5 py-2 rounded-md border border-border bg-surface text-sm" placeholder={t.splitBill.other} />
+                          <button onClick={() => setCharges((prev) => prev.filter((x) => x.key !== c.key))} className="p-1.5 text-foreground-muted hover:text-destructive shrink-0" title={t.splitBill.delete}><Trash2 className="w-4 h-4" /></button>
                         </div>
                         <div className="grid grid-cols-[1fr_auto] sm:grid-cols-[140px_88px_1fr] gap-2 items-center">
                           <div className="min-w-0">
@@ -2465,7 +2465,7 @@ export function SplitBillDetailClient({
                           </div>
                           <div className="col-span-2 sm:col-span-1 flex items-center gap-2 min-w-0">
                             <NumberInput value={String(c.amount_value ?? "")} onValueChange={(v) => { const raw = toNum(v, 0); const clamped = c.amount_mode === "percent" ? Math.min(Math.max(raw, 0), 100) : Math.max(raw, 0); setCharges((prev) => prev.map((x) => x.key === c.key ? { ...x, amount_value: clamped } : x)); }} mode={c.amount_mode === "percent" ? "decimal" : "currency"} currency={c.amount_mode === "percent" ? undefined : currency} showCurrency={c.amount_mode !== "percent"} compact className="w-full min-w-0 flex-1" />
-                            <span className="text-xs text-[#64748B] w-10 shrink-0 text-right">{c.amount_mode === "percent" ? "%" : currency}</span>
+                            <span className="text-xs text-foreground-secondary w-10 shrink-0 text-right">{c.amount_mode === "percent" ? "%" : currency}</span>
                           </div>
                         </div>
                       </div>
@@ -2481,8 +2481,8 @@ export function SplitBillDetailClient({
                 const computed = c.amount_mode === "percent" ? (calc.items_subtotal * toNum(c.amount_value)) / 100 : toNum(c.amount_value);
                 return (
                   <div key={c.key} className="flex items-center justify-between gap-3 text-sm">
-                    <span className="text-[#64748B] truncate">{c.name || kindLabel}{c.amount_mode === "percent" ? ` ${toNum(c.amount_value)}%` : ""}</span>
-                    <span className={cn("font-mono", c.kind === "discount" ? "text-rose-600" : "")}>{c.kind === "discount" ? "−" : ""}{formatCurrency(Math.abs(computed), currency)}</span>
+                    <span className="text-foreground-secondary truncate">{c.name || kindLabel}{c.amount_mode === "percent" ? ` ${toNum(c.amount_value)}%` : ""}</span>
+                    <span className={cn("font-mono", c.kind === "discount" ? "text-destructive" : "")}>{c.kind === "discount" ? "−" : ""}{formatCurrency(Math.abs(computed), currency)}</span>
                   </div>
                 );
               })}
@@ -2490,10 +2490,10 @@ export function SplitBillDetailClient({
           ) : null}
 
           {/* Total */}
-          <div className="border-t border-[#E5E7EB] dark:border-[#27272A] pt-3">
+          <div className="border-t border-border pt-3">
             {editingDetails ? (
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] uppercase tracking-wide font-semibold text-[#64748B] dark:text-[#94A3B8]">{t.splitBill.billTotalLabel}</label>
+                <label className="text-[10px] uppercase tracking-wide font-semibold text-foreground-secondary">{t.splitBill.billTotalLabel}</label>
                 <NumberInput
                   value={String(grandTotal || "")}
                   onValueChange={(v) => {
@@ -2505,13 +2505,13 @@ export function SplitBillDetailClient({
                   currency={currency}
                   className="w-full"
                 />
-                <div className="flex flex-wrap items-center justify-between gap-1 text-[11px] text-[#64748B]">
+                <div className="flex flex-wrap items-center justify-between gap-1 text-[11px] text-foreground-secondary">
                   <span>{t.splitBill.billTotalHint}</span>
                   <div className="flex items-center gap-2">
                     {Math.abs((Number(grandTotal) || calc.computed_grand_total) - calc.computed_grand_total) >= tolerance && (
                       <>
-                        <span className="text-amber-600">{t.splitBill.computedTotal}: <span className="font-mono font-semibold">{formatCurrency(calc.computed_grand_total, currency)}</span></span>
-                        <button type="button" onClick={() => { setIsGrandTotalManual(false); setGrandTotal(Number(calc.computed_grand_total) || 0); }} className="text-[11px] font-semibold text-[#0F172A] dark:text-[#FAFAFA] underline underline-offset-2">Auto</button>
+                        <span className="text-warning">{t.splitBill.computedTotal}: <span className="font-mono font-semibold">{formatCurrency(calc.computed_grand_total, currency)}</span></span>
+                        <button type="button" onClick={() => { setIsGrandTotalManual(false); setGrandTotal(Number(calc.computed_grand_total) || 0); }} className="text-[11px] font-semibold text-foreground underline underline-offset-2">Auto</button>
                       </>
                     )}
                   </div>
@@ -2519,15 +2519,15 @@ export function SplitBillDetailClient({
               </div>
             ) : (
               <div>
-                <p className="text-[10px] uppercase tracking-wide font-semibold text-[#64748B] dark:text-[#94A3B8]">{t.splitBill.billTotalLabel}</p>
+                <p className="text-[10px] uppercase tracking-wide font-semibold text-foreground-secondary">{t.splitBill.billTotalLabel}</p>
                 <p className="text-2xl font-bold tracking-tight">{formatCurrency(targetGrand || calc.computed_grand_total, currency)}</p>
                 {Math.abs((targetGrand || calc.computed_grand_total) - calc.computed_grand_total) >= tolerance && (
-                  <p className="text-[11px] text-amber-600 mt-1">{t.splitBill.computedTotal}: {formatCurrency(calc.computed_grand_total, currency)}</p>
+                  <p className="text-[11px] text-warning mt-1">{t.splitBill.computedTotal}: {formatCurrency(calc.computed_grand_total, currency)}</p>
                 )}
               </div>
             )}
             {hasTargetMismatch && (
-              <div className="text-[11px] text-amber-600 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-lg px-2 py-1.5 mt-2">
+              <div className="text-[11px] text-warning bg-warning-muted border border-warning/30 rounded-lg px-2 py-1.5 mt-2">
                 {t.splitBill.targetMismatch.replace("{diff}", formatCurrency(computedVsTargetDiff, currency))}
               </div>
             )}
@@ -2538,26 +2538,26 @@ export function SplitBillDetailClient({
       {/* Step 2: Participants */}
       {step === 2 && (
         <div className="flex flex-col gap-4">
-          <div className="rounded-xl border border-[#E5E7EB] dark:border-[#27272A] bg-white dark:bg-[#121215] p-4 flex flex-col gap-3">
+          <div className="rounded-xl border border-border bg-surface p-4 flex flex-col gap-3">
             <div className="flex items-center justify-between gap-2">
               <div>
                 <span className="text-sm font-bold">{t.splitBill.participants}</span>
-                <p className="text-[10px] text-[#94A3B8] mt-0.5">{language === "id" ? "Tambah peserta atau pilih dari kontak tersimpan." : "Add participants or pick from saved contacts."}</p>
+                <p className="text-[10px] text-foreground-muted mt-0.5">{language === "id" ? "Tambah peserta atau pilih dari kontak tersimpan." : "Add participants or pick from saved contacts."}</p>
               </div>
               <Button variant="secondary" className="h-8 text-xs" onClick={() => setShowContacts(true)}><BookmarkPlus className="w-4 h-4 mr-1" />{t.splitBill.contacts}</Button>
             </div>
 
             <div className="flex flex-wrap gap-2 items-center">
-              <input value={newParticipantName} onChange={(e) => setNewParticipantName(e.target.value)} placeholder={t.splitBill.contactName} className="px-3 py-2 rounded-lg border border-[#E5E7EB] dark:border-[#27272A] bg-transparent text-sm w-full sm:w-56" onKeyDown={(e) => { if (e.key === "Enter") { addParticipant(newParticipantName); setNewParticipantName(""); } }} />
+              <input value={newParticipantName} onChange={(e) => setNewParticipantName(e.target.value)} placeholder={t.splitBill.contactName} className="px-3 py-2 rounded-lg border border-border bg-transparent text-sm w-full sm:w-56" onKeyDown={(e) => { if (e.key === "Enter") { addParticipant(newParticipantName); setNewParticipantName(""); } }} />
               <Button variant="secondary" className="h-9 text-xs" onClick={() => { addParticipant(newParticipantName); setNewParticipantName(""); }}><UserPlus className="w-4 h-4 mr-1" />{t.splitBill.addParticipant}</Button>
             </div>
 
-            <div className="flex flex-col gap-1.5 pt-1 border-t border-[#F1F3F5] dark:border-[#1A1A20]">
-              <p className="text-[10px] font-bold uppercase text-[#64748B]">{t.splitBill.participants}</p>
+            <div className="flex flex-col gap-1.5 pt-1 border-t border-surface-subtle">
+              <p className="text-[10px] font-bold uppercase text-foreground-secondary">{t.splitBill.participants}</p>
               <div className="flex flex-wrap gap-2">
                 {participants.map((p) => {
                   return (
-                    <div key={p.key} className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg border border-[#E5E7EB] dark:border-[#27272A] text-xs font-semibold">
+                    <div key={p.key} className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg border border-border text-xs font-semibold">
                       <div className="relative shrink-0 mr-1.5">
                         <button
                           onClick={() => handleAvatarTap(p.key)}
@@ -2577,12 +2577,12 @@ export function SplitBillDetailClient({
                             size="md"
                             className={cn(
                               p.is_me &&
-                                "ring-2 ring-[#0F172A] dark:ring-[#FAFAFA] ring-offset-2 ring-offset-white dark:ring-offset-[#121215]",
+                                "ring-2 ring-ring ring-offset-2 ring-offset-surface",
                             )}
                           />
                           {p.is_me && (
-                            <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white dark:border-[#121215] flex items-center justify-center">
-                              <Check className="w-2 h-2 text-white stroke-3" />
+                            <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-success border-2 border-surface flex items-center justify-center">
+                              <Check className="w-2 h-2 text-success-foreground stroke-3" />
                             </span>
                           )}
                         </button>
@@ -2590,7 +2590,7 @@ export function SplitBillDetailClient({
                         <button
                           type="button"
                           onClick={() => removeParticipant(p.key)}
-                          className="absolute -top-1 -left-1 w-3.5 h-3.5 rounded-full bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#374151] text-[#94A3B8] hover:text-rose-500 hover:border-rose-300 dark:hover:border-rose-800 flex items-center justify-center shadow-sm transition-colors"
+                          className="absolute -top-1 -left-1 w-3.5 h-3.5 rounded-full bg-surface border border-border dark:border-border-strong/40 text-foreground-muted hover:text-destructive hover:border-destructive/40 flex items-center justify-center shadow-sm transition-colors"
                           title={language === "id" ? "Hapus peserta" : "Remove participant"}
                           aria-label={language === "id" ? "Hapus peserta" : "Remove participant"}
                         >
@@ -2601,7 +2601,7 @@ export function SplitBillDetailClient({
                     </div>
                   );
                 })}
-                {participants.length === 0 && <p className="text-xs text-[#94A3B8]">{language === "id" ? "Belum ada peserta." : "No participants yet."}</p>}
+                {participants.length === 0 && <p className="text-xs text-foreground-muted">{language === "id" ? "Belum ada peserta." : "No participants yet."}</p>}
               </div>
             </div>
  
@@ -2612,11 +2612,11 @@ export function SplitBillDetailClient({
       {/* Step 3: Assign (person-first) */}
       {step === 3 && (
         <div className="flex flex-col gap-4">
-          <div className="rounded-xl border border-[#E5E7EB] dark:border-[#27272A] bg-white dark:bg-[#121215] p-4 flex flex-col gap-4">
+          <div className="rounded-xl border border-border bg-surface p-4 flex flex-col gap-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <span className="text-sm font-bold">{t.splitBill.stepAssign}</span>
-                <p className="text-[10px] text-[#94A3B8] mt-0.5">
+                <p className="text-[10px] text-foreground-muted mt-0.5">
                   {language === "id"
                     ? "Pilih orang dulu, lalu tentukan item & qty milik orang tersebut. Lanjut ke orang berikutnya sampai selesai."
                     : "Pick a person first, then assign their items & quantities. Move to the next person until done."}
@@ -2624,15 +2624,15 @@ export function SplitBillDetailClient({
               </div>
 
               {/* Mode pembagian: proporsional atau bagi rata (kanan atas) */}
-              <div className="inline-flex items-center rounded-xl border border-[#E5E7EB] dark:border-[#27272A] overflow-hidden shrink-0">
+              <div className="inline-flex items-center rounded-xl border border-border overflow-hidden shrink-0">
                 <button
                   type="button"
                   onClick={() => setSplitMode("proportional")}
                   className={cn(
                     "px-3 py-1.5 text-xs font-semibold transition-colors",
                     splitMode === "proportional"
-                      ? "bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A]"
-                      : "bg-white dark:bg-[#121215] text-[#64748B] dark:text-[#94A3B8]",
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-surface text-foreground-secondary",
                   )}
                 >
                   {t.splitBill.splitProportional}
@@ -2641,10 +2641,10 @@ export function SplitBillDetailClient({
                   type="button"
                   onClick={requestEqualSplit}
                   className={cn(
-                    "px-3 py-1.5 text-xs font-semibold transition-colors border-l border-[#E5E7EB] dark:border-[#27272A]",
+                    "px-3 py-1.5 text-xs font-semibold transition-colors border-l border-border",
                     splitMode === "equal"
-                      ? "bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A]"
-                      : "bg-white dark:bg-[#121215] text-[#64748B] dark:text-[#94A3B8]",
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-surface text-foreground-secondary",
                   )}
                 >
                   {t.splitBill.splitEvenly}
@@ -2653,9 +2653,9 @@ export function SplitBillDetailClient({
             </div>
 
             {items.length === 0 ? (
-              <p className="text-xs text-[#94A3B8]">{t.splitBill.addItemHint}</p>
+              <p className="text-xs text-foreground-muted">{t.splitBill.addItemHint}</p>
             ) : participants.length === 0 ? (
-              <p className="text-xs text-[#94A3B8]">{language === "id" ? "Tambahkan peserta dulu di langkah sebelumnya." : "Add participants in the previous step first."}</p>
+              <p className="text-xs text-foreground-muted">{language === "id" ? "Tambahkan peserta dulu di langkah sebelumnya." : "Add participants in the previous step first."}</p>
             ) : (
               <>
                 {/* Person selector */}
@@ -2669,8 +2669,8 @@ export function SplitBillDetailClient({
                         className={cn(
                           "px-3 py-2 rounded-xl border text-xs font-semibold transition-colors flex items-center gap-2",
                           active
-                            ? "bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A] border-transparent"
-                            : "bg-white dark:bg-[#121215] text-[#0F172A] dark:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A] hover:border-[#94A3B8]"
+                            ? "bg-primary text-primary-foreground border-transparent"
+                            : "bg-surface text-foreground border-border hover:border-foreground-muted"
                         )}
                       >
                         <DiceAvatar
@@ -2699,7 +2699,7 @@ export function SplitBillDetailClient({
                   return (
                     <div className="flex flex-col gap-3">
                       {splitMode === "equal" && (
-                        <p className="text-[11px] text-[#94A3B8]">
+                        <p className="text-[11px] text-foreground-muted">
                           {language === "id"
                             ? "Mode dibagi rata: semua orang bayar sama, item tidak perlu di-assign ke orang tertentu."
                             : "Equal split mode: everyone pays the same, items don't need to be assigned to anyone."}
@@ -2714,14 +2714,14 @@ export function SplitBillDetailClient({
                           const ok = Math.abs(remaining) < 0.0001 && toNum(it.quantity) > 0;
                           const isEqualMode = splitMode === "equal";
                           return (
-                            <div key={it.key} className="p-3 rounded-lg border border-[#E5E7EB] dark:border-[#27272A] bg-white dark:bg-[#121215] flex flex-col gap-2">
+                            <div key={it.key} className="p-3 rounded-lg border border-border bg-surface flex flex-col gap-2">
                               <div className="flex items-start justify-between gap-2">
                                 <div className="min-w-0">
                                   <p className="text-sm font-semibold truncate">{it.name || `${t.splitBill.item} ${idx + 1}`}</p>
-                                  <p className="text-[10px] text-[#64748B] font-mono">{formatQty(toNum(it.quantity))} × {formatCurrency(toNum(it.unit_price), currency)}</p>
+                                  <p className="text-[10px] text-foreground-secondary font-mono">{formatQty(toNum(it.quantity))} × {formatCurrency(toNum(it.unit_price), currency)}</p>
                                 </div>
                                 <div className="flex flex-col items-end gap-1 shrink-0">
-                                  <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full", isEqualMode ? "bg-[#F1F3F5] text-[#64748B] dark:bg-[#1A1A20] dark:text-[#94A3B8]" : ok ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300" : "bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300")}>
+                                  <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full", isEqualMode ? "bg-surface-subtle text-foreground-muted dark:text-foreground-secondary" : ok ? "bg-success-muted text-success" : "bg-warning-muted text-warning")}>
                                     {isEqualMode
                                       ? (language === "id" ? "Dibagi rata" : "Split evenly")
                                       : ok
@@ -2739,7 +2739,7 @@ export function SplitBillDetailClient({
                                         {owners.map((p) => (
                                           <span
                                             key={p.key}
-                                            className="rounded-full ring-2 ring-white dark:ring-[#121215]"
+                                            className="rounded-full ring-2 ring-surface"
                                             title={personLabel(p)}
                                           >
                                             <DiceAvatar
@@ -2762,7 +2762,7 @@ export function SplitBillDetailClient({
                                     <button
                                       type="button"
                                       onClick={() => setAssignment(it.key, activePerson.key, Math.max(0, toNum(mine) - 1))}
-                                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[#E5E7EB] dark:border-[#27272A] bg-white dark:bg-[#121215] text-[#64748B] dark:text-[#94A3B8] text-sm hover:bg-[#F8F9FA] dark:hover:bg-[#1A1A20]"
+                                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-surface text-foreground-secondary text-sm hover:bg-canvas dark:hover:bg-surface-subtle"
                                     >
                                       −
                                     </button>
@@ -2772,12 +2772,12 @@ export function SplitBillDetailClient({
                                       value={mine ? String(mine) : ""}
                                       placeholder="0"
                                       onChange={(e) => setAssignment(it.key, activePerson.key, toNum(e.target.value, 0))}
-                                      className="h-8 w-14 rounded-md border border-[#E5E7EB] dark:border-[#27272A] bg-white dark:bg-[#121215] text-xs text-center text-[#0F172A] dark:text-[#FAFAFA] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                      className="h-8 w-14 rounded-md border border-border bg-surface text-xs text-center text-foreground focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                     />
                                     <button
                                       type="button"
                                       onClick={() => setAssignment(it.key, activePerson.key, toNum(mine) + 1)}
-                                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[#E5E7EB] dark:border-[#27272A] bg-white dark:bg-[#121215] text-[#64748B] dark:text-[#94A3B8] text-sm hover:bg-[#F8F9FA] dark:hover:bg-[#1A1A20]"
+                                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-surface text-foreground-secondary text-sm hover:bg-canvas dark:hover:bg-surface-subtle"
                                     >
                                       +
                                     </button>
@@ -2785,7 +2785,7 @@ export function SplitBillDetailClient({
                                   {canTake && (
                                     <button
                                       onClick={() => setAssignment(it.key, activePerson.key, toNum(mine) + remaining)}
-                                      className="text-[11px] px-2.5 py-1.5 rounded-md border border-[#E5E7EB] dark:border-[#27272A] hover:bg-[#F8F9FA] dark:hover:bg-[#1A1A20]"
+                                      className="text-[11px] px-2.5 py-1.5 rounded-md border border-border hover:bg-canvas dark:hover:bg-surface-subtle"
                                     >
                                       + {language === "id" ? "Ambil sisa" : "Take remaining"} ({formatQty(remaining)})
                                     </button>
@@ -2793,7 +2793,7 @@ export function SplitBillDetailClient({
                                   {mine > 0.0001 && (
                                     <button
                                       onClick={() => setAssignment(it.key, activePerson.key, 0)}
-                                      className="text-[11px] px-2.5 py-1.5 rounded-md border border-[#E5E7EB] dark:border-[#27272A] hover:bg-[#F8F9FA] dark:hover:bg-[#1A1A20] text-[#64748B]"
+                                      className="text-[11px] px-2.5 py-1.5 rounded-md border border-border hover:bg-canvas dark:hover:bg-surface-subtle text-foreground-secondary"
                                     >
                                       {language === "id" ? "Kosongkan" : "Clear"}
                                     </button>
@@ -2805,7 +2805,7 @@ export function SplitBillDetailClient({
                         })}
                       </div>
 
-                      <div className={cn("text-xs font-semibold p-2.5 rounded-lg", splitMode === "equal" ? "text-[#64748B] bg-[#F1F3F5] dark:bg-[#1A1A20] dark:text-[#94A3B8]" : calc.unassigned_item_ids.length === 0 ? "text-emerald-700 bg-emerald-50 dark:text-emerald-300 dark:bg-emerald-950/20" : "text-amber-700 bg-amber-50 dark:text-amber-300 dark:bg-amber-950/20")}>
+                      <div className={cn("text-xs font-semibold p-2.5 rounded-lg", splitMode === "equal" ? "text-foreground-secondary bg-surface-subtle dark:text-foreground-muted" : calc.unassigned_item_ids.length === 0 ? "text-success bg-success-muted" : "text-warning bg-warning-muted")}>
                         {splitMode === "equal"
                           ? (language === "id" ? "Semua orang bayar sama — pembagian item tidak dipakai." : "Everyone pays the same — per-item assignment is not used.")
                           : calc.unassigned_item_ids.length === 0
@@ -2827,7 +2827,7 @@ export function SplitBillDetailClient({
       {step === 4 && (
         <div className="flex flex-col gap-4">
           {images.length > 0 && (
-            <div className="rounded-2xl border border-[#E5E7EB] dark:border-[#27272A] bg-white dark:bg-[#121215] p-4">
+            <div className="rounded-2xl border border-border bg-surface p-4">
               {renderReceiptPhotos()}
             </div>
           )}
@@ -2844,7 +2844,7 @@ export function SplitBillDetailClient({
                 <button
                   type="button"
                   onClick={() => setEditingDetails(false)}
-                  className="w-12 h-12 rounded-full shadow-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] flex items-center justify-center hover:bg-[#F8F9FA] dark:hover:bg-[#1A1A20]"
+                  className="w-12 h-12 rounded-full shadow-lg bg-surface border border-border text-foreground flex items-center justify-center hover:bg-canvas dark:hover:bg-surface-subtle"
                   title={language === "id" ? "Selesai ubah" : "Done"}
                   aria-label={language === "id" ? "Selesai ubah" : "Done"}
                 >
@@ -2924,16 +2924,16 @@ export function SplitBillDetailClient({
       <BottomSheet isOpen={showContacts} onClose={() => setShowContacts(false)} title={t.splitBill.contacts}>
         <div className="flex flex-col gap-3">
           <div className="flex gap-2">
-            <input value={newContactName} onChange={(e) => setNewContactName(e.target.value)} placeholder={t.splitBill.contactName} className="flex-1 px-3 py-2 rounded-lg border border-[#E5E7EB] dark:border-[#27272A] bg-transparent text-sm" />
+            <input value={newContactName} onChange={(e) => setNewContactName(e.target.value)} placeholder={t.splitBill.contactName} className="flex-1 px-3 py-2 rounded-lg border border-border bg-transparent text-sm" />
             <Button onClick={() => { saveContact(newContactName); setNewContactName(""); }} className="h-10 text-xs"><UserPlus className="w-4 h-4 mr-1" />{t.splitBill.save}</Button>
           </div>
-          <p className="text-[10px] text-[#94A3B8]">
+          <p className="text-[10px] text-foreground-muted">
             {language === "id"
               ? "Ketuk nama untuk mencentang. Ketuk lagi untuk membatalkan. Tekan Pilih untuk menambahkan ke patungan."
               : "Tap a name to tick it. Tap again to untick. Press Select to add them to the split."}
           </p>
           {contacts.length === 0 ? (
-            <p className="text-sm text-[#64748B]">{t.splitBill.noContacts}</p>
+            <p className="text-sm text-foreground-secondary">{t.splitBill.noContacts}</p>
           ) : (
             <>
               {/* List kontak (scroll sendiri supaya modal tidak terlalu tinggi) */}
@@ -2974,10 +2974,10 @@ export function SplitBillDetailClient({
                     className={cn(
                       "flex items-center gap-2 p-2 rounded-lg border transition-colors",
                       added
-                        ? "border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/60 dark:bg-emerald-950/20"
+                        ? "border-success/30 bg-success-muted/60"
                         : picked
-                          ? "border-[#0F172A] dark:border-[#FAFAFA] bg-[#F1F3F5] dark:bg-[#1A1A20]"
-                          : "border-[#E5E7EB] dark:border-[#27272A]",
+                          ? "border-border-strong bg-surface-subtle"
+                          : "border-border",
                     )}
                   >
                     <button
@@ -2991,7 +2991,7 @@ export function SplitBillDetailClient({
                     <button
                       className={cn(
                         "text-sm font-medium text-left flex-1 min-w-0 truncate py-1",
-                        added ? "text-[#64748B] dark:text-[#94A3B8]" : "text-[#0F172A] dark:text-[#FAFAFA]",
+                        added ? "text-foreground-secondary" : "text-foreground",
                       )}
                       onClick={toggle}
                     >
@@ -3001,7 +3001,7 @@ export function SplitBillDetailClient({
                       <button
                         type="button"
                         onClick={toggle}
-                        className="shrink-0 w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center hover:bg-emerald-600 transition-colors"
+                        className="shrink-0 w-6 h-6 rounded-full bg-success text-success-foreground flex items-center justify-center hover:bg-success/90 transition-colors"
                         title={language === "id" ? "Sudah jadi peserta — ketuk untuk membatalkan" : "Already a participant — tap to unselect"}
                         aria-label={language === "id" ? "Batalkan" : "Unselect"}
                       >
@@ -3014,8 +3014,8 @@ export function SplitBillDetailClient({
                         className={cn(
                           "shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors",
                           picked
-                            ? "bg-[#0F172A] dark:bg-[#FAFAFA] border-transparent text-white dark:text-[#0F172A]"
-                            : "border-[#CBD5E1] dark:border-[#334155] hover:border-[#94A3B8]",
+                            ? "bg-primary border-transparent text-primary-foreground"
+                            : "border-border-strong/30 hover:border-foreground-muted",
                         )}
                         title={picked ? (language === "id" ? "Batalkan pilihan" : "Unselect") : (language === "id" ? "Pilih" : "Select")}
                         aria-label={picked ? (language === "id" ? "Batalkan pilihan" : "Unselect") : (language === "id" ? "Pilih" : "Select")}
@@ -3023,7 +3023,7 @@ export function SplitBillDetailClient({
                         {picked && <Check className="w-3.5 h-3.5 stroke-3" />}
                       </button>
                     )}
-                    <button onClick={() => removeContact(c.id)} className="shrink-0 p-1.5 text-[#94A3B8] hover:text-rose-500" aria-label={t.splitBill.delete}>
+                    <button onClick={() => removeContact(c.id)} className="shrink-0 p-1.5 text-foreground-muted hover:text-destructive" aria-label={t.splitBill.delete}>
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
@@ -3066,25 +3066,25 @@ export function SplitBillDetailClient({
       <BottomSheet isOpen={showRecord} onClose={() => setShowRecord(false)} title={t.splitBill.recordMyPortion}>
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold uppercase text-[#64748B]">{t.splitBill.selectAccount}</label>
+            <label className="text-[10px] font-bold uppercase text-foreground-secondary">{t.splitBill.selectAccount}</label>
             <SearchableSelect value={recordState.accountId} onValueChange={(v) => setRecordState((s) => ({ ...s, accountId: v }))} options={accounts.map((a) => ({ value: a.id, label: a.name, icon: a.icon || "Wallet", badge: `(${a.currency})`, disabled: (a.currency || "").toUpperCase() !== currency.toUpperCase() }))} placeholder={t.splitBill.selectAccount} searchPlaceholder={t.splitBill.searchAccount} emptyText={t.splitBill.noMatchingAccount} />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold uppercase text-[#64748B]">{t.splitBill.selectCategory}</label>
+            <label className="text-[10px] font-bold uppercase text-foreground-secondary">{t.splitBill.selectCategory}</label>
             <SearchableSelect value={recordState.categoryId} onValueChange={(v) => setRecordState((s) => ({ ...s, categoryId: v }))} options={categories.map((c) => ({ value: c.id, label: c.name, icon: c.icon || "Tag" }))} placeholder={t.splitBill.selectCategory} searchPlaceholder={t.splitBill.searchCategory} emptyText={t.splitBill.noCategory} />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold uppercase text-[#64748B]">{(t.transactions as { date?: string } | undefined)?.date || (language === "id" ? "Tanggal" : "Date")}</label>
+            <label className="text-[10px] font-bold uppercase text-foreground-secondary">{(t.transactions as { date?: string } | undefined)?.date || (language === "id" ? "Tanggal" : "Date")}</label>
             <DatePicker value={recordState.date} onChange={(v) => setRecordState((s) => ({ ...s, date: v }))} />
           </div>
-          <div className="p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A]">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] mb-1">{(t.splitBill as { note?: string; notes?: string }).note || t.splitBill.notes || (language === "id" ? "Catatan" : "Note")}</p>
-            <p className="text-sm font-medium text-[#0F172A] dark:text-[#FAFAFA]">{`${language === "id" ? "Patungan" : "Split Bill"} - ${title || (language === "id" ? "Patungan" : "Split Bill")}`}</p>
+          <div className="p-3 rounded-lg bg-canvas dark:bg-surface-subtle border border-border">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary mb-1">{(t.splitBill as { note?: string; notes?: string }).note || t.splitBill.notes || (language === "id" ? "Catatan" : "Note")}</p>
+            <p className="text-sm font-medium text-foreground">{`${language === "id" ? "Patungan" : "Split Bill"} - ${title || (language === "id" ? "Patungan" : "Split Bill")}`}</p>
           </div>
           {(myPersonCalc && (myPersonCalc.item_lines.length > 0 || Math.abs(Number(myPersonCalc.charges_breakdown?.discount) || 0) > 0.0001)) && (
-            <div className="p-3 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-2">
+            <div className="p-3 rounded-xl bg-canvas dark:bg-surface-subtle border border-border flex flex-col gap-2">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary">
                   {t.quickAdd?.itemizedBreakdownTitle || "Rincian Item"}
                 </span>
               </div>
@@ -3097,17 +3097,17 @@ export function SplitBillDetailClient({
                   const unitPrice = it ? toNum(it.unit_price, 0) : 0;
                   const itemDiscount = Number(l.discount_amount) || 0;
                   return (
-                    <div key={`${l.item_id}-${idx}`} className="flex flex-col gap-1 py-2 border-b border-[#E5E7EB] dark:border-[#27272A] last:border-b-0">
+                    <div key={`${l.item_id}-${idx}`} className="flex flex-col gap-1 py-2 border-b border-border last:border-b-0">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="flex-1 min-w-0 text-sm font-medium text-[#0F172A] dark:text-[#FAFAFA] truncate">{l.name || it?.name || `Item ${idx + 1}`}</span>
-                        <span className="text-sm font-mono font-semibold text-[#0F172A] dark:text-[#FAFAFA] shrink-0">
+                        <span className="flex-1 min-w-0 text-sm font-medium text-foreground truncate">{l.name || it?.name || `Item ${idx + 1}`}</span>
+                        <span className="text-sm font-mono font-semibold text-foreground shrink-0">
                           {formatCurrency(Number(l.amount) || 0, currency)}
                         </span>
                       </div>
-                      <div className="flex flex-col gap-0.5 text-xs text-[#64748B] dark:text-[#94A3B8]">
+                      <div className="flex flex-col gap-0.5 text-xs text-foreground-secondary">
                         <span>{String(l.share_quantity)} × {formatCurrency(unitPrice, currency)}</span>
                         {itemDiscount > 0.0001 && (
-                          <span className="text-rose-600 dark:text-rose-400">
+                          <span className="text-destructive">
                             {language === "id" ? "Diskon item" : "Item discount"}: -{formatCurrency(itemDiscount, currency)}
                           </span>
                         )}
@@ -3116,19 +3116,19 @@ export function SplitBillDetailClient({
                   );
                 })}
                 {Math.abs(Number(myPersonCalc.charges_breakdown?.discount) || 0) > 0.0001 && (
-                  <div className="flex items-center justify-between gap-2 py-2 border-b border-[#E5E7EB] dark:border-[#27272A] last:border-b-0">
-                    <span className="flex-1 min-w-0 text-sm font-medium text-[#0F172A] dark:text-[#FAFAFA] truncate">
+                  <div className="flex items-center justify-between gap-2 py-2 border-b border-border last:border-b-0">
+                    <span className="flex-1 min-w-0 text-sm font-medium text-foreground truncate">
                       {language === "id" ? "Diskon" : "Discount"}
                     </span>
-                    <span className="text-sm font-mono font-semibold text-rose-600 dark:text-rose-400 shrink-0">
+                    <span className="text-sm font-mono font-semibold text-destructive shrink-0">
                       -{formatCurrency(Math.abs(Number(myPersonCalc.charges_breakdown?.discount) || 0), currency)}
                     </span>
                   </div>
                 )}
               </div>
-              <div className="pt-2 border-t border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-between text-[11px] font-mono">
-                <span className="text-[#64748B] dark:text-[#94A3B8]">{t.quickAdd?.itemizedTotal || "Total"}</span>
-                <span className="font-bold text-[#0F172A] dark:text-[#FAFAFA]">
+              <div className="pt-2 border-t border-border flex items-center justify-between text-[11px] font-mono">
+                <span className="text-foreground-secondary">{t.quickAdd?.itemizedTotal || "Total"}</span>
+                <span className="font-bold text-foreground">
                   {formatCurrency(myTotal, currency)}
                 </span>
               </div>

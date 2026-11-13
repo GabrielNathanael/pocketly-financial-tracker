@@ -709,13 +709,13 @@ function QuickAddSheetContent({
       {/* Pinned Templates Shortcuts (hidden while numpad is open to free up vertical space) */}
       {pinnedTemplates.length > 0 && !isNumpadOpen && (
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-0.5 no-scrollbar scroll-smooth">
-          <Star className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
+          <Star className="w-3.5 h-3.5 text-warning shrink-0" />
           {pinnedTemplates.map((tpl) => (
             <button
               key={tpl.id}
               type="button"
               onClick={() => handleApplyTemplate(tpl)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#F1F3F5] dark:bg-[#1A1A20] hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#FAFAFA] border border-[#E5E7EB] dark:border-[#27272A] shrink-0 cursor-pointer active:scale-95 transition-all"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-muted hover:bg-secondary text-foreground border border-border shrink-0 cursor-pointer active:scale-95 transition-all"
             >
               <span className="whitespace-nowrap font-medium">{tpl.name}</span>
               <span className="font-mono font-bold text-[11px] tnum opacity-90">
@@ -729,7 +729,7 @@ function QuickAddSheetContent({
       {/* 1. Header: Segmented Type Switcher (compacts while numpad is open) */}
       <div
         className={cn(
-          "grid grid-cols-2 p-0.5 bg-[#F1F3F5] dark:bg-[#1A1A20] rounded-lg border border-[#E5E7EB] dark:border-[#27272A] transition-all",
+          "grid grid-cols-2 p-0.5 bg-muted rounded-lg border border-border transition-all",
           isNumpadOpen && "scale-[0.97] opacity-90",
         )}
       >
@@ -740,8 +740,8 @@ function QuickAddSheetContent({
             "flex items-center justify-center gap-1.5 text-xs font-bold rounded-md transition-all cursor-pointer",
             isNumpadOpen ? "py-1" : "py-1.5",
             type === "expense"
-              ? "bg-[#E11D48] text-white shadow-2xs"
-              : "text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]",
+              ? "bg-destructive text-destructive-foreground shadow-2xs"
+              : "text-foreground-secondary hover:text-foreground",
           )}
         >
           <ArrowDownRight className="w-3.5 h-3.5" />
@@ -755,8 +755,8 @@ function QuickAddSheetContent({
             "flex items-center justify-center gap-1.5 text-xs font-bold rounded-md transition-all cursor-pointer",
             isNumpadOpen ? "py-1" : "py-1.5",
             type === "income"
-              ? "bg-[#0D9488] text-white shadow-2xs"
-              : "text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]",
+              ? "bg-success text-success-foreground shadow-2xs"
+              : "text-foreground-secondary hover:text-foreground",
           )}
         >
           <ArrowUpRight className="w-3.5 h-3.5" />
@@ -768,25 +768,25 @@ function QuickAddSheetContent({
       <div className="relative">
         <div
           className={cn(
-            "relative rounded-xl bg-white dark:bg-[#121215] border shadow-2xs overflow-hidden transition-all group",
+            "relative rounded-xl bg-surface border shadow-2xs overflow-hidden transition-all group",
             isAmountShaking
-              ? "border-[#E11D48] dark:border-[#E11D48] ring-2 ring-[#E11D48]/20 animate-[shake_0.3s_ease-in-out]"
+              ? "border-destructive ring-2 ring-destructive/20 animate-[shake_0.3s_ease-in-out]"
               : highlightScan
-                ? "border-indigo-400/70 ring-2 ring-indigo-400/30"
+                ? "border-info/70 ring-2 ring-info/30"
                 : isNumpadOpen
-                  ? "border-[#0F172A] dark:border-[#FAFAFA] ring-2 ring-[#0F172A]/10 dark:ring-[#FAFAFA]/10"
-                  : "border-[#E5E7EB] dark:border-[#27272A]",
+                  ? "border-border-strong ring-2 ring-ring/10"
+                  : "border-border",
           )}
         >
           <div
             onClick={() => setIsNumpadOpen(!isNumpadOpen)}
             className={cn(
-              "w-full flex flex-col text-left cursor-pointer hover:bg-[#F8F9FA] dark:hover:bg-[#16161A] transition-all",
+              "w-full flex flex-col text-left cursor-pointer hover:bg-surface-subtle transition-all",
               isNumpadOpen ? "p-4 gap-1.5" : "p-3 gap-1",
             )}
           >
             <div className="flex items-center justify-between pr-8">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary">
                 {t.quickAdd.nominal}
               </span>
 
@@ -794,15 +794,15 @@ function QuickAddSheetContent({
                 className={cn(
                   "w-4 h-4 transition-colors",
                   isNumpadOpen
-                    ? "text-[#0F172A] dark:text-[#FAFAFA]"
-                    : "text-[#94A3B8] group-hover:text-blue-500",
+                    ? "text-foreground"
+                    : "text-foreground-muted group-hover:text-info",
                 )}
               />
             </div>
 
             {isNumpadOpen && (
               <div
-                className="overflow-x-auto whitespace-nowrap text-right text-xs font-mono font-semibold tracking-wide text-[#64748B] dark:text-[#94A3B8] no-scrollbar"
+                className="overflow-x-auto whitespace-nowrap text-right text-xs font-mono font-semibold tracking-wide text-foreground-secondary no-scrollbar"
                 aria-label={`Input nominal: ${amountStr}`}
               >
                 {amountStr}
@@ -817,7 +817,7 @@ function QuickAddSheetContent({
             >
               <span
                 className={cn(
-                  "font-bold text-[#0F172A] dark:text-[#F8FAFC]",
+                  "font-bold text-foreground",
                   isNumpadOpen ? "text-2xl" : "text-xl",
                 )}
               >
@@ -830,8 +830,8 @@ function QuickAddSheetContent({
                     ? "text-4xl sm:text-5xl"
                     : "text-2xl sm:text-3xl",
                   numericAmount > 0
-                    ? "text-[#0F172A] dark:text-[#F8FAFC]"
-                    : "text-[#94A3B8]",
+                    ? "text-foreground"
+                    : "text-foreground-muted",
                 )}
               >
                 {formatCurrency(numericAmount, currentCurrency)}
@@ -851,8 +851,8 @@ function QuickAddSheetContent({
               className={cn(
                 "p-1.5 rounded-lg transition-colors cursor-pointer",
                 isPinned
-                  ? "bg-amber-50 dark:bg-amber-950/40 text-amber-500"
-                  : "text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]",
+                  ? "bg-warning-muted text-warning"
+                  : "text-foreground-muted hover:text-foreground",
               )}
             >
               <Pin className={cn("w-3.5 h-3.5", isPinned && "fill-current")} />
@@ -874,12 +874,12 @@ function QuickAddSheetContent({
             }}
             title={t.quickAdd.scanReceiptBtn}
             aria-label={t.quickAdd.scanReceiptBtn}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-[#94A3B8] transition-colors hover:bg-[#F1F3F5] hover:text-[#0F172A] dark:hover:bg-[#1A1A20] dark:hover:text-[#FAFAFA] disabled:opacity-60"
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-foreground-muted transition-colors hover:bg-muted hover:text-foreground disabled:opacity-60"
           >
             {isScanning ? (
-              <Loader2 className="h-4 w-4 animate-spin text-indigo-500" />
+              <Loader2 className="h-4 w-4 animate-spin text-info" />
             ) : (
-              <Camera className="h-4 w-4 text-indigo-500" />
+              <Camera className="h-4 w-4 text-info" />
             )}
           </button>
         </div>
@@ -909,7 +909,7 @@ function QuickAddSheetContent({
                 type="button"
                 tabIndex={isNumpadOpen ? 0 : -1}
                 onClick={() => handleKeypadPress(n)}
-                className="h-full min-h-16 sm:min-h-19 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-2xl sm:text-3xl hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
+                className="h-full min-h-16 sm:min-h-19 rounded-xl bg-muted font-mono font-bold text-2xl sm:text-3xl hover:bg-secondary text-foreground border border-border active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
               >
                 {n}
               </button>
@@ -918,7 +918,7 @@ function QuickAddSheetContent({
               type="button"
               tabIndex={isNumpadOpen ? 0 : -1}
               onClick={handleKeypadBackspace}
-              className="h-full min-h-16 sm:min-h-19 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] flex items-center justify-center text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none"
+              className="h-full min-h-16 sm:min-h-19 rounded-xl bg-muted flex items-center justify-center text-foreground-secondary hover:text-foreground hover:bg-secondary border border-border active:scale-95 transition-all cursor-pointer select-none"
             >
               <Delete className="w-6 h-6" />
             </button>
@@ -929,7 +929,7 @@ function QuickAddSheetContent({
                 type="button"
                 tabIndex={isNumpadOpen ? 0 : -1}
                 onClick={() => handleKeypadPress(n)}
-                className="h-full min-h-16 sm:min-h-19 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-2xl sm:text-3xl hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
+                className="h-full min-h-16 sm:min-h-19 rounded-xl bg-muted font-mono font-bold text-2xl sm:text-3xl hover:bg-secondary text-foreground border border-border active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
               >
                 {n}
               </button>
@@ -938,7 +938,7 @@ function QuickAddSheetContent({
               type="button"
               tabIndex={isNumpadOpen ? 0 : -1}
               onClick={() => handleKeypadPress("000")}
-              className="h-full min-h-16 sm:min-h-19 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-base sm:text-lg hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
+              className="h-full min-h-16 sm:min-h-19 rounded-xl bg-muted font-mono font-bold text-base sm:text-lg hover:bg-secondary text-foreground border border-border active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
             >
               .000
             </button>
@@ -949,7 +949,7 @@ function QuickAddSheetContent({
                 type="button"
                 tabIndex={isNumpadOpen ? 0 : -1}
                 onClick={() => handleKeypadPress(n)}
-                className="h-full min-h-16 sm:min-h-19 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-2xl sm:text-3xl hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
+                className="h-full min-h-16 sm:min-h-19 rounded-xl bg-muted font-mono font-bold text-2xl sm:text-3xl hover:bg-secondary text-foreground border border-border active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
               >
                 {n}
               </button>
@@ -961,7 +961,7 @@ function QuickAddSheetContent({
                 triggerHaptic();
                 setAmountStr("0");
               }}
-              className="h-full min-h-16 sm:min-h-19 rounded-xl bg-[#FFF1F2] dark:bg-[#881337]/20 text-[#E11D48] font-mono font-bold text-lg sm:text-xl hover:bg-[#FFE4E6] dark:hover:bg-[#881337]/40 border border-[#FECDD3] dark:border-[#9F1239]/40 active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
+              className="h-full min-h-16 sm:min-h-19 rounded-xl bg-destructive-muted text-destructive font-mono font-bold text-lg sm:text-xl hover:opacity-90 border border-destructive/30 active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
             >
               C
             </button>
@@ -970,7 +970,7 @@ function QuickAddSheetContent({
               type="button"
               tabIndex={isNumpadOpen ? 0 : -1}
               onClick={() => handleKeypadPress("00")}
-              className="h-full min-h-16 sm:min-h-19 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-lg sm:text-xl hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
+              className="h-full min-h-16 sm:min-h-19 rounded-xl bg-muted font-mono font-bold text-lg sm:text-xl hover:bg-secondary text-foreground border border-border active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
             >
               00
             </button>
@@ -978,7 +978,7 @@ function QuickAddSheetContent({
               type="button"
               tabIndex={isNumpadOpen ? 0 : -1}
               onClick={() => handleKeypadPress("0")}
-              className="h-full min-h-16 sm:min-h-19 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-2xl sm:text-3xl hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
+              className="h-full min-h-16 sm:min-h-19 rounded-xl bg-muted font-mono font-bold text-2xl sm:text-3xl hover:bg-secondary text-foreground border border-border active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
             >
               0
             </button>
@@ -992,7 +992,7 @@ function QuickAddSheetContent({
               triggerHaptic();
               setIsNumpadOpen(false);
             }}
-            className="w-full min-h-14 rounded-xl bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] font-bold text-sm sm:text-base flex items-center justify-center gap-1.5 hover:opacity-90 active:scale-95 shadow-md transition-all cursor-pointer select-none"
+            className="w-full min-h-14 rounded-xl bg-primary text-primary-foreground font-bold text-sm sm:text-base flex items-center justify-center gap-1.5 hover:bg-primary-hover active:scale-95 shadow-md transition-all cursor-pointer select-none"
           >
             <Check className="w-5 h-5 stroke-3" />
             <span>{t.quickAdd.done}</span>
@@ -1012,7 +1012,7 @@ function QuickAddSheetContent({
 
           {/* 4. Account Selector */}
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary">
               {t.quickAdd.account}
             </label>
             <SearchableSelect
@@ -1033,13 +1033,13 @@ function QuickAddSheetContent({
               placeholder={t.quickAdd.selectAccount}
               searchPlaceholder={t.quickAdd.searchAccount}
               emptyText={t.quickAdd.noAccountFound}
-              triggerClassName="py-2.5 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20]"
+              triggerClassName="py-2.5 rounded-xl bg-surface-subtle"
             />
           </div>
 
           {/* 5. Category Selector */}
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary">
               {t.quickAdd.category}
             </label>
             <SearchableSelect
@@ -1050,12 +1050,12 @@ function QuickAddSheetContent({
                 label: formatCategoryName(c.name, language),
                 icon: c.icon || "Tag",
                 iconColor:
-                  type === "expense" ? "text-[#E11D48]" : "text-[#0D9488]",
+                  type === "expense" ? "text-destructive" : "text-success",
               }))}
               placeholder={t.quickAdd.selectCategory}
               searchPlaceholder={t.quickAdd.searchCategory}
               emptyText={t.quickAdd.noCategoryFound}
-              triggerClassName="py-2.5 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20]"
+              triggerClassName="py-2.5 rounded-xl bg-surface-subtle"
             />
           </div>
 
@@ -1067,10 +1067,10 @@ function QuickAddSheetContent({
               onChange={(e) => setDescription(e.target.value)}
               placeholder={t.quickAdd.notePlaceholder}
               className={cn(
-                "w-full px-3 py-2 rounded-xl bg-white dark:bg-[#121215] border text-xs font-medium text-[#0F172A] dark:text-[#F8FAFC] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#0F172A] dark:focus:border-[#FAFAFA] transition-all",
+                "w-full px-3 py-2 rounded-xl bg-surface border text-xs font-medium text-foreground placeholder:text-foreground-muted focus:outline-none focus:border-border-strong transition-all",
                 highlightScan
-                  ? "border-indigo-400/70 ring-2 ring-indigo-400/30"
-                  : "border-[#E5E7EB] dark:border-[#27272A]",
+                  ? "border-info/70 ring-2 ring-info/30"
+                  : "border-border",
               )}
             />
 
@@ -1092,8 +1092,8 @@ function QuickAddSheetContent({
                 className={cn(
                   "py-1.5 px-1 rounded-lg border text-[11px] font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none",
                   showItemsBreakdown
-                    ? "bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A] shadow-xs"
-                    : "bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]",
+                    ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                    : "bg-surface-subtle text-foreground-secondary hover:text-foreground border-border",
                 )}
               >
                 <ListPlus className="w-3 h-3 shrink-0" />
@@ -1112,8 +1112,8 @@ function QuickAddSheetContent({
                 className={cn(
                   "py-1.5 px-1 rounded-lg border text-[11px] font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none",
                   showFreeMemo
-                    ? "bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A] shadow-xs"
-                    : "bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]",
+                    ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                    : "bg-surface-subtle text-foreground-secondary hover:text-foreground border-border",
                 )}
               >
                 <AlignLeft className="w-3 h-3 shrink-0" />
@@ -1127,8 +1127,8 @@ function QuickAddSheetContent({
                 className={cn(
                   "py-1.5 px-1 rounded-lg border text-[11px] font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none",
                   showTags
-                    ? "bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A] shadow-xs"
-                    : "bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]",
+                    ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                    : "bg-surface-subtle text-foreground-secondary hover:text-foreground border-border",
                 )}
               >
                 <Hash className="w-3 h-3 shrink-0" />
@@ -1144,21 +1144,21 @@ function QuickAddSheetContent({
 
           {/* 6.5 Expandable Tags (#tags) Drawer */}
           {showTags && (
-            <div className="p-3 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-2 animate-in fade-in duration-150">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+            <div className="p-3 rounded-xl bg-surface-subtle border border-border flex flex-col gap-2 animate-in fade-in duration-150">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary">
                 {t.transactions.tagLabel}
               </span>
               <div className="flex flex-wrap items-center gap-1.5 min-h-7">
                 {tags.map((tag) => (
                   <span
                     key={tag}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs font-bold text-[#0F172A] dark:text-[#FAFAFA] shadow-2xs"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-surface border border-border text-xs font-bold text-foreground shadow-2xs"
                   >
                     <span>#{tag}</span>
                     <button
                       type="button"
                       onClick={() => setTags(tags.filter((t) => t !== tag))}
-                      className="text-[#94A3B8] hover:text-rose-500 cursor-pointer"
+                      className="text-foreground-muted hover:text-destructive cursor-pointer"
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -1186,7 +1186,7 @@ function QuickAddSheetContent({
                       ? t.transactions.tagPlaceholder
                       : t.common.moreTagsPlaceholder
                   }
-                  className="flex-1 min-w-30 px-2 py-1 bg-transparent text-xs text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8] focus:outline-none"
+                  className="flex-1 min-w-30 px-2 py-1 bg-transparent text-xs text-foreground placeholder:text-foreground-muted focus:outline-none"
                 />
               </div>
             </div>
@@ -1194,15 +1194,15 @@ function QuickAddSheetContent({
 
           {/* 7. Expandable Sub-items Breakdown Drawer */}
           {showItemsBreakdown && (
-            <div className="p-3 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-2">
+            <div className="p-3 rounded-xl bg-surface-subtle border border-border flex flex-col gap-2">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] truncate">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary truncate">
                   {t.quickAdd.itemizedBreakdownTitle}
                 </span>
                 <button
                   type="button"
                   onClick={handleAddItem}
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-[11px] font-bold text-[#0F172A] dark:text-[#FAFAFA] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] active:scale-95 transition-all cursor-pointer shrink-0"
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-surface border border-border text-[11px] font-bold text-foreground hover:bg-muted active:scale-95 transition-all cursor-pointer shrink-0"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">{t.quickAdd.addItem}</span>
@@ -1210,7 +1210,7 @@ function QuickAddSheetContent({
               </div>
 
               {items.length === 0 ? (
-                <div className="text-center py-3 text-xs text-[#94A3B8]">
+                <div className="text-center py-3 text-xs text-foreground-muted">
                   {t.quickAdd.emptyItems}
                 </div>
               ) : (
@@ -1218,7 +1218,7 @@ function QuickAddSheetContent({
                   {items.map((item, idx) => (
                     <div
                       key={idx}
-                      className="flex flex-col gap-1 py-2 border-b border-[#E5E7EB] dark:border-[#27272A] last:border-b-0"
+                      className="flex flex-col gap-1 py-2 border-b border-border last:border-b-0"
                     >
                       {/* Row 1: Name + Total */}
                       <div className="flex items-center justify-between gap-2">
@@ -1229,7 +1229,7 @@ function QuickAddSheetContent({
                           onChange={(e) =>
                             handleUpdateItem(idx, "name", e.target.value)
                           }
-                          className="flex-1 min-w-0 bg-transparent text-sm font-medium text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8] focus:outline-none"
+                          className="flex-1 min-w-0 bg-transparent text-sm font-medium text-foreground placeholder:text-foreground-muted focus:outline-none"
                         />
                         <div className="w-28 shrink-0">
                           <NumberInput
@@ -1260,7 +1260,7 @@ function QuickAddSheetContent({
                             const next = cur > 1 ? cur - 1 : cur;
                             handleUpdateItem(idx, "quantity", String(Number(next.toFixed(6))));
                           }}
-                          className="flex h-6 w-6 items-center justify-center rounded-md border border-[#E5E7EB] dark:border-[#27272A] text-[#64748B] dark:text-[#94A3B8] text-sm"
+                          className="flex h-6 w-6 items-center justify-center rounded-md border border-border text-foreground-secondary text-sm"
                         >
                           −
                         </button>
@@ -1287,7 +1287,7 @@ function QuickAddSheetContent({
                               handleUpdateItem(idx, "quantity", "1");
                             }
                           }}
-                          className="w-10 bg-transparent text-xs text-center text-[#0F172A] dark:text-[#FAFAFA] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          className="w-10 bg-transparent text-xs text-center text-foreground focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
 
                         {/* Plus */}
@@ -1298,13 +1298,13 @@ function QuickAddSheetContent({
                             const cur = Number.isFinite(base) && base > 0 ? base : 1;
                             handleUpdateItem(idx, "quantity", String(Number((cur + 1).toFixed(6))));
                           }}
-                          className="flex h-6 w-6 items-center justify-center rounded-md border border-[#E5E7EB] dark:border-[#27272A] text-[#64748B] dark:text-[#94A3B8] text-sm"
+                          className="flex h-6 w-6 items-center justify-center rounded-md border border-border text-foreground-secondary text-sm"
                         >
                           +
                         </button>
 
                         {/* Multiply + unit price */}
-                        <span className="text-xs text-[#94A3B8]">×</span>
+                        <span className="text-xs text-foreground-muted">×</span>
                         <div className="flex-1 min-w-0">
                           <NumberInput
                             value={item.price}
@@ -1317,7 +1317,7 @@ function QuickAddSheetContent({
                             currency={currentCurrency}
                             compact
                             showCurrency={false}
-                            className="w-full bg-transparent text-xs text-[#64748B] dark:text-[#94A3B8] focus:outline-none"
+                            className="w-full bg-transparent text-xs text-foreground-secondary focus:outline-none"
                           />
                         </div>
 
@@ -1325,7 +1325,7 @@ function QuickAddSheetContent({
                         <button
                           type="button"
                           onClick={() => handleRemoveItem(idx)}
-                          className="p-1 text-[#94A3B8] hover:text-[#E11D48] active:scale-90 transition-all cursor-pointer shrink-0"
+                          className="p-1 text-foreground-muted hover:text-destructive active:scale-90 transition-all cursor-pointer shrink-0"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -1333,7 +1333,7 @@ function QuickAddSheetContent({
 
                       {/* Row 3: Split/patungan controls (optional) */}
                       <div className="flex items-center gap-2 pt-1">
-                        <span className="text-[10px] text-[#64748B] dark:text-[#94A3B8] shrink-0">
+                        <span className="text-[10px] text-foreground-secondary shrink-0">
                           {language === "id" ? "Dibagi ke" : "Split with"}
                         </span>
                         <button
@@ -1342,11 +1342,11 @@ function QuickAddSheetContent({
                             const cur = parseInt(item.shareCount ?? "1", 10) || 1;
                             handleUpdateItem(idx, "shareCount", String(Math.max(1, cur - 1)));
                           }}
-                          className="flex h-5 w-5 items-center justify-center rounded border border-[#E5E7EB] dark:border-[#27272A] text-[#64748B] dark:text-[#94A3B8] text-xs"
+                          className="flex h-5 w-5 items-center justify-center rounded border border-border text-foreground-secondary text-xs"
                         >
                           −
                         </button>
-                        <span className="w-5 text-center text-xs font-medium text-[#0F172A] dark:text-[#FAFAFA]">
+                        <span className="w-5 text-center text-xs font-medium text-foreground">
                           {Math.max(1, parseInt(item.shareCount ?? "1", 10) || 1)}
                         </span>
                         <button
@@ -1355,16 +1355,16 @@ function QuickAddSheetContent({
                             const cur = parseInt(item.shareCount ?? "1", 10) || 1;
                             handleUpdateItem(idx, "shareCount", String(cur + 1));
                           }}
-                          className="flex h-5 w-5 items-center justify-center rounded border border-[#E5E7EB] dark:border-[#27272A] text-[#64748B] dark:text-[#94A3B8] text-xs"
+                          className="flex h-5 w-5 items-center justify-center rounded border border-border text-foreground-secondary text-xs"
                         >
                           +
                         </button>
-                        <span className="text-[10px] text-[#64748B] dark:text-[#94A3B8] shrink-0">
+                        <span className="text-[10px] text-foreground-secondary shrink-0">
                           {language === "id" ? "orang" : "people"}
                         </span>
 
                         <div className="flex-1 min-w-0 flex items-center justify-end gap-1.5">
-                          <span className="text-[10px] text-[#64748B] dark:text-[#94A3B8] shrink-0">
+                          <span className="text-[10px] text-foreground-secondary shrink-0">
                             {t.quickAdd.myPortionTotalLabel}:
                           </span>
                           <div className="w-24">
@@ -1395,35 +1395,35 @@ function QuickAddSheetContent({
 
               {/* Smart Allocation Summary Bar */}
               {items.length > 0 && (
-                <div className="pt-2 border-t border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-2">
+                <div className="pt-2 border-t border-border flex flex-col gap-2">
                   <div className="flex flex-col gap-1 text-[11px] font-mono">
                     <div className="flex items-center justify-between">
-                      <span className="text-[#64748B] dark:text-[#94A3B8]">
+                      <span className="text-foreground-secondary">
                         {t.quickAdd.receiptTotalLabel}:{" "}
-                        <strong className="text-[#0F172A] dark:text-[#FAFAFA]">
+                        <strong className="text-foreground">
                           {formatCurrency(itemsTotal, currentCurrency)}
                         </strong>
                       </span>
-                      <span className="text-[#64748B] dark:text-[#94A3B8]">
+                      <span className="text-foreground-secondary">
                         {t.quickAdd.myPortionTotalLabel}:{" "}
-                        <strong className="text-[#0D9488] dark:text-emerald-400">
+                        <strong className="text-success">
                           {formatCurrency(myPortionTotal, currentCurrency)}
                         </strong>
                       </span>
                     </div>
 
                     {isItemsMatching ? (
-                      <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                      <span className="text-[10px] font-bold text-success flex items-center gap-1">
                         <Check className="w-3 h-3" />
                         <span>{t.quickAdd.itemsMatched}</span>
                       </span>
                     ) : hasRemainingUnitemized ? (
-                      <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400">
+                      <span className="text-[10px] font-bold text-info">
                         {t.quickAdd.unitemizedRemaining}: +
                         {formatCurrency(remainingAmount, currentCurrency)}
                       </span>
                     ) : isItemsExceeding ? (
-                      <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 flex items-center gap-1">
+                      <span className="text-[10px] font-bold text-destructive flex items-center gap-1">
                         <AlertCircle className="w-3 h-3" />
                         <span>
                           +
@@ -1445,9 +1445,9 @@ function QuickAddSheetContent({
                         setAmountStr(String(Math.round(myPortionTotal)));
                         setError(null);
                       }}
-                      className="w-full py-1.5 px-2 rounded-lg bg-white dark:bg-[#121215] border border-dashed border-[#CBD5E1] dark:border-[#334155] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] text-[11px] font-medium text-[#475569] dark:text-[#CBD5E1] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      className="w-full py-1.5 px-2 rounded-lg bg-surface border border-dashed border-border-strong hover:border-foreground text-[11px] font-medium text-foreground-secondary flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                     >
-                      <Check className="w-3 h-3 text-[#0D9488]" />
+                      <Check className="w-3 h-3 text-success" />
                       <span>
                         {t.quickAdd.syncTotalWithItems}:{" "}
                         <strong>
@@ -1463,30 +1463,30 @@ function QuickAddSheetContent({
 
           {/* 8. Expandable Free Text Memo Drawer */}
           {showFreeMemo && (
-            <div className="p-3 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A]">
+            <div className="p-3 rounded-xl bg-surface-subtle border border-border">
               <textarea
                 rows={2}
                 value={freeTextMemo}
                 onChange={(e) => setFreeTextMemo(e.target.value)}
                 placeholder={t.quickAdd.memoPlaceholder}
-                className="w-full p-2 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs text-[#0F172A] dark:text-[#F8FAFC] placeholder:text-[#94A3B8] focus:outline-none"
+                className="w-full p-2 rounded-lg bg-surface border border-border text-xs text-foreground placeholder:text-foreground-muted focus:outline-none"
               />
             </div>
           )}
 
           {error && (
-            <p className="text-xs font-semibold text-[#E11D48] text-center pt-1">
+            <p className="text-xs font-semibold text-destructive text-center pt-1">
               {error}
             </p>
           )}
 
           {/* Action Footer Bar */}
-          <div className="mt-auto flex items-center justify-between gap-2 pt-2 border-t border-[#E5E7EB] dark:border-[#27272A]">
+          <div className="mt-auto flex items-center justify-between gap-2 pt-2 border-t border-border">
             <button
               type="button"
               onClick={onClose}
               disabled={isLoading}
-              className="px-4 py-2 rounded-xl text-xs font-bold text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] bg-[#F1F3F5] dark:bg-[#1A1A20] hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer"
+              className="px-4 py-2 rounded-xl text-xs font-bold text-foreground-secondary hover:text-foreground bg-muted hover:bg-secondary border border-border active:scale-95 transition-all cursor-pointer"
             >
               {t.common.cancel}
             </button>
@@ -1496,7 +1496,7 @@ function QuickAddSheetContent({
               onClick={handleSave}
               isLoading={isLoading}
               disabled={numericAmount <= 0}
-              className="flex-1 py-2.5 h-auto font-bold text-xs rounded-xl bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] hover:opacity-90 active:scale-95 shadow-sm"
+              className="flex-1 py-2.5 h-auto font-bold text-xs rounded-xl bg-primary text-primary-foreground hover:bg-primary-hover active:scale-95 shadow-sm"
             >
               <Check className="w-3.5 h-3.5 mr-1 stroke-3" />
               <span>{t.quickAdd.recordBtn}</span>

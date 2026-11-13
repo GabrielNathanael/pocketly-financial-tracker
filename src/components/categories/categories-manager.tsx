@@ -40,25 +40,25 @@ export function CategoriesManager({ categories }: CategoriesManagerProps) {
     <div className="flex flex-col gap-4">
       {/* Dynamic Bilingual Header */}
       <div>
-        <h1 className="text-xl font-bold tracking-tight text-[#0F172A] dark:text-[#F8FAFC]">
+        <h1 className="text-xl font-bold tracking-tight text-foreground">
           {t.categories.title}
         </h1>
-        <p className="text-xs text-[#64748B] dark:text-[#94A3B8] font-mono">
+        <p className="text-xs text-foreground-secondary font-mono">
           {t.categories.subtitle}
         </p>
       </div>
 
       {/* Tab Switcher & Add Button */}
       <div className="flex items-center justify-between gap-2">
-        <div className="inline-flex p-0.5 bg-[#F1F3F5] dark:bg-[#1A1A20] rounded-lg border border-[#E5E7EB] dark:border-[#27272A] shrink-0">
+        <div className="inline-flex p-0.5 bg-surface-subtle rounded-lg border border-border shrink-0">
           <button
             type="button"
             onClick={() => setTab('expense')}
             className={cn(
               'px-2.5 sm:px-3.5 py-1.5 rounded-md text-xs font-bold transition-colors cursor-pointer',
               tab === 'expense'
-                ? 'bg-[#E11D48] text-white'
-                : 'text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
+                ? 'bg-destructive text-destructive-foreground'
+                : 'text-foreground-secondary hover:text-foreground'
             )}
           >
             {t.categories.expenseTab} ({categories.filter((c) => c.type === 'expense').length})
@@ -69,8 +69,8 @@ export function CategoriesManager({ categories }: CategoriesManagerProps) {
             className={cn(
               'px-2.5 sm:px-3.5 py-1.5 rounded-md text-xs font-bold transition-colors cursor-pointer',
               tab === 'income'
-                ? 'bg-[#0D9488] text-white'
-                : 'text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
+                ? 'bg-success text-success-foreground'
+                : 'text-foreground-secondary hover:text-foreground'
             )}
           >
             {t.categories.incomeTab} ({categories.filter((c) => c.type === 'income').length})
@@ -99,16 +99,16 @@ export function CategoriesManager({ categories }: CategoriesManagerProps) {
             <button
               key={cat.id}
               onClick={() => handleEdit(cat)}
-              className="flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors cursor-pointer text-left group min-h-14.5"
+              className="flex items-center gap-3 p-3 rounded-xl bg-surface border border-border hover:border-border-strong transition-colors cursor-pointer text-left group min-h-14.5"
             >
-              <div className="w-8 h-8 rounded-lg bg-[#F1F3F5] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-surface-subtle border border-border text-foreground flex items-center justify-center shrink-0">
                 <DynamicIcon name={cat.icon} className="w-4 h-4" />
               </div>
               <div className="flex flex-col min-w-0">
-                <span className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC] line-clamp-2 leading-tight">
+                <span className="text-xs font-bold text-foreground line-clamp-2 leading-tight">
                   {formatCategoryName(cat.name, language)}
                 </span>
-                <span className="text-[10px] text-[#94A3B8] mt-0.5">
+                <span className="text-[10px] text-foreground-muted mt-0.5">
                   {cat.is_default ? t.common.systemDefault : t.common.custom}
                 </span>
               </div>

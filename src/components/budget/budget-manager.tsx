@@ -143,21 +143,21 @@ export function BudgetManager({
     <div className="flex flex-col gap-4">
       {/* Dynamic Bilingual Header */}
       <div>
-        <h1 className="text-xl font-bold tracking-tight text-[#0F172A] dark:text-[#F8FAFC]">
+        <h1 className="text-xl font-bold tracking-tight text-foreground">
           {t.budgets.title}
         </h1>
-        <p className="text-xs text-[#64748B] dark:text-[#94A3B8] font-mono">
+        <p className="text-xs text-foreground-secondary dark:text-foreground-muted font-mono">
           {t.budgets.subtitle}
         </p>
       </div>
 
       {/* Month Navigator Header & Add Budget Button */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-        <div className="flex items-center justify-between p-2 sm:p-2.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex-1">
+        <div className="flex items-center justify-between p-2 sm:p-2.5 rounded-xl bg-surface border border-border flex-1">
           <button
             onClick={handlePrevMonth}
             disabled={isPending}
-            className="p-1.5 rounded-md text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] transition-colors cursor-pointer disabled:opacity-50"
+            className="p-1.5 rounded-md text-foreground-secondary dark:text-foreground-muted hover:text-foreground hover:bg-surface-subtle transition-colors cursor-pointer disabled:opacity-50"
             title="Bulan Sebelumnya"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -165,12 +165,12 @@ export function BudgetManager({
 
           <div className="flex flex-col items-center">
             <div className="flex items-center gap-1.5">
-              <span className="text-xs sm:text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+              <span className="text-xs sm:text-sm font-bold text-foreground">
                 {formatDate(currentPeriod, 'MMMM yyyy')}
               </span>
-              {isPending && <Loader2 className="w-3.5 h-3.5 text-blue-500 animate-spin" />}
+              {isPending && <Loader2 className="w-3.5 h-3.5 text-info animate-spin" />}
             </div>
-            <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-[#94A3B8] font-bold">
+            <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-foreground-muted font-bold">
               {t.budgets.periodLabel}
             </span>
           </div>
@@ -178,7 +178,7 @@ export function BudgetManager({
           <button
             onClick={handleNextMonth}
             disabled={isPending}
-            className="p-1.5 rounded-md text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] transition-colors cursor-pointer disabled:opacity-50"
+            className="p-1.5 rounded-md text-foreground-secondary dark:text-foreground-muted hover:text-foreground hover:bg-surface-subtle transition-colors cursor-pointer disabled:opacity-50"
             title="Bulan Berikutnya"
           >
             <ChevronRight className="w-4 h-4" />
@@ -189,7 +189,7 @@ export function BudgetManager({
           <button
             type="button"
             onClick={handleAddNew}
-            className="h-10 px-4 rounded-xl bg-[#0F172A] hover:bg-[#1E293B] dark:bg-[#FAFAFA] dark:hover:bg-[#E2E8F0] text-white dark:text-[#0F172A] text-xs font-bold transition-all active:scale-95 inline-flex items-center justify-center gap-1.5 cursor-pointer shadow-xs shrink-0"
+            className="h-10 px-4 rounded-xl bg-surface-inverse hover:bg-surface-inverse/90 text-foreground-inverse text-xs font-bold transition-all active:scale-95 inline-flex items-center justify-center gap-1.5 cursor-pointer shadow-xs shrink-0"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
             <span>{t.budgets.modalTitle}</span>
@@ -199,20 +199,20 @@ export function BudgetManager({
 
       {/* Aggregate Overview Tile (Normalized in displayCurrency) */}
       {totalBudget > 0 && (
-        <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-3 font-mono">
+        <div className="p-4 sm:p-5 rounded-xl bg-surface border border-border flex flex-col gap-3 font-mono">
           <div className="flex items-center justify-between text-xs">
-            <span className="font-sans font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] text-[10px]">
+            <span className="font-sans font-bold uppercase tracking-wider text-foreground-secondary dark:text-foreground-muted text-[10px]">
               {t.budgets.aggregateTitle} ({displayCurrency})
             </span>
-            <span className="font-bold text-[#0F172A] dark:text-[#F8FAFC] tnum">
+            <span className="font-bold text-foreground tnum">
               {isPrivate ? '••%' : `${overallPercentage.toFixed(0)}%`} {t.budgets.consumed}
             </span>
           </div>
 
-          <div className="w-full bg-[#E5E7EB] dark:bg-[#27272A] h-2 rounded-full overflow-hidden">
+          <div className="w-full bg-border h-2 rounded-full overflow-hidden">
             <div
               className={`h-full transition-all duration-300 ${
-                totalSpent > totalBudget ? 'bg-[#E11D48]' : 'bg-[#0D9488]'
+                totalSpent > totalBudget ? 'bg-destructive' : 'bg-success'
               }`}
               style={{
                 width: `${Math.min(100, (totalSpent / totalBudget) * 100)}%`,
@@ -220,24 +220,24 @@ export function BudgetManager({
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[#E5E7EB] dark:border-[#27272A] text-xs tnum">
+          <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border text-xs tnum">
             <div>
-              <span className="text-[10px] font-sans text-[#94A3B8] uppercase tracking-wider block">{t.budgets.totalLimit}</span>
-              <span className="font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+              <span className="text-[10px] font-sans text-foreground-muted uppercase tracking-wider block">{t.budgets.totalLimit}</span>
+              <span className="font-bold text-foreground">
                 {maskCurrency(formatCurrency(totalBudget, displayCurrency), isPrivate)}
               </span>
             </div>
             <div className="text-center">
-              <span className="text-[10px] font-sans text-[#94A3B8] uppercase tracking-wider block">{t.common.spent}</span>
-              <span className="font-bold text-[#E11D48]">
+              <span className="text-[10px] font-sans text-foreground-muted uppercase tracking-wider block">{t.common.spent}</span>
+              <span className="font-bold text-destructive">
                 {maskCurrency(formatCurrency(totalSpent, displayCurrency), isPrivate)}
               </span>
             </div>
             <div className="text-right">
-              <span className="text-[10px] font-sans text-[#94A3B8] uppercase tracking-wider block">{t.common.remaining}</span>
+              <span className="text-[10px] font-sans text-foreground-muted uppercase tracking-wider block">{t.common.remaining}</span>
               <span
                 className={`font-bold ${
-                  totalRemaining < 0 ? 'text-[#E11D48]' : 'text-[#0D9488]'
+                  totalRemaining < 0 ? 'text-destructive' : 'text-success'
                 }`}
               >
                 {maskCurrency(formatCurrency(totalRemaining, displayCurrency), isPrivate)}
@@ -248,16 +248,16 @@ export function BudgetManager({
       )}
 
       {/* Filter & Search Bar */}
-      <div className="p-3 sm:p-4 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-2.5">
+      <div className="p-3 sm:p-4 rounded-xl bg-surface border border-border flex flex-col gap-2.5">
         <div className="flex items-center gap-2">
           <div className="relative flex-1 min-w-0">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none" />
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-foreground-muted pointer-events-none" />
             <input
               type="text"
               placeholder={t.budgets.searchPlaceholder}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-8.5 pr-3 py-1.5 sm:py-2 text-xs bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] rounded-lg text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#0F172A] dark:focus:border-white transition-colors"
+              className="w-full pl-8.5 pr-3 py-1.5 sm:py-2 text-xs bg-surface-subtle border border-border rounded-lg text-foreground placeholder:text-foreground-muted focus:outline-none focus:border-foreground transition-colors"
             />
           </div>
 
@@ -265,7 +265,7 @@ export function BudgetManager({
             <button
               type="button"
               onClick={handleResetFilters}
-              className="text-xs text-[#E11D48] hover:underline flex items-center gap-1 cursor-pointer font-semibold shrink-0"
+              className="text-xs text-destructive hover:underline flex items-center gap-1 cursor-pointer font-semibold shrink-0"
             >
               <X className="w-3.5 h-3.5" />
               <span>{t.budgets.reset}</span>
@@ -273,7 +273,7 @@ export function BudgetManager({
           )}
         </div>
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 border-t border-[#E5E7EB] dark:border-[#27272A]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 border-t border-border">
           {/* Status Filter Chips */}
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
             {statusOptions.map((item) => (
@@ -284,8 +284,8 @@ export function BudgetManager({
                 className={cn(
                   'px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors shrink-0 whitespace-nowrap cursor-pointer border',
                   statusFilter === item.value
-                    ? 'bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A] border-transparent shadow-2xs'
-                    : 'bg-white dark:bg-[#121215] text-[#64748B] dark:text-[#94A3B8] border-[#E5E7EB] dark:border-[#27272A] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20]'
+                    ? 'bg-surface-inverse text-foreground-inverse border-transparent shadow-2xs'
+                    : 'bg-surface text-foreground-secondary dark:text-foreground-muted border-border hover:bg-surface-subtle'
                 )}
               >
                 {item.label}
@@ -318,22 +318,22 @@ export function BudgetManager({
           {Array.from({ length: 4 }).map((_, i) => (
             <div
               key={i}
-              className="p-3.5 sm:p-4 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] shadow-2xs flex flex-col gap-3"
+              className="p-3.5 sm:p-4 rounded-xl bg-surface border border-border shadow-2xs flex flex-col gap-3"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <Skeleton className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-[#1A1A20]" />
+                  <Skeleton className="w-8 h-8 rounded-lg bg-surface-subtle" />
                   <div className="flex flex-col gap-1.5">
-                    <Skeleton className="h-3.5 w-24 rounded-md bg-slate-200 dark:bg-[#27272A]" />
-                    <Skeleton className="h-2.5 w-16 rounded-md bg-slate-100 dark:bg-[#1E1E24]" />
+                    <Skeleton className="h-3.5 w-24 rounded-md bg-surface-muted" />
+                    <Skeleton className="h-2.5 w-16 rounded-md bg-surface-subtle" />
                   </div>
                 </div>
-                <Skeleton className="h-5 w-16 rounded-md bg-slate-200 dark:bg-[#27272A]" />
+                <Skeleton className="h-5 w-16 rounded-md bg-surface-muted" />
               </div>
-              <Skeleton className="h-2 w-full rounded-full bg-slate-100 dark:bg-[#1E1E24]" />
+              <Skeleton className="h-2 w-full rounded-full bg-surface-subtle" />
               <div className="flex items-center justify-between pt-0.5">
-                <Skeleton className="h-3 w-20 rounded-md bg-slate-200 dark:bg-[#27272A]" />
-                <Skeleton className="h-3 w-24 rounded-md bg-slate-200 dark:bg-[#27272A]" />
+                <Skeleton className="h-3 w-20 rounded-md bg-surface-muted" />
+                <Skeleton className="h-3 w-24 rounded-md bg-surface-muted" />
               </div>
             </div>
           ))}

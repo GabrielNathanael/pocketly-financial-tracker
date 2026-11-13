@@ -64,24 +64,24 @@ export function AccountDetailView({ account, mutations, totalMutations, page, to
       {/* Back button */}
       <Link
         href="/accounts"
-        className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] transition-colors self-start"
+        className="inline-flex items-center gap-1.5 text-xs font-semibold text-foreground-secondary hover:text-foreground transition-colors self-start"
       >
         <ArrowLeft className="w-4 h-4" />
         <span>{t.accounts.backToAccounts}</span>
       </Link>
 
       {/* Account Info Card */}
-      <div className="p-4 sm:p-6 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-4 shadow-2xs">
+      <div className="p-4 sm:p-6 rounded-xl bg-surface border border-border flex flex-col gap-4 shadow-2xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] flex items-center justify-center shrink-0">
+            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-surface-subtle border border-border text-foreground flex items-center justify-center shrink-0">
               <DynamicIcon name={account.icon || 'Wallet'} className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
             <div className="flex flex-col min-w-0">
-              <h1 className="text-base sm:text-lg font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate">
+              <h1 className="text-base sm:text-lg font-bold text-foreground truncate">
                 {account.name}
               </h1>
-              <span className="text-xs text-[#64748B] dark:text-[#94A3B8] truncate">
+              <span className="text-xs text-foreground-secondary truncate">
                 {t.accounts.types[account.type] || account.type} • {account.currency}
               </span>
             </div>
@@ -93,9 +93,9 @@ export function AccountDetailView({ account, mutations, totalMutations, page, to
                 variant="outline"
                 size="sm"
                 onClick={() => setIsTransferModalOpen(true)}
-                className="flex-1 sm:flex-initial gap-1.5 text-xs font-bold cursor-pointer h-8 sm:h-9 px-2.5 sm:px-3 border-[#E5E7EB] dark:border-[#27272A] hover:bg-[#F8F9FA] dark:hover:bg-[#1A1A20]"
+                className="flex-1 sm:flex-initial gap-1.5 text-xs font-bold cursor-pointer h-8 sm:h-9 px-2.5 sm:px-3"
               >
-                <ArrowRightLeft className="w-3.5 h-3.5 text-[#6366F1]" />
+                <ArrowRightLeft className="w-3.5 h-3.5 text-info" />
                 <span>Transfer</span>
               </Button>
             )}
@@ -103,20 +103,20 @@ export function AccountDetailView({ account, mutations, totalMutations, page, to
               variant="outline"
               size="sm"
               onClick={() => setIsAdjustModalOpen(true)}
-              className="flex-1 sm:flex-initial gap-1.5 text-xs font-bold cursor-pointer h-8 sm:h-9 px-2.5 sm:px-3 border-[#E5E7EB] dark:border-[#27272A] hover:bg-[#F8F9FA] dark:hover:bg-[#1A1A20]"
+              className="flex-1 sm:flex-initial gap-1.5 text-xs font-bold cursor-pointer h-8 sm:h-9 px-2.5 sm:px-3"
             >
-              <Scale className="w-3.5 h-3.5 text-amber-500" />
+              <Scale className="w-3.5 h-3.5 text-warning" />
               <span>{t.accounts.adjustBalanceBtn}</span>
             </Button>
             <AccountEditTrigger account={account} />
           </div>
         </div>
 
-        <div className="pt-3 border-t border-[#E5E7EB] dark:border-[#27272A]">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8] block">
+        <div className="pt-3 border-t border-border">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-muted block">
             {t.accounts.settledBalance}
           </span>
-          <span className="text-2xl sm:text-3xl font-mono font-bold text-[#0F172A] dark:text-[#F8FAFC] tracking-tight tnum">
+          <span className="text-2xl sm:text-3xl font-mono font-bold text-foreground tracking-tight tnum">
             {maskCurrency(formatCurrency(account.current_balance, account.currency), isPrivate)}
           </span>
         </div>
@@ -125,7 +125,7 @@ export function AccountDetailView({ account, mutations, totalMutations, page, to
       {/* Mutation History */}
       <div className="flex flex-col gap-2.5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-0.5">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">
             {t.accounts.historyTitle} ({totalMutations})
           </h2>
           <div className="w-full sm:w-64 shrink-0">
@@ -145,7 +145,7 @@ export function AccountDetailView({ account, mutations, totalMutations, page, to
         </div>
 
         {mutations.length === 0 ? (
-          <div className="p-8 text-center bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] rounded-xl text-[#94A3B8] text-xs">
+          <div className="p-8 text-center bg-surface border border-border rounded-xl text-foreground-muted text-xs">
             {t.accounts.historyEmpty}
           </div>
         ) : (
@@ -158,27 +158,27 @@ export function AccountDetailView({ account, mutations, totalMutations, page, to
               
               const content = (
                 <div
-                  className="flex items-center justify-between p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-all shadow-2xs group cursor-pointer"
+                  className="flex items-center justify-between p-3 sm:p-3.5 rounded-xl bg-surface border border-border hover:border-border-strong transition-all shadow-2xs group cursor-pointer"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-[#F1F3F5] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                    <div className="w-8 h-8 rounded-lg bg-surface-subtle border border-border text-foreground flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
                       {m.type === 'transfer_out' ? (
-                        <ArrowDownRight className="w-4 h-4 text-[#E11D48]" />
+                        <ArrowDownRight className="w-4 h-4 text-destructive" />
                       ) : m.type === 'transfer_in' ? (
-                        <ArrowUpRight className="w-4 h-4 text-[#0D9488]" />
+                        <ArrowUpRight className="w-4 h-4 text-success" />
                       ) : (
                         <DynamicIcon name={m.icon || 'Tag'} className="w-4 h-4" />
                       )}
                     </div>
 
                     <div className="flex flex-col min-w-0">
-                      <span className="text-xs sm:text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate group-hover:text-[#0D9488] transition-colors">
+                      <span className="text-xs sm:text-sm font-bold text-foreground truncate group-hover:text-success transition-colors">
                         {displayTitle}
                       </span>
-                      <div className="flex items-center gap-1.5 text-[11px] text-[#64748B] dark:text-[#94A3B8] truncate">
+                      <div className="flex items-center gap-1.5 text-[11px] text-foreground-secondary truncate">
                         {m.isCross && m.exchangeRateUsed && m.counterpartyCurrency ? (
                           <>
-                            <span className="font-mono text-[#475569] dark:text-[#CBD5E1]">
+                            <span className="font-mono text-foreground-secondary">
                               {formatNaturalForexRate(
                                 m.type === 'transfer_out' ? m.currency : m.counterpartyCurrency,
                                 m.type === 'transfer_out' ? m.counterpartyCurrency : m.currency,
@@ -189,7 +189,7 @@ export function AccountDetailView({ account, mutations, totalMutations, page, to
                           </>
                         ) : m.description ? (
                           <>
-                            <span className="truncate max-w-40 sm:max-w-60 text-[#475569] dark:text-[#CBD5E1]">
+                            <span className="truncate max-w-40 sm:max-w-60 text-foreground-secondary">
                               {m.description}
                             </span>
                             <span>•</span>
@@ -203,7 +203,7 @@ export function AccountDetailView({ account, mutations, totalMutations, page, to
                   <span
                     className={cn(
                       'text-xs sm:text-sm font-mono font-bold tracking-tight shrink-0 ml-3 tnum',
-                      isPlus ? 'text-[#0D9488]' : 'text-[#0F172A] dark:text-[#F8FAFC]'
+                      isPlus ? 'text-success' : 'text-foreground'
                     )}
                   >
                     {maskCurrency(formattedMutation, isPrivate)}
@@ -228,9 +228,9 @@ export function AccountDetailView({ account, mutations, totalMutations, page, to
 
             {/* Pagination Controls (server-side) */}
             {totalPages > 1 && (
-              <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs">
-                <span className="text-[#64748B] dark:text-[#94A3B8] font-medium text-center sm:text-left">
-                  {t.common.showing} <span className="font-bold text-[#0F172A] dark:text-[#FAFAFA]">{mutations.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1} - {(page - 1) * PAGE_SIZE + mutations.length}</span> / {totalMutations}
+              <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 rounded-xl bg-surface border border-border text-xs">
+                <span className="text-foreground-secondary font-medium text-center sm:text-left">
+                  {t.common.showing} <span className="font-bold text-foreground">{mutations.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1} - {(page - 1) * PAGE_SIZE + mutations.length}</span> / {totalMutations}
                 </span>
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                   {(() => {
@@ -252,7 +252,7 @@ export function AccountDetailView({ account, mutations, totalMutations, page, to
                         >
                           {t.accounts.previousBtn}
                         </Button>
-                        <span className="font-mono text-[#64748B] dark:text-[#94A3B8] shrink-0">
+                        <span className="font-mono text-foreground-secondary shrink-0">
                           {page} / {totalPages}
                         </span>
                         <Button

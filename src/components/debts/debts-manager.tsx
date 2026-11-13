@@ -53,39 +53,39 @@ export function DebtsManager({ debts, accounts }: DebtsManagerProps) {
     <div className="flex flex-col gap-5">
       {/* Dynamic Bilingual Header */}
       <div>
-        <h1 className="text-xl font-bold tracking-tight text-[#0F172A] dark:text-[#F8FAFC]">
+        <h1 className="text-xl font-bold tracking-tight text-foreground">
           {t.debts.title}
         </h1>
-        <p className="text-xs text-[#64748B] dark:text-[#94A3B8] font-mono">
+        <p className="text-xs text-muted-foreground font-mono">
           {t.debts.subtitle}
         </p>
       </div>
 
       {/* Overview stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-        <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-lg bg-[#FFF1F2] dark:bg-[#881337]/20 text-[#E11D48] border border-[#FECDD3] dark:border-[#9F1239]/40 flex items-center justify-center shrink-0">
+        <div className="p-4 sm:p-5 rounded-xl bg-surface border border-border flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-lg bg-destructive-muted text-destructive border border-destructive/20 flex items-center justify-center shrink-0">
             <ArrowDownRight className="w-5 h-5 stroke-[2.5]" />
           </div>
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] block">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
               {t.debts.totalDebts}
             </span>
-            <span className="text-lg sm:text-xl font-mono font-bold text-[#E11D48] tracking-tight tnum">
+            <span className="text-lg sm:text-xl font-mono font-bold text-destructive tracking-tight tnum">
               {formatCurrency(totalActiveDebts, "IDR")}
             </span>
           </div>
         </div>
 
-        <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-lg bg-[#ECFDF5] dark:bg-[#064E3B]/20 text-[#0D9488] border border-[#A7F3D0] dark:border-[#065F46]/40 flex items-center justify-center shrink-0">
+        <div className="p-4 sm:p-5 rounded-xl bg-surface border border-border flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-lg bg-success-muted text-success border border-success/20 flex items-center justify-center shrink-0">
             <ArrowUpRight className="w-5 h-5 stroke-[2.5]" />
           </div>
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] block">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
               {t.debts.totalReceivables}
             </span>
-            <span className="text-lg sm:text-xl font-mono font-bold text-[#0D9488] tracking-tight tnum">
+            <span className="text-lg sm:text-xl font-mono font-bold text-success tracking-tight tnum">
               {formatCurrency(totalActiveReceivables, "IDR")}
             </span>
           </div>
@@ -106,8 +106,8 @@ export function DebtsManager({ debts, accounts }: DebtsManagerProps) {
               className={cn(
                 "px-3 py-1.5 rounded-md text-[11px] font-semibold transition-colors shrink-0 whitespace-nowrap cursor-pointer border",
                 typeFilter === tItem.value
-                  ? "bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A] border-transparent"
-                  : "bg-white dark:bg-[#121215] text-[#64748B] dark:text-[#94A3B8] border-[#E5E7EB] dark:border-[#27272A] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20]",
+                  ? "bg-primary text-primary-foreground border-transparent"
+                  : "bg-surface text-muted-foreground border-border hover:bg-surface-subtle",
               )}
             >
               {tItem.label}

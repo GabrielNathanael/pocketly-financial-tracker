@@ -152,7 +152,7 @@ export function AccountForm({ initialData, onSuccess }: AccountFormProps) {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       {error && (
-        <div className="p-3 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 text-xs font-medium flex items-start gap-2">
+        <div className="p-3 rounded-lg bg-destructive-muted border border-destructive/20 text-destructive text-xs font-medium flex items-start gap-2">
           <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
           <span className="leading-relaxed">{error}</span>
         </div>
@@ -169,7 +169,7 @@ export function AccountForm({ initialData, onSuccess }: AccountFormProps) {
       <div className="grid grid-cols-2 gap-2.5">
         {/* Type */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+          <label className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary">
             {t.accounts.typeLabel}
           </label>
           <Select
@@ -197,7 +197,7 @@ export function AccountForm({ initialData, onSuccess }: AccountFormProps) {
 
         {/* Currency */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+          <label className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary">
             {t.accounts.currencyLabel}
           </label>
           <Select
@@ -232,21 +232,21 @@ export function AccountForm({ initialData, onSuccess }: AccountFormProps) {
       )}
 
       {/* Default Account Checkbox Toggle */}
-      <label className="flex items-center gap-2.5 p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] cursor-pointer">
+      <label className="flex items-center gap-2.5 p-3 rounded-lg bg-canvas dark:bg-surface-subtle border border-border cursor-pointer">
         <input
           type="checkbox"
           checked={isDefault}
           onChange={(e) => setIsDefault(e.target.checked)}
-          className="w-4 h-4 rounded border-[#CBD5E1] text-[#0F172A] focus:ring-0 cursor-pointer"
+          className="w-4 h-4 rounded border-border-strong text-primary focus:ring-0 cursor-pointer"
         />
-        <span className="text-xs font-bold text-[#0F172A] dark:text-[#FAFAFA]">
+        <span className="text-xs font-bold text-foreground">
           {t.accounts.defaultAccountCheck}
         </span>
       </label>
 
       {/* Icon Picker */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+        <label className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary">
           {t.accounts.iconLabel}
         </label>
         <div className="grid grid-cols-6 sm:grid-cols-8 gap-2 max-h-36 overflow-y-auto p-0.5 no-scrollbar">
@@ -258,8 +258,8 @@ export function AccountForm({ initialData, onSuccess }: AccountFormProps) {
               className={cn(
                 "p-2 rounded-lg border flex items-center justify-center transition-colors cursor-pointer",
                 icon === ic
-                  ? "border-[#0F172A] bg-[#0F172A] text-white dark:border-[#FAFAFA] dark:bg-[#FAFAFA] dark:text-[#0F172A]"
-                  : "border-[#E5E7EB] dark:border-[#27272A] bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#0F172A] dark:text-[#F8FAFC] hover:bg-[#F1F3F5] dark:hover:bg-[#26262E]",
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border bg-canvas dark:bg-surface-subtle text-foreground hover:bg-surface-subtle dark:hover:bg-surface-muted",
               )}
             >
               <DynamicIcon name={ic} className="w-4 h-4" />
@@ -268,7 +268,7 @@ export function AccountForm({ initialData, onSuccess }: AccountFormProps) {
         </div>
       </div>
 
-      {error && <p className="text-xs font-semibold text-[#E11D48]">{error}</p>}
+      {error && <p className="text-xs font-semibold text-destructive">{error}</p>}
 
       <div className="flex items-center gap-2 pt-2">
         {isEditing && (

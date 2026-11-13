@@ -83,7 +83,7 @@ export function GoalDetailModal({
     >
       <div className="flex flex-col gap-5 pt-1">
         {/* Header Hero Card */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-4">
+        <div className="p-4 sm:p-5 rounded-2xl bg-canvas dark:bg-surface-subtle border border-border flex flex-col gap-4">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <div
@@ -94,17 +94,17 @@ export function GoalDetailModal({
               </div>
               <div className="flex flex-col min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="text-base sm:text-lg font-bold text-[#0F172A] dark:text-[#FAFAFA] truncate">
+                  <h2 className="text-base sm:text-lg font-bold text-foreground truncate">
                     {goal.name}
                   </h2>
                   <span
                     className={cn(
                       'px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider shrink-0 flex items-center gap-1',
                       isCompleted
-                        ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
+                        ? 'bg-success-muted text-success'
                         : isPaused
-                          ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300'
-                          : 'bg-teal-100 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300'
+                          ? 'bg-warning-muted text-warning'
+                          : 'bg-success-muted text-success'
                     )}
                   >
                     {isCompleted ? (
@@ -126,7 +126,7 @@ export function GoalDetailModal({
                   </span>
                 </div>
                 {goal.category && (
-                  <span className="text-xs text-[#64748B] dark:text-[#94A3B8] flex items-center gap-1 mt-0.5">
+                  <span className="text-xs text-foreground-secondary flex items-center gap-1 mt-0.5">
                     <DynamicIcon name={goal.category.icon || 'Tag'} className="w-3.5 h-3.5" />
                     <span>{goal.category.name}</span>
                   </span>
@@ -135,7 +135,7 @@ export function GoalDetailModal({
             </div>
 
             <div className="text-right shrink-0">
-              <span className="text-xl sm:text-2xl font-black font-mono tracking-tight text-[#0F172A] dark:text-[#FAFAFA]">
+              <span className="text-xl sm:text-2xl font-black font-mono tracking-tight text-foreground">
                 {progressPct}%
               </span>
             </div>
@@ -143,7 +143,7 @@ export function GoalDetailModal({
 
           {/* Progress Bar */}
           <div className="flex flex-col gap-1.5">
-            <div className="h-3 w-full rounded-full bg-[#E5E7EB] dark:bg-[#27272A] overflow-hidden p-0.5">
+            <div className="h-3 w-full rounded-full bg-border overflow-hidden p-0.5">
               <div
                 className="h-full rounded-full transition-all duration-700 ease-out"
                 style={{
@@ -153,10 +153,10 @@ export function GoalDetailModal({
               />
             </div>
             <div className="flex items-center justify-between text-xs font-mono font-bold">
-              <span className="text-[#0D9488]">
+              <span className="text-success">
                 {formatCurrency(currentAmt, goal.currency)}
               </span>
-              <span className="text-[#64748B] dark:text-[#94A3B8]">
+              <span className="text-foreground-secondary">
                 {formatCurrency(targetAmt, goal.currency)}
               </span>
             </div>
@@ -165,29 +165,29 @@ export function GoalDetailModal({
 
         {/* Financial Metrics Stack (Vertical) */}
         <div className="flex flex-col gap-2.5">
-          <div className="p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-between">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+          <div className="p-3 sm:p-3.5 rounded-xl bg-surface border border-border flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary">
               {t.goals.remainingNeededLabel}
             </span>
-            <span className="text-xs sm:text-sm font-bold font-mono text-[#0F172A] dark:text-[#FAFAFA]">
+            <span className="text-xs sm:text-sm font-bold font-mono text-foreground">
               {formatCurrency(remainingAmt, goal.currency)}
             </span>
           </div>
 
-          <div className="p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-between">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+          <div className="p-3 sm:p-3.5 rounded-xl bg-surface border border-border flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary">
               {t.goals.targetDateDetailLabel}
             </span>
-            <span className="text-xs sm:text-sm font-bold font-mono text-[#0F172A] dark:text-[#FAFAFA]">
+            <span className="text-xs sm:text-sm font-bold font-mono text-foreground">
               {goal.target_date ? formatDate(goal.target_date, 'd MMM yyyy', language) : '-'}
             </span>
           </div>
 
-          <div className="p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-between">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+          <div className="p-3 sm:p-3.5 rounded-xl bg-surface border border-border flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary">
               {t.goals.estMonthlySavingLabel}
             </span>
-            <span className="text-xs sm:text-sm font-bold font-mono text-[#0D9488]">
+            <span className="text-xs sm:text-sm font-bold font-mono text-success">
               {monthlyNeeded > 0 ? formatCurrency(monthlyNeeded, goal.currency) : t.goals.targetReachedLabel}
             </span>
           </div>
@@ -196,17 +196,17 @@ export function GoalDetailModal({
         {/* Deposit & Withdrawal History */}
         <div className="flex flex-col gap-2.5">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#FAFAFA] flex items-center gap-1.5">
-              <History className="w-3.5 h-3.5 text-[#64748B]" />
+            <h3 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+              <History className="w-3.5 h-3.5 text-foreground-secondary" />
               <span>{t.goals.historyTitleLabel}</span>
             </h3>
-            <span className="text-xs font-mono text-[#94A3B8]">
+            <span className="text-xs font-mono text-foreground-muted">
               {deposits.length} {t.goals.historyEntriesLabel}
             </span>
           </div>
 
           {deposits.length === 0 ? (
-            <div className="p-4 rounded-xl border border-dashed border-[#E5E7EB] dark:border-[#27272A] text-center text-xs text-[#94A3B8]">
+            <div className="p-4 rounded-xl border border-dashed border-border text-center text-xs text-foreground-muted">
               {t.goals.emptyHistoryLabel}
             </div>
           ) : (
@@ -218,14 +218,14 @@ export function GoalDetailModal({
                     <div
                       key={dep.id}
                       onClick={() => setSelectedDeposit(dep)}
-                      className="p-3 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] flex items-center gap-3 shadow-2xs group transition-all cursor-pointer"
+                      className="p-3 rounded-xl bg-surface border border-border hover:border-border-strong flex items-center gap-3 shadow-2xs group transition-all cursor-pointer"
                     >
                       <div
                         className={cn(
                           'w-7 h-7 rounded-lg flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform',
                           isDeposit
-                            ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400'
-                            : 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400'
+                            ? 'bg-success-muted text-success'
+                            : 'bg-destructive-muted text-destructive'
                         )}
                       >
                         {isDeposit ? <ArrowDownLeft className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
@@ -233,14 +233,14 @@ export function GoalDetailModal({
 
                       <div className="flex-1 min-w-0 flex flex-col gap-0.5">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA] truncate group-hover:text-[#0D9488] transition-colors">
+                          <span className="text-xs font-semibold text-foreground truncate group-hover:text-success transition-colors">
                             {isDeposit ? t.goals.depositTypeLabel : t.goals.withdrawalTypeLabel}
                             {dep.account && ` • ${dep.account.name}`}
                           </span>
                           <span
                             className={cn(
                               'text-xs font-mono font-bold shrink-0',
-                              isDeposit ? 'text-[#0D9488]' : 'text-[#E11D48]'
+                              isDeposit ? 'text-success' : 'text-destructive'
                             )}
                           >
                             {isDeposit ? '+' : '-'}
@@ -248,7 +248,7 @@ export function GoalDetailModal({
                           </span>
                         </div>
 
-                        <div className="flex items-center gap-2 text-[10px] text-[#64748B] dark:text-[#94A3B8]">
+                        <div className="flex items-center gap-2 text-[10px] text-foreground-secondary">
                           <span className="whitespace-nowrap shrink-0">{formatDate(dep.deposit_date, 'd MMM yyyy', language)}</span>
                           {dep.notes && <span className="truncate">({dep.notes})</span>}
                         </div>
@@ -260,9 +260,9 @@ export function GoalDetailModal({
 
               {/* Pagination Load More Controls */}
               {displayLimit < deposits.length && (
-                <div className="pt-1 flex flex-col sm:flex-row items-center justify-between gap-2 p-2.5 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-xs">
-                  <span className="text-[#64748B] dark:text-[#94A3B8] font-medium text-center sm:text-left text-[11px]">
-                    {t.common.showing} <span className="font-bold text-[#0F172A] dark:text-[#FAFAFA]">{Math.min(displayLimit, deposits.length)}</span> / {deposits.length}
+                <div className="pt-1 flex flex-col sm:flex-row items-center justify-between gap-2 p-2.5 rounded-xl bg-canvas dark:bg-surface-subtle border border-border text-xs">
+                  <span className="text-foreground-secondary font-medium text-center sm:text-left text-[11px]">
+                    {t.common.showing} <span className="font-bold text-foreground">{Math.min(displayLimit, deposits.length)}</span> / {deposits.length}
                   </span>
                   <div className="flex items-center gap-1.5 w-full sm:w-auto">
                     <Button
@@ -277,7 +277,7 @@ export function GoalDetailModal({
                       variant="ghost"
                       size="sm"
                       onClick={() => setDisplayLimit(deposits.length)}
-                      className="flex-1 sm:flex-initial text-xs text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] cursor-pointer h-7 px-2"
+                      className="flex-1 sm:flex-initial text-xs text-foreground-secondary hover:text-foreground cursor-pointer h-7 px-2"
                     >
                       {t.common.showAll}
                     </Button>
@@ -289,14 +289,14 @@ export function GoalDetailModal({
         </div>
 
         {/* Modal Action Footer */}
-        <div className="flex flex-col gap-2 pt-3 border-t border-[#E5E7EB] dark:border-[#27272A] w-full">
+        <div className="flex flex-col gap-2 pt-3 border-t border-border w-full">
           <Button
             size="sm"
             onClick={() => {
               onClose()
               onDeposit(goal)
             }}
-            className="w-full py-2.5 h-auto cursor-pointer text-xs font-bold bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] rounded-xl flex items-center justify-center gap-1.5 shadow-sm"
+            className="w-full py-2.5 h-auto cursor-pointer text-xs font-bold bg-primary text-primary-foreground rounded-xl flex items-center justify-center gap-1.5 shadow-sm"
           >
             <Plus className="w-4 h-4" />
             <span>{t.goals.depositWithdrawBtn}</span>
@@ -355,14 +355,14 @@ export function GoalDetailModal({
         >
           <div className="flex flex-col gap-4 pt-1">
             {/* Amount Badge Card */}
-            <div className="p-4 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col items-center justify-center text-center">
-              <span className="text-[10px] uppercase font-bold tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+            <div className="p-4 rounded-xl bg-canvas dark:bg-surface-subtle border border-border flex flex-col items-center justify-center text-center">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-foreground-secondary">
                 {selectedDeposit.type === 'deposit' ? t.goals.allocatedFundsAmountLabel : t.goals.withdrawnFundsAmountLabel}
               </span>
               <span
                 className={cn(
                   'text-2xl font-black font-mono mt-1',
-                  selectedDeposit.type === 'deposit' ? 'text-[#0D9488]' : 'text-[#E11D48]'
+                  selectedDeposit.type === 'deposit' ? 'text-success' : 'text-destructive'
                 )}
               >
                 {selectedDeposit.type === 'deposit' ? '+' : '-'}
@@ -372,22 +372,22 @@ export function GoalDetailModal({
 
             {/* Info Grid */}
             <div className="flex flex-col gap-2 text-xs">
-              <div className="flex items-center justify-between p-2.5 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A]">
-                <span className="text-[#64748B] dark:text-[#94A3B8]">{t.goals.receiptGoalLabel}</span>
-                <span className="font-bold text-[#0F172A] dark:text-[#FAFAFA]">{goal.name}</span>
+              <div className="flex items-center justify-between p-2.5 rounded-lg bg-surface border border-border">
+                <span className="text-foreground-secondary">{t.goals.receiptGoalLabel}</span>
+                <span className="font-bold text-foreground">{goal.name}</span>
               </div>
-              <div className="flex items-center justify-between p-2.5 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A]">
-                <span className="text-[#64748B] dark:text-[#94A3B8]">{t.goals.sourceAccountShortLabel}</span>
-                <span className="font-bold text-[#0F172A] dark:text-[#FAFAFA]">{selectedDeposit.account?.name || '-'}</span>
+              <div className="flex items-center justify-between p-2.5 rounded-lg bg-surface border border-border">
+                <span className="text-foreground-secondary">{t.goals.sourceAccountShortLabel}</span>
+                <span className="font-bold text-foreground">{selectedDeposit.account?.name || '-'}</span>
               </div>
-              <div className="flex items-center justify-between p-2.5 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A]">
-                <span className="text-[#64748B] dark:text-[#94A3B8]">{t.goals.receiptDateLabel}</span>
-                <span className="font-mono font-bold text-[#0F172A] dark:text-[#FAFAFA]">{formatDate(selectedDeposit.deposit_date, 'd MMM yyyy, HH:mm', language)}</span>
+              <div className="flex items-center justify-between p-2.5 rounded-lg bg-surface border border-border">
+                <span className="text-foreground-secondary">{t.goals.receiptDateLabel}</span>
+                <span className="font-mono font-bold text-foreground">{formatDate(selectedDeposit.deposit_date, 'd MMM yyyy, HH:mm', language)}</span>
               </div>
               {selectedDeposit.notes && (
-                <div className="flex flex-col gap-1 p-2.5 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A]">
-                  <span className="text-[#64748B] dark:text-[#94A3B8]">{t.goals.receiptNotesLabel}</span>
-                  <span className="font-medium text-[#0F172A] dark:text-[#FAFAFA]">{selectedDeposit.notes}</span>
+                <div className="flex flex-col gap-1 p-2.5 rounded-lg bg-surface border border-border">
+                  <span className="text-foreground-secondary">{t.goals.receiptNotesLabel}</span>
+                  <span className="font-medium text-foreground">{selectedDeposit.notes}</span>
                 </div>
               )}
             </div>

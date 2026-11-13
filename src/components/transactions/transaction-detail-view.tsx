@@ -158,19 +158,19 @@ export function TransactionDetailView({
           <button
             type="button"
             onClick={() => setIsEditing(false)}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] cursor-pointer"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-foreground-secondary hover:text-foreground cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>{t.common.cancel}</span>
           </button>
         </div>
 
-        <div className="p-5 sm:p-6 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-4">
+        <div className="p-5 sm:p-6 rounded-xl bg-surface border border-border flex flex-col gap-4">
           <div>
-            <h1 className="text-base font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+            <h1 className="text-base font-bold text-foreground">
               {t.transactions.editTitle}
             </h1>
-            <span className="text-[10px] font-mono text-[#94A3B8]">
+            <span className="text-[10px] font-mono text-foreground-muted">
               ID: {transaction.id}
             </span>
           </div>
@@ -198,7 +198,7 @@ export function TransactionDetailView({
         <button
           type="button"
           onClick={handleBack}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] cursor-pointer"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-foreground-secondary hover:text-foreground cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>{t.transactions.backToLedger}</span>
@@ -206,7 +206,7 @@ export function TransactionDetailView({
 
         <Link
           href={`/transactions/${transaction.id}/audit-log`}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA] hover:underline"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-foreground hover:underline"
         >
           <History className="w-3.5 h-3.5" />
           <span>{t.transactions.auditTrail}</span>
@@ -214,15 +214,15 @@ export function TransactionDetailView({
       </div>
 
       {/* Hero Detail Card */}
-      <div className="p-5 sm:p-6 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] shadow-2xs flex flex-col gap-4">
+      <div className="p-5 sm:p-6 rounded-xl bg-surface border border-border shadow-2xs flex flex-col gap-4">
         {/* Amount & Type Header */}
         <div>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-muted">
             {isExpense ? t.quickAdd.expense : t.quickAdd.income}
           </span>
           <h1
             className={`text-3xl sm:text-4xl font-mono font-bold tracking-tight mt-0.5 tnum ${
-              isExpense ? "text-[#E11D48]" : "text-[#0D9488]"
+              isExpense ? "text-destructive" : "text-success"
             }`}
           >
             {isExpense ? "-" : "+"}
@@ -231,35 +231,35 @@ export function TransactionDetailView({
         </div>
 
         {/* Info Items Stack (Account, Category, Date) */}
-        <div className="flex flex-col gap-2.5 pt-2 border-t border-[#E5E7EB] dark:border-[#27272A]">
+        <div className="flex flex-col gap-2.5 pt-2 border-t border-border">
           {/* Account */}
-          <div className="p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex items-center gap-3">
-            <div className="w-8 h-8 rounded bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] flex items-center justify-center shrink-0">
+          <div className="p-3 rounded-lg bg-canvas dark:bg-surface-subtle border border-border flex items-center gap-3">
+            <div className="w-8 h-8 rounded bg-surface border border-border text-foreground flex items-center justify-center shrink-0">
               <DynamicIcon
                 name={account?.icon || "Wallet"}
                 className="w-4 h-4"
               />
             </div>
             <div className="flex flex-col min-w-0">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-muted">
                 {t.common.account}
               </span>
-              <span className="text-xs font-bold text-[#0F172A] dark:text-[#FAFAFA] truncate">
+              <span className="text-xs font-bold text-foreground truncate">
                 {account?.name || t.common.account} ({transaction.currency})
               </span>
             </div>
           </div>
 
           {/* Category */}
-          <div className="p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex items-center gap-3">
-            <div className="w-8 h-8 rounded bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] flex items-center justify-center shrink-0">
+          <div className="p-3 rounded-lg bg-canvas dark:bg-surface-subtle border border-border flex items-center gap-3">
+            <div className="w-8 h-8 rounded bg-surface border border-border text-foreground flex items-center justify-center shrink-0">
               <DynamicIcon name={category?.icon || "Tag"} className="w-4 h-4" />
             </div>
             <div className="flex flex-col min-w-0">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-muted">
                 {t.common.category}
               </span>
-              <span className="text-xs font-bold text-[#0F172A] dark:text-[#FAFAFA] truncate">
+              <span className="text-xs font-bold text-foreground truncate">
                 {formatCategoryName(category?.name || t.common.category, language)}
               </span>
             </div>
@@ -267,9 +267,9 @@ export function TransactionDetailView({
         </div>
 
         {/* Date */}
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-xs">
-          <Calendar className="w-4 h-4 text-[#64748B] dark:text-[#94A3B8] shrink-0" />
-          <span className="font-medium text-[#0F172A] dark:text-[#FAFAFA]">
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-canvas dark:bg-surface-subtle border border-border text-xs">
+          <Calendar className="w-4 h-4 text-foreground-secondary shrink-0" />
+          <span className="font-medium text-foreground">
             {format(
               new Date(transaction.transaction_date),
               "EEEE, dd MMMM yyyy",
@@ -279,12 +279,12 @@ export function TransactionDetailView({
 
         {/* Notes / Description */}
         {cleanDescription && (
-          <div className="flex flex-col gap-1 p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A]">
-            <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
+          <div className="flex flex-col gap-1 p-3 rounded-lg bg-canvas dark:bg-surface-subtle border border-border">
+            <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-foreground-muted">
               <FileText className="w-3 h-3" />
               <span>{t.common.note}</span>
             </div>
-            <p className="text-xs text-[#0F172A] dark:text-[#FAFAFA] whitespace-pre-wrap">
+            <p className="text-xs text-foreground whitespace-pre-wrap">
               {cleanDescription}
             </p>
           </div>
@@ -292,12 +292,12 @@ export function TransactionDetailView({
 
         {/* Free Text Memo */}
         {memoText && (
-          <div className="flex flex-col gap-1 p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A]">
-            <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
+          <div className="flex flex-col gap-1 p-3 rounded-lg bg-canvas dark:bg-surface-subtle border border-border">
+            <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-foreground-muted">
               <FileText className="w-3 h-3" />
               <span>{t.transactions.memoTitle}</span>
             </div>
-            <p className="text-xs text-[#0F172A] dark:text-[#FAFAFA] whitespace-pre-wrap">
+            <p className="text-xs text-foreground whitespace-pre-wrap">
               {memoText}
             </p>
           </div>
@@ -305,8 +305,8 @@ export function TransactionDetailView({
 
         {/* Tags (#tags) */}
         {allTags.length > 0 && (
-          <div className="flex flex-col gap-1.5 p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A]">
-            <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
+          <div className="flex flex-col gap-1.5 p-3 rounded-lg bg-canvas dark:bg-surface-subtle border border-border">
+            <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-foreground-muted">
               <Hash className="w-3 h-3" />
               <span>{t.transactions.tagLabel}</span>
             </div>
@@ -314,7 +314,7 @@ export function TransactionDetailView({
               {allTags.map((tag) => (
                 <span
                   key={tag}
-                  className="px-2.5 py-1 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs font-bold text-[#0F172A] dark:text-[#FAFAFA] shadow-2xs"
+                  className="px-2.5 py-1 rounded-lg bg-surface border border-border text-xs font-bold text-foreground shadow-2xs"
                 >
                   #{tag}
                 </span>
@@ -325,8 +325,8 @@ export function TransactionDetailView({
 
         {/* Sub-items List Breakdown */}
         {itemsList.length > 0 && (
-          <div className="flex flex-col gap-2 p-3.5 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A]">
-            <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
+          <div className="flex flex-col gap-2 p-3.5 rounded-lg bg-canvas dark:bg-surface-subtle border border-border">
+            <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-foreground-muted">
               <ListPlus className="w-3.5 h-3.5" />
               <span>
                 {t.transactions.itemBreakdownWithCount.replace(
@@ -347,17 +347,17 @@ export function TransactionDetailView({
                 return (
                   <div
                     key={idx}
-                    className="flex items-center justify-between gap-2 p-2 rounded bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs"
+                    className="flex items-center justify-between gap-2 p-2 rounded bg-surface border border-border text-xs"
                   >
                     <div className="flex flex-col min-w-0">
-                      <span className="text-[#0F172A] dark:text-[#FAFAFA] font-medium truncate">
+                      <span className="text-foreground font-medium truncate">
                         {item.name}
                       </span>
-                      <span className="text-[11px] text-[#64748B] dark:text-[#94A3B8] font-mono">
+                      <span className="text-[11px] text-foreground-secondary font-mono">
                         {`${qty} × ${formatCurrency(unit, transaction.currency)}`}
                       </span>
                       {isShared && (
-                        <span className="text-[10px] text-emerald-700 dark:text-emerald-400">
+                        <span className="text-[10px] text-success">
                           {(!isNaN(shares) && shares >= 2)
                             ? (language === "id" ? `Dibagi ${shares} orang` : `Shared by ${shares} people`)
                             : `${t.quickAdd.myPortionTotalLabel}: ${formatCurrency(mySubtotal, transaction.currency)}`}
@@ -365,11 +365,11 @@ export function TransactionDetailView({
                       )}
                     </div>
                     <div className="shrink-0 flex flex-col items-end">
-                      <span className="font-mono font-semibold text-[#0F172A] dark:text-[#FAFAFC]">
+                      <span className="font-mono font-semibold text-foreground">
                         {formatCurrency(subtotal, transaction.currency)}
                       </span>
                       {isShared && (
-                        <span className="text-[10px] font-mono text-emerald-700 dark:text-emerald-400">
+                        <span className="text-[10px] font-mono text-success">
                           {formatCurrency(mySubtotal, transaction.currency)}
                         </span>
                       )}
@@ -378,12 +378,12 @@ export function TransactionDetailView({
                 );
               })}
             </div>
-            <div className="flex flex-col gap-1 pt-1 border-t border-[#E5E7EB] dark:border-[#27272A] text-[11px] font-mono">
+            <div className="flex flex-col gap-1 pt-1 border-t border-border text-[11px] font-mono">
               <div className="flex items-center justify-between">
-                <span className="text-[#64748B] dark:text-[#94A3B8]">
+                <span className="text-foreground-secondary">
                   {t.quickAdd.receiptTotalLabel}
                 </span>
-                <span className="font-semibold text-[#0F172A] dark:text-[#FAFAFA]">
+                <span className="font-semibold text-foreground">
                   {formatCurrency(
                     itemsList.reduce(
                       (s, i) => s + getItemTotal(i, transaction.currency),
@@ -398,10 +398,10 @@ export function TransactionDetailView({
                 return (!isNaN(shares) && shares >= 2) || i.mySubtotal != null;
               }) && (
                 <div className="flex items-center justify-between">
-                  <span className="text-[#64748B] dark:text-[#94A3B8]">
+                  <span className="text-foreground-secondary">
                     {t.quickAdd.myPortionTotalLabel}
                   </span>
-                  <span className="font-bold text-emerald-700 dark:text-emerald-400">
+                  <span className="font-bold text-success">
                     {formatCurrency(
                       itemsList.reduce(
                         (s, i) => s + getItemMyTotal(i, transaction.currency),
@@ -417,7 +417,7 @@ export function TransactionDetailView({
         )}
 
         {/* Action Buttons: Pin, Edit, Delete */}
-        <div className="flex items-center gap-2 pt-3 border-t border-[#E5E7EB] dark:border-[#27272A]">
+        <div className="flex items-center gap-2 pt-3 border-t border-border">
           <Button
             type="button"
             variant="outline"
@@ -427,7 +427,7 @@ export function TransactionDetailView({
           >
             {isPinned ? (
               <>
-                <Check className="w-3.5 h-3.5 text-[#0D9488]" />
+                <Check className="w-3.5 h-3.5 text-success" />
                 <span>{t.transactions.pinnedLabel}</span>
               </>
             ) : (

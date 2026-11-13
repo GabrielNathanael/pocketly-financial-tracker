@@ -52,26 +52,26 @@ export function BalanceSummary({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="p-5 sm:p-6 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-4 shadow-2xs">
+      <div className="p-5 sm:p-6 rounded-xl bg-surface border border-border flex flex-col gap-4 shadow-2xs">
         {/* Header row */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 min-w-0">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] truncate">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-foreground-secondary truncate">
               {t.dashboard.netBalance} ({displayCurrency})
             </span>
             <button
               type="button"
               onClick={() => togglePrivacyMode()}
-              className="p-1 rounded-md text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8] dark:hover:text-[#FAFAFA] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] transition-colors cursor-pointer shrink-0"
+              className="p-1 rounded-md text-foreground-secondary hover:text-foreground hover:bg-surface-muted transition-colors cursor-pointer shrink-0"
               title={privacyTooltip}
               aria-label={privacyTooltip}
             >
-              {isPrivate ? <EyeOff className="w-3.5 h-3.5 text-amber-500" /> : <Eye className="w-3.5 h-3.5" />}
+              {isPrivate ? <EyeOff className="w-3.5 h-3.5 text-warning" /> : <Eye className="w-3.5 h-3.5" />}
             </button>
           </div>
           <Link
             href="/transactions"
-            className="inline-flex items-center gap-1 text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA] hover:underline shrink-0 whitespace-nowrap"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-foreground hover:underline shrink-0 whitespace-nowrap"
           >
             <span>{t.dashboard.allTransactions}</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -80,40 +80,40 @@ export function BalanceSummary({
 
         {/* Big Balance with Auto-Scale */}
         <div className="flex flex-col gap-1 min-w-0">
-          <h2 className={`font-extrabold text-[#0F172A] dark:text-[#FAFAFA] font-mono tracking-tight tnum wrap-break-word leading-none ${getBigBalanceFontSize(formattedTotal.length)}`}>
+          <h2 className={`font-extrabold text-foreground font-mono tracking-tight tnum wrap-break-word leading-none ${getBigBalanceFontSize(formattedTotal.length)}`}>
             {formattedTotal}
           </h2>
           {displayCurrency !== 'IDR' && (
-            <span className="text-xs font-mono text-[#94A3B8] tnum">
+            <span className="text-xs font-mono text-foreground-muted tnum">
               ≈ {maskCurrency(formatCurrency(totalBalanceIdr, 'IDR'), isPrivate)}
             </span>
           )}
         </div>
 
         {/* 2 Mini cards (Income & Expense) with Auto-Scale */}
-        <div className="grid grid-cols-2 gap-3 pt-3 border-t border-[#E5E7EB] dark:border-[#27272A]">
+        <div className="grid grid-cols-2 gap-3 pt-3 border-t border-border">
           {/* Income this month */}
           <div className="flex flex-col gap-1 min-w-0">
-            <div className="flex items-center gap-1 text-[11px] font-medium text-[#64748B] dark:text-[#94A3B8]">
-              <div className="w-4 h-4 rounded-full bg-[#ECFDF5] dark:bg-[#064E3B]/30 flex items-center justify-center text-[#0D9488] shrink-0">
+            <div className="flex items-center gap-1 text-[11px] font-medium text-foreground-secondary">
+              <div className="w-4 h-4 rounded-full bg-success-muted flex items-center justify-center text-success shrink-0">
                 <ArrowUpRight className="w-3.5 h-3.5" />
               </div>
               <span className="truncate">{t.dashboard.incomeMonth}</span>
             </div>
-            <span className={`font-bold font-mono text-[#0D9488] tracking-tight tnum truncate ${getSubCardFontSize(formattedIncome.length)}`}>
+            <span className={`font-bold font-mono text-success tracking-tight tnum truncate ${getSubCardFontSize(formattedIncome.length)}`}>
               +{formattedIncome}
             </span>
           </div>
 
           {/* Expense this month */}
           <div className="flex flex-col gap-1 min-w-0">
-            <div className="flex items-center gap-1 text-[11px] font-medium text-[#64748B] dark:text-[#94A3B8]">
-              <div className="w-4 h-4 rounded-full bg-[#FFF1F2] dark:bg-[#881337]/30 flex items-center justify-center text-[#E11D48] shrink-0">
+            <div className="flex items-center gap-1 text-[11px] font-medium text-foreground-secondary">
+              <div className="w-4 h-4 rounded-full bg-destructive-muted flex items-center justify-center text-destructive shrink-0">
                 <ArrowDownRight className="w-3.5 h-3.5" />
               </div>
               <span className="truncate">{t.dashboard.expenseMonth}</span>
             </div>
-            <span className={`font-bold font-mono text-[#E11D48] tracking-tight tnum truncate ${getSubCardFontSize(formattedExpense.length)}`}>
+            <span className={`font-bold font-mono text-destructive tracking-tight tnum truncate ${getSubCardFontSize(formattedExpense.length)}`}>
               -{formattedExpense}
             </span>
           </div>

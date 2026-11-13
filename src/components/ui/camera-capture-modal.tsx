@@ -145,18 +145,18 @@ export function CameraCaptureModal({
   return createPortal(
     <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
       <div
-        className="fixed inset-0 bg-[#0F172A]/80 dark:bg-black/90"
+        className="fixed inset-0 bg-overlay"
         onClick={handleClose}
       />
-      <div className="relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-2xl dark:border-[#27272A] dark:bg-[#121215]">
-        <div className="flex items-center justify-between border-b border-[#E5E7EB] px-5 py-3 dark:border-[#27272A]">
-          <h3 className="text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+      <div className="relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-2xl">
+        <div className="flex items-center justify-between border-b border-border px-5 py-3">
+          <h3 className="text-sm font-bold text-foreground">
             {t.quickAdd.cameraTitle}
           </h3>
           <button
             type="button"
             onClick={handleClose}
-            className="rounded-md p-1 text-[#94A3B8] transition-colors hover:bg-[#F1F3F5] hover:text-[#0F172A] dark:hover:bg-[#1A1A20] dark:hover:text-[#F8FAFC]"
+            className="rounded-md p-1 text-foreground-muted transition-colors hover:bg-secondary hover:text-foreground"
           >
             <X className="h-4 w-4" />
           </button>
@@ -197,7 +197,7 @@ export function CameraCaptureModal({
             onClick={handleCapture}
             disabled={isStarting || !!error}
             className={cn(
-              "flex w-full items-center justify-center gap-2 rounded-xl bg-[#0F172A] py-3 text-sm font-bold text-white transition-all active:scale-95 disabled:opacity-50 dark:bg-[#FAFAFA] dark:text-[#0F172A]",
+              "flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground transition-all active:scale-95 disabled:opacity-50",
             )}
           >
             <Camera className="h-4 w-4" />

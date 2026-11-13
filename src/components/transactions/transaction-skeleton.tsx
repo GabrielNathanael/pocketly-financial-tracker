@@ -21,7 +21,7 @@ export function TransactionSkeletonList({ count = 5 }: TransactionSkeletonListPr
         {Array.from({ length: count }).map((_, i) => (
           <div
             key={i}
-            className="flex items-center justify-between p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] shadow-2xs"
+            className="flex items-center justify-between p-3 sm:p-3.5 rounded-xl bg-surface border border-border shadow-2xs"
           >
             {/* Left side: Icon + Titles */}
             <div className="flex items-center gap-3 min-w-0">

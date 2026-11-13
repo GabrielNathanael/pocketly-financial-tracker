@@ -8,6 +8,7 @@ export const savingsGoalSchema = z.object({
   targetDate: z.string().min(1, 'Target deadline date is required'),
   categoryId: z.string().uuid().optional().nullable(),
   icon: z.string().default('Target'),
+  // Domain default color persisted with goal records (data semantics); preserved intentionally.
   color: z.string().default('#0D9488'),
   status: z.enum(['in_progress', 'completed', 'paused']).default('in_progress'),
   notes: z.string().max(500, 'Notes too long').optional().nullable(),

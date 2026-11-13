@@ -240,7 +240,7 @@ export async function getRecurringPaymentHistory(recurringName: string, category
     .select(`
       *,
       account:accounts(id, name, currency, icon),
-      category:categories(id, name, icon, color)
+      category:categories(id, name, icon)
     `)
     .eq('user_id', user.id)
     .order('transaction_date', { ascending: false })

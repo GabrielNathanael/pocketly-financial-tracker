@@ -167,7 +167,7 @@ export function GoalFormModal({
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {/* Error Alert Banner */}
         {errorMsg && (
-          <div className="p-3 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 flex items-center gap-2 text-xs text-rose-600 dark:text-rose-400">
+          <div className="p-3 rounded-lg bg-destructive-muted border border-destructive/20 flex items-center gap-2 text-xs text-destructive">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{errorMsg}</span>
           </div>
@@ -175,8 +175,8 @@ export function GoalFormModal({
 
         {/* Goal Name Input with Memo Trigger */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA]">
-            {t.goals.nameLabel} <span className="text-rose-500">*</span>
+          <label className="text-xs font-semibold text-foreground">
+            {t.goals.nameLabel} <span className="text-destructive">*</span>
           </label>
           <div className="flex items-center gap-2">
             <Input
@@ -193,8 +193,8 @@ export function GoalFormModal({
               className={cn(
                 'h-9 px-3 rounded-lg border transition-colors cursor-pointer shrink-0 flex items-center justify-center gap-1.5 text-xs font-medium',
                 showMemo
-                  ? 'bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A]'
-                  : 'bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]'
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'bg-canvas dark:bg-surface-subtle text-foreground-secondary hover:text-foreground border-border'
               )}
             >
               <AlignLeft className="w-3.5 h-3.5" />
@@ -205,21 +205,21 @@ export function GoalFormModal({
 
         {/* Expandable Memo Drawer */}
         {showMemo && (
-          <div className="p-3 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] animate-in fade-in duration-150">
+          <div className="p-3 rounded-xl bg-canvas dark:bg-surface-subtle border border-border animate-in fade-in duration-150">
             <textarea
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder={t.goals.memoPlaceholder}
-              className="w-full p-2 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs text-[#0F172A] dark:text-[#F8FAFC] placeholder:text-[#94A3B8] focus:outline-none"
+              className="w-full p-2 rounded-lg bg-surface border border-border text-xs text-foreground placeholder:text-foreground-muted focus:outline-none"
             />
           </div>
         )}
 
         {/* Target Amount */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA]">
-            {t.goals.targetAmountLabel} <span className="text-rose-500">*</span>
+          <label className="text-xs font-semibold text-foreground">
+            {t.goals.targetAmountLabel} <span className="text-destructive">*</span>
           </label>
           <Input
             type="number"
@@ -235,7 +235,7 @@ export function GoalFormModal({
 
         {/* Currency Selector */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA]">
+          <label className="text-xs font-semibold text-foreground">
             {t.common.currency}
           </label>
           <Select value={currency} onValueChange={(val) => setCurrency(val as CurrencyCode)}>
@@ -255,7 +255,7 @@ export function GoalFormModal({
         {/* Initial Saved Amount (Only for new goals) */}
         {!editItem && (
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA]">
+            <label className="text-xs font-semibold text-foreground">
               {t.goals.initialSavedLabel}
             </label>
             <Input
@@ -272,8 +272,8 @@ export function GoalFormModal({
 
         {/* Target Date */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA]">
-            {t.goals.targetDateLabel} <span className="text-rose-500">*</span>
+          <label className="text-xs font-semibold text-foreground">
+            {t.goals.targetDateLabel} <span className="text-destructive">*</span>
           </label>
           <DatePicker
             value={targetDate}
@@ -283,8 +283,8 @@ export function GoalFormModal({
         </div>
 
         {/* Icon Picker Grid & Color Theme (Matching Category Form Style) */}
-        <div className="flex flex-col gap-2 p-3 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A]">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+        <div className="flex flex-col gap-2 p-3 rounded-xl bg-canvas dark:bg-surface-subtle border border-border">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary">
             {t.categories.iconLabel} & {t.goals.colorThemeLabel}
           </span>
 
@@ -298,8 +298,8 @@ export function GoalFormModal({
                 className={cn(
                   'p-2 rounded-lg border flex items-center justify-center transition-colors cursor-pointer',
                   icon === ic
-                    ? 'border-[#0F172A] bg-[#0F172A] text-white dark:border-[#FAFAFA] dark:bg-[#FAFAFA] dark:text-[#0F172A]'
-                    : 'border-[#E5E7EB] dark:border-[#27272A] bg-white dark:bg-[#121215] text-[#0F172A] dark:text-[#F8FAFC] hover:bg-[#F1F3F5] dark:hover:bg-[#26262E]'
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-border bg-surface text-foreground hover:bg-surface-subtle dark:hover:bg-surface-muted'
                 )}
               >
                 <DynamicIcon name={ic} className="w-4 h-4" />
@@ -308,7 +308,7 @@ export function GoalFormModal({
           </div>
 
           {/* Color palette */}
-          <div className="flex items-center gap-2 pt-2 border-t border-[#E5E7EB] dark:border-[#27272A]">
+          <div className="flex items-center gap-2 pt-2 border-t border-border">
             {GOAL_COLORS.map((col) => (
               <button
                 key={col}
@@ -317,7 +317,7 @@ export function GoalFormModal({
                 style={{ backgroundColor: col }}
                 className={cn(
                   'w-5 h-5 rounded-full transition-all cursor-pointer shrink-0',
-                  color === col ? 'ring-2 ring-offset-2 ring-[#0F172A] dark:ring-[#FAFAFA] scale-110' : 'opacity-80 hover:opacity-100'
+                  color === col ? 'ring-2 ring-offset-2 ring-ring scale-110' : 'opacity-80 hover:opacity-100'
                 )}
               />
             ))}
@@ -325,7 +325,7 @@ export function GoalFormModal({
         </div>
 
         {/* Footer Actions */}
-        <div className="pt-3 border-t border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-end gap-2">
+        <div className="pt-3 border-t border-border flex items-center justify-end gap-2">
           <Button
             type="button"
             variant="outline"
@@ -339,7 +339,7 @@ export function GoalFormModal({
             type="submit"
             size="sm"
             disabled={loading}
-            className="text-xs font-bold bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] cursor-pointer"
+            className="text-xs font-bold bg-primary text-primary-foreground cursor-pointer"
           >
             {loading ? t.common.loading : t.common.save}
           </Button>

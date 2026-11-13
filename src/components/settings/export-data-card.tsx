@@ -253,30 +253,30 @@ export function ExportDataCard() {
 
   const openButtonClass = (fmt: ExportFormat) =>
     `gap-1.5 flex-1 sm:flex-none justify-center ${
-      openFormat === fmt ? "border-[#0F172A] dark:border-[#FAFAFA]" : ""
+      openFormat === fmt ? "border-border-strong" : ""
     }`;
 
   return (
-    <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-4">
+    <div className="p-4 sm:p-5 rounded-xl bg-surface border border-border flex flex-col gap-4">
       {/* Header */}
       <div className="flex items-center gap-2.5">
-        <div className="w-8 h-8 shrink-0 rounded-lg bg-[#F1F3F5] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] flex items-center justify-center">
+        <div className="w-8 h-8 shrink-0 rounded-lg bg-surface-subtle border border-border text-foreground flex items-center justify-center">
           <Download className="w-4 h-4" />
         </div>
         <div className="min-w-0">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">
             {t.settings.exportTitle}
           </h3>
-          <p className="text-xs text-[#64748B] dark:text-[#94A3B8] leading-relaxed">
+          <p className="text-xs text-muted-foreground leading-relaxed">
             {t.settings.exportDesc}
           </p>
         </div>
       </div>
 
       {/* Date Filter + Export Buttons */}
-      <div className="flex flex-col gap-3 pt-3.5 border-t border-[#E5E7EB] dark:border-[#27272A]">
+      <div className="flex flex-col gap-3 pt-3.5 border-t border-border">
         {/* Section label */}
-        <div className="flex items-center gap-1.5 text-[#64748B] dark:text-[#94A3B8]">
+        <div className="flex items-center gap-1.5 text-muted-foreground">
           <CalendarDays className="w-3.5 h-3.5 shrink-0" />
           <span className="text-[10px] font-bold uppercase tracking-wider">
             {t.settings.exportFilterLabel}
@@ -292,8 +292,8 @@ export function ExportDataCard() {
               onClick={() => setPreset(key)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
                 preset === key
-                  ? "bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] font-bold"
-                  : "bg-[#F1F3F5] dark:bg-[#1A1A20] text-[#64748B] dark:text-[#94A3B8] border border-[#E5E7EB] dark:border-[#27272A] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]"
+                  ? "bg-primary text-primary-foreground font-bold"
+                  : "bg-surface-subtle text-muted-foreground border border-border hover:text-foreground"
               }`}
             >
               {label}
@@ -306,7 +306,7 @@ export function ExportDataCard() {
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-foreground-muted">
                   {t.settings.exportCustomFrom}
                 </label>
                 <DatePicker
@@ -317,7 +317,7 @@ export function ExportDataCard() {
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-foreground-muted">
                   {t.settings.exportCustomTo}
                 </label>
                 <DatePicker
@@ -329,7 +329,7 @@ export function ExportDataCard() {
               </div>
             </div>
             {isCustomInvalid && (
-              <p className="text-[11px] text-red-500 dark:text-red-400">
+              <p className="text-[11px] text-destructive">
                 {t.settings.exportCustomError}
               </p>
             )}
@@ -347,7 +347,7 @@ export function ExportDataCard() {
             className={openButtonClass("csv")}
           >
             {downloadSuccess && openFormat === null ? (
-              <Check className="w-3.5 h-3.5 text-[#0D9488]" />
+              <Check className="w-3.5 h-3.5 text-success" />
             ) : (
               <FileSpreadsheet className="w-3.5 h-3.5" />
             )}
@@ -363,7 +363,7 @@ export function ExportDataCard() {
             className={openButtonClass("json")}
           >
             {downloadSuccess && openFormat === null ? (
-              <Check className="w-3.5 h-3.5 text-[#0D9488]" />
+              <Check className="w-3.5 h-3.5 text-success" />
             ) : (
               <FileCode className="w-3.5 h-3.5" />
             )}
@@ -373,8 +373,8 @@ export function ExportDataCard() {
 
         {/* Panel pilihan data — hanya muncul setelah CSV/JSON diklik */}
         {openFormat && (
-          <div className="flex flex-col gap-3 p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#0E0E11] border border-[#E5E7EB] dark:border-[#27272A]">
-            <p className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+          <div className="flex flex-col gap-3 p-3 rounded-lg bg-canvas dark:bg-surface-subtle border border-border">
+            <p className="text-xs font-bold text-foreground">
               {openFormat === "csv"
                 ? t.settings.exportChooseCSV
                 : t.settings.exportChooseJSON}
@@ -390,13 +390,13 @@ export function ExportDataCard() {
                     role="checkbox"
                     aria-checked={checked}
                     onClick={() => toggleSection(openFormat, key)}
-                    className="flex items-center gap-2.5 px-2 py-1.5 -mx-2 rounded-md text-left text-xs text-[#0F172A] dark:text-[#F8FAFC] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] transition-colors cursor-pointer"
+                    className="flex items-center gap-2.5 px-2 py-1.5 -mx-2 rounded-md text-left text-xs text-foreground hover:bg-surface-subtle transition-colors cursor-pointer"
                   >
                     <span
                       className={`w-4 h-4 shrink-0 rounded flex items-center justify-center border transition-colors ${
                         checked
-                          ? "bg-[#0F172A] dark:bg-[#FAFAFA] border-[#0F172A] dark:border-[#FAFAFA] text-white dark:text-[#0F172A]"
-                          : "border-[#CBD5E1] dark:border-[#3F3F46]"
+                          ? "bg-primary border-primary text-primary-foreground"
+                          : "border-border"
                       }`}
                     >
                       {checked && <Check className="w-3 h-3" />}
@@ -407,12 +407,12 @@ export function ExportDataCard() {
               })}
             </div>
 
-            <p className="text-[11px] text-[#64748B] dark:text-[#94A3B8] leading-relaxed">
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
               {t.settings.exportDateHint}
             </p>
 
             {noSectionSelected && (
-              <p className="text-[11px] text-red-500 dark:text-red-400">
+              <p className="text-[11px] text-destructive">
                 {t.settings.exportSectionsError}
               </p>
             )}

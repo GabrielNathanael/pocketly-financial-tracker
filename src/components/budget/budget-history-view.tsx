@@ -27,7 +27,7 @@ export function BudgetHistoryView({ category, currency = 'IDR', history }: Budge
       <div>
         <Link
           href="/budget"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-foreground-secondary hover:text-foreground dark:hover:text-foreground"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>{t.budgets.backToBudgets}</span>
@@ -35,21 +35,21 @@ export function BudgetHistoryView({ category, currency = 'IDR', history }: Budge
       </div>
 
       {/* Category Header Card */}
-      <div className="p-5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center gap-3.5">
-        <div className="w-10 h-10 rounded-lg bg-[#F1F3F5] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] flex items-center justify-center shrink-0">
+      <div className="p-5 rounded-xl bg-surface border border-border flex items-center gap-3.5">
+        <div className="w-10 h-10 rounded-lg bg-surface-subtle border border-border text-foreground flex items-center justify-center shrink-0">
           <DynamicIcon name={category.icon} className="w-5 h-5" />
         </div>
 
         <div className="flex flex-col min-w-0">
           <div className="flex items-center gap-2">
-            <h1 className="text-base font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+            <h1 className="text-base font-bold text-foreground">
               {category.name}
             </h1>
-            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-[#F1F3F5] dark:bg-[#1A1A20] text-[#64748B] dark:text-[#94A3B8] border border-[#E5E7EB] dark:border-[#27272A]">
+            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-surface-subtle text-foreground-secondary dark:text-foreground-muted border border-border">
               {currency}
             </span>
           </div>
-          <p className="text-xs text-[#64748B] dark:text-[#94A3B8] font-mono">
+          <p className="text-xs text-foreground-secondary dark:text-foreground-muted font-mono">
             {t.budgets.historySubtitle}
           </p>
         </div>
@@ -57,7 +57,7 @@ export function BudgetHistoryView({ category, currency = 'IDR', history }: Budge
 
       {/* 6-Month Historical List */}
       <div className="flex flex-col gap-2.5">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC] px-0.5">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-foreground px-0.5">
           {t.budgets.historyTitle}
         </h2>
 
@@ -68,15 +68,15 @@ export function BudgetHistoryView({ category, currency = 'IDR', history }: Budge
           return (
             <div
               key={item.periodStart}
-              className="p-4 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-2.5"
+              className="p-4 rounded-xl bg-surface border border-border flex flex-col gap-2.5"
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                <span className="text-xs font-bold text-foreground">
                   {item.periodLabel}
                 </span>
                 <span
                   className={`text-xs font-mono font-bold flex items-center gap-1 ${
-                    isOver ? 'text-[#E11D48]' : 'text-[#64748B] dark:text-[#94A3B8]'
+                    isOver ? 'text-destructive' : 'text-foreground-secondary dark:text-foreground-muted'
                   }`}
                 >
                   {isOver && <AlertTriangle className="w-3.5 h-3.5" />}
@@ -88,20 +88,20 @@ export function BudgetHistoryView({ category, currency = 'IDR', history }: Budge
                 <BudgetProgressBar spent={item.actualSpent} budget={item.budgetAmount} />
               )}
 
-              <div className="flex items-center justify-between text-xs pt-1 border-t border-[#E5E7EB] dark:border-[#27272A] font-mono tnum">
+              <div className="flex items-center justify-between text-xs pt-1 border-t border-border font-mono tnum">
                 <div>
-                  <span className="text-[10px] font-sans text-[#94A3B8] uppercase tracking-wider block">
+                  <span className="text-[10px] font-sans text-foreground-muted uppercase tracking-wider block">
                     {t.budgets.actualSpent}
                   </span>
-                  <span className="font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                  <span className="font-bold text-foreground">
                     {maskCurrency(formatCurrency(item.actualSpent, currency), isPrivate)}
                   </span>
                 </div>
                 <div className="text-right">
-                  <span className="text-[10px] font-sans text-[#94A3B8] uppercase tracking-wider block">
+                  <span className="text-[10px] font-sans text-foreground-muted uppercase tracking-wider block">
                     {t.budgets.totalLimit}
                   </span>
-                  <span className="font-medium text-[#64748B] dark:text-[#94A3B8]">
+                  <span className="font-medium text-foreground-secondary dark:text-foreground-muted">
                     {item.budgetAmount > 0 ? maskCurrency(formatCurrency(item.budgetAmount, currency), isPrivate) : '—'}
                   </span>
                 </div>

@@ -325,14 +325,14 @@ function TransferForm({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       {error && (
-        <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs">
+        <div className="p-3 rounded-lg bg-destructive-muted border border-destructive/20 text-destructive text-xs">
           {error}
         </div>
       )}
 
       {/* Source Account */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+        <label className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary">
           {t.transfer.sourceLabel}
         </label>
         <Select value={fromAccountId} onValueChange={handleFromChange}>
@@ -346,7 +346,7 @@ function TransferForm({
                   <span className="truncate">
                     {a.name} ({a.currency})
                   </span>
-                  <span className="text-[10px] font-mono text-[#94A3B8] shrink-0 font-bold">
+                  <span className="text-[10px] font-mono text-foreground-muted shrink-0 font-bold">
                     ({formatCurrency(a.current_balance, a.currency)})
                   </span>
                 </div>
@@ -358,7 +358,7 @@ function TransferForm({
 
       {/* Destination Account */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+        <label className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary">
           {t.transfer.destLabel}
         </label>
         <Select value={toAccountId} onValueChange={handleToChange}>
@@ -372,7 +372,7 @@ function TransferForm({
                   <span className="truncate">
                     {a.name} ({a.currency})
                   </span>
-                  <span className="text-[10px] font-mono text-[#94A3B8] shrink-0 font-bold">
+                  <span className="text-[10px] font-mono text-foreground-muted shrink-0 font-bold">
                     ({formatCurrency(a.current_balance, a.currency)})
                   </span>
                 </div>
@@ -409,7 +409,7 @@ function TransferForm({
       </div>
 
       {parseFloat(transferFee) > 0 && parseFloat(amount) > 0 && (
-        <div className="p-2.5 rounded-xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 text-[11px] text-amber-900 dark:text-amber-300 flex items-center justify-between">
+        <div className="p-2.5 rounded-xl bg-warning-muted border border-warning/20 text-[11px] text-warning flex items-center justify-between">
           <span className="font-medium">
             {t.transfer.totalDeductedLabel || "Total Terpotong"}:
           </span>
@@ -423,16 +423,16 @@ function TransferForm({
       )}
 
       {isCrossCurrency && (
-        <div className="p-3 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-2.5">
+        <div className="p-3 rounded-xl bg-canvas dark:bg-surface-subtle border border-border flex flex-col gap-2.5">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary">
               {t.transfer.conversionTitle}
             </span>
             <button
               type="button"
               onClick={handleManualRateRefresh}
               disabled={isFetchingRates}
-              className="inline-flex items-center gap-1 text-[11px] font-mono text-[#0F172A] dark:text-[#FAFAFA] hover:underline disabled:opacity-50 cursor-pointer"
+              className="inline-flex items-center gap-1 text-[11px] font-mono text-foreground hover:underline disabled:opacity-50 cursor-pointer"
             >
               <RefreshCw
                 className={`w-3 h-3 ${isFetchingRates ? "animate-spin" : ""}`}
@@ -443,7 +443,7 @@ function TransferForm({
             </button>
           </div>
 
-          <div className="flex flex-col gap-2.5 pt-1 border-t border-[#E5E7EB] dark:border-[#27272A]">
+          <div className="flex flex-col gap-2.5 pt-1 border-t border-border">
             <Input
               label={`${t.transfer.receivedAmountLabel || "Nominal Diterima"} (${toAccount?.currency})`}
               type="number"
@@ -453,7 +453,7 @@ function TransferForm({
               onChange={(e) => handleReceivedAmountChange(e.target.value)}
               currency={toAccount?.currency || "IDR"}
               required
-              className="text-xs font-mono font-bold text-[#0D9488]"
+              className="text-xs font-mono font-bold text-success"
             />
 
             <Input
@@ -465,18 +465,18 @@ function TransferForm({
               onChange={(e) => handleNaturalRateChange(e.target.value)}
               className="text-xs font-mono font-bold"
               rightIcon={
-                <span className="text-[11px] font-mono font-bold text-[#64748B] dark:text-[#94A3B8]">
+                <span className="text-[11px] font-mono font-bold text-foreground-secondary">
                   {pairInfo.quoteCurrency}
                 </span>
               }
             />
 
             {/* Natural Human-Readable Effective Forex Indicator */}
-            <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs font-mono flex items-center justify-between">
-              <span className="text-[#64748B] dark:text-[#94A3B8] font-sans text-[11px]">
+            <div className="p-2.5 rounded-lg bg-success-muted border border-success/20 text-xs font-mono flex items-center justify-between">
+              <span className="text-foreground-secondary font-sans text-[11px]">
                 {t.transfer.effectiveRateLabel}
               </span>
-              <span className="font-bold text-emerald-600 dark:text-emerald-400">
+              <span className="font-bold text-success">
                 1 {pairInfo.baseCurrency} ={" "}
                 {formatCurrency(
                   parseFloat(naturalRate) || pairInfo.defaultRate,
@@ -489,7 +489,7 @@ function TransferForm({
       )}
 
       <div className="flex flex-col gap-1.5">
-        <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+        <label className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary">
           {t.transfer.dateLabel}
         </label>
         <DatePicker value={transferDate} onChange={setTransferDate} />
@@ -497,7 +497,7 @@ function TransferForm({
 
       {/* Description / Free-Text Note */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+        <label className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary">
           {t.transfer.noteLabel}
         </label>
         <textarea
@@ -505,11 +505,11 @@ function TransferForm({
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder={t.transfer.notePlaceholder}
-          className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#F8FAFC] placeholder:text-[#94A3B8] focus:outline-none focus:ring-1 focus:ring-[#0F172A] dark:focus:ring-white resize-y min-h-14 max-h-40 transition-colors"
+          className="w-full px-3 py-2 text-xs rounded-xl bg-surface border border-border text-foreground placeholder:text-foreground-muted focus:outline-none focus:ring-1 focus:ring-ring resize-y min-h-14 max-h-40 transition-colors"
         />
       </div>
 
-      {error && <p className="text-xs font-semibold text-[#E11D48]">{error}</p>}
+      {error && <p className="text-xs font-semibold text-destructive">{error}</p>}
 
       <div className="flex items-center gap-2 pt-2">
         <Button

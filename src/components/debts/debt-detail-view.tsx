@@ -100,7 +100,7 @@ export function DebtDetailView({ debt, accounts }: DebtDetailViewProps) {
       <div className="flex items-center justify-between">
         <Link
           href="/debts"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>{t.debts.backToDebts}</span>
@@ -108,22 +108,22 @@ export function DebtDetailView({ debt, accounts }: DebtDetailViewProps) {
       </div>
 
       {/* Main Debt Overview Card */}
-      <div className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-4 sm:gap-5 shadow-2xs">
+      <div className="p-4 sm:p-6 rounded-2xl bg-surface border border-border flex flex-col gap-4 sm:gap-5 shadow-2xs">
         {/* Header with Type & Status */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-surface-subtle border border-border text-foreground flex items-center justify-center shrink-0">
               {isDebt ? (
-                <ArrowDownRight className="w-5 h-5 text-[#E11D48]" />
+                <ArrowDownRight className="w-5 h-5 text-destructive" />
               ) : (
-                <ArrowUpRight className="w-5 h-5 text-[#0D9488]" />
+                <ArrowUpRight className="w-5 h-5 text-success" />
               )}
             </div>
             <div className="flex flex-col min-w-0">
-              <h1 className="text-base sm:text-lg font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate">
+              <h1 className="text-base sm:text-lg font-bold text-foreground truncate">
                 {debt.counterparty_name}
               </h1>
-              <span className="text-[10px] uppercase font-bold tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
                 {isDebt ? t.debts.debtType : t.debts.receivableType}
               </span>
             </div>
@@ -136,15 +136,15 @@ export function DebtDetailView({ debt, accounts }: DebtDetailViewProps) {
 
         {/* Progress Bar & Summary */}
         <div className="flex flex-col gap-1.5">
-          <div className="w-full bg-[#E5E7EB] dark:bg-[#27272A] h-2 rounded-full overflow-hidden">
+          <div className="w-full bg-surface-muted h-2 rounded-full overflow-hidden">
             <div
               className={`h-full transition-all duration-300 ${
-                isPaid ? 'bg-[#0D9488]' : isDebt ? 'bg-[#E11D48]' : 'bg-[#0284C7]'
+                isPaid ? 'bg-success' : isDebt ? 'bg-destructive' : 'bg-info'
               }`}
               style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
             />
           </div>
-          <div className="flex flex-wrap items-center justify-between gap-1 text-[11px] font-mono text-[#64748B] dark:text-[#94A3B8]">
+          <div className="flex flex-wrap items-center justify-between gap-1 text-[11px] font-mono text-muted-foreground">
             <span>{progress.toFixed(0)}% {t.debts.settledPct} ({formatCurrency(totalPaid, debt.currency)})</span>
             {debt.due_date && (
               <span className="flex items-center gap-1">
@@ -155,25 +155,25 @@ export function DebtDetailView({ debt, accounts }: DebtDetailViewProps) {
         </div>
 
         {/* Amount Stack */}
-        <div className="flex flex-col gap-2.5 pt-2 sm:pt-3 border-t border-[#E5E7EB] dark:border-[#27272A] font-mono tnum text-xs">
-          <div className="p-3 sm:p-3.5 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A]">
-            <span className="text-[10px] font-sans text-[#94A3B8] uppercase tracking-wider block">
+        <div className="flex flex-col gap-2.5 pt-2 sm:pt-3 border-t border-border font-mono tnum text-xs">
+          <div className="p-3 sm:p-3.5 rounded-xl bg-surface-subtle border border-border">
+            <span className="text-[10px] font-sans text-foreground-muted uppercase tracking-wider block">
               {t.debts.remainingTagihan}
             </span>
             <span
               className={`text-sm sm:text-base font-bold tracking-tight ${
-                isPaid ? 'text-[#94A3B8]' : isDebt ? 'text-[#E11D48]' : 'text-[#0D9488]'
+                isPaid ? 'text-foreground-muted' : isDebt ? 'text-destructive' : 'text-success'
               }`}
             >
               {formatCurrency(debt.remaining_amount, debt.currency)}
             </span>
           </div>
 
-          <div className="p-3 sm:p-3.5 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A]">
-            <span className="text-[10px] font-sans text-[#94A3B8] uppercase tracking-wider block">
+          <div className="p-3 sm:p-3.5 rounded-xl bg-surface-subtle border border-border">
+            <span className="text-[10px] font-sans text-foreground-muted uppercase tracking-wider block">
               {t.debts.principalLabel}
             </span>
-            <span className="text-sm sm:text-base font-bold text-[#0F172A] dark:text-[#F8FAFC] tracking-tight">
+            <span className="text-sm sm:text-base font-bold text-foreground tracking-tight">
               {formatCurrency(debt.initial_amount, debt.currency)}
             </span>
           </div>
@@ -181,10 +181,10 @@ export function DebtDetailView({ debt, accounts }: DebtDetailViewProps) {
 
         {/* Terms Notes */}
         {debt.notes && (
-          <div className="p-3 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-xs text-[#475569] dark:text-[#CBD5E1] flex items-start gap-2.5">
-            <FileText className="w-4 h-4 text-[#94A3B8] shrink-0 mt-0.5" />
+          <div className="p-3 rounded-xl bg-surface-subtle border border-border text-xs text-foreground-secondary flex items-start gap-2.5">
+            <FileText className="w-4 h-4 text-foreground-muted shrink-0 mt-0.5" />
             <div className="flex flex-col min-w-0">
-              <span className="font-bold text-[10px] uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+              <span className="font-bold text-[10px] uppercase tracking-wider text-muted-foreground">
                 {t.debts.termsLabel}
               </span>
               <span className="mt-0.5 leading-relaxed wrap-break-word">{debt.notes}</span>
@@ -193,7 +193,7 @@ export function DebtDetailView({ debt, accounts }: DebtDetailViewProps) {
         )}
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2 pt-2 border-t border-[#E5E7EB] dark:border-[#27272A]">
+        <div className="flex items-center gap-2 pt-2 border-t border-border">
           {!isPaid && (
             <Button
               onClick={() => setIsPaymentOpen(true)}
@@ -244,18 +244,18 @@ export function DebtDetailView({ debt, accounts }: DebtDetailViewProps) {
       {/* Payment Installments History */}
       <div className="flex flex-col gap-2.5">
         <div className="flex items-center justify-between px-0.5">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">
             {t.debts.installmentsTitle} ({debt.payments.length})
           </h2>
           {isPaid && (
-            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#0D9488]">
+            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-success">
               <CheckCircle2 className="w-3.5 h-3.5" /> Lunas Sepenuhnya
             </span>
           )}
         </div>
 
         {debt.payments.length === 0 ? (
-          <div className="p-8 text-center bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] rounded-2xl text-[#94A3B8] text-xs">
+          <div className="p-8 text-center bg-surface border border-border rounded-2xl text-foreground-muted text-xs">
             {t.debts.installmentsEmpty}
           </div>
         ) : (
@@ -266,37 +266,37 @@ export function DebtDetailView({ debt, accounts }: DebtDetailViewProps) {
               .map((p, idx) => (
                 <div
                   key={p.id}
-                  className="flex items-center justify-between p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors gap-3"
+                  className="flex items-center justify-between p-3 sm:p-3.5 rounded-xl bg-surface border border-border hover:border-border-strong transition-colors gap-3"
                 >
                   {p.linked_transaction_id ? (
                     <Link
                       href={`/transactions/${p.linked_transaction_id}`}
                       className="flex items-center gap-3 min-w-0 flex-1 hover:opacity-80 transition-opacity cursor-pointer group"
                     >
-                      <div className="w-7 h-7 rounded-full bg-[#ECFDF5] dark:bg-[#064E3B]/20 text-[#0D9488] flex items-center justify-center text-xs font-bold shrink-0 group-hover:scale-105 transition-transform">
+                      <div className="w-7 h-7 rounded-full bg-success-muted text-success flex items-center justify-center text-xs font-bold shrink-0 group-hover:scale-105 transition-transform">
                         {debt.payments.length - idx}
                       </div>
                       <div className="flex flex-col min-w-0">
-                        <span className="text-xs sm:text-sm font-mono font-bold text-[#0F172A] dark:text-[#F8FAFC] tnum truncate group-hover:text-[#0D9488] transition-colors">
+                        <span className="text-xs sm:text-sm font-mono font-bold text-foreground tnum truncate group-hover:text-success transition-colors">
                           {formatCurrency(p.amount, debt.currency)}
                         </span>
-                        <div className="flex items-center gap-1 text-[10px] font-mono text-[#94A3B8] truncate">
+                        <div className="flex items-center gap-1 text-[10px] font-mono text-foreground-muted truncate">
                           <Clock className="w-3 h-3 shrink-0" />
                           <span>{formatDate(p.payment_date, 'd MMM yyyy, HH:mm', language)}</span>
-                          <span className="text-[9px] text-[#0D9488] underline ml-1 hidden sm:inline">Lihat Transaksi</span>
+                          <span className="text-[9px] text-success underline ml-1 hidden sm:inline">Lihat Transaksi</span>
                         </div>
                       </div>
                     </Link>
                   ) : (
                     <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <div className="w-7 h-7 rounded-full bg-[#ECFDF5] dark:bg-[#064E3B]/20 text-[#0D9488] flex items-center justify-center text-xs font-bold shrink-0">
+                      <div className="w-7 h-7 rounded-full bg-success-muted text-success flex items-center justify-center text-xs font-bold shrink-0">
                         {debt.payments.length - idx}
                       </div>
                       <div className="flex flex-col min-w-0">
-                        <span className="text-xs sm:text-sm font-mono font-bold text-[#0F172A] dark:text-[#F8FAFC] tnum truncate">
+                        <span className="text-xs sm:text-sm font-mono font-bold text-foreground tnum truncate">
                           {formatCurrency(p.amount, debt.currency)}
                         </span>
-                        <div className="flex items-center gap-1 text-[10px] font-mono text-[#94A3B8] truncate">
+                        <div className="flex items-center gap-1 text-[10px] font-mono text-foreground-muted truncate">
                           <Clock className="w-3 h-3 shrink-0" />
                           <span>{formatDate(p.payment_date, 'd MMM yyyy, HH:mm', language)}</span>
                         </div>
@@ -311,7 +311,7 @@ export function DebtDetailView({ debt, accounts }: DebtDetailViewProps) {
                       variant="ghost"
                       size="icon"
                       onClick={() => setEditingPayment(p)}
-                      className="h-auto w-auto p-1.5 text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] rounded-md"
+                      className="h-auto w-auto p-1.5 text-foreground-muted hover:text-foreground rounded-md"
                       title={t.common.edit}
                     >
                       <Pencil className="w-3.5 h-3.5" />
@@ -320,7 +320,7 @@ export function DebtDetailView({ debt, accounts }: DebtDetailViewProps) {
                       type="button"
                       disabled={deletingPaymentId === p.id}
                       onClick={() => handleDeletePayment(p.id)}
-                      className="p-1.5 text-[#94A3B8] hover:text-[#E11D48] rounded-md transition-colors cursor-pointer"
+                      className="p-1.5 text-foreground-muted hover:text-destructive rounded-md transition-colors cursor-pointer"
                       title={t.common.delete}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -331,9 +331,9 @@ export function DebtDetailView({ debt, accounts }: DebtDetailViewProps) {
 
             {/* Pagination Load More Controls */}
             {displayLimit < debt.payments.length && (
-              <div className="pt-1 flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs">
-                <span className="text-[#64748B] dark:text-[#94A3B8] font-medium text-center sm:text-left">
-                  {t.common.showing} <span className="font-bold text-[#0F172A] dark:text-[#FAFAFA]">{Math.min(displayLimit, debt.payments.length)}</span> / {debt.payments.length}
+              <div className="pt-1 flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 rounded-xl bg-surface border border-border text-xs">
+                <span className="text-muted-foreground font-medium text-center sm:text-left">
+                  {t.common.showing} <span className="font-bold text-foreground">{Math.min(displayLimit, debt.payments.length)}</span> / {debt.payments.length}
                 </span>
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                   <Button
@@ -348,7 +348,7 @@ export function DebtDetailView({ debt, accounts }: DebtDetailViewProps) {
                     variant="ghost"
                     size="sm"
                     onClick={() => setDisplayLimit(debt.payments.length)}
-                    className="flex-1 sm:flex-initial text-xs text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] cursor-pointer"
+                    className="flex-1 sm:flex-initial text-xs text-muted-foreground hover:text-foreground cursor-pointer"
                   >
                     {t.common.showAll}
                   </Button>

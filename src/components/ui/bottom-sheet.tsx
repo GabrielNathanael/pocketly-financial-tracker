@@ -143,7 +143,7 @@ export function BottomSheet({
     <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center p-0 md:p-4">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-[#0F172A]/70 dark:bg-black/80 transition-opacity duration-200 ease-out"
+        className="fixed inset-0 bg-overlay transition-opacity duration-200 ease-out"
         style={{ opacity: isEntered ? backdropOpacity : 0 }}
         onClick={closeSheet}
       />
@@ -151,7 +151,7 @@ export function BottomSheet({
       {/* Sheet Container */}
       <div
         className={cn(
-          "relative w-full max-w-lg bg-white dark:bg-[#121215] border-t md:border border-[#E5E7EB] dark:border-[#27272A] rounded-t-2xl md:rounded-xl shadow-2xl z-10 max-h-[88dvh] md:h-auto flex flex-col overflow-hidden will-change-transform",
+          "relative w-full max-w-lg bg-surface border-t md:border border-border rounded-t-2xl md:rounded-xl shadow-2xl z-10 max-h-[88dvh] md:h-auto flex flex-col overflow-hidden will-change-transform",
           !isDragging && !isEntering && "transition-transform duration-200 ease-out",
           isEntering && !isDragging && "bottom-sheet-enter",
           className,
@@ -175,23 +175,23 @@ export function BottomSheet({
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
         >
-          <div className="w-12 h-1.5 bg-[#CBD5E1] dark:bg-[#334155] rounded-full active:scale-95 transition-transform" />
+          <div className="w-12 h-1.5 bg-border-strong/30 dark:bg-border-inverse rounded-full active:scale-95 transition-transform" />
         </div>
 
         {/* Header - Also draggable on touch */}
         <div
-          className="flex items-center justify-between px-5 py-3 border-b border-[#E5E7EB] dark:border-[#27272A] select-none touch-none"
+          className="flex items-center justify-between px-5 py-3 border-b border-border select-none touch-none"
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
         >
-          <h3 className="font-bold text-sm sm:text-base text-[#0F172A] dark:text-[#F8FAFC]">
+          <h3 className="font-bold text-sm sm:text-base text-foreground">
             {title}
           </h3>
           <button
             type="button"
             onClick={closeSheet}
-            className="p-1 text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#F8FAFC] rounded-md hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] transition-colors"
+            className="p-1 text-foreground-muted hover:text-foreground rounded-md hover:bg-secondary transition-colors"
           >
             <X className="w-4 h-4" />
           </button>

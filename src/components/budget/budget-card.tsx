@@ -27,27 +27,27 @@ export function BudgetCard({ budget, onEditClick }: BudgetCardProps) {
   const isOver = budgetAmount > 0 && spent > budgetAmount
 
   return (
-    <div className="p-4 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-3 transition-colors hover:border-[#0F172A] dark:hover:border-[#FAFAFA]">
+    <div className="p-4 rounded-xl bg-surface border border-border flex flex-col gap-3 transition-colors hover:border-foreground">
       {/* Header */}
       <div className="flex items-center justify-between gap-3 min-w-0">
         <Link
           href={`/budget/${budget.category_id}?currency=${currency}`}
           className="flex items-center gap-2.5 min-w-0 flex-1 group cursor-pointer"
         >
-          <div className="w-8 h-8 rounded-lg bg-[#F1F3F5] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-surface-subtle border border-border text-foreground flex items-center justify-center shrink-0">
             <DynamicIcon name={cat?.icon || 'Tag'} className="w-4 h-4" />
           </div>
           <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-1.5 min-w-0">
-              <span className="text-xs sm:text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate">
+              <span className="text-xs sm:text-sm font-bold text-foreground truncate">
                 {cat?.name || t.common.category}
               </span>
-              <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-[#F1F3F5] dark:bg-[#1A1A20] text-[#64748B] dark:text-[#94A3B8] border border-[#E5E7EB] dark:border-[#27272A] shrink-0">
+              <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-surface-subtle text-foreground-secondary dark:text-foreground-muted border border-border shrink-0">
                 {currency}
               </span>
-              <ChevronRight className="w-3.5 h-3.5 text-[#94A3B8] opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+              <ChevronRight className="w-3.5 h-3.5 text-foreground-muted opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
             </div>
-            <span className="text-[11px] font-mono text-[#64748B] dark:text-[#94A3B8] truncate">
+            <span className="text-[11px] font-mono text-foreground-secondary dark:text-foreground-muted truncate">
               {budgetAmount > 0
                 ? `${percentage.toFixed(0)}% ${t.budgets.consumed}`
                 : t.dashboard.noBudgetsSet}
@@ -59,7 +59,7 @@ export function BudgetCard({ budget, onEditClick }: BudgetCardProps) {
           <button
             type="button"
             onClick={onEditClick}
-            className="shrink-0 whitespace-nowrap text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] px-2.5 py-1 rounded-md transition-colors cursor-pointer"
+            className="shrink-0 whitespace-nowrap text-xs font-semibold text-foreground hover:bg-surface-subtle border border-border px-2.5 py-1 rounded-md transition-colors cursor-pointer"
           >
             {budgetAmount > 0 ? t.common.edit : `+ ${t.dashboard.setLimits}`}
           </button>
@@ -73,29 +73,29 @@ export function BudgetCard({ budget, onEditClick }: BudgetCardProps) {
       <div className="flex items-center justify-between text-xs pt-0.5 font-mono tnum">
         {/* Spent column */}
         <div className="flex flex-col">
-          <span className="text-[#94A3B8] text-[10px] uppercase tracking-wider">{t.common.spent}</span>
-          <span className="font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+          <span className="text-foreground-muted text-[10px] uppercase tracking-wider">{t.common.spent}</span>
+          <span className="font-bold text-foreground">
             {maskCurrency(formatCurrency(spent, currency), isPrivate)}
           </span>
         </div>
 
         {/* Limit column */}
         <div className="flex flex-col items-center">
-          <span className="text-[#94A3B8] text-[10px] uppercase tracking-wider">{t.common.limit}</span>
-          <span className="font-medium text-[#475569] dark:text-[#94A3B8]">
+          <span className="text-foreground-muted text-[10px] uppercase tracking-wider">{t.common.limit}</span>
+          <span className="font-medium text-foreground-secondary dark:text-foreground-muted">
             {budgetAmount > 0 ? maskCurrency(formatCurrency(budgetAmount, currency), isPrivate) : '—'}
           </span>
         </div>
 
         {/* Remaining / Deficit column */}
         <div className="flex flex-col items-end">
-          <span className="text-[#94A3B8] text-[10px] uppercase tracking-wider">
+          <span className="text-foreground-muted text-[10px] uppercase tracking-wider">
             {budgetAmount > 0 ? (isOver ? t.common.deficit : t.common.remaining) : t.common.remaining}
           </span>
           {budgetAmount > 0 ? (
             <span
               className={`font-bold flex items-center gap-1 ${
-                isOver ? 'text-[#E11D48]' : 'text-[#0D9488]'
+                isOver ? 'text-destructive' : 'text-success'
               }`}
             >
               {isOver && <AlertTriangle className="w-3 h-3" />}
@@ -103,7 +103,7 @@ export function BudgetCard({ budget, onEditClick }: BudgetCardProps) {
               {maskCurrency(formatCurrency(Math.abs(remaining), currency), isPrivate)}
             </span>
           ) : (
-            <span className="font-medium text-[#94A3B8]">
+            <span className="font-medium text-foreground-muted">
               —
             </span>
           )}

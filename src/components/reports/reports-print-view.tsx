@@ -129,8 +129,8 @@ export function ReportsPrintView({
           </thead>
           <tbody>
             <tr>
-              <td className="font-semibold text-emerald-800">{t.reports.inflowLabel}</td>
-              <td className="text-right font-mono font-bold text-emerald-800 tnum">
+              <td className="font-semibold text-success">{t.reports.inflowLabel}</td>
+              <td className="text-right font-mono font-bold text-success tnum">
                 +{formatCurrency(totalIncome, displayCurrency)}
               </td>
               <td>
@@ -139,8 +139,8 @@ export function ReportsPrintView({
               </td>
             </tr>
             <tr>
-              <td className="font-semibold text-rose-800">{t.reports.outflowLabel}</td>
-              <td className="text-right font-mono font-bold text-rose-800 tnum">
+              <td className="font-semibold text-destructive">{t.reports.outflowLabel}</td>
+              <td className="text-right font-mono font-bold text-destructive tnum">
                 -{formatCurrency(totalExpense, displayCurrency)}
               </td>
               <td>
@@ -150,7 +150,7 @@ export function ReportsPrintView({
             </tr>
             <tr className="bg-slate-50 font-bold">
               <td>{t.reports.netSavingsLabel}</td>
-              <td className={cn("text-right font-mono tnum", netSavings >= 0 ? "text-emerald-800" : "text-rose-800")}>
+              <td className={cn("text-right font-mono tnum", netSavings >= 0 ? "text-success" : "text-destructive")}>
                 {netSavings >= 0 ? "+" : ""}
                 {formatCurrency(netSavings, displayCurrency)}
               </td>
@@ -224,13 +224,13 @@ export function ReportsPrintView({
           <tbody>
             <tr>
               <td>{t.reports.totalIncome}</td>
-              <td className="text-right font-mono font-bold text-emerald-800 tnum">+{formatCurrency(totalIncome, displayCurrency)}</td>
+              <td className="text-right font-mono font-bold text-success tnum">+{formatCurrency(totalIncome, displayCurrency)}</td>
               <td className="text-right font-mono tnum">+{formatCurrency(priorTotalIncome, displayCurrency)}</td>
               <td className="text-right font-mono font-bold tnum">{incomeGrowthPct >= 0 ? `+${incomeGrowthPct.toFixed(1)}%` : `${incomeGrowthPct.toFixed(1)}%`}</td>
             </tr>
             <tr>
               <td>{t.reports.totalExpense}</td>
-              <td className="text-right font-mono font-bold text-rose-800 tnum">-{formatCurrency(totalExpense, displayCurrency)}</td>
+              <td className="text-right font-mono font-bold text-destructive tnum">-{formatCurrency(totalExpense, displayCurrency)}</td>
               <td className="text-right font-mono tnum">-{formatCurrency(priorTotalExpense, displayCurrency)}</td>
               <td className="text-right font-mono font-bold tnum">{expenseGrowthPct >= 0 ? `+${expenseGrowthPct.toFixed(1)}%` : `${expenseGrowthPct.toFixed(1)}%`}</td>
             </tr>
@@ -295,7 +295,7 @@ export function ReportsPrintView({
                   <td className="font-semibold">{getCleanDescription(tx.description) || tx.category?.name || "-"}</td>
                   <td>{tx.category?.name || "-"}</td>
                   <td className="text-slate-600">{tx.account?.name || "-"}</td>
-                  <td className="text-right font-mono font-bold text-rose-800 tnum">-{formatCurrency(tx.convertedAmount, displayCurrency)}</td>
+                  <td className="text-right font-mono font-bold text-destructive tnum">-{formatCurrency(tx.convertedAmount, displayCurrency)}</td>
                 </tr>
               ))
             )}
@@ -355,7 +355,7 @@ function CategoryPrintTable({
                 <td>{idx + 1}</td>
                 <td className="font-semibold">{cat.category?.name || "Lainnya"}</td>
                 <td className="text-center font-mono">{cat.count}</td>
-                <td className={cn("text-right font-mono font-bold tnum", positive && "text-emerald-800")}>
+                <td className={cn("text-right font-mono font-bold tnum", positive && "text-success")}>
                   {positive ? "+" : "-"}{formatCurrency(cat.total, displayCurrency)}
                 </td>
                 <td className="text-right font-mono font-bold tnum">{cat.percentage.toFixed(1)}%</td>

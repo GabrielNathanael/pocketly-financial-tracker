@@ -560,12 +560,12 @@ export function TransactionForm({
   return (
     <form onSubmit={handleSave} className="flex flex-col gap-4">
       {error && (
-        <div className="p-3 rounded-lg bg-[#FFF1F2] dark:bg-[#881337]/20 border border-[#FECDD3] dark:border-[#9F1239]/40 text-xs text-[#E11D48] flex items-center justify-between">
+        <div className="p-3 rounded-lg bg-destructive-muted border border-destructive/20 text-xs text-destructive flex items-center justify-between">
           <span>{error}</span>
           <button
             type="button"
             onClick={() => setError(null)}
-            className="text-[#E11D48] hover:opacity-80"
+            className="text-destructive hover:opacity-80"
           >
             <X className="w-4 h-4" />
           </button>
@@ -573,15 +573,15 @@ export function TransactionForm({
       )}
 
       {/* 1. Transaction Type Toggle */}
-      <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A]">
+      <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-secondary border border-border">
         <button
           type="button"
           onClick={() => handleTypeChange("expense")}
           className={cn(
             "flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer",
             type === "expense"
-              ? "bg-[#E11D48] text-white shadow-xs"
-              : "text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]",
+              ? "bg-destructive text-destructive-foreground shadow-xs"
+              : "text-foreground-secondary hover:text-foreground",
           )}
         >
           <ArrowDownRight className="w-4 h-4" />
@@ -594,8 +594,8 @@ export function TransactionForm({
           className={cn(
             "flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer",
             type === "income"
-              ? "bg-[#0D9488] text-white shadow-xs"
-              : "text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]",
+              ? "bg-success text-success-foreground shadow-xs"
+              : "text-foreground-secondary hover:text-foreground",
           )}
         >
           <ArrowUpRight className="w-4 h-4" />
@@ -626,8 +626,8 @@ export function TransactionForm({
           className={cn(
             "absolute right-2 top-2 z-10 rounded-lg p-1.5 transition-colors",
             isPinned
-              ? "bg-amber-50 text-amber-500 dark:bg-amber-950/40"
-              : "text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]",
+              ? "bg-warning-muted text-warning"
+              : "text-foreground-muted hover:text-foreground",
           )}
         >
           <Pin className={cn("h-3.5 w-3.5", isPinned && "fill-current")} />
@@ -639,12 +639,12 @@ export function TransactionForm({
             disabled={isScanning}
             onClick={() => setShowScanMenu((v) => !v)}
             title={t.quickAdd.scanReceiptBtn}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-[#94A3B8] transition-colors hover:bg-[#F1F3F5] hover:text-[#0F172A] dark:hover:bg-[#1A1A20] dark:hover:text-[#FAFAFA] disabled:opacity-60"
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-foreground-muted transition-colors hover:bg-[#F1F3F5] hover:text-[#0F172A] dark:hover:bg-[#1A1A20] dark:hover:text-[#FAFAFA] disabled:opacity-60"
           >
             {isScanning ? (
-              <Loader2 className="h-4 w-4 animate-spin text-indigo-500" />
+              <Loader2 className="h-4 w-4 animate-spin text-info" />
             ) : (
-              <Camera className="h-4 w-4 text-indigo-500" />
+              <Camera className="h-4 w-4 text-info" />
             )}
           </button>
           {showScanMenu && !isScanning && (
@@ -689,10 +689,10 @@ export function TransactionForm({
       </div>
       <div
         className={cn(
-          "relative hidden rounded-xl bg-white dark:bg-[#121215] border shadow-2xs overflow-hidden transition-all group",
+          "relative hidden rounded-xl bg-surface border shadow-2xs overflow-hidden transition-all group",
           isNumpadOpen
             ? "border-[#0F172A] dark:border-[#FAFAFA] ring-2 ring-[#0F172A]/10 dark:ring-[#FAFAFA]/10"
-            : "border-[#E5E7EB] dark:border-[#27272A]",
+            : "border-border",
         )}
       >
         <button
@@ -701,7 +701,7 @@ export function TransactionForm({
           className="w-full p-3.5 sm:p-4 flex flex-col gap-1 text-left cursor-pointer hover:bg-[#F8F9FA] dark:hover:bg-[#16161A] transition-colors"
         >
           <div className="flex items-center justify-between pr-8">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary">
               {t.quickAdd.nominal}
             </span>
 
@@ -709,22 +709,22 @@ export function TransactionForm({
               className={cn(
                 "w-4 h-4 transition-colors",
                 isNumpadOpen
-                  ? "text-[#0F172A] dark:text-[#FAFAFA]"
-                  : "text-[#94A3B8] group-hover:text-blue-500",
+                  ? "text-foreground"
+                  : "text-foreground-muted group-hover:text-blue-500",
               )}
             />
           </div>
 
           <div className="flex items-baseline gap-2 pt-0.5">
-            <span className="text-xl sm:text-2xl font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+            <span className="text-xl sm:text-2xl font-bold text-foreground">
               {currentCurrency}
             </span>
             <span
               className={cn(
                 "flex-1 min-w-0 text-2xl sm:text-3xl font-mono font-bold tracking-tight truncate",
                 numericAmount > 0
-                  ? "text-[#0F172A] dark:text-[#F8FAFC]"
-                  : "text-[#94A3B8]",
+                  ? "text-foreground"
+                  : "text-foreground-muted",
               )}
             >
               {formatCurrency(numericAmount, currentCurrency)}
@@ -743,8 +743,8 @@ export function TransactionForm({
             className={cn(
               "p-1.5 rounded-md transition-colors cursor-pointer",
               isPinned
-                ? "text-amber-500 bg-amber-50 dark:bg-amber-950/40"
-                : "text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]",
+                ? "text-warning bg-warning-muted"
+                : "text-foreground-muted hover:text-foreground",
             )}
             title={isPinned ? t.common.pinActive : t.common.pinInactive}
           >
@@ -762,7 +762,7 @@ export function TransactionForm({
                 key={n}
                 type="button"
                 onClick={() => handleKeypadPress(n)}
-                className="py-3.5 sm:py-4 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-base sm:text-lg hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none"
+                className="py-3.5 sm:py-4 rounded-xl bg-secondary font-mono font-bold text-base sm:text-lg hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-foreground border border-border active:scale-95 transition-all cursor-pointer select-none"
               >
                 {n}
               </button>
@@ -770,7 +770,7 @@ export function TransactionForm({
             <button
               type="button"
               onClick={handleKeypadBackspace}
-              className="py-3.5 sm:py-4 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] flex items-center justify-center text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none"
+              className="py-3.5 sm:py-4 rounded-xl bg-secondary flex items-center justify-center text-[#64748B] hover:text-foreground hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] border border-border active:scale-95 transition-all cursor-pointer select-none"
             >
               <Delete className="w-5 h-5" />
             </button>
@@ -780,7 +780,7 @@ export function TransactionForm({
                 key={n}
                 type="button"
                 onClick={() => handleKeypadPress(n)}
-                className="py-3.5 sm:py-4 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-base sm:text-lg hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none"
+                className="py-3.5 sm:py-4 rounded-xl bg-secondary font-mono font-bold text-base sm:text-lg hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-foreground border border-border active:scale-95 transition-all cursor-pointer select-none"
               >
                 {n}
               </button>
@@ -788,7 +788,7 @@ export function TransactionForm({
             <button
               type="button"
               onClick={() => handleKeypadPress("000")}
-              className="py-3.5 sm:py-4 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-xs sm:text-sm hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none"
+              className="py-3.5 sm:py-4 rounded-xl bg-secondary font-mono font-bold text-xs sm:text-sm hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-foreground border border-border active:scale-95 transition-all cursor-pointer select-none"
             >
               .000
             </button>
@@ -798,7 +798,7 @@ export function TransactionForm({
                 key={n}
                 type="button"
                 onClick={() => handleKeypadPress(n)}
-                className="py-3.5 sm:py-4 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-base sm:text-lg hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none"
+                className="py-3.5 sm:py-4 rounded-xl bg-secondary font-mono font-bold text-base sm:text-lg hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-foreground border border-border active:scale-95 transition-all cursor-pointer select-none"
               >
                 {n}
               </button>
@@ -806,7 +806,7 @@ export function TransactionForm({
             <button
               type="button"
               onClick={() => setAmountStr("0")}
-              className="py-3.5 sm:py-4 rounded-xl bg-[#FFF1F2] dark:bg-[#881337]/20 text-[#E11D48] font-mono font-bold text-sm hover:bg-[#FFE4E6] dark:hover:bg-[#881337]/40 border border-[#FECDD3] dark:border-[#9F1239]/40 active:scale-95 transition-all cursor-pointer select-none"
+              className="py-3.5 sm:py-4 rounded-xl bg-destructive-muted text-destructive font-mono font-bold text-sm hover:bg-destructive/20 border border-destructive/20 active:scale-95 transition-all cursor-pointer select-none"
             >
               C
             </button>
@@ -814,14 +814,14 @@ export function TransactionForm({
             <button
               type="button"
               onClick={() => handleKeypadPress("00")}
-              className="py-3.5 sm:py-4 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-sm hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none"
+              className="py-3.5 sm:py-4 rounded-xl bg-secondary font-mono font-bold text-sm hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-foreground border border-border active:scale-95 transition-all cursor-pointer select-none"
             >
               00
             </button>
             <button
               type="button"
               onClick={() => handleKeypadPress("0")}
-              className="py-3.5 sm:py-4 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-base sm:text-lg hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none"
+              className="py-3.5 sm:py-4 rounded-xl bg-secondary font-mono font-bold text-base sm:text-lg hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-foreground border border-border active:scale-95 transition-all cursor-pointer select-none"
             >
               0
             </button>
@@ -842,7 +842,7 @@ export function TransactionForm({
 
           {/* 4. Account Selector */}
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary">
               {t.quickAdd.account}
             </label>
             <SearchableSelect
@@ -878,13 +878,13 @@ export function TransactionForm({
               placeholder={t.quickAdd.selectAccount}
               searchPlaceholder={t.transactions.searchAccountPlaceholder}
               emptyText={t.transactions.noAccountFound}
-              triggerClassName="py-2.5 rounded-xl bg-white dark:bg-[#121215]"
+              triggerClassName="py-2.5 rounded-xl bg-surface"
             />
           </div>
 
           {/* 5. Category Selector */}
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary">
               {t.quickAdd.category}
             </label>
             <SearchableSelect
@@ -895,12 +895,12 @@ export function TransactionForm({
                 label: formatCategoryName(c.name, language),
                 icon: c.icon || "Tag",
                 iconColor:
-                  type === "expense" ? "text-[#E11D48]" : "text-[#0D9488]",
+                  type === "expense" ? "text-destructive" : "text-success",
               }))}
               placeholder={t.quickAdd.selectCategory}
               searchPlaceholder={t.transactions.searchCategoryPlaceholder}
               emptyText={t.transactions.noCategoryFound}
-              triggerClassName="py-2.5 rounded-xl bg-white dark:bg-[#121215]"
+              triggerClassName="py-2.5 rounded-xl bg-surface"
             />
           </div>
 
@@ -911,7 +911,7 @@ export function TransactionForm({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder={t.quickAdd.notePlaceholder}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs font-medium text-[#0F172A] dark:text-[#F8FAFC] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#0F172A] dark:focus:border-[#FAFAFA]"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-surface border border-border text-xs font-medium text-foreground placeholder:text-foreground-muted focus:outline-none focus:border-[#0F172A] dark:focus:border-[#FAFAFA]"
             />
 
             {/* Hidden File Input for Receipt Photo */}
@@ -933,14 +933,14 @@ export function TransactionForm({
 
             {/* OCR Scanning Status Banner */}
             {isScanning && (
-              <div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 flex items-center justify-between gap-2 animate-pulse">
+              <div className="p-2.5 rounded-xl bg-info-muted border border-info/20 flex items-center justify-between gap-2 animate-pulse">
                 <div className="flex items-center gap-2 min-w-0">
-                  <Loader2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400 animate-spin shrink-0" />
-                  <span className="text-xs font-medium text-indigo-900 dark:text-indigo-200 truncate">
+                  <Loader2 className="w-4 h-4 text-info animate-spin shrink-0" />
+                  <span className="text-xs font-medium text-foreground truncate">
                     {ocrStatus || t.quickAdd.scanningReceipt}
                   </span>
                 </div>
-                <span className="text-xs font-mono font-bold text-indigo-600 dark:text-indigo-400 shrink-0">
+                <span className="text-xs font-mono font-bold text-info shrink-0">
                   {ocrProgress}%
                 </span>
               </div>
@@ -956,7 +956,7 @@ export function TransactionForm({
                   "py-2 px-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none",
                   showItemsBreakdown
                     ? "bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A] shadow-xs"
-                    : "bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]",
+                    : "bg-canvas dark:bg-surface-subtle text-[#64748B] hover:text-foreground border-border",
                 )}
               >
                 <ListPlus className="w-3.5 h-3.5 shrink-0" />
@@ -976,7 +976,7 @@ export function TransactionForm({
                   "py-2 px-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none",
                   showFreeMemo
                     ? "bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A] shadow-xs"
-                    : "bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]",
+                    : "bg-canvas dark:bg-surface-subtle text-[#64748B] hover:text-foreground border-border",
                 )}
               >
                 <AlignLeft className="w-3.5 h-3.5 shrink-0" />
@@ -991,7 +991,7 @@ export function TransactionForm({
                   "py-2 px-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none",
                   showTags
                     ? "bg-[#0F172A] text-white border-[#0F172A] dark:bg-[#FAFAFA] dark:text-[#0F172A] shadow-xs"
-                    : "bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]",
+                    : "bg-canvas dark:bg-surface-subtle text-[#64748B] hover:text-foreground border-border",
                 )}
               >
                 <Hash className="w-3.5 h-3.5 shrink-0" />
@@ -1007,21 +1007,21 @@ export function TransactionForm({
 
           {/* 6.5 Expandable Tags (#tags) Drawer */}
           {showTags && (
-            <div className="p-3 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-2 animate-in fade-in duration-150">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+            <div className="p-3 rounded-xl bg-canvas dark:bg-surface-subtle border border-border flex flex-col gap-2 animate-in fade-in duration-150">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary">
                 {t.transactions.tagLabel}
               </span>
               <div className="flex flex-wrap items-center gap-1.5 min-h-7">
                 {tags.map((tag) => (
                   <span
                     key={tag}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs font-bold text-[#0F172A] dark:text-[#FAFAFA] shadow-2xs"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-surface border border-border text-xs font-bold text-foreground shadow-2xs"
                   >
                     <span>#{tag}</span>
                     <button
                       type="button"
                       onClick={() => setTags(tags.filter((t) => t !== tag))}
-                      className="text-[#94A3B8] hover:text-rose-500 cursor-pointer"
+                      className="text-foreground-muted hover:text-destructive cursor-pointer"
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -1049,7 +1049,7 @@ export function TransactionForm({
                       ? t.transactions.tagPlaceholder
                       : t.common.moreTagsPlaceholder
                   }
-                  className="flex-1 min-w-30 px-2 py-1 bg-transparent text-xs text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8] focus:outline-none"
+                  className="flex-1 min-w-30 px-2 py-1 bg-transparent text-xs text-foreground placeholder:text-foreground-muted focus:outline-none"
                 />
               </div>
             </div>
@@ -1057,15 +1057,15 @@ export function TransactionForm({
 
           {/* 7. Expandable Sub-items Breakdown Drawer */}
           {showItemsBreakdown && (
-            <div className="p-3 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-2">
+            <div className="p-3 rounded-xl bg-canvas dark:bg-surface-subtle border border-border flex flex-col gap-2">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] truncate">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary truncate">
                   {t.quickAdd.itemizedBreakdownTitle}
                 </span>
                 <button
                   type="button"
                   onClick={handleAddItem}
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-[11px] font-bold text-[#0F172A] dark:text-[#FAFAFA] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] active:scale-95 transition-all cursor-pointer shrink-0"
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-surface border border-border text-[11px] font-bold text-foreground hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] active:scale-95 transition-all cursor-pointer shrink-0"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">{t.quickAdd.addItem}</span>
@@ -1073,7 +1073,7 @@ export function TransactionForm({
               </div>
 
               {items.length === 0 ? (
-                <div className="text-center py-3 text-xs text-[#94A3B8]">
+                <div className="text-center py-3 text-xs text-foreground-muted">
                   {t.quickAdd.emptyItems}
                 </div>
               ) : (
@@ -1081,7 +1081,7 @@ export function TransactionForm({
                   {items.map((item, idx) => (
                     <div
                       key={idx}
-                      className="flex flex-col gap-1 py-2 border-b border-[#E5E7EB] dark:border-[#27272A] last:border-b-0"
+                      className="flex flex-col gap-1 py-2 border-b border-border last:border-b-0"
                     >
                       {/* Row 1: Name + Total */}
                       <div className="flex items-center justify-between gap-2">
@@ -1092,7 +1092,7 @@ export function TransactionForm({
                           onChange={(e) =>
                             handleUpdateItem(idx, "name", e.target.value)
                           }
-                          className="flex-1 min-w-0 bg-transparent text-sm font-medium text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8] focus:outline-none"
+                          className="flex-1 min-w-0 bg-transparent text-sm font-medium text-foreground placeholder:text-foreground-muted focus:outline-none"
                         />
                         <div className="w-28 shrink-0">
                           <NumberInput
@@ -1126,7 +1126,7 @@ export function TransactionForm({
                             const next = cur > 1 ? cur - 1 : cur;
                             handleUpdateItem(idx, "quantity", String(Number(next.toFixed(6))));
                           }}
-                          className="flex h-6 w-6 items-center justify-center rounded-md border border-[#E5E7EB] dark:border-[#27272A] text-[#64748B] dark:text-[#94A3B8] text-sm"
+                          className="flex h-6 w-6 items-center justify-center rounded-md border border-border text-foreground-secondary text-sm"
                         >
                           −
                         </button>
@@ -1153,7 +1153,7 @@ export function TransactionForm({
                               handleUpdateItem(idx, "quantity", "1");
                             }
                           }}
-                          className="w-10 bg-transparent text-xs text-center text-[#0F172A] dark:text-[#FAFAFA] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          className="w-10 bg-transparent text-xs text-center text-foreground focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
 
                         {/* Plus */}
@@ -1164,13 +1164,13 @@ export function TransactionForm({
                             const cur = Number.isFinite(base) && base > 0 ? base : 1;
                             handleUpdateItem(idx, "quantity", String(Number((cur + 1).toFixed(6))));
                           }}
-                          className="flex h-6 w-6 items-center justify-center rounded-md border border-[#E5E7EB] dark:border-[#27272A] text-[#64748B] dark:text-[#94A3B8] text-sm"
+                          className="flex h-6 w-6 items-center justify-center rounded-md border border-border text-foreground-secondary text-sm"
                         >
                           +
                         </button>
 
                         {/* Multiply + unit price */}
-                        <span className="text-xs text-[#94A3B8]">×</span>
+                        <span className="text-xs text-foreground-muted">×</span>
                         <div className="flex-1 min-w-0">
                           <NumberInput
                             value={item.price}
@@ -1183,7 +1183,7 @@ export function TransactionForm({
                             currency={currentCurrency}
                             compact
                             showCurrency={false}
-                            className="w-full bg-transparent text-xs text-[#64748B] dark:text-[#94A3B8] focus:outline-none"
+                            className="w-full bg-transparent text-xs text-foreground-secondary focus:outline-none"
                           />
                         </div>
 
@@ -1191,7 +1191,7 @@ export function TransactionForm({
                         <button
                           type="button"
                           onClick={() => handleRemoveItem(idx)}
-                          className="p-1 text-[#94A3B8] hover:text-[#E11D48] active:scale-90 transition-all cursor-pointer shrink-0"
+                          className="p-1 text-foreground-muted hover:text-destructive active:scale-90 transition-all cursor-pointer shrink-0"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -1199,7 +1199,7 @@ export function TransactionForm({
 
                       {/* Row 3: Split/patungan controls (optional) */}
                       <div className="flex items-center gap-2 pt-1">
-                        <span className="text-[10px] text-[#64748B] dark:text-[#94A3B8] shrink-0">
+                        <span className="text-[10px] text-foreground-secondary shrink-0">
                           {language === "id" ? "Dibagi ke" : "Split with"}
                         </span>
                         <button
@@ -1208,11 +1208,11 @@ export function TransactionForm({
                             const cur = parseInt(item.shareCount ?? "1", 10) || 1;
                             handleUpdateItem(idx, "shareCount", String(Math.max(1, cur - 1)));
                           }}
-                          className="flex h-5 w-5 items-center justify-center rounded border border-[#E5E7EB] dark:border-[#27272A] text-[#64748B] dark:text-[#94A3B8] text-xs"
+                          className="flex h-5 w-5 items-center justify-center rounded border border-border text-foreground-secondary text-xs"
                         >
                           −
                         </button>
-                        <span className="w-5 text-center text-xs font-medium text-[#0F172A] dark:text-[#FAFAFA]">
+                        <span className="w-5 text-center text-xs font-medium text-foreground">
                           {Math.max(1, parseInt(item.shareCount ?? "1", 10) || 1)}
                         </span>
                         <button
@@ -1221,16 +1221,16 @@ export function TransactionForm({
                             const cur = parseInt(item.shareCount ?? "1", 10) || 1;
                             handleUpdateItem(idx, "shareCount", String(cur + 1));
                           }}
-                          className="flex h-5 w-5 items-center justify-center rounded border border-[#E5E7EB] dark:border-[#27272A] text-[#64748B] dark:text-[#94A3B8] text-xs"
+                          className="flex h-5 w-5 items-center justify-center rounded border border-border text-foreground-secondary text-xs"
                         >
                           +
                         </button>
-                        <span className="text-[10px] text-[#64748B] dark:text-[#94A3B8] shrink-0">
+                        <span className="text-[10px] text-foreground-secondary shrink-0">
                           {language === "id" ? "orang" : "people"}
                         </span>
 
                         <div className="flex-1 min-w-0 flex items-center justify-end gap-1.5">
-                          <span className="text-[10px] text-[#64748B] dark:text-[#94A3B8] shrink-0">
+                          <span className="text-[10px] text-foreground-secondary shrink-0">
                             {t.quickAdd.myPortionTotalLabel}:
                           </span>
                           <div className="w-24">
@@ -1261,35 +1261,35 @@ export function TransactionForm({
 
               {/* Smart Allocation Summary Bar */}
               {items.length > 0 && (
-                <div className="pt-2 border-t border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-2">
+                <div className="pt-2 border-t border-border flex flex-col gap-2">
                   <div className="flex flex-col gap-1 text-[11px] font-mono">
                     <div className="flex items-center justify-between">
-                      <span className="text-[#64748B] dark:text-[#94A3B8]">
+                      <span className="text-foreground-secondary">
                         {t.quickAdd.receiptTotalLabel}:{" "}
-                        <strong className="text-[#0F172A] dark:text-[#FAFAFA]">
+                        <strong className="text-foreground">
                           {formatCurrency(itemsTotal, currentCurrency)}
                         </strong>
                       </span>
-                      <span className="text-[#64748B] dark:text-[#94A3B8]">
+                      <span className="text-foreground-secondary">
                         {t.quickAdd.myPortionTotalLabel}:{" "}
-                        <strong className="text-[#0D9488] dark:text-emerald-400">
+                        <strong className="text-success">
                           {formatCurrency(myPortionTotal, currentCurrency)}
                         </strong>
                       </span>
                     </div>
 
                     {isItemsMatching ? (
-                      <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                      <span className="text-[10px] font-bold text-success flex items-center gap-1">
                         <Check className="w-3 h-3" />
                         <span>{t.transactions.matchedFull}</span>
                       </span>
                     ) : hasRemainingUnitemized ? (
-                      <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400">
+                      <span className="text-[10px] font-bold text-info">
                         {t.quickAdd.unitemizedRemaining}: +
                         {formatCurrency(remainingAmount, currentCurrency)}
                       </span>
                     ) : isItemsExceeding ? (
-                      <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 flex items-center gap-1">
+                      <span className="text-[10px] font-bold text-destructive flex items-center gap-1">
                         <AlertCircle className="w-3 h-3" />
                         <span>
                           +
@@ -1311,9 +1311,9 @@ export function TransactionForm({
                         setAmountStr(String(Math.round(myPortionTotal)));
                         setError(null);
                       }}
-                      className="w-full py-1.5 px-2 rounded-lg bg-white dark:bg-[#121215] border border-dashed border-[#CBD5E1] dark:border-[#334155] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] text-[11px] font-medium text-[#475569] dark:text-[#CBD5E1] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      className="w-full py-1.5 px-2 rounded-lg bg-surface border border-dashed border-border-strong hover:border-foreground text-[11px] font-medium text-foreground-secondary flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                     >
-                      <Check className="w-3 h-3 text-[#0D9488]" />
+                      <Check className="w-3 h-3 text-success" />
                       <span>
                         {t.quickAdd.syncTotalWithItems}:{" "}
                         <strong>
@@ -1329,26 +1329,26 @@ export function TransactionForm({
 
           {/* 8. Expandable Free Text Memo Drawer */}
           {showFreeMemo && (
-            <div className="p-3 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A]">
+            <div className="p-3 rounded-xl bg-canvas dark:bg-surface-subtle border border-border">
               <textarea
                 rows={2}
                 value={freeTextMemo}
                 onChange={(e) => setFreeTextMemo(e.target.value)}
                 placeholder={t.quickAdd.memoPlaceholder}
-                className="w-full p-2 rounded-lg bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs text-[#0F172A] dark:text-[#F8FAFC] placeholder:text-[#94A3B8] focus:outline-none"
+                className="w-full p-2 rounded-lg bg-surface border border-border text-xs text-foreground placeholder:text-foreground-muted focus:outline-none"
               />
             </div>
           )}
 
           {error && (
-            <p className="text-xs font-semibold text-[#E11D48] text-center pt-1">
+            <p className="text-xs font-semibold text-destructive text-center pt-1">
               {error}
             </p>
           )}
 
           {/* 9. Action Footer Bar: Save only — Cancel lives in the page
               header above, and Delete lives outside this form entirely. */}
-          <div className="mt-auto flex items-center gap-2 pt-2 border-t border-[#E5E7EB] dark:border-[#27272A]">
+          <div className="mt-auto flex items-center gap-2 pt-2 border-t border-border">
             <button
               type="submit"
               disabled={isLoading}

@@ -299,7 +299,7 @@ export function BottomNav({
   return (
     <>
       {/* 1. Mobile Bottom Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-[#121215] border-t border-[#E5E7EB] dark:border-[#27272A] pb-safe md:hidden print:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-surface border-t border-border pb-safe md:hidden print:hidden">
         <div className="flex items-center justify-around h-14 px-1">
           {mobileNavItems.map((item, idx) => {
             if (item.isAction) {
@@ -307,7 +307,7 @@ export function BottomNav({
                 <button
                   key={idx}
                   onClick={item.onClick}
-                  className="flex flex-col items-center justify-center -mt-5 bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A] w-12 h-12 rounded-full shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                  className="flex flex-col items-center justify-center -mt-5 bg-primary text-primary-foreground w-12 h-12 rounded-full shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer"
                   aria-label={item.label}
                 >
                   <item.icon className="w-5 h-5 stroke-[2.5]" />
@@ -323,8 +323,8 @@ export function BottomNav({
                   className={cn(
                     "flex flex-col items-center justify-center flex-1 py-1 text-[10px] font-semibold transition-colors cursor-pointer",
                     item.isActive
-                      ? "text-[#0F172A] dark:text-[#FAFAFA]"
-                      : "text-[#94A3B8] dark:text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#F8FAFC]",
+                      ? "text-foreground"
+                      : "text-foreground-muted hover:text-foreground",
                   )}
                 >
                   <item.icon className="w-4 h-4 mb-0.5" />
@@ -340,8 +340,8 @@ export function BottomNav({
                 className={cn(
                   "flex flex-col items-center justify-center flex-1 py-1 text-[10px] font-semibold transition-colors cursor-pointer",
                   item.isActive
-                    ? "text-[#0F172A] dark:text-[#FAFAFA]"
-                    : "text-[#94A3B8] dark:text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#F8FAFC]",
+                    ? "text-foreground"
+                    : "text-foreground-muted hover:text-foreground",
                 )}
               >
                 <item.icon className="w-4 h-4 mb-0.5" />
@@ -353,9 +353,9 @@ export function BottomNav({
       </nav>
 
       {/* 2. Modern Desktop Fixed Sidebar */}
-      <aside className="hidden md:flex flex-col fixed left-0 top-0 bottom-0 w-64 bg-white dark:bg-[#121215] border-r border-[#E5E7EB] dark:border-[#27272A] z-40 select-none print:hidden">
+      <aside className="hidden md:flex flex-col fixed left-0 top-0 bottom-0 w-64 bg-surface border-r border-border z-40 select-none print:hidden">
         {/* Brand Header */}
-        <div className="p-4 flex items-center justify-between border-b border-[#E5E7EB] dark:border-[#27272A]">
+        <div className="p-4 flex items-center justify-between border-b border-border">
           <Link href="/dashboard" className="flex items-center gap-2.5 group">
             <Image
               src="/logo.png"
@@ -366,10 +366,10 @@ export function BottomNav({
               priority
             />
             <div className="flex flex-col">
-              <span className="font-extrabold text-base tracking-tight text-[#0F172A] dark:text-[#FAFAFA] leading-tight">
+              <span className="font-extrabold text-base tracking-tight text-foreground leading-tight">
                 Pocketly
               </span>
-              <span className="text-[10px] font-mono text-[#94A3B8] leading-none">
+              <span className="text-[10px] font-mono text-foreground-muted leading-none">
                 Financial Tracker
               </span>
             </div>
@@ -382,7 +382,7 @@ export function BottomNav({
           <button
             type="button"
             onClick={() => setIsQuickAddOpen(true)}
-            className="w-full h-9 rounded-xl bg-[#0F172A] hover:bg-[#1E293B] dark:bg-[#FAFAFA] dark:hover:bg-[#E2E8F0] text-white dark:text-[#0F172A] text-xs font-bold transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+            className="w-full h-9 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer shadow-xs"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
             <span>{t.nav.quickLog}</span>
@@ -392,13 +392,13 @@ export function BottomNav({
           <button
             type="button"
             onClick={() => setIsSearchOpen(true)}
-            className="w-full h-8 px-3 rounded-lg text-xs text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8] dark:hover:text-[#FAFAFA] bg-[#F8F9FA] dark:bg-[#1A1A20] hover:bg-[#F1F3F5] dark:hover:bg-[#26262E] border border-[#E5E7EB] dark:border-[#27272A] transition-colors flex items-center justify-between cursor-pointer"
+            className="w-full h-8 px-3 rounded-lg text-xs text-foreground-secondary hover:text-foreground bg-surface-subtle hover:bg-muted border border-border transition-colors flex items-center justify-between cursor-pointer"
           >
             <div className="flex items-center gap-2">
-              <Search className="w-3.5 h-3.5 text-[#94A3B8]" />
+              <Search className="w-3.5 h-3.5 text-foreground-muted" />
               <span className="font-medium">{t.common.search}</span>
             </div>
-            <kbd className="text-[10px] font-mono px-1 py-0.2 rounded bg-white dark:bg-[#121215] text-[#64748B] dark:text-[#94A3B8] border border-[#E5E7EB] dark:border-[#27272A]">
+            <kbd className="text-[10px] font-mono px-1 py-0.2 rounded bg-surface text-foreground-secondary border border-border">
               ⌘K
             </kbd>
           </button>
@@ -408,7 +408,7 @@ export function BottomNav({
         <div className="flex-1 px-3 py-2 overflow-y-auto no-scrollbar flex flex-col gap-4">
           {sidebarGroups.map((group, gIdx) => (
             <div key={gIdx} className="flex flex-col gap-1">
-              <span className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-[#94A3B8] dark:text-[#64748B]">
+              <span className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-foreground-muted">
                 {group.title}
               </span>
               <div className="flex flex-col gap-0.5">
@@ -419,8 +419,8 @@ export function BottomNav({
                     className={cn(
                       "px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2.5 transition-all cursor-pointer",
                       item.isActive
-                        ? "bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A] shadow-2xs font-bold"
-                        : "text-[#64748B] dark:text-[#94A3B8] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]",
+                        ? "bg-primary text-primary-foreground shadow-2xs font-bold"
+                        : "text-foreground-secondary hover:bg-muted hover:text-foreground",
                     )}
                   >
                     <item.icon className="w-4 h-4 shrink-0" />
@@ -433,7 +433,7 @@ export function BottomNav({
         </div>
 
         {/* Footer: Privacy, Theme & Logout */}
-        <div className="p-3 border-t border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-2 bg-[#F8F9FA]/50 dark:bg-[#1A1A20]/30">
+        <div className="p-3 border-t border-border flex flex-col gap-2 bg-surface-subtle/50">
           <div className="flex items-center justify-between gap-1">
             <PrivacyToggle />
             <ThemeToggle />
@@ -442,7 +442,7 @@ export function BottomNav({
           <form action={logout}>
             <button
               type="submit"
-              className="w-full flex items-center justify-center gap-2 py-1.5 rounded-lg bg-[#FFF1F2] dark:bg-[#881337]/20 text-[#BE123C] dark:text-[#FB7185] font-bold text-xs hover:bg-[#FFE4E6] dark:hover:bg-[#881337]/30 transition-colors border border-[#FECDD3] dark:border-[#9F1239]/40 cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 py-1.5 rounded-lg bg-destructive-muted text-destructive font-bold text-xs hover:opacity-90 transition-colors border border-destructive/30 cursor-pointer"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span>{t.nav.signOut}</span>
@@ -455,17 +455,17 @@ export function BottomNav({
       {isMoreMenuOpen && (
         <div className="fixed inset-0 z-50 flex items-end justify-center md:hidden">
           <div
-            className="fixed inset-0 bg-[#0F172A]/70 dark:bg-black/80"
+            className="fixed inset-0 bg-overlay"
             onClick={() => setIsMoreMenuOpen(false)}
           />
-          <div className="relative w-full bg-white dark:bg-[#121215] rounded-t-xl border-t border-[#E5E7EB] dark:border-[#27272A] p-5 z-10 max-h-[85vh] overflow-y-auto">
+          <div className="relative w-full bg-surface rounded-t-xl border-t border-border p-5 z-10 max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-sm uppercase tracking-wider text-[#0F172A] dark:text-[#FAFAFA]">
+              <h3 className="font-bold text-sm uppercase tracking-wider text-foreground">
                 {t.nav.more}
               </h3>
               <button
                 onClick={() => setIsMoreMenuOpen(false)}
-                className="p-1 text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] rounded-md cursor-pointer"
+                className="p-1 text-foreground-muted hover:text-foreground rounded-md cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -477,15 +477,15 @@ export function BottomNav({
                 setIsMoreMenuOpen(false);
                 setIsSearchOpen(true);
               }}
-              className="w-full flex items-center justify-between p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] hover:bg-[#F1F3F5] dark:hover:bg-[#26262E] transition-colors border border-[#E5E7EB] dark:border-[#27272A] mb-3 text-left cursor-pointer"
+              className="w-full flex items-center justify-between p-3 rounded-lg bg-surface-subtle hover:bg-muted transition-colors border border-border mb-3 text-left cursor-pointer"
             >
               <div className="flex items-center gap-2.5">
-                <Search className="w-4 h-4 text-[#64748B] dark:text-[#94A3B8]" />
-                <span className="text-xs font-bold text-[#0F172A] dark:text-[#FAFAFA]">
+                <Search className="w-4 h-4 text-foreground-secondary" />
+                <span className="text-xs font-bold text-foreground">
                   {t.nav.globalSearch}
                 </span>
               </div>
-              <span className="text-[10px] font-mono text-[#94A3B8]">
+              <span className="text-[10px] font-mono text-foreground-muted">
                 Ctrl+K
               </span>
             </button>
@@ -496,16 +496,16 @@ export function BottomNav({
                   key={link.href}
                   href={link.href}
                   onClick={() => setIsMoreMenuOpen(false)}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] hover:bg-[#F1F3F5] dark:hover:bg-[#26262E] transition-colors border border-[#E5E7EB] dark:border-[#27272A]"
+                  className="flex items-center gap-3 p-3 rounded-lg bg-surface-subtle hover:bg-muted transition-colors border border-border"
                 >
-                  <div className="w-8 h-8 rounded-md bg-white dark:bg-[#121215] text-[#0F172A] dark:text-[#FAFAFA] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-md bg-surface text-foreground border border-border flex items-center justify-center shrink-0">
                     <link.icon className="w-4 h-4" />
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <div className="text-xs font-bold text-[#0F172A] dark:text-[#FAFAFA] truncate">
+                    <div className="text-xs font-bold text-foreground truncate">
                       {link.label}
                     </div>
-                    <div className="text-[11px] text-[#64748B] dark:text-[#94A3B8] truncate">
+                    <div className="text-[11px] text-foreground-secondary truncate">
                       {link.desc}
                     </div>
                   </div>
@@ -516,7 +516,7 @@ export function BottomNav({
             <form action={logout}>
               <button
                 type="submit"
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-[#FFF1F2] dark:bg-[#881337]/20 text-[#BE123C] dark:text-[#FB7185] font-bold text-xs hover:bg-[#FFE4E6] dark:hover:bg-[#881337]/30 transition-colors border border-[#FECDD3] dark:border-[#9F1239]/40 cursor-pointer"
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-destructive-muted text-destructive font-bold text-xs hover:opacity-90 transition-colors border border-destructive/30 cursor-pointer"
               >
                 <LogOut className="w-3.5 h-3.5" />
                 {t.nav.signOut}

@@ -11,7 +11,7 @@ export function TransactionsSkeleton() {
       </div>
 
       {/* 2. Filter Card Skeleton (1:1 with TransactionFilters) */}
-      <div className="flex flex-col gap-2 p-3 sm:p-4 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] shadow-2xs">
+      <div className="flex flex-col gap-2 p-3 sm:p-4 rounded-xl bg-surface border border-border shadow-2xs">
         {/* Row 1: Search Input & Filter Button */}
         <div className="flex items-center gap-2">
           <Skeleton className="h-8 sm:h-9 flex-1 rounded-lg bg-slate-100 dark:bg-[#1A1A20]" />
@@ -42,7 +42,7 @@ export function TransactionsSkeleton() {
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="flex items-center justify-between p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] shadow-2xs"
+                className="flex items-center justify-between p-3 sm:p-3.5 rounded-xl bg-surface border border-border shadow-2xs"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <Skeleton className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-[#1A1A20] shrink-0" />
@@ -71,7 +71,7 @@ export function TransactionsSkeleton() {
             {[1, 2].map((i) => (
               <div
                 key={i}
-                className="flex items-center justify-between p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] shadow-2xs"
+                className="flex items-center justify-between p-3 sm:p-3.5 rounded-xl bg-surface border border-border shadow-2xs"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <Skeleton className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-[#1A1A20] shrink-0" />

@@ -131,7 +131,7 @@ export function NumberInput({
   const display = (
     <>
       {currency && showCurrency && (
-        <span className="shrink-0 font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+        <span className="shrink-0 font-bold text-foreground">
           {currency}
         </span>
       )}
@@ -146,10 +146,10 @@ export function NumberInput({
     return (
       <div
         className={cn(
-          "relative overflow-hidden rounded-xl border bg-white shadow-2xs transition-all dark:bg-[#121215]",
+          "relative overflow-hidden rounded-xl border bg-surface shadow-2xs transition-all",
           isOpen
-            ? "border-[#0F172A] ring-2 ring-[#0F172A]/10 dark:border-[#FAFAFA] dark:ring-[#FAFAFA]/10"
-            : "border-[#E5E7EB] dark:border-[#27272A]",
+            ? "border-border-strong ring-2 ring-ring/10"
+            : "border-border",
           className,
         )}
       >
@@ -158,15 +158,15 @@ export function NumberInput({
           disabled={disabled}
           data-required={required || undefined}
           onClick={() => setOpen(!isOpen)}
-          className="group w-full cursor-pointer p-4 text-left transition-all hover:bg-[#F8F9FA] dark:hover:bg-[#16161A]"
+          className="group w-full cursor-pointer p-4 text-left transition-all hover:bg-canvas dark:hover:bg-surface-subtle"
         >
           <div className="flex items-center justify-between pr-8">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
               {label}
             </span>
-            <Calculator className="h-4 w-4 text-[#94A3B8] group-hover:text-blue-500" />
+            <Calculator className="h-4 w-4 text-foreground-muted group-hover:text-info" />
           </div>
-          <div className="mt-1 overflow-x-auto whitespace-nowrap text-right text-xs font-mono font-semibold tracking-wide text-[#64748B] dark:text-[#94A3B8] no-scrollbar">
+          <div className="mt-1 overflow-x-auto whitespace-nowrap text-right text-xs font-mono font-semibold tracking-wide text-muted-foreground no-scrollbar">
             {formattedValue}
           </div>
           <div className="flex items-baseline gap-2 pt-1 text-4xl">{display}</div>
@@ -178,7 +178,7 @@ export function NumberInput({
   return (
     <div className="flex w-full flex-col gap-1.5">
       {label && (
-        <label className="text-[11px] font-bold uppercase tracking-wider text-[#475569] dark:text-[#94A3B8]">
+        <label className="text-[11px] font-bold uppercase tracking-wider text-foreground-secondary">
           {label}
         </label>
       )}
@@ -189,24 +189,24 @@ export function NumberInput({
         autoFocus={autoFocus}
         onClick={() => setOpen(!isOpen)}
         className={cn(
-          "flex w-full items-center justify-between rounded-lg border bg-[#F8F9FA] text-left text-sm text-[#0F172A] transition-colors dark:border-[#27272A] dark:bg-[#1A1A20] dark:text-[#F8FAFC]",
+          "flex w-full items-center justify-between rounded-lg border border-border bg-canvas dark:bg-surface-subtle text-left text-sm text-foreground transition-colors",
           compact ? "min-h-8 px-2 py-1.5" : "min-h-10 px-3.5 py-2.5",
           isOpen
-            ? "border-[#0F172A] ring-1 ring-[#0F172A]/10 dark:border-[#FAFAFA]"
-            : "border-[#E5E7EB]",
-          error && "border-[#E11D48]",
+            ? "border-border-strong ring-1 ring-ring/10"
+            : "",
+          error && "border-destructive",
           bare &&
             "justify-end border-0 bg-transparent p-0 min-h-0 ring-0 hover:bg-transparent dark:bg-transparent dark:border-0",
         )}
       >
         <span className={cn("flex min-w-0 flex-1 items-baseline gap-2 text-base", bare && "justify-end")}>
           {leftIcon}
-          <span className={cn("flex min-w-0 flex-1 items-baseline gap-2 truncate", !value && "text-[#94A3B8]", compact ? "text-sm" : "text-base", bare && "justify-end text-right")}>
+          <span className={cn("flex min-w-0 flex-1 items-baseline gap-2 truncate", !value && "text-foreground-muted", compact ? "text-sm" : "text-base", bare && "justify-end text-right")}>
             {display}
           </span>
         </span>
       </button>
-      {error && <p className="mt-0.5 text-xs font-semibold text-[#E11D48]">{error}</p>}
+      {error && <p className="mt-0.5 text-xs font-semibold text-destructive">{error}</p>}
       <BottomSheet
         isOpen={isOpen}
         onClose={() => setOpen(false)}
@@ -214,8 +214,8 @@ export function NumberInput({
         className="max-w-lg"
       >
         <div className="flex flex-col gap-3">
-          <div className="rounded-xl border border-[#E5E7EB] bg-white p-4 dark:border-[#27272A] dark:bg-[#121215]">
-            <div className="overflow-x-auto whitespace-nowrap text-right text-xs font-mono font-semibold tracking-wide text-[#64748B] dark:text-[#94A3B8] no-scrollbar">
+          <div className="rounded-xl border border-border bg-surface p-4">
+            <div className="overflow-x-auto whitespace-nowrap text-right text-xs font-mono font-semibold tracking-wide text-muted-foreground no-scrollbar">
               {formattedValue}
             </div>
             <div className="flex items-baseline gap-2 pt-1 text-4xl sm:text-5xl">

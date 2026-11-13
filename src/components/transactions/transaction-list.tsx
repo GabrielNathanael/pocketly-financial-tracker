@@ -83,10 +83,10 @@ export function TransactionList({
           <div key={dateKey} className="flex flex-col gap-1.5">
             {/* Day Header Row with clean non-repetitive date */}
             <div className="flex items-center justify-between px-1 text-xs">
-              <span className="font-bold text-[#64748B] dark:text-[#94A3B8] uppercase tracking-wider text-[10px]">
+              <span className="font-bold text-foreground-secondary uppercase tracking-wider text-[10px]">
                 {formatLedgerDateHeader(dateKey, language)}
               </span>
-              <span className="font-mono font-bold text-[#64748B] dark:text-[#94A3B8] tnum">
+              <span className="font-mono font-bold text-foreground-secondary tnum">
                 {dayNet >= 0 ? "+" : ""}
                 {formatCurrency(dayNet, displayCurrency)}
               </span>
@@ -104,10 +104,10 @@ export function TransactionList({
 
       {/* Pagination Load More Controls */}
       {hasMore && (
-        <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs">
-          <span className="text-[#64748B] dark:text-[#94A3B8] font-medium text-center sm:text-left">
+        <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 rounded-xl bg-surface border border-border text-xs">
+          <span className="text-foreground-secondary font-medium text-center sm:text-left">
             {t.common.showing}{" "}
-            <span className="font-bold text-[#0F172A] dark:text-[#FAFAFA]">
+            <span className="font-bold text-foreground">
               {paginatedTransactions.length}
             </span>{" "}
             / {visibleTransactions.length}
@@ -130,7 +130,7 @@ export function TransactionList({
               variant="ghost"
               size="sm"
               onClick={() => setDisplayLimit(visibleTransactions.length)}
-              className="flex-1 sm:flex-initial text-xs text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] cursor-pointer"
+              className="flex-1 sm:flex-initial text-xs text-foreground-secondary hover:text-foreground cursor-pointer"
             >
               {t.common.showAll}
             </Button>

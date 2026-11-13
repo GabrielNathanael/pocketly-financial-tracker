@@ -46,24 +46,24 @@ export function AccountsManager({ accounts, exchangeRate }: AccountsManagerProps
     <div className="flex flex-col gap-5">
       {/* Dynamic Bilingual Header */}
       <div>
-        <h1 className="text-xl font-bold tracking-tight text-[#0F172A] dark:text-[#F8FAFC]">
+        <h1 className="text-xl font-bold tracking-tight text-foreground">
           {t.accounts.title}
         </h1>
-        <p className="text-xs text-[#64748B] dark:text-[#94A3B8] font-mono">
+        <p className="text-xs text-foreground-secondary font-mono">
           {t.accounts.subtitle}
         </p>
       </div>
 
       {/* Top Banner Card */}
-      <div className="p-5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="p-5 rounded-xl bg-surface border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="min-w-0">
-          <span className="text-[10px] font-bold text-[#64748B] dark:text-[#94A3B8] uppercase tracking-wider block">
+          <span className="text-[10px] font-bold text-foreground-secondary uppercase tracking-wider block">
             {t.accounts.aggregateLiquidity}
           </span>
-          <h2 className={`font-mono font-bold text-[#0F172A] dark:text-[#F8FAFC] tracking-tight mt-0.5 tnum leading-tight ${getLiquidityFontSize(formattedLiquidity.length)}`}>
+          <h2 className={`font-mono font-bold text-foreground tracking-tight mt-0.5 tnum leading-tight ${getLiquidityFontSize(formattedLiquidity.length)}`}>
             {formattedLiquidity}
           </h2>
-          <span className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-1 block">
+          <span className="text-xs text-foreground-secondary mt-1 block">
             {t.accounts.acrossAccounts.replace('{n}', String(accounts.length))}
           </span>
         </div>

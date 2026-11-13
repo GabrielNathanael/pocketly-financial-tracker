@@ -39,15 +39,15 @@ export function AvatarPicker({
               className={cn(
                 "relative rounded-2xl p-1 transition-colors",
                 selected
-                  ? "ring-2 ring-[#0F172A] dark:ring-[#FAFAFA]"
-                  : "ring-1 ring-[#E5E7EB] dark:border-[#27272A] hover:ring-[#94A3B8]",
+                  ? "ring-2 ring-ring"
+                  : "ring-1 ring-border hover:ring-foreground-muted",
               )}
               aria-label={`${o.style}-${o.seed}`}
             >
               <DiceAvatar name="" style={o.style} seed={o.seed} size="xl" className="w-full h-auto aspect-square" />
               {selected && (
-                <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-[#0F172A] dark:bg-[#FAFAFA] flex items-center justify-center">
-                  <Check className="w-3 h-3 text-white dark:text-[#0F172A] stroke-3" />
+                <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                  <Check className="w-3 h-3 text-primary-foreground stroke-3" />
                 </span>
               )}
             </button>

@@ -203,10 +203,10 @@ export function RecurringManager({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-[#0F172A] dark:text-[#F8FAFC]">
+          <h1 className="text-xl font-bold tracking-tight text-foreground">
             {t.recurring.title}
           </h1>
-          <p className="text-xs text-[#64748B] dark:text-[#94A3B8] font-mono leading-relaxed mt-0.5">
+          <p className="text-xs text-foreground-secondary font-mono leading-relaxed mt-0.5">
             {t.recurring.subtitle}
           </p>
         </div>
@@ -217,7 +217,7 @@ export function RecurringManager({
             setModalOpen(true)
           }}
           size="sm"
-          className="gap-1.5 cursor-pointer text-xs font-bold bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] self-start sm:self-auto"
+          className="gap-1.5 cursor-pointer text-xs font-bold bg-primary text-primary-foreground self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
           <span>{t.recurring.addBtn}</span>
@@ -227,60 +227,60 @@ export function RecurringManager({
       {/* Scorecard: 4 Metric Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
         {/* Card 1: Monthly Outflow */}
-        <div className="p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col justify-between gap-1.5 shadow-2xs">
+        <div className="p-3 sm:p-3.5 rounded-xl bg-surface border border-border flex flex-col justify-between gap-1.5 shadow-2xs">
           <div className="flex items-center justify-between gap-1 min-h-5.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] leading-tight">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary leading-tight">
               {t.recurring.monthlyCommitment}
             </span>
-            <TrendingDown className="w-3.5 h-3.5 text-[#E11D48] shrink-0" />
+            <TrendingDown className="w-3.5 h-3.5 text-destructive shrink-0" />
           </div>
           <div>
-            <h3 className="text-sm sm:text-base font-bold font-mono text-[#E11D48] tracking-tight tnum">
+            <h3 className="text-sm sm:text-base font-bold font-mono text-destructive tracking-tight tnum">
               -{maskCurrency(formatCurrency(monthlyOutflow, displayCurrency), isPrivate)}
             </h3>
-            <span className="text-[10px] font-mono text-[#94A3B8] mt-0.5 block">
+            <span className="text-[10px] font-mono text-foreground-muted mt-0.5 block">
               /{t.recurring.perMonth}
             </span>
           </div>
         </div>
 
         {/* Card 2: Monthly Inflow */}
-        <div className="p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col justify-between gap-1.5 shadow-2xs">
+        <div className="p-3 sm:p-3.5 rounded-xl bg-surface border border-border flex flex-col justify-between gap-1.5 shadow-2xs">
           <div className="flex items-center justify-between gap-1 min-h-5.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] leading-tight">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary leading-tight">
               {t.recurring.monthlyIncome}
             </span>
-            <TrendingUp className="w-3.5 h-3.5 text-[#0D9488] shrink-0" />
+            <TrendingUp className="w-3.5 h-3.5 text-success shrink-0" />
           </div>
           <div>
-            <h3 className="text-sm sm:text-base font-bold font-mono text-[#0D9488] tracking-tight tnum">
+            <h3 className="text-sm sm:text-base font-bold font-mono text-success tracking-tight tnum">
               +{maskCurrency(formatCurrency(monthlyInflow, displayCurrency), isPrivate)}
             </h3>
-            <span className="text-[10px] font-mono text-[#94A3B8] mt-0.5 block">
+            <span className="text-[10px] font-mono text-foreground-muted mt-0.5 block">
               /{t.recurring.perMonth}
             </span>
           </div>
         </div>
 
         {/* Card 3: Net Cashflow */}
-        <div className="p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col justify-between gap-1.5 shadow-2xs">
+        <div className="p-3 sm:p-3.5 rounded-xl bg-surface border border-border flex flex-col justify-between gap-1.5 shadow-2xs">
           <div className="flex items-center justify-between gap-1 min-h-5.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] leading-tight">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary leading-tight">
               {t.recurring.netCommitment}
             </span>
-            <Scale className="w-3.5 h-3.5 text-[#0F172A] dark:text-[#FAFAFA] shrink-0" />
+            <Scale className="w-3.5 h-3.5 text-foreground shrink-0" />
           </div>
           <div>
             <h3
               className={cn(
                 'text-sm sm:text-base font-bold font-mono tracking-tight tnum',
-                netMonthly >= 0 ? 'text-[#0D9488]' : 'text-[#E11D48]'
+                netMonthly >= 0 ? 'text-success' : 'text-destructive'
               )}
             >
               {netMonthly >= 0 ? '+' : ''}
               {maskCurrency(formatCurrency(netMonthly, displayCurrency), isPrivate)}
             </h3>
-            <span className="text-[10px] font-mono text-[#94A3B8] mt-0.5 block">
+            <span className="text-[10px] font-mono text-foreground-muted mt-0.5 block">
               {netMonthly >= 0
                 ? t.recurring.surplusCash
                 : t.recurring.deficitNote}
@@ -289,30 +289,30 @@ export function RecurringManager({
         </div>
 
         {/* Card 4: Due in 7 Days */}
-        <div className="p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col justify-between gap-1.5 shadow-2xs">
+        <div className="p-3 sm:p-3.5 rounded-xl bg-surface border border-border flex flex-col justify-between gap-1.5 shadow-2xs">
           <div className="flex items-center justify-between gap-1 min-h-5.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] leading-tight">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary leading-tight">
               {t.recurring.dueSoonBadge}
             </span>
-            <Flame className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+            <Flame className="w-3.5 h-3.5 text-warning shrink-0" />
           </div>
           <div>
             <div className="flex items-baseline gap-1">
-              <span className="text-base sm:text-lg font-bold font-mono tracking-tight text-[#0F172A] dark:text-[#FAFAFA]">
+              <span className="text-base sm:text-lg font-bold font-mono tracking-tight text-foreground">
                 {dueSoonCount}
               </span>
-              <span className="text-[11px] font-medium text-[#64748B] dark:text-[#94A3B8]">
+              <span className="text-[11px] font-medium text-foreground-secondary">
                 {t.recurring.itemsLabel}
               </span>
             </div>
             <div className="mt-0.5 flex items-center gap-1">
               {dueSoonCount > 0 ? (
-                <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                <span className="text-[10px] font-bold text-warning flex items-center gap-1">
                   <AlertTriangle className="w-3 h-3" />
                   <span>{t.recurring.actionRequired}</span>
                 </span>
               ) : (
-                <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                <span className="text-[10px] font-bold text-success flex items-center gap-1">
                   <Sparkles className="w-3 h-3" />
                   <span>{t.recurring.allSettled}</span>
                 </span>
@@ -325,15 +325,15 @@ export function RecurringManager({
       {/* Filter Tabs & Search Bar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         {/* Segmented Tabs without truncation */}
-        <div className="flex items-center gap-1 p-1 bg-[#F1F3F5] dark:bg-[#1A1A20] rounded-xl border border-[#E5E7EB] dark:border-[#27272A] overflow-x-auto">
+        <div className="flex items-center gap-1 p-1 bg-surface-subtle rounded-xl border border-border overflow-x-auto">
           <button
             type="button"
             onClick={() => setActiveTab('all')}
             className={cn(
               'px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer',
               activeTab === 'all'
-                ? 'bg-white dark:bg-[#121215] text-[#0F172A] dark:text-[#FAFAFA] shadow-xs'
-                : 'text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
+                ? 'bg-surface text-foreground shadow-xs'
+                : 'text-foreground-secondary hover:text-foreground'
             )}
           >
             {t.recurring.tabAll}
@@ -344,8 +344,8 @@ export function RecurringManager({
             className={cn(
               'px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer',
               activeTab === 'expense'
-                ? 'bg-white dark:bg-[#121215] text-[#0F172A] dark:text-[#FAFAFA] shadow-xs'
-                : 'text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
+                ? 'bg-surface text-foreground shadow-xs'
+                : 'text-foreground-secondary hover:text-foreground'
             )}
           >
             {t.recurring.tabExpenses}
@@ -356,8 +356,8 @@ export function RecurringManager({
             className={cn(
               'px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer',
               activeTab === 'income'
-                ? 'bg-white dark:bg-[#121215] text-[#0F172A] dark:text-[#FAFAFA] shadow-xs'
-                : 'text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
+                ? 'bg-surface text-foreground shadow-xs'
+                : 'text-foreground-secondary hover:text-foreground'
             )}
           >
             {t.recurring.tabIncome}
@@ -368,8 +368,8 @@ export function RecurringManager({
             className={cn(
               'px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer',
               activeTab === 'paused'
-                ? 'bg-white dark:bg-[#121215] text-[#0F172A] dark:text-[#FAFAFA] shadow-xs'
-                : 'text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
+                ? 'bg-surface text-foreground shadow-xs'
+                : 'text-foreground-secondary hover:text-foreground'
             )}
           >
             {t.recurring.tabPaused}
@@ -378,7 +378,7 @@ export function RecurringManager({
 
         {/* Search Bar */}
         <div className="relative w-full sm:w-64">
-          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
+          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-foreground-muted" />
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -418,14 +418,14 @@ export function RecurringManager({
               <div
                 key={item.id}
                 className={cn(
-                  'p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#121215] border flex flex-col justify-between gap-4 transition-all shadow-2xs',
+                  'p-4 sm:p-5 rounded-2xl bg-surface border flex flex-col justify-between gap-4 transition-all shadow-2xs',
                   !item.is_active
-                    ? 'border-[#E5E7EB] dark:border-[#27272A] opacity-60'
+                    ? 'border-border opacity-60'
                     : isDueNow
-                      ? 'border-rose-300 dark:border-rose-800/80 bg-rose-50/20 dark:bg-rose-950/10'
+                      ? 'border-destructive/30 bg-destructive/10'
                       : isDueSoon
-                        ? 'border-amber-300 dark:border-amber-700/80 bg-amber-50/20 dark:bg-amber-950/10'
-                        : 'border-[#E5E7EB] dark:border-[#27272A] hover:border-[#0F172A] dark:hover:border-[#FAFAFA]'
+                        ? 'border-warning/30 bg-warning/10'
+                        : 'border-border hover:border-primary'
                 )}
               >
                 {/* Card Clickable Top & Middle Area */}
@@ -443,8 +443,8 @@ export function RecurringManager({
                         className={cn(
                           'w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border',
                           isIncome
-                            ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-[#0D9488]'
-                            : 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800 text-[#E11D48]'
+                            ? 'bg-success-muted border-success/30 text-success'
+                            : 'bg-destructive-muted border-destructive/30 text-destructive'
                         )}
                       >
                         <DynamicIcon
@@ -455,16 +455,16 @@ export function RecurringManager({
 
                       <div className="flex flex-col min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-sm font-bold text-[#0F172A] dark:text-[#FAFAFA] truncate">
+                          <span className="text-sm font-bold text-foreground truncate">
                             {item.name}
                           </span>
                           {!item.is_active && (
-                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[#64748B] dark:text-[#94A3B8] shrink-0">
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-foreground-secondary shrink-0">
                               {t.recurring.statusPaused}
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center gap-1.5 text-[11px] text-[#64748B] dark:text-[#94A3B8] truncate mt-0.5">
+                        <div className="flex items-center gap-1.5 text-[11px] text-foreground-secondary truncate mt-0.5">
                           <span>{item.category?.name || t.common.custom}</span>
                           <span>•</span>
                           <span>{item.account?.name || 'Account'} ({item.currency})</span>
@@ -473,7 +473,7 @@ export function RecurringManager({
                     </div>
 
                     {/* Frequency Badge */}
-                    <span className="text-[10px] font-bold font-mono px-2 py-0.5 rounded-md bg-[#F1F3F5] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] shrink-0">
+                    <span className="text-[10px] font-bold font-mono px-2 py-0.5 rounded-md bg-surface-subtle border border-border text-foreground shrink-0">
                       {item.frequency === 'daily'
                         ? t.recurring.frequencyDaily
                         : item.frequency === 'weekly'
@@ -485,14 +485,14 @@ export function RecurringManager({
                   </div>
 
                   {/* Card Middle: Amount & Next Due Date */}
-                  <div className="flex items-end justify-between gap-3 pt-2 border-t border-[#E5E7EB] dark:border-[#27272A]">
+                  <div className="flex items-end justify-between gap-3 pt-2 border-t border-border">
                     <div>
-                      <span className="text-[10px] uppercase font-bold tracking-wider text-[#94A3B8] block">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-foreground-muted block">
                         {t.recurring.nextDue}
                       </span>
                       <div className="flex items-center gap-1.5 mt-0.5">
-                        <Calendar className="w-3.5 h-3.5 text-[#64748B] dark:text-[#94A3B8]" />
-                        <span className="text-xs font-mono font-bold text-[#0F172A] dark:text-[#FAFAFA]">
+                        <Calendar className="w-3.5 h-3.5 text-foreground-secondary" />
+                        <span className="text-xs font-mono font-bold text-foreground">
                           {format(parseISO(item.next_due_date), 'dd MMM yyyy', { locale: dateFnsLocale })}
                         </span>
                       </div>
@@ -501,17 +501,17 @@ export function RecurringManager({
                       {item.is_active && (
                         <div className="mt-1">
                           {daysUntil < 0 ? (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-600 dark:text-rose-400">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-destructive">
                               <AlertCircle className="w-3 h-3 shrink-0" />
                               <span>{t.recurring.overdue.replace('{days}', String(Math.abs(daysUntil)))}</span>
                             </span>
                           ) : daysUntil === 0 ? (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-600 dark:text-rose-400 animate-pulse">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-destructive animate-pulse">
                               <Flame className="w-3 h-3 shrink-0" />
                               <span>{t.recurring.dueToday}</span>
                             </span>
                           ) : daysUntil <= 7 ? (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-warning">
                               <Clock className="w-3 h-3 shrink-0" />
                               <span>{t.recurring.dueInDays.replace('{days}', String(daysUntil))}</span>
                             </span>
@@ -524,7 +524,7 @@ export function RecurringManager({
                       <span
                         className={cn(
                           'text-base sm:text-lg font-mono font-bold tracking-tight tnum',
-                          isIncome ? 'text-[#0D9488]' : 'text-[#0F172A] dark:text-[#FAFAFA]'
+                          isIncome ? 'text-success' : 'text-foreground'
                         )}
                       >
                         {isIncome ? '+' : '-'}{maskCurrency(formatCurrency(item.amount, item.currency), isPrivate)}
@@ -534,14 +534,14 @@ export function RecurringManager({
                 </div>
 
                 {/* Card Bottom Actions */}
-                <div className="pt-2 border-t border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-between gap-2">
+                <div className="pt-2 border-t border-border flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5">
                     {/* Toggle Active Button */}
                     <button
                       type="button"
                       disabled={togglingId === item.id}
                       onClick={() => handleToggleActive(item)}
-                      className="p-1.5 rounded-lg text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8] dark:hover:text-[#FAFAFA] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] transition-colors cursor-pointer"
+                      className="p-1.5 rounded-lg text-foreground-secondary hover:text-foreground hover:bg-surface-subtle transition-colors cursor-pointer"
                       title={item.is_active ? t.recurring.pause : t.recurring.resume}
                     >
                       {togglingId === item.id ? (
@@ -549,7 +549,7 @@ export function RecurringManager({
                       ) : item.is_active ? (
                         <PauseCircle className="w-3.5 h-3.5" />
                       ) : (
-                        <PlayCircle className="w-3.5 h-3.5 text-emerald-600" />
+                        <PlayCircle className="w-3.5 h-3.5 text-success" />
                       )}
                     </button>
 
@@ -560,7 +560,7 @@ export function RecurringManager({
                         setEditingItem(item)
                         setModalOpen(true)
                       }}
-                      className="p-1.5 rounded-lg text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8] dark:hover:text-[#FAFAFA] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] transition-colors cursor-pointer"
+                      className="p-1.5 rounded-lg text-foreground-secondary hover:text-foreground hover:bg-surface-subtle transition-colors cursor-pointer"
                       title={t.common.edit}
                     >
                       <Edit2 className="w-3.5 h-3.5" />
@@ -570,7 +570,7 @@ export function RecurringManager({
                     <button
                       type="button"
                       onClick={() => setDeletingId(item.id)}
-                      className="p-1.5 rounded-lg text-[#64748B] hover:text-rose-600 dark:text-[#94A3B8] dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+                      className="p-1.5 rounded-lg text-foreground-secondary hover:text-destructive hover:bg-destructive-muted transition-colors cursor-pointer"
                       title={t.common.delete}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -585,8 +585,8 @@ export function RecurringManager({
                     className={cn(
                       'text-xs font-bold gap-1.5 cursor-pointer h-8 px-3.5 whitespace-nowrap shrink-0',
                       isDueNow
-                        ? 'bg-rose-600 hover:bg-rose-700 text-white'
-                        : 'bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A]'
+                        ? 'bg-destructive hover:bg-destructive-hover text-destructive-foreground'
+                        : 'bg-primary text-primary-foreground'
                     )}
                   >
                     {processingId === item.id ? (

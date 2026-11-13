@@ -13,10 +13,10 @@ export function TransactionsHeader({ count }: TransactionsHeaderProps) {
   return (
     <div className="flex items-center justify-between">
       <div>
-        <h1 className="text-xl font-bold tracking-tight text-[#0F172A] dark:text-[#F8FAFC]">
+        <h1 className="text-xl font-bold tracking-tight text-foreground">
           {t.transactions.title}
         </h1>
-        <p className="text-xs text-[#64748B] dark:text-[#94A3B8] font-mono">
+        <p className="text-xs text-foreground-secondary font-mono">
           {language === 'en'
             ? `${count} ledger entries matching current filters`
             : `${count} catatan transaksi sesuai filter`}

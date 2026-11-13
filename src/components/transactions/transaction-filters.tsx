@@ -117,14 +117,14 @@ export function TransactionFilters({
   };
 
   return (
-    <div className="flex flex-col gap-2 p-3 sm:p-4 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] shadow-2xs">
+    <div className="flex flex-col gap-2 p-3 sm:p-4 rounded-xl bg-surface border border-border shadow-2xs">
       {/* Row 1: Search Bar & Advanced Filter Toggle */}
       <div className="flex items-center gap-2">
         <div className="relative flex-1 min-w-0">
           {isPending ? (
             <Loader2 className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-blue-500 animate-spin pointer-events-none" />
           ) : (
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none" />
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-foreground-muted pointer-events-none" />
           )}
           <input
             type="text"
@@ -138,7 +138,7 @@ export function TransactionFilters({
               return () => clearTimeout(timer);
             }}
             className={cn(
-              "w-full pl-8.5 pr-3 py-1.5 sm:py-2 text-xs bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] rounded-lg text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#0F172A] dark:focus:border-white transition-all",
+              "w-full pl-8.5 pr-3 py-1.5 sm:py-2 text-xs bg-canvas dark:bg-surface-subtle border border-border rounded-lg text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-foreground-muted focus:outline-none focus:border-[#0F172A] dark:focus:border-white transition-all",
               isPending && "bg-blue-50/20 dark:bg-blue-950/10 border-blue-200 dark:border-blue-900/40"
             )}
           />
@@ -151,7 +151,7 @@ export function TransactionFilters({
             "p-1.5 sm:p-2 rounded-lg border transition-colors shrink-0 flex items-center justify-center cursor-pointer",
             hasAdvancedFilters || isOpen
               ? "bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A] border-transparent"
-              : "bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] dark:text-[#94A3B8] border-[#E5E7EB] dark:border-[#27272A] hover:bg-[#F1F3F5] dark:hover:bg-[#26262E]",
+              : "bg-[#F8F9FA] dark:bg-[#1A1A20] text-foreground-secondary border-border hover:bg-[#F1F3F5] dark:hover:bg-[#26262E]",
           )}
           title={t.common.filter}
         >
@@ -170,7 +170,7 @@ export function TransactionFilters({
               "px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-md text-[11px] font-semibold transition-colors shrink-0 cursor-pointer border",
               currentType === "all"
                 ? "bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A] border-transparent"
-                : "bg-white dark:bg-[#121215] text-[#64748B] dark:text-[#94A3B8] border-[#E5E7EB] dark:border-[#27272A] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20]",
+                : "bg-white dark:bg-[#121215] text-foreground-secondary border-border hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20]",
             )}
           >
             {t.common.all}
@@ -182,8 +182,8 @@ export function TransactionFilters({
             className={cn(
               "px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-md text-[11px] font-semibold transition-colors shrink-0 cursor-pointer border inline-flex items-center gap-1",
               currentType === "expense"
-                ? "bg-[#E11D48] text-white border-transparent"
-                : "bg-white dark:bg-[#121215] text-[#64748B] dark:text-[#94A3B8] border-[#E5E7EB] dark:border-[#27272A] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20]",
+                ? "bg-destructive text-destructive-foreground border-transparent"
+                : "bg-surface text-foreground-secondary border-border hover:bg-surface-hover",
             )}
           >
             <ArrowDownRight className="w-3 h-3 stroke-[2.5]" />
@@ -198,8 +198,8 @@ export function TransactionFilters({
             className={cn(
               "px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-md text-[11px] font-semibold transition-colors shrink-0 cursor-pointer border inline-flex items-center gap-1",
               currentType === "income"
-                ? "bg-[#0D9488] text-white border-transparent"
-                : "bg-white dark:bg-[#121215] text-[#64748B] dark:text-[#94A3B8] border-[#E5E7EB] dark:border-[#27272A] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20]",
+                ? "bg-success text-success-foreground border-transparent"
+                : "bg-surface text-foreground-secondary border-border hover:bg-surface-hover",
             )}
           >
             <ArrowUpRight className="w-3 h-3 stroke-[2.5]" />
@@ -236,10 +236,10 @@ export function TransactionFilters({
 
       {/* Row 3: Collapsible Advanced Filters (2 Separate Category Selectors) */}
       {isOpen && (
-        <div className="pt-2.5 border-t border-[#E5E7EB] dark:border-[#27272A] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2.5">
+        <div className="pt-2.5 border-t border-border grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2.5">
           {/* 1. Account Filter */}
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary">
               {t.common.account}
             </label>
             <SearchableSelect
@@ -262,7 +262,7 @@ export function TransactionFilters({
 
           {/* 2. Expense Category Filter */}
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-[#E11D48] flex items-center gap-1">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-destructive flex items-center gap-1">
               <ArrowDownRight className="w-3 h-3" />
               <span>{t.transactions.expenseCategoryFilter}</span>
             </label>
@@ -280,7 +280,7 @@ export function TransactionFilters({
                   value: c.id,
                   label: formatCategoryName(c.name, language),
                   icon: c.icon || "Tag",
-                  iconColor: "text-[#E11D48]",
+                  iconColor: "text-destructive",
                 })),
               ]}
               placeholder={t.transactions.allExpenseCategories}
@@ -291,7 +291,7 @@ export function TransactionFilters({
 
           {/* 3. Income Category Filter */}
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-[#0D9488] flex items-center gap-1">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-success flex items-center gap-1">
               <ArrowUpRight className="w-3 h-3" />
               <span>{t.transactions.incomeCategoryFilter}</span>
             </label>
@@ -309,7 +309,7 @@ export function TransactionFilters({
                   value: c.id,
                   label: formatCategoryName(c.name, language),
                   icon: c.icon || "Tag",
-                  iconColor: "text-[#0D9488]",
+                  iconColor: "text-success",
                 })),
               ]}
               placeholder={t.transactions.allIncomeCategories}
@@ -320,7 +320,7 @@ export function TransactionFilters({
 
           {/* 4. Tagar (#tags) Filter */}
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] flex items-center gap-1">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary flex items-center gap-1">
               <Hash className="w-3 h-3 text-[#64748B]" />
               <span>{t.transactions.tagLabel}</span>
             </label>
@@ -342,7 +342,7 @@ export function TransactionFilters({
 
           {/* 5. Unified Date Range Filter */}
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary">
               {t.transactions.dateRange}
             </label>
             <DateRangePicker
@@ -360,7 +360,7 @@ export function TransactionFilters({
               <button
                 type="button"
                 onClick={handleReset}
-                className="text-xs text-[#E11D48] hover:underline flex items-center gap-1 cursor-pointer font-semibold"
+                className="text-xs text-destructive hover:underline flex items-center gap-1 cursor-pointer font-semibold"
               >
                 <X className="w-3.5 h-3.5" />
                 <span>{t.common.resetFilter}</span>

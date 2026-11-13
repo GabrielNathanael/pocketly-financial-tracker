@@ -88,16 +88,16 @@ type PeriodType = "this_month" | "last_month" | "this_year" | "custom";
 
 // Palette for Category Donut Chart
 const DONUT_COLORS = [
-  "#0F172A",
-  "#0D9488",
-  "#E11D48",
-  "#F59E0B",
-  "#3B82F6",
-  "#8B5CF6",
-  "#EC4899",
-  "#10B981",
-  "#6366F1",
-  "#64748B",
+  "var(--token-primary)",
+  "var(--token-success)",
+  "var(--token-destructive)",
+  "var(--token-warning)",
+  "var(--token-info)",
+  "var(--token-foreground-secondary)",
+  "var(--token-accent)",
+  "var(--token-muted-foreground)",
+  "var(--token-foreground-muted)",
+  "var(--token-primary)",
 ];
 
 export function ReportsView({
@@ -967,11 +967,11 @@ export function ReportsView({
 
     const getStyles = () => ({
       containerClassName:
-        "bg-[#F8F9FA] dark:bg-[#1A1A20] border-[#E5E7EB] dark:border-[#27272A]",
+        "bg-surface-subtle border-border",
       iconBoxClassName:
-        "bg-white dark:bg-[#121215] text-[#0F172A] dark:text-[#FAFAFA] border border-[#E5E7EB] dark:border-[#27272A]",
+        "bg-surface text-foreground border border-border",
       badgeClassName:
-        "bg-white dark:bg-[#121215] text-[#0F172A] dark:text-[#FAFAFA] border border-[#E5E7EB] dark:border-[#27272A]",
+        "bg-surface text-foreground border border-border",
     });
 
     // 1. Savings Rate / Buffer Health Evaluation
@@ -1546,10 +1546,10 @@ export function ReportsView({
         {/* Header with Title & Action Buttons */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-[#0F172A] dark:text-[#F8FAFC]">
+            <h1 className="text-xl font-bold tracking-tight text-foreground">
               {t.reports.title}
             </h1>
-            <p className="text-xs text-[#64748B] dark:text-[#94A3B8] font-mono leading-relaxed mt-0.5">
+            <p className="text-xs text-foreground-secondary font-mono leading-relaxed mt-0.5">
               {t.reports.subtitle}
             </p>
           </div>
@@ -1559,7 +1559,7 @@ export function ReportsView({
               onClick={handlePrint}
               size="sm"
               disabled={isGeneratingPdf}
-              className="gap-1.5 cursor-pointer text-xs font-bold bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A]"
+              className="gap-1.5 cursor-pointer text-xs font-bold bg-primary text-primary-foreground"
             >
               <Printer className="w-3.5 h-3.5" />
               <span>{isGeneratingPdf ? "…" : t.reports.printBtn}</span>
@@ -1571,7 +1571,7 @@ export function ReportsView({
         <div className="flex flex-col gap-2.5">
           <div className="flex flex-col sm:flex-row sm:items-center gap-2.5">
             {/* Period Segmented Controls */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 p-1 bg-[#F1F3F5] dark:bg-[#1A1A20] rounded-xl border border-[#E5E7EB] dark:border-[#27272A] gap-1 flex-1">
+            <div className="grid grid-cols-2 sm:grid-cols-4 p-1 bg-muted rounded-xl border border-border gap-1 flex-1">
               <button
                 type="button"
                 onClick={() => {
@@ -1581,8 +1581,8 @@ export function ReportsView({
                 className={cn(
                   "py-2 px-3 rounded-lg text-xs font-bold transition-all text-center cursor-pointer",
                   period === "this_month"
-                    ? "bg-white dark:bg-[#121215] text-[#0F172A] dark:text-[#FAFAFA] shadow-xs"
-                    : "text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8] dark:hover:text-[#FAFAFA]",
+                    ? "bg-surface text-foreground shadow-xs"
+                    : "text-foreground-secondary hover:text-foreground",
                 )}
               >
                 {t.reports.periodThisMonth}
@@ -1596,8 +1596,8 @@ export function ReportsView({
                 className={cn(
                   "py-2 px-3 rounded-lg text-xs font-bold transition-all text-center cursor-pointer",
                   period === "last_month"
-                    ? "bg-white dark:bg-[#121215] text-[#0F172A] dark:text-[#FAFAFA] shadow-xs"
-                    : "text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8] dark:hover:text-[#FAFAFA]",
+                    ? "bg-surface text-foreground shadow-xs"
+                    : "text-foreground-secondary hover:text-foreground",
                 )}
               >
                 {t.reports.periodLastMonth}
@@ -1611,8 +1611,8 @@ export function ReportsView({
                 className={cn(
                   "py-2 px-3 rounded-lg text-xs font-bold transition-all text-center cursor-pointer",
                   period === "this_year"
-                    ? "bg-white dark:bg-[#121215] text-[#0F172A] dark:text-[#FAFAFA] shadow-xs"
-                    : "text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8] dark:hover:text-[#FAFAFA]",
+                    ? "bg-surface text-foreground shadow-xs"
+                    : "text-foreground-secondary hover:text-foreground",
                 )}
               >
                 {t.reports.periodThisYear}
@@ -1626,8 +1626,8 @@ export function ReportsView({
                 className={cn(
                   "py-2 px-3 rounded-lg text-xs font-bold transition-all text-center cursor-pointer",
                   period === "custom"
-                    ? "bg-white dark:bg-[#121215] text-[#0F172A] dark:text-[#FAFAFA] shadow-xs"
-                    : "text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8] dark:hover:text-[#FAFAFA]",
+                    ? "bg-surface text-foreground shadow-xs"
+                    : "text-foreground-secondary hover:text-foreground",
                 )}
               >
                 {t.reports.periodCustom}
@@ -1645,9 +1645,9 @@ export function ReportsView({
                       setSelectedCategoryFilter(null);
                     }}
                   >
-                    <SelectTrigger className="h-10 text-xs font-semibold bg-white dark:bg-[#121215] border-[#E5E7EB] dark:border-[#27272A] rounded-xl px-3">
+                    <SelectTrigger className="h-10 text-xs font-semibold bg-surface border-border rounded-xl px-3">
                       <div className="flex items-center gap-1.5 truncate">
-                        <Hash className="w-3.5 h-3.5 text-[#64748B] shrink-0" />
+                        <Hash className="w-3.5 h-3.5 text-foreground-secondary shrink-0" />
                         <SelectValue placeholder={t.reports.allTags} />
                       </div>
                     </SelectTrigger>
@@ -1675,15 +1675,15 @@ export function ReportsView({
                   "h-10 px-3 text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 shrink-0 cursor-pointer transition-colors",
                   availableTags.length === 0 ? "w-full sm:w-auto" : "",
                   excludedCategoryIds.length > 0
-                    ? "bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-400 font-bold"
-                    : "bg-white dark:bg-[#121215] border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA]",
+                    ? "bg-warning-muted border-warning/40 text-warning font-bold"
+                    : "bg-surface border-border text-foreground",
                 )}
                 title={t.reports.excludeCategoriesTitle}
               >
                 <SlidersHorizontal className="w-3.5 h-3.5" />
                 <span>{t.reports.exclude}</span>
                 {excludedCategoryIds.length > 0 && (
-                  <span className="ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-amber-500 text-white font-bold">
+                  <span className="ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-warning text-warning-foreground font-bold">
                     {excludedCategoryIds.length}
                   </span>
                 )}
@@ -1693,8 +1693,8 @@ export function ReportsView({
 
           {/* Custom Range Picker */}
           {period === "custom" && (
-            <div className="p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-between gap-3">
-              <span className="text-xs font-semibold text-[#64748B] dark:text-[#94A3B8] flex items-center gap-1.5 shrink-0">
+            <div className="p-3.5 rounded-xl bg-surface border border-border flex items-center justify-between gap-3">
+              <span className="text-xs font-semibold text-foreground-secondary flex items-center gap-1.5 shrink-0">
                 <Calendar className="w-3.5 h-3.5" />
                 <span>{t.reports.periodLabel}:</span>
               </span>
@@ -1710,10 +1710,10 @@ export function ReportsView({
           {/* Active Tag Pill Indicator */}
           {selectedTag !== "all" && (
             <div className="flex items-center gap-2 pt-0.5">
-              <span className="text-[11px] text-[#64748B] dark:text-[#94A3B8] font-medium">
+              <span className="text-[11px] text-foreground-secondary font-medium">
                 {t.reports.filteredByTag}
               </span>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A] text-xs font-bold font-mono">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary text-primary-foreground text-xs font-bold font-mono">
                 #{selectedTag}
                 <button
                   type="button"
@@ -1729,21 +1729,21 @@ export function ReportsView({
 
           {/* Active Category Exclusion Warning Banner */}
           {excludedCategoryIds.length > 0 && (
-            <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-              <div className="flex items-start sm:items-center gap-2.5 text-amber-900 dark:text-amber-200 min-w-0">
-                <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5 sm:mt-0" />
+            <div className="p-3.5 rounded-xl bg-warning-muted/80 border border-warning/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="flex items-start sm:items-center gap-2.5 text-foreground min-w-0">
+                <AlertTriangle className="w-4 h-4 shrink-0 text-warning mt-0.5 sm:mt-0" />
                 <div className="truncate">
                   <span className="font-bold">
                     {excludedCategoryIds.length} {t.reports.categoriesExcluded}
                   </span>
                   <span className="mx-1.5 opacity-60">•</span>
-                  <span className="text-[11px] text-amber-700 dark:text-amber-300">
+                  <span className="text-[11px] text-warning">
                     {categoryTab === "expense"
                       ? `${t.reports.hiddenExpense}: ${maskCurrency(formatCurrency(totalExcludedExpense, displayCurrency), isPrivate)}`
                       : `${t.reports.hiddenIncome}: ${maskCurrency(formatCurrency(totalExcludedIncome, displayCurrency), isPrivate)}`}
                   </span>
                   {excludedCategoryNames.length > 0 && (
-                    <span className="hidden md:inline text-[11px] text-amber-600/80 dark:text-amber-400/80 ml-1.5 truncate">
+                    <span className="hidden md:inline text-[11px] text-warning/80 ml-1.5 truncate">
                       ({excludedCategoryNames.slice(0, 3).join(", ")}
                       {excludedCategoryNames.length > 3 ? "..." : ""})
                     </span>
@@ -1757,14 +1757,14 @@ export function ReportsView({
                     setSheetCategoryType(categoryTab);
                     setIsExcludeSheetOpen(true);
                   }}
-                  className="text-xs font-semibold text-amber-800 dark:text-amber-300 underline hover:opacity-80 cursor-pointer"
+                  className="text-xs font-semibold text-warning underline hover:opacity-80 cursor-pointer"
                 >
                   {t.reports.adjust}
                 </button>
                 <button
                   type="button"
                   onClick={() => setExcludedCategoryIds([])}
-                  className="text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-200 dark:bg-amber-900/60 text-amber-900 dark:text-amber-100 hover:bg-amber-300 dark:hover:bg-amber-900 cursor-pointer transition-colors"
+                  className="text-xs font-bold px-2.5 py-1 rounded-lg bg-warning/20 text-foreground hover:bg-warning/30 cursor-pointer transition-colors"
                 >
                   {t.reports.resetAll}
                 </button>
@@ -1776,17 +1776,17 @@ export function ReportsView({
         {/* Financial Health Scorecard (4 Responsive Cards) */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {/* Card 1: Savings Rate */}
-          <div className="p-4 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col justify-between gap-2 shadow-2xs">
+          <div className="p-4 rounded-xl bg-surface border border-border flex flex-col justify-between gap-2 shadow-2xs">
             <div className="flex items-center justify-between gap-1 min-h-7">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] leading-tight">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-foreground-secondary leading-tight">
                 {t.reports.savingsRate}
               </span>
-              <Percent className="w-3.5 h-3.5 text-[#64748B] dark:text-[#94A3B8] shrink-0" />
+              <Percent className="w-3.5 h-3.5 text-foreground-secondary shrink-0" />
             </div>
 
             <div>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-xl font-black font-mono tracking-tight text-[#0F172A] dark:text-[#FAFAFA]">
+                <span className="text-xl font-black font-mono tracking-tight text-foreground">
                   {savingsRate >= 0
                     ? `+${savingsRate.toFixed(1)}%`
                     : `${savingsRate.toFixed(1)}%`}
@@ -1795,17 +1795,17 @@ export function ReportsView({
 
               <div className="mt-2 flex items-center gap-1.5">
                 {savingsRate >= 30 ? (
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-success-muted text-success border border-success/30">
                     <Sparkles className="w-3 h-3" />
                     {t.reports.savingsRateHealthy}
                   </span>
                 ) : savingsRate >= 10 ? (
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-warning-muted text-warning border border-warning/30">
                     <AlertTriangle className="w-3 h-3" />
                     {t.reports.savingsRateWarning}
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-destructive-muted text-destructive border border-destructive/30">
                     <Flame className="w-3 h-3" />
                     {t.reports.savingsRateDeficit}
                   </span>
@@ -1815,18 +1815,18 @@ export function ReportsView({
           </div>
 
           {/* Card 2: Total Income */}
-          <div className="p-4 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col justify-between gap-2 shadow-2xs">
+          <div className="p-4 rounded-xl bg-surface border border-border flex flex-col justify-between gap-2 shadow-2xs">
             <div className="flex items-center justify-between gap-1 min-h-7">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] leading-tight">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-foreground-secondary leading-tight">
                 {t.reports.totalIncome}
               </span>
-              <TrendingUp className="w-3.5 h-3.5 text-[#0D9488] shrink-0" />
+              <TrendingUp className="w-3.5 h-3.5 text-success shrink-0" />
             </div>
 
             <div>
               <h3
                 className={cn(
-                  "font-bold font-mono text-[#0D9488] tracking-tight tnum",
+                  "font-bold font-mono text-success tracking-tight tnum",
                   getCardFont(
                     formatCurrency(totalIncome, displayCurrency).length,
                   ),
@@ -1838,12 +1838,12 @@ export function ReportsView({
                   isPrivate,
                 )}
               </h3>
-              <div className="flex items-center gap-1 mt-1 text-[10px] font-mono text-[#94A3B8]">
+              <div className="flex items-center gap-1 mt-1 text-[10px] font-mono text-foreground-muted">
                 <span>vs {priorPeriodLabel}:</span>
                 <span
                   className={cn(
                     "font-bold",
-                    incomeGrowthPct >= 0 ? "text-[#0D9488]" : "text-[#E11D48]",
+                    incomeGrowthPct >= 0 ? "text-success" : "text-destructive",
                   )}
                 >
                   {incomeGrowthPct >= 0
@@ -1855,18 +1855,18 @@ export function ReportsView({
           </div>
 
           {/* Card 3: Total Expense & Growth */}
-          <div className="p-4 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col justify-between gap-2 shadow-2xs">
+          <div className="p-4 rounded-xl bg-surface border border-border flex flex-col justify-between gap-2 shadow-2xs">
             <div className="flex items-center justify-between gap-1 min-h-7">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] leading-tight">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-foreground-secondary leading-tight">
                 {t.reports.totalExpense}
               </span>
-              <TrendingDown className="w-3.5 h-3.5 text-[#E11D48] shrink-0" />
+              <TrendingDown className="w-3.5 h-3.5 text-destructive shrink-0" />
             </div>
 
             <div>
               <h3
                 className={cn(
-                  "font-bold font-mono text-[#E11D48] tracking-tight tnum",
+                  "font-bold font-mono text-destructive tracking-tight tnum",
                   getCardFont(
                     formatCurrency(totalExpense, displayCurrency).length,
                   ),
@@ -1878,12 +1878,12 @@ export function ReportsView({
                   isPrivate,
                 )}
               </h3>
-              <div className="flex items-center gap-1 mt-1 text-[10px] font-mono text-[#94A3B8]">
+              <div className="flex items-center gap-1 mt-1 text-[10px] font-mono text-foreground-muted">
                 <span>vs {priorPeriodLabel}:</span>
                 <span
                   className={cn(
                     "font-bold",
-                    expenseGrowthPct > 0 ? "text-[#E11D48]" : "text-[#0D9488]",
+                    expenseGrowthPct > 0 ? "text-destructive" : "text-success",
                   )}
                 >
                   {expenseGrowthPct > 0
@@ -1895,18 +1895,18 @@ export function ReportsView({
           </div>
 
           {/* Card 4: Daily Burn Rate & Net */}
-          <div className="p-4 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col justify-between gap-2 shadow-2xs">
+          <div className="p-4 rounded-xl bg-surface border border-border flex flex-col justify-between gap-2 shadow-2xs">
             <div className="flex items-center justify-between gap-1 min-h-7">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] leading-tight">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-foreground-secondary leading-tight">
                 {t.reports.dailyBurnRate}
               </span>
-              <Flame className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              <Flame className="w-3.5 h-3.5 text-warning shrink-0" />
             </div>
 
             <div>
               <h3
                 className={cn(
-                  "font-bold font-mono text-[#0F172A] dark:text-[#FAFAFA] tracking-tight tnum",
+                  "font-bold font-mono text-foreground tracking-tight tnum",
                   getCardFont(
                     formatCurrency(dailyBurnRate, displayCurrency).length,
                   ),
@@ -1916,7 +1916,7 @@ export function ReportsView({
                   formatCurrency(dailyBurnRate, displayCurrency),
                   isPrivate,
                 )}
-                <span className="text-[10px] font-normal text-[#94A3B8]">
+                <span className="text-[10px] font-normal text-foreground-muted">
                   {t.reports.perDay}
                 </span>
               </h3>
@@ -1925,23 +1925,23 @@ export function ReportsView({
         </div>
 
         {/* Smart Financial Insights & Highlights Section */}
-        <div className="p-5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-3.5 shadow-2xs">
+        <div className="p-5 rounded-xl bg-surface border border-border flex flex-col gap-3.5 shadow-2xs">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-md bg-[#F1F3F5] dark:bg-[#1A1A20] flex items-center justify-center text-[#0F172A] dark:text-[#FAFAFA] border border-[#E5E7EB] dark:border-[#27272A] shrink-0">
+              <div className="w-6 h-6 rounded-md bg-muted flex items-center justify-center text-foreground border border-border shrink-0">
                 <TrendingUp className="w-3.5 h-3.5" />
               </div>
-              <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#FAFAFA]">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">
                 {t.reports.smartInsightsTitle}
               </h2>
             </div>
-            <span className="text-[10px] text-[#64748B] dark:text-[#94A3B8] font-mono">
+            <span className="text-[10px] text-foreground-secondary font-mono">
               {t.reports.smartInsightsSubtitle}
             </span>
           </div>
 
           {smartInsights.length === 0 ? (
-            <div className="py-6 text-center text-xs text-[#94A3B8]">
+            <div className="py-6 text-center text-xs text-foreground-muted">
               {t.reports.noInsightsDesc}
             </div>
           ) : (
@@ -1984,7 +1984,7 @@ export function ReportsView({
                       >
                         {insight.icon}
                       </div>
-                      <h3 className="text-xs font-bold text-[#0F172A] dark:text-[#FAFAFA] truncate">
+                      <h3 className="text-xs font-bold text-foreground truncate">
                         {insight.title}
                       </h3>
                     </div>
@@ -1998,7 +1998,7 @@ export function ReportsView({
                     </span>
                   </div>
 
-                  <p className="text-xs text-[#475569] dark:text-[#CBD5E1] leading-relaxed">
+                  <p className="text-xs text-foreground-secondary leading-relaxed">
                     {insight.description}
                   </p>
                 </div>
@@ -2020,7 +2020,7 @@ export function ReportsView({
                         aria-label={`Slide ${i + 1}`}
                         className={cn(
                           "h-1.5 rounded-full transition-all",
-                          i === safeIdx ? "w-5 bg-[#0F172A] dark:bg-[#FAFAFA]" : "w-1.5 bg-[#E5E7EB] dark:bg-[#3F3F46]",
+                          i === safeIdx ? "w-5 bg-primary" : "w-1.5 bg-border",
                         )}
                       />
                     ))}
@@ -2032,33 +2032,33 @@ export function ReportsView({
         </div>
 
         {/* Side-by-Side Period Comparison Matrix */}
-        <div className="p-5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-4 shadow-2xs">
+        <div className="p-5 rounded-xl bg-surface border border-border flex flex-col gap-4 shadow-2xs">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Scale className="w-4 h-4 text-[#0F172A] dark:text-[#FAFAFA]" />
-              <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#FAFAFA]">
+              <Scale className="w-4 h-4 text-foreground" />
+              <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">
                 {t.reports.periodComparison}
               </h2>
             </div>
-            <span className="text-[10px] font-bold font-mono text-[#64748B] dark:text-[#94A3B8]">
+            <span className="text-[10px] font-bold font-mono text-foreground-secondary">
               {currentPeriodLabel} vs {priorPeriodLabel}
             </span>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono">
             {/* Income comparison */}
-            <div className="p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-1">
-              <span className="text-[10px] font-sans font-bold text-[#64748B] dark:text-[#94A3B8] uppercase">
+            <div className="p-3 rounded-lg bg-surface-subtle border border-border flex flex-col gap-1">
+              <span className="text-[10px] font-sans font-bold text-foreground-secondary uppercase">
                 {t.quickAdd.income}
               </span>
-              <span className="text-sm font-bold text-[#0D9488] tnum">
+              <span className="text-sm font-bold text-success tnum">
                 +
                 {maskCurrency(
                   formatCurrency(totalIncome, displayCurrency),
                   isPrivate,
                 )}
               </span>
-              <div className="flex items-center justify-between text-[10px] text-[#94A3B8] pt-1 border-t border-[#E5E7EB] dark:border-[#27272A] truncate">
+              <div className="flex items-center justify-between text-[10px] text-foreground-muted pt-1 border-t border-border truncate">
                 <span className="truncate">{priorPeriodLabel}:</span>
                 <span className="shrink-0">
                   {maskCurrency(
@@ -2070,18 +2070,18 @@ export function ReportsView({
             </div>
 
             {/* Expense comparison */}
-            <div className="p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-1">
-              <span className="text-[10px] font-sans font-bold text-[#64748B] dark:text-[#94A3B8] uppercase">
+            <div className="p-3 rounded-lg bg-surface-subtle border border-border flex flex-col gap-1">
+              <span className="text-[10px] font-sans font-bold text-foreground-secondary uppercase">
                 {t.quickAdd.expense}
               </span>
-              <span className="text-sm font-bold text-[#E11D48] tnum">
+              <span className="text-sm font-bold text-destructive tnum">
                 -
                 {maskCurrency(
                   formatCurrency(totalExpense, displayCurrency),
                   isPrivate,
                 )}
               </span>
-              <div className="flex items-center justify-between text-[10px] text-[#94A3B8] pt-1 border-t border-[#E5E7EB] dark:border-[#27272A] truncate">
+              <div className="flex items-center justify-between text-[10px] text-foreground-muted pt-1 border-t border-border truncate">
                 <span className="truncate">{priorPeriodLabel}:</span>
                 <span className="shrink-0">
                   {maskCurrency(
@@ -2093,14 +2093,14 @@ export function ReportsView({
             </div>
 
             {/* Net Surplus comparison */}
-            <div className="p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-1">
-              <span className="text-[10px] font-sans font-bold text-[#64748B] dark:text-[#94A3B8] uppercase">
+            <div className="p-3 rounded-lg bg-surface-subtle border border-border flex flex-col gap-1">
+              <span className="text-[10px] font-sans font-bold text-foreground-secondary uppercase">
                 {t.reports.netSavings}
               </span>
               <span
                 className={cn(
                   "text-sm font-bold tnum",
-                  netSavings >= 0 ? "text-[#0D9488]" : "text-[#E11D48]",
+                  netSavings >= 0 ? "text-success" : "text-destructive",
                 )}
               >
                 {maskCurrency(
@@ -2108,7 +2108,7 @@ export function ReportsView({
                   isPrivate,
                 )}
               </span>
-              <div className="flex items-center justify-between text-[10px] text-[#94A3B8] pt-1 border-t border-[#E5E7EB] dark:border-[#27272A] truncate">
+              <div className="flex items-center justify-between text-[10px] text-foreground-muted pt-1 border-t border-border truncate">
                 <span className="truncate">{priorPeriodLabel}:</span>
                 <span className="shrink-0">
                   {maskCurrency(
@@ -2120,14 +2120,14 @@ export function ReportsView({
             </div>
 
             {/* Savings Rate comparison */}
-            <div className="p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-1">
-              <span className="text-[10px] font-sans font-bold text-[#64748B] dark:text-[#94A3B8] uppercase">
+            <div className="p-3 rounded-lg bg-surface-subtle border border-border flex flex-col gap-1">
+              <span className="text-[10px] font-sans font-bold text-foreground-secondary uppercase">
                 {t.reports.savingsRate}
               </span>
-              <span className="text-sm font-bold text-[#0F172A] dark:text-[#FAFAFA] tnum">
+              <span className="text-sm font-bold text-foreground tnum">
                 {savingsRate.toFixed(1)}%
               </span>
-              <div className="flex items-center justify-between text-[10px] text-[#94A3B8] pt-1 border-t border-[#E5E7EB] dark:border-[#27272A] truncate">
+              <div className="flex items-center justify-between text-[10px] text-foreground-muted pt-1 border-t border-border truncate">
                 <span className="truncate">{priorPeriodLabel}:</span>
                 <span className="shrink-0">{priorSavingsRate.toFixed(1)}%</span>
               </div>
@@ -2136,25 +2136,25 @@ export function ReportsView({
         </div>
 
         {/* Cashflow Trajectory Trend Chart */}
-        <div className="p-5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-4 shadow-2xs">
+        <div className="p-5 rounded-xl bg-surface border border-border flex flex-col gap-4 shadow-2xs">
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#FAFAFA]">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">
               {t.reports.cashflowTrendTitle}
             </h2>
             <div className="flex items-center gap-3 text-[10px] font-bold font-mono">
-              <span className="flex items-center gap-1.5 text-[#0D9488]">
-                <span className="w-2 h-2 rounded-full bg-[#0D9488]" />
+              <span className="flex items-center gap-1.5 text-success">
+                <span className="w-2 h-2 rounded-full bg-success" />
                 {t.quickAdd.income}
               </span>
-              <span className="flex items-center gap-1.5 text-[#E11D48]">
-                <span className="w-2 h-2 rounded-full bg-[#E11D48]" />
+              <span className="flex items-center gap-1.5 text-destructive">
+                <span className="w-2 h-2 rounded-full bg-destructive" />
                 {t.quickAdd.expense}
               </span>
             </div>
           </div>
 
           {timelineData.length === 0 ? (
-            <div className="py-10 text-center text-xs text-[#94A3B8]">
+            <div className="py-10 text-center text-xs text-foreground-muted">
               {t.reports.noDataDesc}
             </div>
           ) : (
@@ -2165,25 +2165,25 @@ export function ReportsView({
               >
                 <defs>
                   <linearGradient id="rpIncomeFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#0D9488" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="#0D9488" stopOpacity={0} />
+                    <stop offset="0%" stopColor="var(--token-success)" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="var(--token-success)" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="rpExpenseFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#E11D48" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="#E11D48" stopOpacity={0} />
+                    <stop offset="0%" stopColor="var(--token-destructive)" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="var(--token-destructive)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--token-border)" vertical={false} />
                 <XAxis
                   dataKey="label"
-                  tick={{ fontSize: 9, fill: "#94A3B8" }}
+                  tick={{ fontSize: 9, fill: "var(--token-foreground-muted)" }}
                   axisLine={false}
                   tickLine={false}
                   minTickGap={24}
                   tickMargin={4}
                 />
                 <YAxis
-                  tick={{ fontSize: 9, fill: "#94A3B8" }}
+                  tick={{ fontSize: 9, fill: "var(--token-foreground-muted)" }}
                   axisLine={false}
                   tickLine={false}
                   width={44}
@@ -2204,7 +2204,7 @@ export function ReportsView({
                     const expense = Number(point?.expense ?? 0);
                     const net = income - expense;
                     const netColor =
-                      net >= 0 ? "#0D9488" : "#E11D48";
+                      net >= 0 ? "var(--token-success)" : "var(--token-destructive)";
                     const fmtVal = (v: number) =>
                       isPrivate
                         ? "••••"
@@ -2212,25 +2212,25 @@ export function ReportsView({
                     return (
                       <div
                         style={{ fontSize: 11, borderRadius: 12 }}
-                        className="border border-[#E5E7EB] bg-white px-2.5 py-2 shadow-lg dark:border-[#27272A] dark:bg-[#121215]"
+                        className="border border-border bg-surface px-2.5 py-2 shadow-lg"
                       >
-                        <div className="mb-1 font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                        <div className="mb-1 font-bold text-foreground">
                           {String(label ?? "")}
                         </div>
                         <div className="flex items-center justify-between gap-4">
-                          <span className="text-[#0D9488]">{t.quickAdd.income}</span>
-                          <span className="font-mono font-bold text-[#0D9488] tnum">
+                          <span className="text-success">{t.quickAdd.income}</span>
+                          <span className="font-mono font-bold text-success tnum">
                             {fmtVal(income)}
                           </span>
                         </div>
                         <div className="flex items-center justify-between gap-4">
-                          <span className="text-[#E11D48]">{t.quickAdd.expense}</span>
-                          <span className="font-mono font-bold text-[#E11D48] tnum">
+                          <span className="text-destructive">{t.quickAdd.expense}</span>
+                          <span className="font-mono font-bold text-destructive tnum">
                             {fmtVal(expense)}
                           </span>
                         </div>
-                        <div className="mt-1 flex items-center justify-between gap-4 border-t border-[#E5E7EB] pt-1 dark:border-[#27272A]">
-                          <span className="text-[#64748B] dark:text-[#94A3B8]">
+                        <div className="mt-1 flex items-center justify-between gap-4 border-t border-border pt-1">
+                          <span className="text-foreground-secondary">
                             {t.reports.netLabel}
                           </span>
                           <span
@@ -2249,7 +2249,7 @@ export function ReportsView({
                   type="monotone"
                   dataKey="income"
                   name={t.quickAdd.income}
-                  stroke="#0D9488"
+                  stroke="var(--token-success)"
                   strokeWidth={2}
                   fill="url(#rpIncomeFill)"
                   dot={timelineData.length <= 8}
@@ -2259,7 +2259,7 @@ export function ReportsView({
                   type="monotone"
                   dataKey="expense"
                   name={t.quickAdd.expense}
-                  stroke="#E11D48"
+                  stroke="var(--token-destructive)"
                   strokeWidth={2}
                   fill="url(#rpExpenseFill)"
                   dot={timelineData.length <= 8}
@@ -2273,11 +2273,11 @@ export function ReportsView({
         {/* Interactive Donut & Category Breakdown with Expense / Income Toggle */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
           {/* Donut Chart Visualizer (5 Cols) */}
-          <div className="lg:col-span-5 p-5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col items-center justify-between gap-4 shadow-2xs">
+          <div className="lg:col-span-5 p-5 rounded-xl bg-surface border border-border flex flex-col items-center justify-between gap-4 shadow-2xs">
             <div className="w-full flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <PieChartIcon className="w-4 h-4 text-[#0F172A] dark:text-[#FAFAFA]" />
-                <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#FAFAFA]">
+                <PieChartIcon className="w-4 h-4 text-foreground" />
+                <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">
                   {categoryTab === "expense"
                     ? t.reports.expenseComposition
                     : t.reports.incomeComposition}
@@ -2286,7 +2286,7 @@ export function ReportsView({
               {selectedCategoryFilter && (
                 <button
                   onClick={() => setSelectedCategoryFilter(null)}
-                  className="text-[10px] font-bold text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8] dark:hover:text-[#FAFAFA] hover:underline cursor-pointer shrink-0"
+                  className="text-[10px] font-bold text-foreground-secondary hover:text-foreground hover:underline cursor-pointer shrink-0"
                 >
                   {t.reports.reset}
                 </button>
@@ -2294,7 +2294,7 @@ export function ReportsView({
             </div>
 
             {/* Expense vs Income Toggle Buttons */}
-            <div className="flex items-center p-1 bg-[#F1F3F5] dark:bg-[#1A1A20] rounded-xl border border-[#E5E7EB] dark:border-[#27272A] w-full max-w-60">
+            <div className="flex items-center p-1 bg-muted rounded-xl border border-border w-full max-w-60">
               <button
                 type="button"
                 onClick={() => {
@@ -2304,8 +2304,8 @@ export function ReportsView({
                 className={cn(
                   "flex-1 py-1.5 text-xs font-bold rounded-lg transition-all text-center cursor-pointer",
                   categoryTab === "expense"
-                    ? "bg-white dark:bg-[#121215] text-[#E11D48] shadow-xs"
-                    : "text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8]",
+                    ? "bg-surface text-destructive shadow-xs"
+                    : "text-foreground-secondary hover:text-foreground",
                 )}
               >
                 {t.quickAdd.expense}
@@ -2319,8 +2319,8 @@ export function ReportsView({
                 className={cn(
                   "flex-1 py-1.5 text-xs font-bold rounded-lg transition-all text-center cursor-pointer",
                   categoryTab === "income"
-                    ? "bg-white dark:bg-[#121215] text-[#0D9488] shadow-xs"
-                    : "text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8]",
+                    ? "bg-surface text-success shadow-xs"
+                    : "text-foreground-secondary hover:text-foreground",
                 )}
               >
                 {t.quickAdd.income}
@@ -2328,7 +2328,7 @@ export function ReportsView({
             </div>
 
             {categoryBreakdown.length === 0 ? (
-              <div className="py-12 text-center text-xs text-[#94A3B8]">
+              <div className="py-12 text-center text-xs text-foreground-muted">
                 {t.reports.noDataDesc}
               </div>
             ) : (
@@ -2359,7 +2359,7 @@ export function ReportsView({
                   ))}
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-4 max-w-37.5 mx-auto">
-                  <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#94A3B8] leading-tight">
+                  <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-foreground-muted leading-tight">
                     {selectedCategoryFilter
                       ? categoryBreakdown.find(
                           (c) => c.id === selectedCategoryFilter,
@@ -2372,8 +2372,8 @@ export function ReportsView({
                     className={cn(
                       "font-black font-mono tracking-tight tnum mt-0.5 leading-tight",
                       categoryTab === "expense"
-                        ? "text-[#E11D48]"
-                        : "text-[#0D9488]",
+                        ? "text-destructive"
+                        : "text-success",
                       "text-xs sm:text-sm",
                     )}
                   >
@@ -2401,7 +2401,7 @@ export function ReportsView({
                     })()}
                   </span>
                   {selectedCategoryFilter && (
-                    <span className="text-[9px] font-bold text-[#0F172A] dark:text-[#FAFAFA] font-mono mt-0.5">
+                    <span className="text-[9px] font-bold text-foreground font-mono mt-0.5">
                       {categoryBreakdown
                         .find((c) => c.id === selectedCategoryFilter)
                         ?.percentage.toFixed(1)}
@@ -2412,26 +2412,26 @@ export function ReportsView({
               </div>
             )}
 
-            <p className="text-[10px] text-[#64748B] dark:text-[#94A3B8] text-center">
+            <p className="text-[10px] text-foreground-secondary text-center">
               {t.reports.clickCategoryArc}
             </p>
           </div>
 
           {/* Interactive Category List (7 Cols) */}
-          <div className="lg:col-span-7 p-5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-4 shadow-2xs">
+          <div className="lg:col-span-7 p-5 rounded-xl bg-surface border border-border flex flex-col gap-4 shadow-2xs">
             <div className="flex items-center justify-between">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#FAFAFA]">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">
                 {categoryTab === "expense"
                   ? t.reports.categoryBreakdownTitle
                   : t.reports.incomeCategoryBreakdownPrint}
               </h2>
-              <span className="text-[10px] font-mono text-[#94A3B8]">
+              <span className="text-[10px] font-mono text-foreground-muted">
                 {categoryBreakdown.length} {t.reports.activeCategories}
               </span>
             </div>
 
             {categoryBreakdown.length === 0 ? (
-              <div className="py-8 text-center text-xs text-[#94A3B8]">
+              <div className="py-8 text-center text-xs text-foreground-muted">
                 {t.reports.noDataDesc}
               </div>
             ) : (
@@ -2450,8 +2450,8 @@ export function ReportsView({
                       className={cn(
                         "flex flex-col gap-1.5 p-2.5 rounded-lg border text-left transition-colors cursor-pointer",
                         isSelected
-                          ? "bg-[#F1F3F5] dark:bg-[#26262E] border-[#0F172A] dark:border-[#FAFAFA]"
-                          : "bg-white dark:bg-[#121215] border-[#E5E7EB] dark:border-[#27272A] hover:bg-[#F8F9FA] dark:hover:bg-[#1A1A20]",
+                          ? "bg-surface-muted border-border-strong"
+                          : "bg-surface border-border hover:bg-surface-subtle",
                       )}
                     >
                       <div className="flex items-center justify-between gap-2 text-xs">
@@ -2460,7 +2460,7 @@ export function ReportsView({
                             style={{ backgroundColor: cat.color }}
                             className="w-2.5 h-2.5 rounded-full shrink-0"
                           />
-                          <div className="w-6 h-6 rounded-md bg-[#F1F3F5] dark:bg-[#1A1A20] flex items-center justify-center shrink-0 border border-[#E5E7EB] dark:border-[#27272A]">
+                          <div className="w-6 h-6 rounded-md bg-muted flex items-center justify-center shrink-0 border border-border">
                             <DynamicIcon
                               name={
                                 cat.category?.icon ||
@@ -2468,27 +2468,27 @@ export function ReportsView({
                                   ? "TrendingUp"
                                   : "Tag")
                               }
-                              className="w-3.5 h-3.5 text-[#0F172A] dark:text-[#FAFAFA]"
+                              className="w-3.5 h-3.5 text-foreground"
                             />
                           </div>
-                          <span className="font-bold text-[#0F172A] dark:text-[#FAFAFA] truncate">
+                          <span className="font-bold text-foreground truncate">
                             {cat.category?.name || t.common.custom}
                           </span>
                         </div>
                         <div className="flex items-center gap-2 font-mono text-right shrink-0">
-                          <span className="text-xs font-bold text-[#0F172A] dark:text-[#FAFAFA] tnum">
+                          <span className="text-xs font-bold text-foreground tnum">
                             {maskCurrency(
                               formatCurrency(cat.total, displayCurrency),
                               isPrivate,
                             )}
                           </span>
-                          <span className="text-[10px] font-bold text-[#64748B] dark:text-[#94A3B8] w-12 text-right">
+                          <span className="text-[10px] font-bold text-foreground-secondary w-12 text-right">
                             {cat.percentage.toFixed(1)}%
                           </span>
                         </div>
                       </div>
                       {/* Progress Bar */}
-                      <div className="w-full h-1.5 rounded-full bg-[#F1F3F5] dark:bg-[#1A1A20] overflow-hidden">
+                      <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
                         <div
                           style={{
                             width: `${Math.min(100, Math.max(2, cat.percentage))}%`,
@@ -2505,7 +2505,7 @@ export function ReportsView({
 
             {/* Excluded categories count indicator at bottom of category list */}
             {excludedCategoryIds.length > 0 && (
-              <div className="pt-2 border-t border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-between text-[11px] text-[#64748B] dark:text-[#94A3B8]">
+              <div className="pt-2 border-t border-border flex items-center justify-between text-[11px] text-foreground-secondary">
                 <span>
                   {excludedCategoryIds.length} {t.reports.categoriesExcluded}
                 </span>
@@ -2515,7 +2515,7 @@ export function ReportsView({
                     setSheetCategoryType(categoryTab);
                     setIsExcludeSheetOpen(true);
                   }}
-                  className="text-amber-600 dark:text-amber-400 font-bold hover:underline cursor-pointer"
+                  className="text-warning font-bold hover:underline cursor-pointer"
                 >
                   {t.common.actions}
                 </button>
@@ -2526,10 +2526,10 @@ export function ReportsView({
 
         {/* Drill-down Section when a Category is Selected */}
         {selectedCategoryFilter && (
-          <div className="p-5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-3 shadow-2xs">
+          <div className="p-5 rounded-xl bg-surface border border-border flex flex-col gap-3 shadow-2xs">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#FAFAFA] flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-[#0D9488]" />
+              <h3 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-success" />
                 <span>
                   {t.reports.drilldownTransactions}{" "}
                   {categoryBreakdown.find(
@@ -2539,14 +2539,14 @@ export function ReportsView({
               </h3>
               <button
                 onClick={() => setSelectedCategoryFilter(null)}
-                className="text-xs text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8] dark:hover:text-[#FAFAFA] cursor-pointer inline-flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] transition-colors"
+                className="text-xs text-foreground-secondary hover:text-foreground cursor-pointer inline-flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-muted transition-colors"
               >
                 <X className="w-3.5 h-3.5" />
                 <span>{t.common.close}</span>
               </button>
             </div>
 
-            <div className="divide-y divide-[#E5E7EB] dark:divide-[#27272A]">
+            <div className="divide-y divide-border">
               {displayedCategoryTransactions.map((tx) => {
                 const cleanDesc = getCleanDescription(tx.description);
                 return (
@@ -2559,15 +2559,15 @@ export function ReportsView({
                         className={cn(
                           "w-2 h-2 rounded-full shrink-0",
                           categoryTab === "income"
-                            ? "bg-[#0D9488]"
-                            : "bg-[#E11D48]",
+                            ? "bg-success"
+                            : "bg-destructive",
                         )}
                       />
                       <div className="flex flex-col min-w-0">
-                        <span className="font-bold text-[#0F172A] dark:text-[#FAFAFA] truncate">
+                        <span className="font-bold text-foreground truncate">
                           {cleanDesc || tx.category?.name || t.common.custom}
                         </span>
-                        <span className="text-[10px] font-mono text-[#94A3B8]">
+                        <span className="text-[10px] font-mono text-foreground-muted">
                           {format(
                             parseISO(tx.transaction_date),
                             "dd MMM yyyy",
@@ -2581,8 +2581,8 @@ export function ReportsView({
                       className={cn(
                         "font-bold font-mono shrink-0 tnum",
                         categoryTab === "income"
-                          ? "text-[#0D9488]"
-                          : "text-[#E11D48]",
+                          ? "text-success"
+                          : "text-destructive",
                       )}
                     >
                       {categoryTab === "income" ? "+" : "-"}
@@ -2601,18 +2601,18 @@ export function ReportsView({
         {/* Account Utilization & Top Expenses Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {/* Account Utilization Card */}
-          <div className="p-5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-4 shadow-2xs">
+          <div className="p-5 rounded-xl bg-surface border border-border flex flex-col gap-4 shadow-2xs">
             <div className="flex items-center justify-between">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#FAFAFA]">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">
                 {t.reports.accountBreakdownTitle}
               </h2>
-              <span className="text-[10px] font-mono text-[#94A3B8]">
+              <span className="text-[10px] font-mono text-foreground-muted">
                 {accountBreakdown.length} {t.reports.accounts}
               </span>
             </div>
 
             {accountBreakdown.length === 0 ? (
-              <div className="py-8 text-center text-xs text-[#94A3B8]">
+              <div className="py-8 text-center text-xs text-foreground-muted">
                 {t.reports.noDataDesc}
               </div>
             ) : (
@@ -2621,32 +2621,32 @@ export function ReportsView({
                   <div key={idx} className="flex flex-col gap-1.5">
                     <div className="flex items-center justify-between gap-2 text-xs">
                       <div className="flex items-center gap-2 min-w-0">
-                        <div className="w-6 h-6 rounded-md bg-[#F1F3F5] dark:bg-[#1A1A20] flex items-center justify-center shrink-0 border border-[#E5E7EB] dark:border-[#27272A]">
-                          <Wallet className="w-3.5 h-3.5 text-[#0F172A] dark:text-[#FAFAFA]" />
+                        <div className="w-6 h-6 rounded-md bg-muted flex items-center justify-center shrink-0 border border-border">
+                          <Wallet className="w-3.5 h-3.5 text-foreground" />
                         </div>
-                        <span className="font-bold text-[#0F172A] dark:text-[#FAFAFA] truncate">
+                        <span className="font-bold text-foreground truncate">
                           {acc.account?.name || t.reports.accountFallback} (
                           {acc.account?.currency})
                         </span>
                       </div>
                       <div className="flex items-center gap-2 font-mono text-right shrink-0">
-                        <span className="text-xs font-bold text-[#0F172A] dark:text-[#FAFAFA] tnum">
+                        <span className="text-xs font-bold text-foreground tnum">
                           {maskCurrency(
                             formatCurrency(acc.total, displayCurrency),
                             isPrivate,
                           )}
                         </span>
-                        <span className="text-[10px] text-[#94A3B8] w-10 text-right">
+                        <span className="text-[10px] text-foreground-muted w-10 text-right">
                           {acc.percentage.toFixed(1)}%
                         </span>
                       </div>
                     </div>
-                    <div className="w-full h-1.5 rounded-full bg-[#F1F3F5] dark:bg-[#1A1A20] overflow-hidden">
+                    <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
                       <div
                         style={{
                           width: `${Math.min(100, Math.max(2, acc.percentage))}%`,
                         }}
-                        className="h-full bg-[#0D9488] rounded-full transition-all duration-300"
+                        className="h-full bg-success rounded-full transition-all duration-300"
                       />
                     </div>
                   </div>
@@ -2656,20 +2656,20 @@ export function ReportsView({
           </div>
 
           {/* Top Expenses */}
-          <div className="p-5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-4 shadow-2xs">
+          <div className="p-5 rounded-xl bg-surface border border-border flex flex-col gap-4 shadow-2xs">
             <div className="flex items-center justify-between">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#FAFAFA]">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">
                 {t.reports.topExpensesTitle}
               </h2>
-              <FileSpreadsheet className="w-4 h-4 text-[#94A3B8]" />
+              <FileSpreadsheet className="w-4 h-4 text-foreground-muted" />
             </div>
 
             {topExpenses.length === 0 ? (
-              <div className="py-6 text-center text-xs text-[#94A3B8]">
+              <div className="py-6 text-center text-xs text-foreground-muted">
                 {t.reports.noDataDesc}
               </div>
             ) : (
-              <div className="divide-y divide-[#E5E7EB] dark:divide-[#27272A]">
+              <div className="divide-y divide-border">
                 {topExpenses.slice(0, 5).map((tx) => {
                   const cleanDesc = getCleanDescription(tx.description);
                   return (
@@ -2678,17 +2678,17 @@ export function ReportsView({
                       className="py-3 first:pt-0 last:pb-0 flex items-center justify-between gap-3"
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-8 h-8 rounded-lg bg-[#FFF1F2] dark:bg-[#881337]/20 border border-[#FECDD3] dark:border-[#9F1239]/40 flex items-center justify-center text-[#E11D48] shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-destructive-muted border border-destructive/30 flex items-center justify-center text-destructive shrink-0">
                           <DynamicIcon
                             name={tx.category?.icon || "ShoppingBag"}
                             className="w-4 h-4"
                           />
                         </div>
                         <div className="flex flex-col min-w-0">
-                          <span className="text-xs font-bold text-[#0F172A] dark:text-[#FAFAFA] truncate">
+                          <span className="text-xs font-bold text-foreground truncate">
                             {cleanDesc || tx.category?.name || t.common.custom}
                           </span>
-                          <span className="text-[10px] font-mono text-[#94A3B8]">
+                          <span className="text-[10px] font-mono text-foreground-muted">
                             {format(
                               parseISO(tx.transaction_date),
                               "dd MMM yyyy",
@@ -2700,7 +2700,7 @@ export function ReportsView({
                       </div>
 
                       <div className="text-right shrink-0">
-                        <span className="text-xs font-bold font-mono text-[#E11D48] tnum">
+                        <span className="text-xs font-bold font-mono text-destructive tnum">
                           -
                           {maskCurrency(
                             formatCurrency(tx.convertedAmount, displayCurrency),
@@ -2708,7 +2708,7 @@ export function ReportsView({
                           )}
                         </span>
                         {tx.currency && tx.currency !== displayCurrency && (
-                          <span className="text-[10px] font-mono text-[#94A3B8] block">
+                          <span className="text-[10px] font-mono text-foreground-muted block">
                             ({formatCurrency(tx.amount, tx.currency)})
                           </span>
                         )}
@@ -2723,7 +2723,7 @@ export function ReportsView({
 
         {/* Kepemilikan Portofolio — paling bawah, snapshot terakhir (tidak difilter tanggal) */}
         {(stocks.length > 0 || cryptos.length > 0 || etfs.length > 0) && (
-          <div className="p-5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-3 shadow-2xs">
+          <div className="p-5 rounded-xl bg-surface border border-border flex flex-col gap-3 shadow-2xs">
             {(() => {
               const priceMap = new Map(
                 prices.map((p) => [`${p.kind}:${p.symbol.toUpperCase()}`, p]),
@@ -2821,39 +2821,39 @@ export function ReportsView({
                 <>
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-md bg-[#F1F3F5] dark:bg-[#1A1A20] flex items-center justify-center text-[#0F172A] dark:text-[#FAFAFA] border border-[#E5E7EB] dark:border-[#27272A] shrink-0">
+                      <div className="w-6 h-6 rounded-md bg-muted flex items-center justify-center text-foreground border border-border shrink-0">
                         <Wallet className="w-3.5 h-3.5" />
                       </div>
-                      <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#FAFAFA]">
+                      <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">
                         {t.reports.portfolioHoldingsTitle}
                       </h2>
                     </div>
-                    <span className="text-[10px] text-[#64748B] dark:text-[#94A3B8] font-mono">
+                    <span className="text-[10px] text-foreground-secondary font-mono">
                       {latestFetchedLabel
                         ? `${language === "en" ? "Prices as of" : "Harga per"} ${latestFetchedLabel}`
                         : t.reports.snapshotToday}
                     </span>
                   </div>
-                  <div className="divide-y divide-[#E5E7EB] dark:divide-[#27272A]">
+                  <div className="divide-y divide-border">
                     {rows.map((r, i) => (
                       <div key={`${r.kind}-${r.symbol}-${i}`} className="flex items-center justify-between gap-3 py-2.5">
                         <div className="min-w-0">
                           <div className="flex items-center gap-1.5">
-                            <span className="font-black text-xs text-[#0F172A] dark:text-[#F8FAFC]">{r.symbol}</span>
-                            <span className="rounded-md bg-[#F1F3F5] px-1.5 py-0.5 text-[9px] font-bold text-[#64748B] dark:bg-[#27272A] dark:text-[#94A3B8]">{r.kind}</span>
+                            <span className="font-black text-xs text-foreground">{r.symbol}</span>
+                            <span className="rounded-md bg-muted px-1.5 py-0.5 text-[9px] font-bold text-foreground-secondary">{r.kind}</span>
                           </div>
-                          <p className="truncate text-[10px] text-[#64748B] dark:text-[#94A3B8]">{r.qtyText}</p>
+                          <p className="truncate text-[10px] text-foreground-secondary">{r.qtyText}</p>
                           {r.fetchedAt && (
-                            <p className="truncate text-[9px] text-[#94A3B8]">
+                            <p className="truncate text-[9px] text-foreground-muted">
                               {language === "en" ? "Market" : "Harga"} {fmtFetched(r.fetchedAt)}
                             </p>
                           )}
                         </div>
                         <div className="shrink-0 text-right">
-                          <p className="font-mono text-xs font-black text-[#0F172A] dark:text-[#F8FAFC]">
+                          <p className="font-mono text-xs font-black text-foreground">
                             {maskCurrency(formatCurrency(r.costDisplay, displayCurrency), isPrivate)}
                           </p>
-                          <p className="font-mono text-[9px] text-[#94A3B8]">
+                          <p className="font-mono text-[9px] text-foreground-muted">
                             {totalHoldingsCost > 0 ? `${((r.costDisplay / totalHoldingsCost) * 100).toFixed(1)}%` : "—"}
                           </p>
                         </div>
@@ -2905,25 +2905,25 @@ export function ReportsView({
         title={t.reports.excludeCategoriesTitle}
       >
         <div className="flex flex-col gap-3">
-          <p className="text-xs text-[#64748B] dark:text-[#94A3B8] leading-relaxed">
+          <p className="text-xs text-foreground-secondary leading-relaxed">
             {t.reports.excludeCategoriesDesc}
           </p>
 
           {/* Type Switcher (Pengeluaran / Pemasukan) */}
-          <div className="flex items-center p-1 bg-[#F1F3F5] dark:bg-[#1A1A20] rounded-xl border border-[#E5E7EB] dark:border-[#27272A] w-full">
+          <div className="flex items-center p-1 bg-muted rounded-xl border border-border w-full">
             <button
               type="button"
               onClick={() => setSheetCategoryType("expense")}
               className={cn(
                 "flex-1 py-1.5 text-xs font-bold rounded-lg transition-all text-center cursor-pointer flex items-center justify-center gap-1.5",
                 sheetCategoryType === "expense"
-                  ? "bg-white dark:bg-[#121215] text-[#E11D48] shadow-xs"
-                  : "text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8]",
+                  ? "bg-surface text-destructive shadow-xs"
+                  : "text-foreground-secondary hover:text-foreground",
               )}
             >
               <span>{t.reports.expenses}</span>
               {excludedExpenseCount > 0 && (
-                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-[#E11D48] text-white">
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-destructive text-white">
                   {excludedExpenseCount}
                 </span>
               )}
@@ -2934,13 +2934,13 @@ export function ReportsView({
               className={cn(
                 "flex-1 py-1.5 text-xs font-bold rounded-lg transition-all text-center cursor-pointer flex items-center justify-center gap-1.5",
                 sheetCategoryType === "income"
-                  ? "bg-white dark:bg-[#121215] text-[#0D9488] shadow-xs"
-                  : "text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8]",
+                  ? "bg-surface text-success shadow-xs"
+                  : "text-foreground-secondary hover:text-foreground",
               )}
             >
               <span>{t.reports.income}</span>
               {excludedIncomeCount > 0 && (
-                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-[#0D9488] text-white">
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-success text-white">
                   {excludedIncomeCount}
                 </span>
               )}
@@ -2949,19 +2949,19 @@ export function ReportsView({
 
           {/* Search Box */}
           <div className="relative">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-foreground-muted" />
             <input
               type="text"
               placeholder={t.reports.searchCategoryPlaceholder}
               value={categorySearchQuery}
               onChange={(e) => setCategorySearchQuery(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 text-xs rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] focus:outline-none focus:ring-1 focus:ring-[#0F172A] dark:focus:ring-[#FAFAFA] text-[#0F172A] dark:text-[#FAFAFA]"
+              className="w-full pl-9 pr-8 py-2 text-xs rounded-xl bg-surface-subtle border border-border focus:outline-none focus:ring-1 focus:ring-ring text-foreground placeholder:text-foreground-muted"
             />
             {categorySearchQuery && (
               <button
                 type="button"
                 onClick={() => setCategorySearchQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-foreground-muted hover:text-foreground"
               >
                 <X className="w-3 h-3" />
               </button>
@@ -2969,7 +2969,7 @@ export function ReportsView({
           </div>
 
           {/* List Meta & Quick Action */}
-          <div className="flex items-center justify-between text-[11px] text-[#64748B] dark:text-[#94A3B8] px-0.5 pt-1">
+          <div className="flex items-center justify-between text-[11px] text-foreground-secondary px-0.5 pt-1">
             <span>
               {filteredSheetCategories.length} {t.reports.activeCategories}
             </span>
@@ -2977,7 +2977,7 @@ export function ReportsView({
               <button
                 type="button"
                 onClick={() => setExcludedCategoryIds([])}
-                className="text-amber-600 dark:text-amber-400 font-bold hover:underline cursor-pointer flex items-center gap-1"
+                className="text-warning font-bold hover:underline cursor-pointer flex items-center gap-1"
               >
                 <RotateCcw className="w-3 h-3" />
                 <span>{t.reports.resetAll}</span>
@@ -2988,7 +2988,7 @@ export function ReportsView({
           {/* Scrollable Categories List */}
           <div className="max-h-75 overflow-y-auto space-y-2 pr-1">
             {filteredSheetCategories.length === 0 ? (
-              <div className="py-8 text-center text-xs text-[#94A3B8]">
+              <div className="py-8 text-center text-xs text-foreground-muted">
                 {t.reports.noDataDesc}
               </div>
             ) : (
@@ -3001,8 +3001,8 @@ export function ReportsView({
                     className={cn(
                       "flex items-center justify-between p-2.5 rounded-xl border transition-all cursor-pointer select-none",
                       isExcluded
-                        ? "bg-rose-50/70 dark:bg-rose-950/25 border-rose-200 dark:border-rose-900/60"
-                        : "bg-white dark:bg-[#121215] border-[#E5E7EB] dark:border-[#27272A] hover:bg-[#F8F9FA] dark:hover:bg-[#1A1A20]",
+                        ? "bg-destructive-muted/70 border-destructive/30"
+                        : "bg-surface border-border hover:bg-surface-subtle",
                     )}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
@@ -3011,15 +3011,15 @@ export function ReportsView({
                         className={cn(
                           "w-4 h-4 rounded-md flex items-center justify-center border transition-colors shrink-0",
                           isExcluded
-                            ? "bg-[#E11D48] border-[#E11D48] text-white"
-                            : "border-[#CBD5E1] dark:border-[#475569] bg-transparent",
+                            ? "bg-destructive border-destructive text-white"
+                            : "border-border bg-transparent",
                         )}
                       >
                         {isExcluded && <Check className="w-3 h-3 stroke-3" />}
                       </div>
 
                       {/* Icon */}
-                      <div className="w-7 h-7 rounded-lg bg-[#F1F3F5] dark:bg-[#1A1A20] flex items-center justify-center shrink-0 border border-[#E5E7EB] dark:border-[#27272A]">
+                      <div className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center shrink-0 border border-border">
                         <DynamicIcon
                           name={
                             cat.category?.icon ||
@@ -3027,7 +3027,7 @@ export function ReportsView({
                               ? "TrendingUp"
                               : "Tag")
                           }
-                          className="w-3.5 h-3.5 text-[#0F172A] dark:text-[#FAFAFA]"
+                          className="w-3.5 h-3.5 text-foreground"
                         />
                       </div>
 
@@ -3037,13 +3037,13 @@ export function ReportsView({
                           className={cn(
                             "text-xs font-bold truncate",
                             isExcluded
-                              ? "line-through text-[#64748B] dark:text-[#94A3B8]"
-                              : "text-[#0F172A] dark:text-[#FAFAFA]",
+                              ? "line-through text-foreground-secondary"
+                              : "text-foreground",
                           )}
                         >
                           {cat.name}
                         </span>
-                        <span className="text-[10px] text-[#94A3B8] font-mono">
+                        <span className="text-[10px] text-foreground-muted font-mono">
                           {cat.count} {t.reports.transactionCount}
                         </span>
                       </div>
@@ -3055,8 +3055,8 @@ export function ReportsView({
                         className={cn(
                           "text-xs font-bold font-mono tnum",
                           isExcluded
-                            ? "text-rose-600 dark:text-rose-400"
-                            : "text-[#0F172A] dark:text-[#FAFAFA]",
+                            ? "text-destructive"
+                            : "text-foreground",
                         )}
                       >
                         {maskCurrency(
@@ -3065,7 +3065,7 @@ export function ReportsView({
                         )}
                       </span>
                       {isExcluded && (
-                        <span className="text-[9px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider">
+                        <span className="text-[9px] font-bold text-destructive uppercase tracking-wider">
                           {t.reports.excluded}
                         </span>
                       )}
@@ -3077,14 +3077,14 @@ export function ReportsView({
           </div>
 
           {/* Sticky Bottom Apply Button */}
-          <div className="pt-2 mt-1 border-t border-[#E5E7EB] dark:border-[#27272A]">
+          <div className="pt-2 mt-1 border-t border-border">
             <Button
               type="button"
               onClick={() => {
                 setIsExcludeSheetOpen(false);
                 setCategorySearchQuery("");
               }}
-              className="w-full py-2.5 rounded-xl font-bold text-xs bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] cursor-pointer"
+              className="w-full py-2.5 rounded-xl font-bold text-xs bg-primary text-primary-foreground cursor-pointer"
             >
               {t.reports.applyFilter.replace(
                 "{count}",

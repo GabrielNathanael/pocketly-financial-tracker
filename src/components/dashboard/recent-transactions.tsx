@@ -18,12 +18,12 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
   return (
     <div className="flex flex-col gap-2.5">
       <div className="flex items-center justify-between px-0.5">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">
           {t.dashboard.recentTransactionsTitle}
         </h2>
         <Link
           href="/transactions"
-          className="text-xs font-semibold text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] flex items-center gap-0.5"
+          className="text-xs font-semibold text-foreground-secondary hover:text-foreground flex items-center gap-0.5"
         >
           <span>{t.dashboard.allTransactions}</span>
           <ArrowRight className="w-3 h-3" />

@@ -36,21 +36,21 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
   return (
     <Link
       href={`/transactions/${transaction.id}`}
-      className="flex items-center justify-between p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors cursor-pointer group"
+      className="flex items-center justify-between p-3 sm:p-3.5 rounded-xl bg-surface border border-border hover:border-border-strong transition-colors cursor-pointer group"
     >
       <div className="flex items-center gap-3 min-w-0">
-        <div className="w-8 h-8 rounded-lg bg-[#F1F3F5] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] flex items-center justify-center shrink-0">
+        <div className="w-8 h-8 rounded-lg bg-secondary border border-border text-foreground flex items-center justify-center shrink-0">
           <DynamicIcon name={cat?.icon || "Tag"} className="w-4 h-4" />
         </div>
 
         <div className="flex flex-col min-w-0">
-          <span className="text-xs sm:text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate">
+          <span className="text-xs sm:text-sm font-bold text-foreground truncate">
             {formatCategoryName(cat?.name || "Uncategorized", language)}
           </span>
-          <div className="flex items-center gap-1.5 text-[11px] text-[#64748B] dark:text-[#94A3B8] truncate">
+          <div className="flex items-center gap-1.5 text-[11px] text-foreground-secondary truncate">
             {cleanDesc && (
               <>
-                <span className="truncate max-w-32.5 sm:max-w-55 text-[#475569] dark:text-[#CBD5E1]">
+                <span className="truncate max-w-32.5 sm:max-w-55 text-foreground-secondary">
                   {cleanDesc}
                 </span>
                 <span>•</span>
@@ -64,13 +64,13 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
               {allTags.slice(0, 3).map((tag) => (
                 <span
                   key={tag}
-                  className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-[#F1F3F5] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-[#64748B] dark:text-[#94A3B8]"
+                  className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-secondary border border-border text-foreground-secondary"
                 >
                   #{tag}
                 </span>
               ))}
               {allTags.length > 3 && (
-                <span className="text-[9px] text-[#94A3B8]">
+                <span className="text-[9px] text-foreground-muted">
                   +{allTags.length - 3}
                 </span>
               )}
@@ -83,12 +83,12 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
         <span
           className={cn(
             "text-xs sm:text-sm font-mono font-bold tracking-tight tnum",
-            isIncome ? "text-[#0D9488]" : "text-[#0F172A] dark:text-[#F8FAFC]",
+            isIncome ? "text-success" : "text-foreground",
           )}
         >
           {maskCurrency(formattedAmount, isPrivate)}
         </span>
-        <span className="text-right font-mono leading-tight text-[#94A3B8]">
+        <span className="text-right font-mono leading-tight text-foreground-muted">
           <span className="block text-[10px]">
             {formatDate(transaction.transaction_date, "dd MMM")}
           </span>

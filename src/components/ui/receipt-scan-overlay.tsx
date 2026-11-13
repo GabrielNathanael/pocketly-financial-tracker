@@ -24,7 +24,7 @@ function ScanEffect({ showCorners }: { showCorners: boolean }) {
       )}
 
       {/* Beam: glow trail above a bright scan line, travels top -> bottom of the receipt */}
-      <div className="receipt-scan-trail absolute left-0 right-0 h-20 bg-linear-to-b from-transparent via-indigo-500/25 to-indigo-300/70">
+      <div className="receipt-scan-trail absolute left-0 right-0 h-20 bg-linear-to-b from-transparent via-info/25 to-info/70">
         <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r from-transparent via-white to-transparent shadow-[0_0_14px_3px_rgba(129,140,248,0.55),0_0_34px_8px_rgba(99,102,241,0.25)]" />
       </div>
     </div>
@@ -130,7 +130,7 @@ export function ReceiptScanOverlay({
         className,
       )}
     >
-      {backdrop && !contained && <div className="absolute inset-0 bg-[#09090B]" />}
+      {backdrop && !contained && <div className="absolute inset-0 bg-black" />}
 
       {/* Receipt area */}
       <div ref={boxRef} className={cn("relative flex items-center justify-center w-full h-full", padding)}>

@@ -1273,13 +1273,6 @@ export function humanizeAuditLog(
         to: newVal.icon || "-",
       });
     }
-    if (oldVal.color !== newVal.color && (oldVal.color || newVal.color)) {
-      catChanges.push({
-        field: isId ? "Warna" : "Color",
-        from: oldVal.color || "-",
-        to: newVal.color || "-",
-      });
-    }
     if (
       Boolean(oldVal.is_default) !== Boolean(newVal.is_default) &&
       (oldVal.is_default !== undefined || newVal.is_default !== undefined)

@@ -41,9 +41,9 @@ export function DiceAvatar({
   return (
     <span
       className={cn(
-        "relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#F1F3F5] dark:bg-[#1A1A20]",
+        "relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-secondary",
         SIZE_CLASS[size],
-        ring && "ring-2 ring-offset-1 ring-offset-white dark:ring-offset-[#121215]",
+        ring && "ring-2 ring-offset-1 ring-offset-surface",
         className,
       )}
       aria-hidden
@@ -52,7 +52,7 @@ export function DiceAvatar({
         // SVG dihasilkan DiceBear dari style + seed (tanpa input pengguna di dalamnya).
         <span className="h-full w-full" dangerouslySetInnerHTML={{ __html: svg }} />
       ) : (
-        <span className="text-[10px] font-bold text-[#64748B]">
+        <span className="text-[10px] font-bold text-muted-foreground">
           {(name || "?").trim().slice(0, 1).toUpperCase()}
         </span>
       )}

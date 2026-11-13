@@ -20,14 +20,14 @@ export function DemoNoticeBanner({ userEmail }: DemoNoticeBannerProps) {
   }
 
   return (
-    <div className="w-full bg-amber-500/15 dark:bg-amber-500/10 border-b border-amber-500/30 px-4 py-2.5 flex items-center justify-between gap-3 text-xs text-amber-900 dark:text-amber-200 animate-in fade-in slide-in-from-top duration-300">
+    <div className="w-full bg-warning-muted border-b border-warning/30 px-4 py-2.5 flex items-center justify-between gap-3 text-xs text-warning animate-in fade-in slide-in-from-top duration-300">
       <div className="flex items-center gap-2.5 max-w-4xl mx-auto flex-1">
-        <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+        <AlertTriangle className="w-4 h-4 text-warning shrink-0" />
         <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
           <span className="font-bold" suppressHydrationWarning>
             {t.dashboard.demoAccountLabel}
           </span>
-          <span className="text-amber-800 dark:text-amber-300">
+          <span className="text-warning/90">
             {t.dashboard.demoAccountDesc}
           </span>
         </div>
@@ -36,7 +36,7 @@ export function DemoNoticeBanner({ userEmail }: DemoNoticeBannerProps) {
       <button
         type="button"
         onClick={() => setIsDismissed(true)}
-        className="p-1 rounded-lg hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 transition-colors cursor-pointer shrink-0"
+        className="p-1 rounded-lg hover:bg-warning/20 text-warning transition-colors cursor-pointer shrink-0"
         title="Tutup banner / Dismiss"
       >
         <X className="w-3.5 h-3.5" />

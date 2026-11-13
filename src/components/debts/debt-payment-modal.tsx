@@ -151,11 +151,11 @@ export function DebtPaymentModal({
       maxWidth="sm"
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
-        <div className="p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-between text-xs font-mono">
-          <span className="font-sans text-[#64748B] dark:text-[#94A3B8]">
+        <div className="p-3 rounded-lg bg-surface-subtle border border-border flex items-center justify-between text-xs font-mono">
+          <span className="font-sans text-muted-foreground">
             {t.debts.remainingTagihan}:
           </span>
-          <span className="font-bold text-[#0F172A] dark:text-[#F8FAFC] tnum">
+          <span className="font-bold text-foreground tnum">
             {formatCurrency(debt?.remaining_amount, debt?.currency)}
           </span>
         </div>
@@ -175,7 +175,7 @@ export function DebtPaymentModal({
 
         {/* Payment Date */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+          <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
             {t.debts.paymentDate}
           </label>
           <DatePicker value={paymentDate} onChange={setPaymentDate} />
@@ -184,10 +184,10 @@ export function DebtPaymentModal({
         {/* Rekening Transaksi (Strict Currency Matched) */}
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
               {t.debts.selectLinkedAccount}
             </label>
-            <span className="text-[10px] font-mono font-bold text-[#D97706]">
+            <span className="text-[10px] font-mono font-bold text-warning">
               {t.debts.mustMatchCurrency
                 ? t.debts.mustMatchCurrency.replace(
                     "{currency}",
@@ -198,7 +198,7 @@ export function DebtPaymentModal({
           </div>
 
           {matchingAccounts.length === 0 ? (
-            <div className="p-3 rounded-xl bg-[#FFFBEB] dark:bg-[#78350F]/20 border border-[#FDE68A] dark:border-[#92400E]/40 text-xs text-[#B45309] dark:text-[#FDE68A] flex items-start gap-2">
+            <div className="p-3 rounded-xl bg-warning-muted border border-warning/20 text-xs text-warning flex items-start gap-2">
               <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>
                 {t.debts.noMatchingAccount
@@ -233,15 +233,15 @@ export function DebtPaymentModal({
                     <SelectItem key={a.id} value={a.id}>
                       <div className="flex items-center justify-between gap-3 w-full">
                         <div className="flex items-center gap-2">
-                          <Wallet className="w-3.5 h-3.5 text-[#94A3B8]" />
+                          <Wallet className="w-3.5 h-3.5 text-foreground-muted" />
                           <span>{a.name}</span>
                           {isDef && (
-                            <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A]">
+                            <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-primary text-primary-foreground">
                               Default
                             </span>
                           )}
                         </div>
-                        <span className="text-[10px] font-mono font-bold text-[#64748B] dark:text-[#94A3B8] tnum">
+                        <span className="text-[10px] font-mono font-bold text-muted-foreground tnum">
                           {formatCurrency(a.current_balance, a.currency)}
                         </span>
                       </div>
@@ -252,7 +252,7 @@ export function DebtPaymentModal({
             </Select>
           )}
 
-          <p className="text-[10px] text-[#64748B] dark:text-[#94A3B8]">
+          <p className="text-[10px] text-muted-foreground">
             {debt?.type === "debt"
               ? t.debts.accountDeductNote ||
                 "Saldo rekening terpilih akan otomatis terpotong (Pengeluaran)."
@@ -262,12 +262,12 @@ export function DebtPaymentModal({
         </div>
 
         {error && (
-          <p className="text-xs font-semibold text-[#E11D48] text-center">
+          <p className="text-xs font-semibold text-destructive text-center">
             {error}
           </p>
         )}
 
-        <div className="flex items-center justify-end gap-2 mt-2 pt-2 border-t border-[#E5E7EB] dark:border-[#27272A]">
+        <div className="flex items-center justify-end gap-2 mt-2 pt-2 border-t border-border">
           <Button
             type="button"
             variant="outline"

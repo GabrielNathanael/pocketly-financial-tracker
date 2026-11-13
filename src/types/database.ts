@@ -78,7 +78,6 @@ export interface Database {
           name: string;
           type: TransactionType;
           icon: string;
-          color: string | null;
           is_default: boolean;
           parent_id: string | null;
           created_at: string;
@@ -89,7 +88,6 @@ export interface Database {
           name: string;
           type: TransactionType;
           icon?: string;
-          color?: string | null;
           is_default?: boolean;
           parent_id?: string | null;
           created_at?: string;
@@ -100,7 +98,6 @@ export interface Database {
           name?: string;
           type?: TransactionType;
           icon?: string;
-          color?: string | null;
           is_default?: boolean;
           parent_id?: string | null;
           created_at?: string;

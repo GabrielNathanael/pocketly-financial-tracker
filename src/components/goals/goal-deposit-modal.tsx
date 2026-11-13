@@ -145,42 +145,42 @@ export function GoalDepositModal({
       <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
         {/* Error Alert Banner */}
         {errorMsg && (
-          <div className="p-3 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 flex items-center gap-2 text-xs text-rose-600 dark:text-rose-400">
+          <div className="p-3 rounded-lg bg-destructive-muted border border-destructive/20 flex items-center gap-2 text-xs text-destructive">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{errorMsg}</span>
           </div>
         )}
 
         {/* Current Savings Summary Bar */}
-        <div className="p-3 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-between text-xs font-mono">
+        <div className="p-3 rounded-xl bg-canvas dark:bg-surface-subtle border border-border flex items-center justify-between text-xs font-mono">
           <div>
-            <span className="font-sans text-[#64748B] dark:text-[#94A3B8] block text-[10px] uppercase font-bold tracking-wider">
+            <span className="font-sans text-foreground-secondary block text-[10px] uppercase font-bold tracking-wider">
               {t.goals.totalSaved}
             </span>
-            <span className="font-bold text-[#0D9488] text-sm tnum">
+            <span className="font-bold text-success text-sm tnum">
               {formatCurrency(currentAmt, goal.currency)}
             </span>
           </div>
           <div className="text-right">
-            <span className="font-sans text-[#64748B] dark:text-[#94A3B8] block text-[10px] uppercase font-bold tracking-wider">
+            <span className="font-sans text-foreground-secondary block text-[10px] uppercase font-bold tracking-wider">
               {t.goals.remainingTargetLabel}
             </span>
-            <span className="font-bold text-[#0F172A] dark:text-[#F8FAFC] text-sm tnum">
+            <span className="font-bold text-foreground text-sm tnum">
               {formatCurrency(remainingAmt, goal.currency)}
             </span>
           </div>
         </div>
 
         {/* Deposit vs Withdraw Type Switcher */}
-        <div className="grid grid-cols-2 p-1 bg-[#F1F3F5] dark:bg-[#1A1A20] rounded-xl border border-[#E5E7EB] dark:border-[#27272A]">
+        <div className="grid grid-cols-2 p-1 bg-surface-subtle rounded-xl border border-border">
           <button
             type="button"
             onClick={() => setType("deposit")}
             className={cn(
               "py-1.5 text-xs font-bold rounded-lg transition-all text-center cursor-pointer flex items-center justify-center gap-1.5",
               type === "deposit"
-                ? "bg-white dark:bg-[#121215] text-[#0D9488] shadow-xs"
-                : "text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8]",
+                ? "bg-surface text-success shadow-xs"
+                : "text-foreground-secondary hover:text-foreground",
             )}
           >
             <ArrowDownRight className="w-3.5 h-3.5" />
@@ -192,8 +192,8 @@ export function GoalDepositModal({
             className={cn(
               "py-1.5 text-xs font-bold rounded-lg transition-all text-center cursor-pointer flex items-center justify-center gap-1.5",
               type === "withdraw"
-                ? "bg-white dark:bg-[#121215] text-[#E11D48] shadow-xs"
-                : "text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8]",
+                ? "bg-surface text-destructive shadow-xs"
+                : "text-foreground-secondary hover:text-foreground",
             )}
           >
             <ArrowUpRight className="w-3.5 h-3.5" />
@@ -217,7 +217,7 @@ export function GoalDepositModal({
 
         {/* Date Picker */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+          <label className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary">
             {t.common.date}
           </label>
           <DatePicker value={depositDate} onChange={setDepositDate} />
@@ -225,11 +225,11 @@ export function GoalDepositModal({
 
         {/* Account Selector (styled to match RecurringFormModal) */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA]">
+          <label className="text-xs font-semibold text-foreground">
             {type === "deposit"
               ? t.goals.sourceAccountShortLabel
               : t.goals.depositDestinationAccountLabel}{" "}
-            <span className="text-rose-500">*</span>
+            <span className="text-destructive">*</span>
           </label>
           <Select value={accountId} onValueChange={setAccountId}>
             <SelectTrigger className="w-full min-w-0 text-xs">
@@ -247,10 +247,10 @@ export function GoalDepositModal({
                 <SelectItem key={a.id} value={a.id}>
                   <div className="flex items-center justify-between gap-3 w-full">
                     <div className="flex items-center gap-2">
-                      <Wallet className="w-3.5 h-3.5 text-[#94A3B8]" />
+                      <Wallet className="w-3.5 h-3.5 text-foreground-muted" />
                       <span>{a.name}</span>
                     </div>
-                    <span className="text-[10px] font-mono font-bold text-[#64748B] dark:text-[#94A3B8] tnum">
+                    <span className="text-[10px] font-mono font-bold text-foreground-secondary tnum">
                       {formatCurrency(a.current_balance, a.currency)}
                     </span>
                   </div>
@@ -270,7 +270,7 @@ export function GoalDepositModal({
         />
 
         {/* Footer Actions */}
-        <div className="pt-3 border-t border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-end gap-2">
+        <div className="pt-3 border-t border-border flex items-center justify-end gap-2">
           <Button
             type="button"
             variant="outline"
@@ -285,10 +285,10 @@ export function GoalDepositModal({
             size="sm"
             disabled={loading}
             className={cn(
-              "text-xs font-bold text-white cursor-pointer",
+              "text-xs font-bold cursor-pointer",
               type === "deposit"
-                ? "bg-[#0D9488] hover:bg-[#0F766E]"
-                : "bg-[#E11D48] hover:bg-[#BE123C]",
+                ? "bg-success text-success-foreground hover:opacity-90"
+                : "bg-destructive text-destructive-foreground hover:bg-destructive-hover",
             )}
           >
             {loading

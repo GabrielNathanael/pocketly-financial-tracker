@@ -52,7 +52,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0F172A",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#F8F9FA" },
+    { media: "(prefers-color-scheme: dark)", color: "#09090B" },
+  ],
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -70,7 +73,7 @@ export default function RootLayout({
       className={`${jakartaSans.variable} ${geistMono.variable}`}
       suppressHydrationWarning
     >
-      <body className="min-h-screen bg-[#F8F9FA] dark:bg-[#09090B] text-[#0F172A] dark:text-[#F8FAFC] font-sans antialiased selection:bg-[#0F172A] selection:text-white dark:selection:bg-white dark:selection:text-[#0F172A]">
+      <body className="min-h-screen bg-canvas text-foreground font-sans antialiased selection:bg-primary selection:text-primary-foreground">
         <ThemeProvider>
           <LanguageProvider>
             <UndoProvider>

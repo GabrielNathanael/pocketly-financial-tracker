@@ -94,25 +94,25 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
     <div className="flex flex-col gap-4">
       {/* Dynamic Bilingual Header */}
       <div>
-        <h1 className="text-xl font-bold tracking-tight text-[#0F172A] dark:text-[#F8FAFC]">
+        <h1 className="text-xl font-bold tracking-tight text-foreground">
           {t.settings.title}
         </h1>
-        <p className="text-xs text-[#64748B] dark:text-[#94A3B8] font-mono">
+        <p className="text-xs text-muted-foreground font-mono">
           {t.settings.subtitle}
         </p>
       </div>
 
       {/* Account Info */}
-      <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-3">
+      <div className="p-4 sm:p-5 rounded-xl bg-surface border border-border flex flex-col gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-[#F1F3F5] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-lg bg-surface-subtle border border-border text-foreground flex items-center justify-center shrink-0">
             <Shield className="w-4 h-4" />
           </div>
           <div className="flex flex-col min-w-0">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC] truncate">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-foreground truncate">
               {t.settings.sessionTitle}
             </h3>
-            <span className="text-xs font-mono text-[#64748B] dark:text-[#94A3B8] truncate">
+            <span className="text-xs font-mono text-muted-foreground truncate">
               {userEmail ||
                 t.settings.authenticatedUser ||
                 "Pengguna Terautentikasi"}
@@ -122,16 +122,16 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
       </div>
 
       {/* Global Audit Log Shortcut Card */}
-      <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="p-4 sm:p-5 rounded-xl bg-surface border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 rounded-lg bg-[#F1F3F5] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-lg bg-surface-subtle border border-border text-foreground flex items-center justify-center shrink-0">
             <History className="w-4 h-4" />
           </div>
           <div className="flex flex-col min-w-0">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">
               {t.auditLog.auditShortcutCardTitle}
             </h3>
-            <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">
+            <p className="text-xs text-muted-foreground">
               {t.auditLog.auditShortcutCardDesc}
             </p>
           </div>
@@ -139,7 +139,7 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
 
         <Link
           href="/audit-log"
-          className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#0F172A] hover:bg-[#1E293B] dark:bg-[#FAFAFA] dark:hover:bg-[#E2E8F0] text-white dark:text-[#0F172A] text-xs font-bold transition-colors shrink-0 whitespace-nowrap cursor-pointer"
+          className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold transition-colors shrink-0 whitespace-nowrap cursor-pointer"
         >
           <span>{t.auditLog.openAuditBtn}</span>
           <ArrowRight className="w-3.5 h-3.5" />
@@ -147,16 +147,16 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
       </div>
 
       {/* Primary Display Currency Setting */}
-      <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="p-4 sm:p-5 rounded-xl bg-surface border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 rounded-lg bg-[#F1F3F5] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-lg bg-surface-subtle border border-border text-foreground flex items-center justify-center shrink-0">
             <Coins className="w-4 h-4" />
           </div>
           <div className="flex flex-col min-w-0">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">
               {t.settings.primaryCurrencyTitle}
             </h3>
-            <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">
+            <p className="text-xs text-muted-foreground">
               {t.settings.primaryCurrencyDesc}
             </p>
           </div>
@@ -177,7 +177,7 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
                 <SelectItem key={curr.code} value={curr.code}>
                   <span className="flex items-center gap-1.5">
                     <span className="font-bold">{curr.code}</span>
-                    <span className="text-[11px] text-[#64748B] dark:text-[#94A3B8] font-normal truncate">
+                    <span className="text-[11px] text-muted-foreground font-normal truncate">
                       ({curr.name})
                     </span>
                   </span>
@@ -189,13 +189,13 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
       </div>
 
       {/* Foreign Exchange Rate Sync & Live Rates Matrix */}
-      <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-3.5">
+      <div className="p-4 sm:p-5 rounded-xl bg-surface border border-border flex flex-col gap-3.5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">
               {t.settings.exchangeRateTitle}
             </h3>
-            <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               {t.settings.forexMatrixDesc}
             </p>
           </div>
@@ -209,7 +209,7 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
           >
             {syncSuccess ? (
               <>
-                <Check className="w-3.5 h-3.5 text-[#0D9488]" />
+                <Check className="w-3.5 h-3.5 text-success" />
                 <span>{t.settings.syncedSuccess}</span>
               </>
             ) : (
@@ -222,30 +222,30 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
         </div>
 
         {/* Live Forex Matrix Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-[#E5E7EB] dark:border-[#27272A] font-mono text-xs">
-          <div className="p-2.5 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col">
-            <span className="text-[10px] font-sans font-bold text-[#94A3B8]">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-border font-mono text-xs">
+          <div className="p-2.5 rounded-lg bg-canvas dark:bg-surface-subtle border border-border flex flex-col">
+            <span className="text-[10px] font-sans font-bold text-foreground-muted">
               USD / IDR
             </span>
-            <span className="font-bold text-[#0F172A] dark:text-[#FAFAFA] mt-0.5">
+            <span className="font-bold text-foreground mt-0.5">
               1 USD = {formatCurrency(forexRates.IDR || 16200, "IDR")}
             </span>
           </div>
 
-          <div className="p-2.5 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col">
-            <span className="text-[10px] font-sans font-bold text-[#94A3B8]">
+          <div className="p-2.5 rounded-lg bg-canvas dark:bg-surface-subtle border border-border flex flex-col">
+            <span className="text-[10px] font-sans font-bold text-foreground-muted">
               USD / SGD
             </span>
-            <span className="font-bold text-[#0F172A] dark:text-[#FAFAFA] mt-0.5">
+            <span className="font-bold text-foreground mt-0.5">
               1 USD = {formatCurrency(forexRates.SGD || 1.34, "SGD")}
             </span>
           </div>
 
-          <div className="p-2.5 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col">
-            <span className="text-[10px] font-sans font-bold text-[#94A3B8]">
+          <div className="p-2.5 rounded-lg bg-canvas dark:bg-surface-subtle border border-border flex flex-col">
+            <span className="text-[10px] font-sans font-bold text-foreground-muted">
               SGD / IDR (Cross)
             </span>
-            <span className="font-bold text-[#0D9488] mt-0.5">
+            <span className="font-bold text-success mt-0.5">
               1 SGD = {formatCurrency(sgdToIdr, "IDR")}
             </span>
           </div>
@@ -253,30 +253,30 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
       </div>
 
       {/* Language Switcher */}
-      <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="p-4 sm:p-5 rounded-xl bg-surface border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 rounded-lg bg-[#F1F3F5] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-lg bg-surface-subtle border border-border text-foreground flex items-center justify-center shrink-0">
             <Globe className="w-4 h-4" />
           </div>
           <div className="flex flex-col min-w-0">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">
               {t.settings.languageTitle}
             </h3>
-            <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">
+            <p className="text-xs text-muted-foreground">
               {t.settings.languageDesc}
             </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 w-full sm:w-auto p-1 bg-[#F1F3F5] dark:bg-[#1A1A20] rounded-lg border border-[#E5E7EB] dark:border-[#27272A] shrink-0">
+        <div className="grid grid-cols-2 w-full sm:w-auto p-1 bg-surface-subtle rounded-lg border border-border shrink-0">
           <button
             type="button"
             onClick={() => setLanguage("id")}
             className={cn(
               "px-3.5 py-1.5 rounded-md text-xs whitespace-nowrap transition-all cursor-pointer font-medium text-center",
               language === "id"
-                ? "bg-white dark:bg-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] border border-[#E5E7EB] dark:border-transparent font-bold shadow-xs"
-                : "text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]",
+                ? "bg-surface dark:bg-surface-muted text-foreground border border-border dark:border-transparent font-bold shadow-xs"
+                : "text-muted-foreground hover:text-foreground",
             )}
           >
             Bahasa Indonesia
@@ -287,8 +287,8 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
             className={cn(
               "px-3.5 py-1.5 rounded-md text-xs whitespace-nowrap transition-all cursor-pointer font-medium text-center",
               language === "en"
-                ? "bg-[#0F172A] text-white dark:bg-[#27272A] dark:text-[#FAFAFA] font-bold shadow-xs"
-                : "text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]",
+                ? "bg-primary text-primary-foreground dark:bg-surface-muted dark:text-foreground font-bold shadow-xs"
+                : "text-muted-foreground hover:text-foreground",
             )}
           >
             English
@@ -297,12 +297,12 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
       </div>
 
       {/* Theme Settings */}
-      <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="p-4 sm:p-5 rounded-xl bg-surface border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h3 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">
             {t.settings.themeTitle}
           </h3>
-          <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">
+          <p className="text-xs text-muted-foreground">
             {t.settings.themeDesc}
           </p>
         </div>
@@ -310,16 +310,16 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
       </div>
 
       {/* User Guide Card */}
-      <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="p-4 sm:p-5 rounded-xl bg-surface border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 rounded-lg bg-[#F1F3F5] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-lg bg-surface-subtle border border-border text-foreground flex items-center justify-center shrink-0">
             <BookOpen className="w-4 h-4" />
           </div>
           <div className="flex flex-col min-w-0">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">
               {t.settings.guideTitle}
             </h3>
-            <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">
+            <p className="text-xs text-muted-foreground">
               {t.settings.guideDesc}
             </p>
           </div>
@@ -327,7 +327,7 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
 
         <Link
           href="/guide"
-          className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#0F172A] hover:bg-[#1E293B] dark:bg-[#FAFAFA] dark:hover:bg-[#E2E8F0] text-white dark:text-[#0F172A] text-xs font-bold transition-colors shrink-0 whitespace-nowrap cursor-pointer"
+          className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold transition-colors shrink-0 whitespace-nowrap cursor-pointer"
         >
           <span>{t.settings.openGuideBtn}</span>
           <ArrowRight className="w-3.5 h-3.5" />
@@ -339,15 +339,15 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
 
       {/* Demo Account Reset Helper */}
       {userEmail?.toLowerCase() === "demo@pocketly.app" && (
-        <div className="p-4 sm:p-5 rounded-xl bg-amber-500/10 dark:bg-amber-500/5 border border-amber-500/30 dark:border-amber-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="p-4 sm:p-5 rounded-xl bg-warning-muted border border-warning/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
-              <RefreshCw className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-              <h3 className="text-xs font-bold uppercase tracking-wider text-amber-900 dark:text-amber-300">
+              <RefreshCw className="w-4 h-4 text-warning" />
+              <h3 className="text-xs font-bold uppercase tracking-wider text-warning">
                 {t.settings.demoResetTitle}
               </h3>
             </div>
-            <p className="text-xs text-amber-800/80 dark:text-amber-300/70 max-w-md">
+            <p className="text-xs text-warning/80 max-w-md">
               {t.settings.demoResetDesc}
             </p>
           </div>
@@ -368,7 +368,7 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
                 toast.error(res.error || "Gagal mereset data demo");
               }
             }}
-            className="border-amber-500/40 text-amber-900 dark:text-amber-200 hover:bg-amber-500/20 shrink-0 font-bold"
+            className="border-warning/40 text-warning hover:bg-warning-muted shrink-0 font-bold"
           >
             {t.settings.demoResetBtn}
           </Button>
@@ -376,12 +376,12 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
       )}
 
       {/* Sign Out */}
-      <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-between">
+      <div className="p-4 sm:p-5 rounded-xl bg-surface border border-border flex items-center justify-between">
         <div>
-          <h3 className="text-xs font-bold uppercase tracking-wider text-[#E11D48]">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-destructive">
             {t.settings.terminateTitle}
           </h3>
-          <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">
+          <p className="text-xs text-muted-foreground">
             {t.settings.terminateDesc}
           </p>
         </div>

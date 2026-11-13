@@ -159,22 +159,22 @@ export function DebtForm({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       {error && (
-        <div className="p-3 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 text-xs font-medium flex items-start gap-2">
+        <div className="p-3 rounded-lg bg-destructive-muted border border-destructive/20 text-destructive text-xs font-medium flex items-start gap-2">
           <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
           <span className="leading-relaxed">{error}</span>
         </div>
       )}
       {/* Type toggle */}
       {!isEditing && (
-        <div className="grid grid-cols-2 p-1 bg-[#F1F3F5] dark:bg-[#1A1A20] rounded-lg border border-[#E5E7EB] dark:border-[#27272A]">
+        <div className="grid grid-cols-2 p-1 bg-surface-subtle rounded-lg border border-border">
           <button
             type="button"
             onClick={() => setType("debt")}
             className={cn(
               "py-2 rounded-md font-bold text-xs transition-colors cursor-pointer text-center",
               type === "debt"
-                ? "bg-[#E11D48] text-white"
-                : "text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#F8FAFC]",
+                ? "bg-destructive text-destructive-foreground"
+                : "text-muted-foreground hover:text-foreground",
             )}
           >
             {t.debts.debtType}
@@ -185,8 +185,8 @@ export function DebtForm({
             className={cn(
               "py-2 rounded-md font-bold text-xs transition-colors cursor-pointer text-center",
               type === "receivable"
-                ? "bg-[#0D9488] text-white"
-                : "text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#F8FAFC]",
+                ? "bg-success text-success-foreground"
+                : "text-muted-foreground hover:text-foreground",
             )}
           >
             {t.debts.receivableType}
@@ -207,7 +207,7 @@ export function DebtForm({
         <div className="flex flex-col gap-3">
           {/* Currency Selector */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
               {t.common.currency}
             </label>
             <Select
@@ -244,19 +244,19 @@ export function DebtForm({
 
       {/* Linked Account Selection & Sync Option */}
       {!isEditing && accounts && accounts.length > 0 && (
-        <div className="flex flex-col gap-2.5 p-3.5 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A]">
+        <div className="flex flex-col gap-2.5 p-3.5 rounded-xl bg-surface-subtle border border-border">
           <label className="flex items-start gap-2.5 cursor-pointer">
             <input
               type="checkbox"
               checked={recordTransaction}
               onChange={(e) => setRecordTransaction(e.target.checked)}
-              className="mt-0.5 w-4 h-4 rounded border-gray-300 text-[#0F172A] focus:ring-[#0F172A] cursor-pointer"
+              className="mt-0.5 w-4 h-4 rounded border-border text-primary focus:ring-ring cursor-pointer"
             />
             <div className="flex flex-col gap-0.5">
-              <span className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+              <span className="text-xs font-bold text-foreground">
                 {t.debts.recordDisbursementCheck}
               </span>
-              <span className="text-[11px] text-[#64748B] dark:text-[#94A3B8]">
+              <span className="text-[11px] text-muted-foreground">
                 {recordTransaction
                   ? type === "receivable"
                     ? t.debts.disbursementDeductDesc
@@ -267,8 +267,8 @@ export function DebtForm({
           </label>
 
           {recordTransaction && (
-            <div className="flex flex-col gap-1.5 pt-2 border-t border-[#E5E7EB] dark:border-[#27272A]">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+            <div className="flex flex-col gap-1.5 pt-2 border-t border-border">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                 {t.debts.disbursementAccountLabel} ({currency})
               </label>
               {matchingAccounts.length > 0 ? (
@@ -290,7 +290,7 @@ export function DebtForm({
                   </SelectContent>
                 </Select>
               ) : (
-                <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-[11px]">
+                <div className="p-2.5 rounded-lg bg-warning-muted border border-warning/20 text-warning text-[11px]">
                   {t.debts.noMatchingAccountShort}
                 </div>
               )}
@@ -301,7 +301,7 @@ export function DebtForm({
 
       {/* Due Date Picker */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
           {t.debts.dueDateLabel}
         </label>
         <DatePicker
@@ -313,7 +313,7 @@ export function DebtForm({
 
       {/* Free-Text Notes */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
           {t.debts.notesLabel}
         </label>
         <textarea
@@ -321,11 +321,11 @@ export function DebtForm({
           placeholder={t.debts.notesPlaceholder}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          className="w-full px-3.5 py-2.5 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-xs text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0F172A] dark:focus:ring-[#FAFAFA] transition-all resize-y min-h-17.5 leading-relaxed"
+          className="w-full px-3.5 py-2.5 rounded-xl bg-surface-subtle border border-border text-xs text-foreground placeholder:text-foreground-muted focus:outline-none focus:ring-2 focus:ring-ring transition-all resize-y min-h-17.5 leading-relaxed"
         />
       </div>
 
-      {error && <p className="text-xs font-semibold text-[#E11D48]">{error}</p>}
+      {error && <p className="text-xs font-semibold text-destructive">{error}</p>}
 
       <div className="flex items-center gap-2 pt-2">
         {isEditing && (

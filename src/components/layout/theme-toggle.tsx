@@ -42,7 +42,7 @@ export function ThemeToggle({
   return (
     <div
       className={cn(
-        'p-0.5 bg-[#F1F3F5] dark:bg-[#1A1A20] rounded-lg border border-[#E5E7EB] dark:border-[#27272A]',
+        'p-0.5 bg-muted rounded-lg border border-border',
         showLabels ? 'grid grid-cols-3 w-full sm:w-auto' : 'inline-flex items-center',
         className
       )}
@@ -58,8 +58,8 @@ export function ThemeToggle({
                 'rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 w-full',
                 showLabels ? 'px-3 py-1.5' : 'p-1.5',
                 isActive
-                  ? 'bg-white dark:bg-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] border border-[#E5E7EB] dark:border-transparent shadow-2xs font-bold'
-                  : 'text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
+                  ? 'bg-surface text-foreground border border-border shadow-2xs font-bold'
+                  : 'text-foreground-secondary hover:text-foreground'
               )}
               aria-label={label}
               title={label}
@@ -70,8 +70,8 @@ export function ThemeToggle({
 
             {/* Hover Floating Tooltip (Positioned below to prevent clipping at top edges) */}
             <div className="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-1.5 hidden group-hover:flex flex-col items-center z-50 animate-in fade-in-0 zoom-in-95 duration-150">
-              <div className="w-1.5 h-1.5 rotate-45 bg-[#0F172A] dark:bg-[#FAFAFA] -mb-1" />
-              <div className="px-2 py-0.5 rounded-md bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] text-[10px] font-bold whitespace-nowrap shadow-md">
+              <div className="w-1.5 h-1.5 rotate-45 bg-primary -mb-1" />
+              <div className="px-2 py-0.5 rounded-md bg-primary text-primary-foreground text-[10px] font-bold whitespace-nowrap shadow-md">
                 {label}
               </div>
             </div>

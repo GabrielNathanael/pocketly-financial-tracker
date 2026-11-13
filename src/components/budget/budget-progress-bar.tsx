@@ -14,18 +14,18 @@ export function BudgetProgressBar({ spent, budget, className }: BudgetProgressBa
   const clampedPercentage = Math.min(100, Math.max(0, percentage))
 
   // Flat color determination
-  let barColor = 'bg-[#0D9488]' // crisp teal green
+  let barColor = 'bg-success'
   if (percentage >= 100) {
-    barColor = 'bg-[#E11D48]' // crisp crimson
+    barColor = 'bg-destructive'
   } else if (percentage >= 85) {
-    barColor = 'bg-[#D97706]' // crisp amber
+    barColor = 'bg-warning'
   } else if (percentage >= 70) {
-    barColor = 'bg-[#CA8A04]' // crisp yellow-amber
+    barColor = 'bg-warning'
   }
 
   return (
     <div className={cn('w-full flex flex-col gap-1', className)}>
-      <div className="w-full h-1.5 bg-[#E5E7EB] dark:bg-[#27272A] rounded-full overflow-hidden">
+      <div className="w-full h-1.5 bg-border rounded-full overflow-hidden">
         <div
           className={cn('h-full rounded-full transition-all duration-300 ease-out', barColor)}
           style={{ width: `${clampedPercentage}%` }}

@@ -148,7 +148,7 @@ function BudgetForm({
       {/* Category Selector (if creating without predefined category) */}
       {!budget?.category && expenseCategories.length > 0 && (
         <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+          <label className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary dark:text-foreground-muted">
             {t.common.category}
           </label>
           <Select value={categoryId} onValueChange={setCategoryId}>
@@ -159,7 +159,7 @@ function BudgetForm({
               {expenseCategories.map((c) => (
                 <SelectItem key={c.id} value={c.id}>
                   <div className="flex items-center gap-2">
-                    <DynamicIcon name={c.icon || 'Tag'} className="w-3.5 h-3.5 text-[#E11D48]" />
+                    <DynamicIcon name={c.icon || 'Tag'} className="w-3.5 h-3.5 text-destructive" />
                     <span>{c.name}</span>
                   </div>
                 </SelectItem>
@@ -171,7 +171,7 @@ function BudgetForm({
 
       {/* Currency Selector Pills */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+        <label className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary dark:text-foreground-muted">
           {t.common.currency}
         </label>
         <div className="grid grid-cols-3 gap-1.5">
@@ -183,8 +183,8 @@ function BudgetForm({
               className={cn(
                 'py-2 px-3 rounded-lg text-xs font-mono font-bold transition-colors cursor-pointer border text-center',
                 currency === cur
-                  ? 'bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A] border-transparent shadow-2xs'
-                  : 'bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] dark:text-[#94A3B8] border-[#E5E7EB] dark:border-[#27272A] hover:bg-[#F1F3F5] dark:hover:bg-[#26262E]'
+                  ? 'bg-surface-inverse text-foreground-inverse border-transparent shadow-2xs'
+                  : 'bg-surface-subtle text-foreground-secondary dark:text-foreground-muted border-border hover:bg-surface-muted'
               )}
             >
               {cur}
@@ -207,7 +207,7 @@ function BudgetForm({
         className="font-mono font-bold text-sm tnum"
       />
 
-      {error && <p className="text-xs font-semibold text-[#E11D48]">{error}</p>}
+      {error && <p className="text-xs font-semibold text-destructive">{error}</p>}
 
       <div className="flex items-center gap-2 pt-2">
         {isEditing && (

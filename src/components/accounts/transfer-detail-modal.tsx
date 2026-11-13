@@ -69,48 +69,48 @@ export function TransferDetailModal({
     >
       <div className="flex flex-col gap-4">
         {/* Hero Amount & Status */}
-        <div className="p-4 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col items-center justify-center text-center gap-1.5">
-          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold uppercase tracking-wider">
+        <div className="p-4 rounded-xl bg-canvas dark:bg-surface-subtle border border-border flex flex-col items-center justify-center text-center gap-1.5">
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-success-muted text-success text-[10px] font-bold uppercase tracking-wider">
             <CheckCircle2 className="w-3 h-3" />
             <span>{t.transfer.completed}</span>
           </div>
-          <span className="text-2xl font-mono font-bold text-[#0F172A] dark:text-[#FAFAFA] tracking-tight tnum mt-1">
+          <span className="text-2xl font-mono font-bold text-foreground tracking-tight tnum mt-1">
             {formatCurrency(mutation.amount, mutation.currency)}
           </span>
-          <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">
+          <span className="text-xs text-foreground-secondary">
             {mutation.title}
           </span>
         </div>
 
         {/* Transfer Route Card */}
-        <div className="p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-3">
+        <div className="p-3.5 rounded-xl bg-surface border border-border flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-rose-500/10 text-rose-600 flex items-center justify-center">
+              <div className="w-7 h-7 rounded-lg bg-destructive-muted text-destructive flex items-center justify-center">
                 <ArrowDownRight className="w-4 h-4" />
               </div>
               <div className="flex flex-col">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-muted">
                   {t.transfer.sourceLabel}
                 </span>
-                <span className="text-xs font-bold text-[#0F172A] dark:text-[#FAFAFA]">
+                <span className="text-xs font-bold text-foreground">
                   {fromName}
                 </span>
               </div>
             </div>
 
-            <ArrowRightLeft className="w-4 h-4 text-[#94A3B8]" />
+            <ArrowRightLeft className="w-4 h-4 text-foreground-muted" />
 
             <div className="flex items-center gap-2 text-right">
               <div className="flex flex-col">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-muted">
                   {t.transfer.destLabel}
                 </span>
-                <span className="text-xs font-bold text-[#0F172A] dark:text-[#FAFAFA]">
+                <span className="text-xs font-bold text-foreground">
                   {toName}
                 </span>
               </div>
-              <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+              <div className="w-7 h-7 rounded-lg bg-success-muted text-success flex items-center justify-center">
                 <ArrowUpRight className="w-4 h-4" />
               </div>
             </div>
@@ -118,10 +118,10 @@ export function TransferDetailModal({
 
           {/* Cross Currency Exchange Details */}
           {mutation.isCross && mutation.exchangeRateUsed && mutation.counterpartyCurrency && (
-            <div className="pt-2.5 border-t border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-1.5 text-xs">
-              <div className="flex items-center justify-between text-[#64748B] dark:text-[#94A3B8]">
+            <div className="pt-2.5 border-t border-border flex flex-col gap-1.5 text-xs">
+              <div className="flex items-center justify-between text-foreground-secondary">
                 <span>{t.transfer.exchangeRateDetailLabel}</span>
-                <span className="font-mono font-bold text-[#0F172A] dark:text-[#FAFAFA]">
+                <span className="font-mono font-bold text-foreground">
                   {formatNaturalForexRate(
                     mutation.type === 'transfer_out' ? mutation.currency : mutation.counterpartyCurrency,
                     mutation.type === 'transfer_out' ? mutation.counterpartyCurrency : mutation.currency,
@@ -130,9 +130,9 @@ export function TransferDetailModal({
                 </span>
               </div>
               {mutation.receivedAmount && (
-                <div className="flex items-center justify-between text-[#64748B] dark:text-[#94A3B8]">
+                <div className="flex items-center justify-between text-foreground-secondary">
                   <span>{t.transfer.receivedAmountLabel}</span>
-                  <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                  <span className="font-mono font-bold text-success">
                     {formatCurrency(mutation.receivedAmount, mutation.counterpartyCurrency)}
                   </span>
                 </div>
@@ -142,24 +142,24 @@ export function TransferDetailModal({
         </div>
 
         {/* Metadata Details */}
-        <div className="p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-2.5 text-xs">
-          <div className="flex items-center justify-between text-[#64748B] dark:text-[#94A3B8]">
+        <div className="p-3.5 rounded-xl bg-surface border border-border flex flex-col gap-2.5 text-xs">
+          <div className="flex items-center justify-between text-foreground-secondary">
             <div className="flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5" />
               <span>{t.transfer.dateLabel}</span>
             </div>
-            <span className="font-medium text-[#0F172A] dark:text-[#FAFAFA]">
+            <span className="font-medium text-foreground">
               {formatDate(mutation.date, 'dd MMMM yyyy, HH:mm')}
             </span>
           </div>
 
           {mutation.description && (
-            <div className="flex items-start justify-between gap-3 pt-2 border-t border-[#E5E7EB] dark:border-[#27272A] text-[#64748B] dark:text-[#94A3B8]">
+            <div className="flex items-start justify-between gap-3 pt-2 border-t border-border text-foreground-secondary">
               <div className="flex items-center gap-1.5 shrink-0">
                 <FileText className="w-3.5 h-3.5" />
                 <span>{t.transfer.noteLabel}</span>
               </div>
-              <span className="font-medium text-right text-[#0F172A] dark:text-[#FAFAFA] leading-relaxed break-all">
+              <span className="font-medium text-right text-foreground leading-relaxed break-all">
                 {mutation.description}
               </span>
             </div>

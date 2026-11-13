@@ -55,37 +55,37 @@ export default function SplitBillLoading() {
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex flex-col gap-2">
-          <Skeleton className="h-7 w-40 sm:w-48 rounded-lg bg-slate-200 dark:bg-[#27272A]" />
-          <Skeleton className="h-3.5 w-56 sm:w-72 rounded-md bg-slate-100 dark:bg-[#1E1E24]" />
+          <Skeleton className="h-7 w-40 sm:w-48 rounded-lg bg-surface-muted" />
+          <Skeleton className="h-3.5 w-56 sm:w-72 rounded-md bg-surface-subtle" />
         </div>
-        <Skeleton className="w-11 h-11 shrink-0 rounded-full bg-slate-100 dark:bg-[#1A1A20]" />
+        <Skeleton className="w-11 h-11 shrink-0 rounded-full bg-surface-subtle" />
       </div>
       <div className="grid sm:grid-cols-2 gap-3">
-        <div className="rounded-2xl border border-[#0F172A] dark:border-[#FAFAFA] bg-[#0F172A] dark:bg-[#FAFAFA] p-5 flex flex-col gap-3">
+        <div className="rounded-2xl border border-foreground bg-surface-inverse p-5 flex flex-col gap-3">
           <Skeleton className="w-11 h-11 rounded-xl bg-white/15 dark:bg-black/10" />
           <Skeleton className="h-4 w-28 rounded-md bg-white/25 dark:bg-black/10" />
           <Skeleton className="h-3 w-full max-w-[220px] rounded-md bg-white/10 dark:bg-black/10" />
           <Skeleton className="h-2.5 w-12 rounded-md bg-white/15 dark:bg-black/10" />
         </div>
-        <div className="rounded-2xl border border-[#E5E7EB] dark:border-[#27272A] bg-white dark:bg-[#121215] p-5 flex flex-col gap-3">
-          <Skeleton className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-[#1A1A20]" />
-          <Skeleton className="h-4 w-32 rounded-md bg-slate-200 dark:bg-[#27272A]" />
-          <Skeleton className="h-3 w-full max-w-[220px] rounded-md bg-slate-100 dark:bg-[#1E1E24]" />
-          <Skeleton className="h-2.5 w-12 rounded-md bg-slate-100 dark:bg-[#1E1E24]" />
+        <div className="rounded-2xl border border-border bg-surface p-5 flex flex-col gap-3">
+          <Skeleton className="w-11 h-11 rounded-xl bg-surface-subtle" />
+          <Skeleton className="h-4 w-32 rounded-md bg-surface-muted" />
+          <Skeleton className="h-3 w-full max-w-[220px] rounded-md bg-surface-subtle" />
+          <Skeleton className="h-2.5 w-12 rounded-md bg-surface-subtle" />
         </div>
       </div>
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-3">
-          <Skeleton className="h-2.5 w-28 rounded-md bg-slate-100 dark:bg-[#1E1E24]" />
-          <Skeleton className="h-2.5 w-16 rounded-md bg-slate-100 dark:bg-[#1E1E24]" />
+          <Skeleton className="h-2.5 w-28 rounded-md bg-surface-subtle" />
+          <Skeleton className="h-2.5 w-16 rounded-md bg-surface-subtle" />
         </div>
         {[1, 2, 3].map((i) => (
-          <div key={i} className="flex items-center justify-between gap-3 rounded-xl border border-[#E5E7EB] dark:border-[#27272A] bg-white dark:bg-[#121215] px-3.5 py-2.5">
+          <div key={i} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface px-3.5 py-2.5">
             <div className="min-w-0 flex flex-col gap-1.5">
-              <Skeleton className="h-3.5 w-32 sm:w-40 rounded-md bg-slate-200 dark:bg-[#27272A]" />
-              <Skeleton className="h-2.5 w-24 sm:w-32 rounded-md bg-slate-100 dark:bg-[#1E1E24]" />
+              <Skeleton className="h-3.5 w-32 sm:w-40 rounded-md bg-surface-muted" />
+              <Skeleton className="h-2.5 w-24 sm:w-32 rounded-md bg-surface-subtle" />
             </div>
-            <Skeleton className="h-4 w-16 shrink-0 rounded-full bg-slate-100 dark:bg-[#1A1A20]" />
+            <Skeleton className="h-4 w-16 shrink-0 rounded-full bg-surface-subtle" />
           </div>
         ))}
       </div>

@@ -170,10 +170,10 @@ export function GoalsManager({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-[#0F172A] dark:text-[#F8FAFC]">
+          <h1 className="text-xl font-bold tracking-tight text-foreground">
             {t.goals.title}
           </h1>
-          <p className="text-xs text-[#64748B] dark:text-[#94A3B8] font-mono leading-relaxed mt-0.5">
+          <p className="text-xs text-foreground-secondary font-mono leading-relaxed mt-0.5">
             {t.goals.subtitle}
           </p>
         </div>
@@ -184,7 +184,7 @@ export function GoalsManager({
             setFormModalOpen(true)
           }}
           size="sm"
-          className="gap-1.5 cursor-pointer text-xs font-bold bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] self-start sm:self-auto"
+          className="gap-1.5 cursor-pointer text-xs font-bold bg-primary text-primary-foreground self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
           <span>{t.goals.addBtn}</span>
@@ -194,56 +194,56 @@ export function GoalsManager({
       {/* Scorecard (4 Metric Cards) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
         {/* Card 1: Total Target */}
-        <div className="p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col justify-between gap-1.5 shadow-2xs">
+        <div className="p-3 sm:p-3.5 rounded-xl bg-surface border border-border flex flex-col justify-between gap-1.5 shadow-2xs">
           <div className="flex items-center justify-between gap-1 min-h-5.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] leading-tight">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary leading-tight">
               {t.goals.totalTarget}
             </span>
-            <Target className="w-3.5 h-3.5 text-[#0F172A] dark:text-[#FAFAFA] shrink-0" />
+            <Target className="w-3.5 h-3.5 text-foreground shrink-0" />
           </div>
           <div>
-            <h3 className="text-sm sm:text-base font-bold font-mono text-[#0F172A] dark:text-[#FAFAFA] tracking-tight tnum">
+            <h3 className="text-sm sm:text-base font-bold font-mono text-foreground tracking-tight tnum">
               {maskCurrency(formatCurrency(totalTargetCapital, displayCurrency), isPrivate)}
             </h3>
-            <span className="text-[10px] font-mono text-[#94A3B8] mt-0.5 block">
+            <span className="text-[10px] font-mono text-foreground-muted mt-0.5 block">
               {savingsGoals.length} {t.goals.milestonesLabel}
             </span>
           </div>
         </div>
 
         {/* Card 2: Total Saved */}
-        <div className="p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col justify-between gap-1.5 shadow-2xs">
+        <div className="p-3 sm:p-3.5 rounded-xl bg-surface border border-border flex flex-col justify-between gap-1.5 shadow-2xs">
           <div className="flex items-center justify-between gap-1 min-h-5.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] leading-tight">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary leading-tight">
               {t.goals.totalSaved}
             </span>
-            <PiggyBank className="w-3.5 h-3.5 text-[#0D9488] shrink-0" />
+            <PiggyBank className="w-3.5 h-3.5 text-success shrink-0" />
           </div>
           <div>
-            <h3 className="text-sm sm:text-base font-bold font-mono text-[#0D9488] tracking-tight tnum">
+            <h3 className="text-sm sm:text-base font-bold font-mono text-success tracking-tight tnum">
               {maskCurrency(formatCurrency(totalSavedCapital, displayCurrency), isPrivate)}
             </h3>
-            <span className="text-[10px] font-mono text-[#94A3B8] mt-0.5 block">
+            <span className="text-[10px] font-mono text-foreground-muted mt-0.5 block">
               {t.goals.allocatedFundsLabel}
             </span>
           </div>
         </div>
 
         {/* Card 3: Overall Progress */}
-        <div className="p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col justify-between gap-1.5 shadow-2xs">
+        <div className="p-3 sm:p-3.5 rounded-xl bg-surface border border-border flex flex-col justify-between gap-1.5 shadow-2xs">
           <div className="flex items-center justify-between gap-1 min-h-5.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] leading-tight">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary leading-tight">
               {t.goals.overallProgress}
             </span>
-            <Percent className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+            <Percent className="w-3.5 h-3.5 text-info shrink-0" />
           </div>
           <div>
-            <h3 className="text-sm sm:text-base font-bold font-mono text-blue-600 dark:text-blue-400 tracking-tight tnum">
+            <h3 className="text-sm sm:text-base font-bold font-mono text-info tracking-tight tnum">
               {overallProgressPct}%
             </h3>
-            <div className="w-full bg-[#E5E7EB] dark:bg-[#27272A] h-1.5 rounded-full overflow-hidden mt-1">
+            <div className="w-full bg-border h-1.5 rounded-full overflow-hidden mt-1">
               <div
-                className="bg-blue-500 h-full rounded-full transition-all duration-500"
+                className="bg-info h-full rounded-full transition-all duration-500"
                 style={{ width: `${overallProgressPct}%` }}
               />
             </div>
@@ -251,23 +251,23 @@ export function GoalsManager({
         </div>
 
         {/* Card 4: Goals Achieved */}
-        <div className="p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col justify-between gap-1.5 shadow-2xs">
+        <div className="p-3 sm:p-3.5 rounded-xl bg-surface border border-border flex flex-col justify-between gap-1.5 shadow-2xs">
           <div className="flex items-center justify-between gap-1 min-h-5.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] leading-tight">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary leading-tight">
               {t.goals.completedCount}
             </span>
-            <Trophy className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+            <Trophy className="w-3.5 h-3.5 text-warning shrink-0" />
           </div>
           <div>
             <div className="flex items-baseline gap-1">
-              <span className="text-base sm:text-lg font-bold font-mono tracking-tight text-[#0F172A] dark:text-[#FAFAFA]">
+              <span className="text-base sm:text-lg font-bold font-mono tracking-tight text-foreground">
                 {completedGoalsCount}
               </span>
-              <span className="text-[11px] font-medium text-[#64748B] dark:text-[#94A3B8]">
+              <span className="text-[11px] font-medium text-foreground-secondary">
                 / {savingsGoals.length}
               </span>
             </div>
-            <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 mt-0.5 flex items-center gap-1">
+            <span className="text-[10px] font-bold text-warning mt-0.5 flex items-center gap-1">
               <Sparkles className="w-2.5 h-2.5" />
               {completedGoalsCount > 0
                 ? t.goals.goalsReachedLabel
@@ -280,15 +280,15 @@ export function GoalsManager({
       {/* Filter Tabs without Truncation & Search */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         {/* Segmented Tabs */}
-        <div className="flex items-center gap-1 p-1 bg-[#F1F3F5] dark:bg-[#1A1A20] rounded-xl border border-[#E5E7EB] dark:border-[#27272A] overflow-x-auto">
+        <div className="flex items-center gap-1 p-1 bg-surface-subtle rounded-xl border border-border overflow-x-auto">
           <button
             type="button"
             onClick={() => setActiveTab('all')}
             className={cn(
               'py-1.5 px-3 text-xs font-bold rounded-lg transition-all text-center cursor-pointer whitespace-nowrap shrink-0',
               activeTab === 'all'
-                ? 'bg-white dark:bg-[#121215] text-[#0F172A] dark:text-[#FAFAFA] shadow-xs'
-                : 'text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8]'
+                ? 'bg-surface text-foreground shadow-xs'
+                : 'text-foreground-secondary hover:text-foreground'
             )}
           >
             {t.goals.tabAll}
@@ -299,8 +299,8 @@ export function GoalsManager({
             className={cn(
               'py-1.5 px-3 text-xs font-bold rounded-lg transition-all text-center cursor-pointer whitespace-nowrap shrink-0',
               activeTab === 'in_progress'
-                ? 'bg-white dark:bg-[#121215] text-[#0D9488] shadow-xs'
-                : 'text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8]'
+                ? 'bg-surface text-success shadow-xs'
+                : 'text-foreground-secondary hover:text-foreground'
             )}
           >
             {t.goals.tabInProgress}
@@ -311,8 +311,8 @@ export function GoalsManager({
             className={cn(
               'py-1.5 px-3 text-xs font-bold rounded-lg transition-all text-center cursor-pointer whitespace-nowrap shrink-0',
               activeTab === 'completed'
-                ? 'bg-white dark:bg-[#121215] text-amber-600 dark:text-amber-400 shadow-xs'
-                : 'text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8]'
+                ? 'bg-surface text-warning shadow-xs'
+                : 'text-foreground-secondary hover:text-foreground'
             )}
           >
             {t.goals.tabCompleted}
@@ -323,8 +323,8 @@ export function GoalsManager({
             className={cn(
               'py-1.5 px-3 text-xs font-bold rounded-lg transition-all text-center cursor-pointer whitespace-nowrap shrink-0',
               activeTab === 'paused'
-                ? 'bg-white dark:bg-[#121215] text-[#64748B] dark:text-[#94A3B8] shadow-xs'
-                : 'text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8]'
+                ? 'bg-surface text-foreground-secondary shadow-xs'
+                : 'text-foreground-secondary hover:text-foreground'
             )}
           >
             {t.goals.tabPaused}
@@ -333,7 +333,7 @@ export function GoalsManager({
 
         {/* Search Bar */}
         <div className="relative w-full sm:w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#94A3B8]" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground-muted" />
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -382,12 +382,12 @@ export function GoalsManager({
               <div
                 key={goal.id}
                 className={cn(
-                  'p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#121215] border flex flex-col justify-between gap-4 transition-all shadow-2xs',
+                  'p-4 sm:p-5 rounded-2xl bg-surface border flex flex-col justify-between gap-4 transition-all shadow-2xs',
                   goal.status === 'paused'
-                    ? 'border-[#E5E7EB] dark:border-[#27272A] opacity-60'
+                    ? 'border-border opacity-60'
                     : isCompleted
-                      ? 'border-amber-300 dark:border-amber-700/80 bg-amber-50/15 dark:bg-amber-950/10'
-                      : 'border-[#E5E7EB] dark:border-[#27272A] hover:border-[#0F172A] dark:hover:border-[#FAFAFA]'
+                      ? 'border-warning/40 bg-warning-muted/30'
+                      : 'border-border hover:border-border-strong'
                 )}
               >
                 {/* Card Click Area (Top & Middle) */}
@@ -414,25 +414,25 @@ export function GoalsManager({
 
                       <div className="flex flex-col min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-sm font-bold text-[#0F172A] dark:text-[#FAFAFA] truncate">
+                          <span className="text-sm font-bold text-foreground truncate">
                             {goal.name}
                           </span>
                           {isCompleted && (
-                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 flex items-center gap-0.5 shrink-0">
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-warning-muted text-warning flex items-center gap-0.5 shrink-0">
                               <Trophy className="w-2.5 h-2.5" />
                               {t.goals.statusCompleted}
                             </span>
                           )}
                           {goal.status === 'paused' && (
-                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[#64748B] dark:text-[#94A3B8] shrink-0">
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-foreground-secondary shrink-0">
                               {t.goals.statusPaused}
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center gap-1.5 text-[11px] text-[#64748B] dark:text-[#94A3B8] truncate">
+                        <div className="flex items-center gap-1.5 text-[11px] text-foreground-secondary truncate">
                           <span>{goal.category?.name || t.common.custom}</span>
                           <span>•</span>
-                          <Calendar className="w-3 h-3 text-[#94A3B8]" />
+                          <Calendar className="w-3 h-3 text-foreground-muted" />
                           <span>{format(parseISO(goal.target_date), 'dd MMM yyyy', { locale: dateFnsLocale })}</span>
                         </div>
                       </div>
@@ -444,8 +444,8 @@ export function GoalsManager({
                         className={cn(
                           'text-[10px] font-bold font-mono px-2 py-0.5 rounded-md shrink-0 border',
                           daysUntil < 0
-                            ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 border-rose-200 dark:border-rose-800'
-                            : 'bg-[#F1F3F5] dark:bg-[#1A1A20] text-[#0F172A] dark:text-[#FAFAFA] border-[#E5E7EB] dark:border-[#27272A]'
+                            ? 'bg-destructive-muted text-destructive border-destructive/20'
+                            : 'bg-surface-subtle text-foreground border-border'
                         )}
                       >
                         {daysUntil < 0
@@ -460,19 +460,19 @@ export function GoalsManager({
                     {/* Amount Balance Numbers */}
                     <div className="flex items-baseline justify-between gap-2">
                       <div className="flex flex-col">
-                        <span className="text-[10px] uppercase font-bold tracking-wider text-[#94A3B8]">
+                        <span className="text-[10px] uppercase font-bold tracking-wider text-foreground-muted">
                           {t.goals.totalSaved}
                         </span>
-                        <span className="text-base sm:text-lg font-bold font-mono text-[#0D9488] tnum">
+                        <span className="text-base sm:text-lg font-bold font-mono text-success tnum">
                           {maskCurrency(formatCurrency(currentAmt, goal.currency), isPrivate)}
                         </span>
                       </div>
 
                       <div className="flex flex-col items-end">
-                        <span className="text-[10px] uppercase font-bold tracking-wider text-[#94A3B8]">
+                        <span className="text-[10px] uppercase font-bold tracking-wider text-foreground-muted">
                           {t.goals.targetAmountLabel}
                         </span>
-                        <span className="text-xs sm:text-sm font-bold font-mono text-[#64748B] dark:text-[#94A3B8] tnum">
+                        <span className="text-xs sm:text-sm font-bold font-mono text-foreground-secondary tnum">
                           {maskCurrency(formatCurrency(targetAmt, goal.currency), isPrivate)}
                         </span>
                       </div>
@@ -480,7 +480,7 @@ export function GoalsManager({
 
                     {/* Progress Track */}
                     <div className="flex items-center gap-2.5">
-                      <div className="h-2.5 w-full rounded-full bg-[#E5E7EB] dark:bg-[#27272A] overflow-hidden p-0.5">
+                      <div className="h-2.5 w-full rounded-full bg-border overflow-hidden p-0.5">
                         <div
                           className="h-full rounded-full transition-all duration-500 ease-out"
                           style={{
@@ -489,7 +489,7 @@ export function GoalsManager({
                           }}
                         />
                       </div>
-                      <span className="text-xs font-mono font-bold text-[#0F172A] dark:text-[#FAFAFA] shrink-0">
+                      <span className="text-xs font-mono font-bold text-foreground shrink-0">
                         {progressPct}%
                       </span>
                     </div>
@@ -499,18 +499,18 @@ export function GoalsManager({
                       className={cn(
                         'p-2 rounded-lg text-xs leading-relaxed flex items-center gap-2',
                         isCompleted
-                          ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-bold border border-amber-200 dark:border-amber-800'
-                          : 'bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] dark:text-[#94A3B8] border border-[#E5E7EB] dark:border-[#27272A]'
+                          ? 'bg-warning-muted text-warning font-bold border border-warning/30'
+                          : 'bg-canvas dark:bg-surface-subtle text-foreground-secondary border border-border'
                       )}
                     >
                       {isCompleted ? (
                         <>
-                          <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                          <Sparkles className="w-3.5 h-3.5 text-warning shrink-0" />
                           <span>{t.goals.goalReached}</span>
                         </>
                       ) : (
                         <>
-                          <TrendingUp className="w-3.5 h-3.5 text-[#0D9488] shrink-0" />
+                          <TrendingUp className="w-3.5 h-3.5 text-success shrink-0" />
                           <span>
                             {t.goals.monthlyNeeded
                               .replace('{amount}', formatCurrency(monthlyPace, goal.currency))
@@ -523,17 +523,17 @@ export function GoalsManager({
                 </div>
 
                 {/* Card Bottom Actions */}
-                <div className="pt-2 border-t border-[#E5E7EB] dark:border-[#27272A] flex items-center justify-between gap-2">
+                <div className="pt-2 border-t border-border flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5">
                     {/* Toggle Status (Pause/Resume) */}
                     <button
                       type="button"
                       onClick={() => handleToggleStatus(goal)}
-                      className="p-1.5 rounded-lg text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8] dark:hover:text-[#FAFAFA] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] transition-colors cursor-pointer"
+                      className="p-1.5 rounded-lg text-foreground-secondary hover:text-foreground hover:bg-surface-subtle transition-colors cursor-pointer"
                       title={goal.status === 'paused' ? t.goals.resumeLabel : t.goals.pauseLabel}
                     >
                       {goal.status === 'paused' ? (
-                        <PlayCircle className="w-3.5 h-3.5 text-emerald-600" />
+                        <PlayCircle className="w-3.5 h-3.5 text-success" />
                       ) : (
                         <PauseCircle className="w-3.5 h-3.5" />
                       )}
@@ -546,7 +546,7 @@ export function GoalsManager({
                         setSelectedGoal(goal)
                         setFormModalOpen(true)
                       }}
-                      className="p-1.5 rounded-lg text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8] dark:hover:text-[#FAFAFA] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20] transition-colors cursor-pointer"
+                      className="p-1.5 rounded-lg text-foreground-secondary hover:text-foreground hover:bg-surface-subtle transition-colors cursor-pointer"
                       title={t.common.edit}
                     >
                       <Edit2 className="w-3.5 h-3.5" />
@@ -556,7 +556,7 @@ export function GoalsManager({
                     <button
                       type="button"
                       onClick={() => setDeletingId(goal.id)}
-                      className="p-1.5 rounded-lg text-[#64748B] hover:text-rose-600 dark:text-[#94A3B8] dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+                      className="p-1.5 rounded-lg text-foreground-secondary hover:text-destructive hover:bg-destructive-muted transition-colors cursor-pointer"
                       title={t.common.delete}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -573,8 +573,8 @@ export function GoalsManager({
                     className={cn(
                       'text-xs font-bold gap-1.5 cursor-pointer h-8 px-3',
                       isCompleted
-                        ? 'bg-amber-600 hover:bg-amber-700 text-white'
-                        : 'bg-[#0D9488] hover:bg-[#0F766E] text-white'
+                        ? 'bg-warning text-warning-foreground hover:opacity-90'
+                        : 'bg-success text-success-foreground hover:opacity-90'
                     )}
                   >
                     <Coins className="w-3.5 h-3.5" />

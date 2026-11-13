@@ -120,18 +120,18 @@ export function CashflowChartWidget({
   const expenseBarWidth = Math.min(100, Math.max(2, (totalExpense / maxCompare) * 100))
 
   return (
-    <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-4 shadow-2xs">
+    <div className="p-4 sm:p-5 rounded-xl bg-surface border border-border flex flex-col gap-4 shadow-2xs">
       {/* Header with Period Switcher */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-[#F1F3F5] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-surface-muted border border-border text-foreground flex items-center justify-center shrink-0">
             <BarChart3 className="w-4 h-4" />
           </div>
           <div>
-            <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">
               {t.dashboard.cashflowAnalyticsTitle}
             </h2>
-            <span className="text-[11px] text-[#64748B] dark:text-[#94A3B8]">
+            <span className="text-[11px] text-foreground-secondary">
               {filteredTransactions.length} {t.dashboard.transactionsInPeriod}
             </span>
           </div>
@@ -152,8 +152,8 @@ export function CashflowChartWidget({
               className={cn(
                 'px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors shrink-0 whitespace-nowrap cursor-pointer border',
                 period === p.id
-                  ? 'bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A] border-transparent'
-                  : 'bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] dark:text-[#94A3B8] border-[#E5E7EB] dark:border-[#27272A] hover:bg-[#F1F3F5] dark:hover:bg-[#26262E]'
+                  ? 'bg-surface-inverse text-foreground-inverse border-transparent'
+                  : 'bg-surface-subtle text-foreground-secondary border-border hover:bg-surface-muted'
               )}
             >
               {p.label}
@@ -165,36 +165,36 @@ export function CashflowChartWidget({
       {/* Metric Cards Banner */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 font-mono tnum text-xs">
         {/* Income Card */}
-        <div className="p-2.5 sm:p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-0.5">
-          <span className="text-[10px] font-sans font-bold uppercase tracking-wider text-[#0D9488] flex items-center gap-1">
+        <div className="p-2.5 sm:p-3 rounded-lg bg-surface-subtle border border-border flex flex-col gap-0.5">
+          <span className="text-[10px] font-sans font-bold uppercase tracking-wider text-success flex items-center gap-1">
             <ArrowUpRight className="w-3 h-3 stroke-[2.5]" />
             {t.dashboard.inflow}
           </span>
-          <span className="text-xs sm:text-sm font-bold text-[#0D9488] whitespace-nowrap">
+          <span className="text-xs sm:text-sm font-bold text-success whitespace-nowrap">
             {maskCurrency(formatCurrency(totalIncome, displayCurrency), isPrivate)}
           </span>
         </div>
 
         {/* Expense Card */}
-        <div className="p-2.5 sm:p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-0.5">
-          <span className="text-[10px] font-sans font-bold uppercase tracking-wider text-[#E11D48] flex items-center gap-1">
+        <div className="p-2.5 sm:p-3 rounded-lg bg-surface-subtle border border-border flex flex-col gap-0.5">
+          <span className="text-[10px] font-sans font-bold uppercase tracking-wider text-destructive flex items-center gap-1">
             <ArrowDownRight className="w-3 h-3 stroke-[2.5]" />
             {t.dashboard.outflow}
           </span>
-          <span className="text-xs sm:text-sm font-bold text-[#E11D48] whitespace-nowrap">
+          <span className="text-xs sm:text-sm font-bold text-destructive whitespace-nowrap">
             {maskCurrency(formatCurrency(totalExpense, displayCurrency), isPrivate)}
           </span>
         </div>
 
         {/* Net Delta Card */}
-        <div className="col-span-2 sm:col-span-1 p-2.5 sm:p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-0.5">
-          <span className="text-[10px] font-sans font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+        <div className="col-span-2 sm:col-span-1 p-2.5 sm:p-3 rounded-lg bg-surface-subtle border border-border flex flex-col gap-0.5">
+          <span className="text-[10px] font-sans font-bold uppercase tracking-wider text-foreground-secondary">
             {t.dashboard.netSavings}
           </span>
           <span
             className={cn(
               'text-xs sm:text-sm font-bold whitespace-nowrap',
-              netSavings >= 0 ? 'text-[#0D9488]' : 'text-[#E11D48]'
+              netSavings >= 0 ? 'text-success' : 'text-destructive'
             )}
           >
             {maskCurrency(
@@ -206,16 +206,16 @@ export function CashflowChartWidget({
       </div>
 
       {/* Sub-view Switcher Tabs */}
-      <div className="flex items-center justify-between pt-1 border-t border-[#E5E7EB] dark:border-[#27272A]">
-        <div className="grid grid-cols-2 w-full sm:w-auto p-0.5 bg-[#F1F3F5] dark:bg-[#1A1A20] rounded-lg border border-[#E5E7EB] dark:border-[#27272A]">
+      <div className="flex items-center justify-between pt-1 border-t border-border">
+        <div className="grid grid-cols-2 w-full sm:w-auto p-0.5 bg-surface-muted rounded-lg border border-border">
           <button
             type="button"
             onClick={() => setActiveTab('cashflow')}
             className={cn(
               'px-3 py-1.5 rounded-md text-xs font-bold transition-colors cursor-pointer text-center whitespace-nowrap',
               activeTab === 'cashflow'
-                ? 'bg-white dark:bg-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] shadow-2xs'
-                : 'text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
+                ? 'bg-surface text-foreground shadow-2xs'
+                : 'text-foreground-secondary hover:text-foreground'
             )}
           >
             {t.dashboard.cashflowCompareTab}
@@ -226,8 +226,8 @@ export function CashflowChartWidget({
             className={cn(
               'px-3 py-1.5 rounded-md text-xs font-bold transition-colors cursor-pointer text-center whitespace-nowrap',
               activeTab === 'categories'
-                ? 'bg-white dark:bg-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] shadow-2xs'
-                : 'text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]'
+                ? 'bg-surface text-foreground shadow-2xs'
+                : 'text-foreground-secondary hover:text-foreground'
             )}
           >
             {t.dashboard.categoryDistTab} ({categoryDistribution.length})
@@ -241,16 +241,16 @@ export function CashflowChartWidget({
           {/* Inflow Bar */}
           <div className="flex flex-col gap-1">
             <div className="flex items-center justify-between text-xs font-mono">
-              <span className="font-sans font-medium text-[#0F172A] dark:text-[#F8FAFC]">
+              <span className="font-sans font-medium text-foreground">
                 {t.dashboard.totalIncome}
               </span>
-              <span className="font-bold text-[#0D9488] tnum">
+              <span className="font-bold text-success tnum">
                 {maskCurrency(formatCurrency(totalIncome, displayCurrency), isPrivate)}
               </span>
             </div>
-            <div className="w-full bg-[#F1F3F5] dark:bg-[#1A1A20] h-3 rounded-full overflow-hidden border border-[#E5E7EB] dark:border-[#27272A]">
+            <div className="w-full bg-surface-muted h-3 rounded-full overflow-hidden border border-border">
               <div
-                className="h-full bg-[#0D9488] rounded-full transition-all duration-500"
+                className="h-full bg-success rounded-full transition-all duration-500"
                 style={{ width: `${incomeBarWidth}%` }}
               />
             </div>
@@ -259,16 +259,16 @@ export function CashflowChartWidget({
           {/* Outflow Bar */}
           <div className="flex flex-col gap-1">
             <div className="flex items-center justify-between text-xs font-mono">
-              <span className="font-sans font-medium text-[#0F172A] dark:text-[#F8FAFC]">
+              <span className="font-sans font-medium text-foreground">
                 {t.dashboard.totalExpense}
               </span>
-              <span className="font-bold text-[#E11D48] tnum">
+              <span className="font-bold text-destructive tnum">
                 {maskCurrency(formatCurrency(totalExpense, displayCurrency), isPrivate)}
               </span>
             </div>
-            <div className="w-full bg-[#F1F3F5] dark:bg-[#1A1A20] h-3 rounded-full overflow-hidden border border-[#E5E7EB] dark:border-[#27272A]">
+            <div className="w-full bg-surface-muted h-3 rounded-full overflow-hidden border border-border">
               <div
-                className="h-full bg-[#E11D48] rounded-full transition-all duration-500"
+                className="h-full bg-destructive rounded-full transition-all duration-500"
                 style={{ width: `${expenseBarWidth}%` }}
               />
             </div>
@@ -280,7 +280,7 @@ export function CashflowChartWidget({
       {activeTab === 'categories' && (
         <div className="flex flex-col gap-2.5">
           {categoryDistribution.length === 0 ? (
-            <div className="py-6 text-center text-xs text-[#94A3B8]">
+            <div className="py-6 text-center text-xs text-foreground-muted">
               {t.dashboard.noExpenseInPeriod}
             </div>
           ) : (
@@ -291,30 +291,30 @@ export function CashflowChartWidget({
                 <div key={idx} className="flex flex-col gap-1">
                   <div className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2 min-w-0">
-                      <div className="w-5 h-5 rounded bg-[#F1F3F5] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] flex items-center justify-center shrink-0">
+                      <div className="w-5 h-5 rounded bg-surface-muted border border-border text-foreground flex items-center justify-center shrink-0">
                         <DynamicIcon name={cat.icon} className="w-3 h-3" />
                       </div>
-                      <span className="font-medium text-[#0F172A] dark:text-[#F8FAFC] truncate">
+                      <span className="font-medium text-foreground truncate">
                         {cat.name}
                       </span>
-                      <span className="text-[10px] text-[#94A3B8] font-mono">
+                      <span className="text-[10px] text-foreground-muted font-mono">
                         ({cat.count}x)
                       </span>
                     </div>
 
                     <div className="flex items-center gap-2 font-mono shrink-0 ml-2">
-                      <span className="font-bold text-[#0F172A] dark:text-[#F8FAFC] tnum">
+                      <span className="font-bold text-foreground tnum">
                         {maskCurrency(formatCurrency(cat.amount, displayCurrency), isPrivate)}
                       </span>
-                      <span className="text-[10px] text-[#64748B] dark:text-[#94A3B8] w-8 text-right tnum">
+                      <span className="text-[10px] text-foreground-secondary w-8 text-right tnum">
                         {isPrivate ? '••%' : `${pct.toFixed(0)}%`}
                       </span>
                     </div>
                   </div>
 
-                  <div className="w-full bg-[#F1F3F5] dark:bg-[#1A1A20] h-1.5 rounded-full overflow-hidden">
+                  <div className="w-full bg-surface-muted h-1.5 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-[#0F172A] dark:bg-[#FAFAFA] rounded-full transition-all duration-300"
+                      className="h-full bg-foreground rounded-full transition-all duration-300"
                       style={{ width: `${Math.min(100, pct)}%` }}
                     />
                   </div>

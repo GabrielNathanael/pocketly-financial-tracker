@@ -161,26 +161,26 @@ export function GlobalAuditLogView({
       <div className="flex items-center justify-between">
         <Link
           href="/settings"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-foreground-secondary hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>{t.auditLog.backToSettings}</span>
         </Link>
-        <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded bg-[#F1F3F5] dark:bg-[#1A1A20] text-[#64748B] dark:text-[#94A3B8] border border-[#E5E7EB] dark:border-[#27272A]">
+        <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded bg-surface-subtle text-foreground-secondary border border-border">
           {t.auditLog.title}
         </span>
       </div>
 
       {/* Page Title */}
-      <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex items-center gap-3.5">
-        <div className="w-10 h-10 rounded-lg bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] flex items-center justify-center shrink-0">
+      <div className="p-4 sm:p-5 rounded-xl bg-surface border border-border flex items-center gap-3.5">
+        <div className="w-10 h-10 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shrink-0">
           <History className="w-5 h-5" />
         </div>
         <div className="min-w-0">
-          <h1 className="text-base sm:text-lg font-bold tracking-tight text-[#0F172A] dark:text-[#F8FAFC]">
+          <h1 className="text-base sm:text-lg font-bold tracking-tight text-foreground">
             {t.auditLog.title}
           </h1>
-          <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-0.5 leading-relaxed">
+          <p className="text-xs text-foreground-secondary mt-0.5 leading-relaxed">
             {t.auditLog.subtitle}
           </p>
         </div>
@@ -189,14 +189,14 @@ export function GlobalAuditLogView({
       {/* Advanced Filter Panel */}
       <div
         className={cn(
-          "p-4 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-3 transition-opacity",
+          "p-4 rounded-xl bg-surface border border-border flex flex-col gap-3 transition-opacity",
           isPending && "opacity-60 pointer-events-none",
         )}
       >
         {/* Row 1: Search & Date Range */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
           <div className="relative sm:col-span-2">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none" />
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-foreground-muted pointer-events-none" />
             <input
               type="text"
               placeholder={
@@ -205,7 +205,7 @@ export function GlobalAuditLogView({
               }
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-8.5 pr-3 py-2 text-xs bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] rounded-lg text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#0F172A] dark:focus:border-white transition-colors"
+              className="w-full pl-8.5 pr-3 py-2 text-xs bg-canvas dark:bg-surface-subtle border border-border rounded-lg text-foreground placeholder:text-foreground-muted focus:outline-none focus:border-border-strong transition-colors"
             />
           </div>
 
@@ -227,16 +227,16 @@ export function GlobalAuditLogView({
         </div>
 
         {/* Row 2: Module Chips */}
-        <div className="flex flex-col gap-1 pt-1 border-t border-[#E5E7EB] dark:border-[#27272A]">
+        <div className="flex flex-col gap-1 pt-1 border-t border-border">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary">
               {t.auditLog.moduleLabel}
             </span>
             {hasActiveFilters && (
               <button
                 type="button"
                 onClick={handleResetFilters}
-                className="text-xs text-[#E11D48] hover:underline flex items-center gap-1 cursor-pointer font-semibold"
+                className="text-xs text-destructive hover:underline flex items-center gap-1 cursor-pointer font-semibold"
               >
                 <X className="w-3.5 h-3.5" />
                 <span>{t.auditLog.resetFilters}</span>
@@ -256,8 +256,8 @@ export function GlobalAuditLogView({
                 className={cn(
                   "px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors shrink-0 whitespace-nowrap cursor-pointer border",
                   moduleFilter === item.value
-                    ? "bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A] border-transparent shadow-2xs"
-                    : "bg-white dark:bg-[#121215] text-[#64748B] dark:text-[#94A3B8] border-[#E5E7EB] dark:border-[#27272A] hover:bg-[#F1F3F5] dark:hover:bg-[#1A1A20]",
+                    ? "bg-primary text-primary-foreground border-transparent shadow-2xs"
+                    : "bg-surface text-foreground-secondary border-border hover:bg-surface-subtle",
                 )}
               >
                 {item.label}
@@ -279,8 +279,8 @@ export function GlobalAuditLogView({
               className={cn(
                 "px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors shrink-0 whitespace-nowrap cursor-pointer border",
                 actionFilter === item.value
-                  ? "bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A] border-transparent shadow-2xs"
-                  : "bg-[#F8F9FA] dark:bg-[#1A1A20] text-[#64748B] dark:text-[#94A3B8] border-[#E5E7EB] dark:border-[#27272A] hover:bg-[#F1F3F5] dark:hover:bg-[#26262E]",
+                  ? "bg-primary text-primary-foreground border-transparent shadow-2xs"
+                  : "bg-canvas dark:bg-surface-subtle text-foreground-secondary border-border hover:bg-surface-subtle dark:hover:bg-surface-muted",
               )}
             >
               {item.label}
@@ -291,14 +291,14 @@ export function GlobalAuditLogView({
 
       {/* Loading indicator */}
       {isPending && (
-        <div className="text-center text-xs text-[#94A3B8] py-2 animate-pulse">
+        <div className="text-center text-xs text-foreground-muted py-2 animate-pulse">
           {t.auditLog.loadingData}
         </div>
       )}
 
       {/* Logs Timeline List */}
       {initialLogs.length === 0 ? (
-        <div className="p-8 text-center bg-white dark:bg-[#121215] rounded-xl border border-[#E5E7EB] dark:border-[#27272A] text-xs text-[#94A3B8]">
+        <div className="p-8 text-center bg-surface rounded-xl border border-border text-xs text-foreground-muted">
           {t.auditLog.emptySearch ||
             "Tidak ada catatan audit yang cocok dengan kriteria filter."}
         </div>
@@ -310,22 +310,22 @@ export function GlobalAuditLogView({
             return (
               <div
                 key={log.id}
-                className="p-4 sm:p-5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-3 transition-colors hover:border-[#0F172A] dark:hover:border-[#FAFAFA]"
+                className="p-4 sm:p-5 rounded-xl bg-surface border border-border flex flex-col gap-3 transition-colors hover:border-border-strong"
               >
                 {/* Header row */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div className="flex items-center gap-2 flex-wrap min-w-0">
-                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-[#F1F3F5] dark:bg-[#1A1A20] text-[#64748B] dark:text-[#94A3B8] border border-[#E5E7EB] dark:border-[#27272A] shrink-0">
+                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-surface-subtle text-foreground-secondary border border-border shrink-0">
                       {h.moduleName}
                     </span>
                     <span
                       className={cn(
                         "inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md border shrink-0",
                         h.badgeType === "create"
-                          ? "bg-[#ECFDF5] dark:bg-[#064E3B]/20 text-[#0D9488] border-[#A7F3D0] dark:border-[#065F46]/40"
+                          ? "bg-success-muted text-success border-success/30"
                           : h.badgeType === "update"
-                            ? "bg-[#F0F9FF] dark:bg-[#0C4A6E]/20 text-[#0284C7] border-[#BAE6FD] dark:border-[#0369A1]/40"
-                            : "bg-[#FFF1F2] dark:bg-[#881337]/20 text-[#E11D48] border-[#FECDD3] dark:border-[#9F1239]/40",
+                            ? "bg-info-muted text-info border-info/30"
+                            : "bg-destructive-muted text-destructive border-destructive/30",
                       )}
                     >
                       {h.badgeType === "create" && (
@@ -337,12 +337,12 @@ export function GlobalAuditLogView({
                       )}
                       {h.badgeLabel}
                     </span>
-                    <h3 className="text-xs sm:text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate">
+                    <h3 className="text-xs sm:text-sm font-bold text-foreground truncate">
                       {h.title}
                     </h3>
                   </div>
 
-                  <span className="text-[11px] font-mono text-[#64748B] dark:text-[#94A3B8] shrink-0">
+                  <span className="text-[11px] font-mono text-foreground-secondary shrink-0">
                     {formatDate(
                       log.changed_at,
                       "EEEE, d MMM yyyy - HH:mm",
@@ -352,22 +352,22 @@ export function GlobalAuditLogView({
                 </div>
 
                 {/* Friendly Summary Text */}
-                <p className="text-xs text-[#475569] dark:text-[#CBD5E1] leading-relaxed">
+                <p className="text-xs text-foreground-secondary dark:text-foreground-secondary leading-relaxed">
                   {h.summary}
                 </p>
 
                 {/* Humanized Change Diff List */}
                 {h.changes.length > 0 && (
-                  <div className="flex flex-col gap-1.5 p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-xs">
+                  <div className="flex flex-col gap-1.5 p-3 rounded-lg bg-canvas dark:bg-surface-subtle border border-border text-xs">
                     {h.changes.map((c, cIdx) =>
                       c.items ? (
                         <div key={cIdx} className="flex flex-col gap-1.5 text-[11px]">
-                          <span className="font-semibold text-[#64748B] dark:text-[#94A3B8]">
+                          <span className="font-semibold text-foreground-secondary">
                             {c.field}:
                           </span>
                           {c.itemsFrom && c.itemsFrom.length > 0 && (
                             <>
-                              <span className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-muted">
                                 {t.transactions.fromLabel}
                               </span>
                               <AuditItemsList
@@ -376,7 +376,7 @@ export function GlobalAuditLogView({
                                 muted
                               />
                               {c.items.length > 0 && (
-                                <span className="mt-2 border-t border-[#E5E7EB] pt-2 text-[10px] font-bold uppercase tracking-wider text-[#94A3B8] dark:border-[#27272A]">
+                                <span className="mt-2 border-t border-border pt-2 text-[10px] font-bold uppercase tracking-wider text-foreground-muted">
                                   {t.transactions.toLabel}
                                 </span>
                               )}
@@ -388,7 +388,7 @@ export function GlobalAuditLogView({
                               currency={c.currency || "IDR"}
                             />
                           ) : (
-                            <span className="font-mono text-[#64748B]">
+                            <span className="font-mono text-foreground-secondary">
                               {c.to}
                             </span>
                           )}
@@ -398,20 +398,20 @@ export function GlobalAuditLogView({
                           key={cIdx}
                           className="flex items-start justify-between gap-2 flex-wrap text-[11px]"
                         >
-                          <span className="font-semibold text-[#64748B] dark:text-[#94A3B8] shrink-0">
+                          <span className="font-semibold text-foreground-secondary shrink-0">
                             {c.field}:
                           </span>
                           <div className="flex items-center gap-2 font-mono flex-wrap justify-end">
                             {c.from && (
-                              <span className="px-1.5 py-0.5 rounded bg-[#FFF1F2] dark:bg-[#881337]/20 text-[#E11D48] line-through">
+                              <span className="px-1.5 py-0.5 rounded bg-destructive-muted text-destructive line-through">
                                 {c.from}
                               </span>
                             )}
                             {c.from && c.to && (
-                              <ArrowRight className="w-3 h-3 text-[#94A3B8] shrink-0" />
+                              <ArrowRight className="w-3 h-3 text-foreground-muted shrink-0" />
                             )}
                             {c.to && (
-                              <span className="px-1.5 py-0.5 rounded bg-[#ECFDF5] dark:bg-[#064E3B]/20 font-bold text-[#0D9488]">
+                              <span className="px-1.5 py-0.5 rounded bg-success-muted font-bold text-success">
                                 {c.to}
                               </span>
                             )}
@@ -427,10 +427,10 @@ export function GlobalAuditLogView({
 
           {/* Pagination Controls (server-side) */}
           {totalPages > 1 && (
-            <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-xs">
-              <span className="text-[#64748B] dark:text-[#94A3B8] font-medium text-center sm:text-left">
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 rounded-xl bg-surface border border-border text-xs">
+              <span className="text-foreground-secondary font-medium text-center sm:text-left">
                 {t.common.showing}{" "}
-                <span className="font-bold text-[#0F172A] dark:text-[#FAFAFA]">
+                <span className="font-bold text-foreground">
                   {initialLogs.length === 0
                     ? 0
                     : (page - 1) * PAGE_SIZE + 1}
@@ -447,7 +447,7 @@ export function GlobalAuditLogView({
                 >
                   {t.auditLog.previousPage}
                 </Button>
-                <span className="font-mono text-[#64748B] dark:text-[#94A3B8] shrink-0">
+                <span className="font-mono text-foreground-secondary shrink-0">
                   {page} / {totalPages}
                 </span>
                 <Button

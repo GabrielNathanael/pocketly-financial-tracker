@@ -639,10 +639,10 @@ export function PortfolioInvestmentView({
   const allocationData = useMemo(
     () =>
       [
-        { key: "cash", name: isEn ? "Cash" : "Kas", value: cashValue, color: "#94A3B8" },
-        { key: "stock", name: isEn ? "Stocks" : "Saham", value: stockValue, color: "#10B981" },
-        { key: "crypto", name: isEn ? "Crypto" : "Kripto", value: cryptoValue, color: "#F59E0B" },
-        { key: "etf", name: isEn ? "US ETFs" : "ETF AS", value: etfValue, color: "#6366F1" },
+        { key: "cash", name: isEn ? "Cash" : "Kas", value: cashValue, color: "var(--token-muted-foreground)" },
+        { key: "stock", name: isEn ? "Stocks" : "Saham", value: stockValue, color: "var(--token-success)" },
+        { key: "crypto", name: isEn ? "Crypto" : "Kripto", value: cryptoValue, color: "var(--token-warning)" },
+        { key: "etf", name: isEn ? "US ETFs" : "ETF AS", value: etfValue, color: "var(--token-info)" },
       ].filter((d) => d.value > 0),
     [cashValue, stockValue, cryptoValue, etfValue, isEn],
   );
@@ -1076,17 +1076,17 @@ export function PortfolioInvestmentView({
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-3.5 px-1 pb-20 sm:gap-4 sm:px-2">
       {/* Header: title row + total row, actions compact */}
-      <header className="rounded-2xl border border-[#E5E7EB] bg-white p-3.5 shadow-2xs dark:border-[#27272A] dark:bg-[#121215] sm:p-5">
+      <header className="rounded-2xl border border-border bg-surface p-3.5 shadow-2xs sm:p-5">
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2.5">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-info-muted text-info">
               <TrendingUp className="h-4 w-4" />
             </div>
             <div className="min-w-0">
-              <h1 className="truncate text-base font-black tracking-tight text-[#0F172A] dark:text-[#F8FAFC] sm:text-lg">
+              <h1 className="truncate text-base font-black tracking-tight text-foreground sm:text-lg">
                 {i18n.title}
               </h1>
-              <p className="truncate text-[10px] text-[#64748B] dark:text-[#94A3B8] sm:text-[11px]">
+              <p className="truncate text-[10px] text-muted-foreground sm:text-[11px]">
                 {i18n.subtitle}
               </p>
             </div>
@@ -1136,28 +1136,28 @@ export function PortfolioInvestmentView({
               <button
                 type="button"
                 onClick={() => setShowCashBreakdown((prev) => !prev)}
-                className="flex w-full items-end justify-between gap-3 rounded-xl bg-[#F8F9FA] px-4 py-3 text-left transition-colors hover:bg-[#F1F3F5] dark:bg-[#1A1A20] dark:hover:bg-[#222228]"
+                className="flex w-full items-end justify-between gap-3 rounded-xl bg-canvas px-4 py-3 text-left transition-colors hover:bg-surface-subtle dark:bg-surface-subtle dark:hover:bg-surface-muted"
               >
                 <span className="flex min-w-0 flex-col">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8] leading-none">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground leading-none">
                     {i18n.totalPortfolio}
                   </span>
-                  <span className="mt-1 whitespace-nowrap font-mono text-lg font-black leading-none text-[#0F172A] dark:text-[#F8FAFC] sm:text-2xl">
+                  <span className="mt-1 whitespace-nowrap font-mono text-lg font-black leading-none text-foreground sm:text-2xl">
                     {isRefreshingPrices ? (
-                      <span className="inline-block h-6 w-32 animate-pulse rounded-md bg-slate-200 dark:bg-[#27272A] sm:h-8 sm:w-40" />
+                      <span className="inline-block h-6 w-32 animate-pulse rounded-md bg-surface-muted sm:h-8 sm:w-40" />
                     ) : (
                       fmt(totalPortfolioValue, "IDR")
                     )}
                   </span>
                 </span>
                 <span className="flex shrink-0 flex-col items-end">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8] leading-none">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground leading-none">
                     {isEn ? "Unrealized P&L" : "Unrealized P&L"}
                   </span>
                   {isRefreshingPrices ? (
                     <>
-                      <span className="mt-1 inline-block h-3.5 w-20 animate-pulse rounded bg-slate-200 dark:bg-[#27272A]" />
-                      <span className="mt-0.5 inline-block h-2.5 w-14 animate-pulse rounded bg-slate-100 dark:bg-[#1E1E24]" />
+                      <span className="mt-1 inline-block h-3.5 w-20 animate-pulse rounded bg-surface-muted" />
+                      <span className="mt-0.5 inline-block h-2.5 w-14 animate-pulse rounded bg-surface-subtle" />
                     </>
                   ) : (
                     <>
@@ -1165,8 +1165,8 @@ export function PortfolioInvestmentView({
                         className={cn(
                           "mt-1 truncate font-mono text-xs font-black leading-none",
                           unrealizedPnl >= 0
-                            ? "text-emerald-600 dark:text-emerald-400"
-                            : "text-rose-600 dark:text-rose-400",
+                            ? "text-success"
+                            : "text-destructive",
                         )}
                       >
                         {unrealizedPnl >= 0 ? "+" : ""}
@@ -1176,8 +1176,8 @@ export function PortfolioInvestmentView({
                         className={cn(
                           "mt-0.5 font-mono text-[10px] font-bold leading-none",
                           unrealizedPnl >= 0
-                            ? "text-emerald-600 dark:text-emerald-400"
-                            : "text-rose-600 dark:text-rose-400",
+                            ? "text-success"
+                            : "text-destructive",
                         )}
                       >
                         {(() => {
@@ -1192,7 +1192,7 @@ export function PortfolioInvestmentView({
               </button>
 
               {latestPriceFetchedAt && (
-                <p className="mt-1.5 px-1 text-[10px] text-[#94A3B8]">
+                <p className="mt-1.5 px-1 text-[10px] text-muted-foreground">
                   {isEn ? "Prices as of " : "Harga per "}
                   {new Date(latestPriceFetchedAt).toLocaleString(
                     isEn ? "en-US" : "id-ID",
@@ -1215,10 +1215,10 @@ export function PortfolioInvestmentView({
                   />
 
                   {/* Popover */}
-                  <div className="absolute left-0 top-full z-20 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-lg dark:border-[#27272A] dark:bg-[#121215]">
+                  <div className="absolute left-0 top-full z-20 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-border bg-surface shadow-lg dark:border-border dark:bg-surface">
                     {/* Kas per akun */}
-                    <div className="border-b border-[#E5E7EB] px-4 py-3 dark:border-[#27272A]">
-                      <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
+                    <div className="border-b border-border px-4 py-3 dark:border-border">
+                      <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                         <Wallet className="h-3 w-3" />
                         {isEn ? "Liquid Cash" : "Kas Liquid"}
                       </div>
@@ -1228,10 +1228,10 @@ export function PortfolioInvestmentView({
                             key={account.id}
                             className="flex items-center justify-between gap-3"
                           >
-                            <span className="truncate text-xs text-[#64748B] dark:text-[#94A3B8]">
+                            <span className="truncate text-xs text-muted-foreground">
                               {account.name}
                             </span>
-                            <span className="shrink-0 whitespace-nowrap font-mono text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                            <span className="shrink-0 whitespace-nowrap font-mono text-xs font-bold text-foreground">
                               {fmt(
                                 Number(account.current_balance),
                                 account.currency,
@@ -1239,11 +1239,11 @@ export function PortfolioInvestmentView({
                             </span>
                           </div>
                         ))}
-                        <div className="mt-1 flex items-center justify-between gap-3 border-t border-[#E5E7EB] pt-1.5 dark:border-[#27272A]">
-                          <span className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                        <div className="mt-1 flex items-center justify-between gap-3 border-t border-border pt-1.5 dark:border-border">
+                          <span className="text-xs font-bold text-foreground">
                             {isEn ? "Total Cash" : "Total Kas"}
                           </span>
-                          <span className="whitespace-nowrap font-mono text-xs font-black text-[#0F172A] dark:text-[#F8FAFC]">
+                          <span className="whitespace-nowrap font-mono text-xs font-black text-foreground">
                             {fmt(cashValue, "IDR")}
                           </span>
                         </div>
@@ -1252,54 +1252,54 @@ export function PortfolioInvestmentView({
 
                     {/* Saham & Kripto */}
                     <div className="flex flex-col gap-1.5 px-4 py-3">
-                      <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
+                      <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                         <BarChart3 className="h-3 w-3" />
                         {isEn ? "Investments" : "Investasi"}
                       </div>
                       <div className="flex items-center justify-between gap-3">
-                        <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">
+                        <span className="text-xs text-muted-foreground">
                           {i18n.stock}
                         </span>
                         {isRefreshingPrices ? (
-                          <span className="inline-block h-3.5 w-20 animate-pulse rounded bg-slate-200 dark:bg-[#27272A]" />
+                          <span className="inline-block h-3.5 w-20 animate-pulse rounded bg-surface-muted" />
                         ) : (
-                          <span className="font-mono text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                          <span className="font-mono text-xs font-bold text-foreground">
                             {fmt(stockValue, "IDR")}
                           </span>
                         )}
                       </div>
                       <div className="flex items-center justify-between gap-3">
-                        <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">
+                        <span className="text-xs text-muted-foreground">
                           {i18n.cryptoAsset}
                         </span>
                         {isRefreshingPrices ? (
-                          <span className="inline-block h-3.5 w-20 animate-pulse rounded bg-slate-200 dark:bg-[#27272A]" />
+                          <span className="inline-block h-3.5 w-20 animate-pulse rounded bg-surface-muted" />
                         ) : (
-                          <span className="font-mono text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                          <span className="font-mono text-xs font-bold text-foreground">
                             {fmt(cryptoValue, "IDR")}
                           </span>
                         )}
                       </div>
                       <div className="flex items-center justify-between gap-3">
-                        <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">
+                        <span className="text-xs text-muted-foreground">
                           {i18n.etf.title}
                         </span>
                         {isRefreshingPrices ? (
-                          <span className="inline-block h-3.5 w-20 animate-pulse rounded bg-slate-200 dark:bg-[#27272A]" />
+                          <span className="inline-block h-3.5 w-20 animate-pulse rounded bg-surface-muted" />
                         ) : (
-                          <span className="font-mono text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                          <span className="font-mono text-xs font-bold text-foreground">
                             {fmt(etfValue, "IDR")}
                           </span>
                         )}
                       </div>
-                      <div className="mt-1 flex items-center justify-between gap-3 border-t border-[#E5E7EB] pt-1.5 dark:border-[#27272A]">
-                        <span className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                      <div className="mt-1 flex items-center justify-between gap-3 border-t border-border pt-1.5 dark:border-border">
+                        <span className="text-xs font-bold text-foreground">
                           {i18n.totalPortfolio}
                         </span>
                         {isRefreshingPrices ? (
-                          <span className="inline-block h-3.5 w-24 animate-pulse rounded bg-slate-200 dark:bg-[#27272A]" />
+                          <span className="inline-block h-3.5 w-24 animate-pulse rounded bg-surface-muted" />
                         ) : (
-                          <span className="whitespace-nowrap font-mono text-xs font-black text-[#0F172A] dark:text-[#F8FAFC]">
+                          <span className="whitespace-nowrap font-mono text-xs font-black text-foreground">
                             {fmt(totalPortfolioValue, "IDR")}
                           </span>
                         )}
@@ -1313,7 +1313,7 @@ export function PortfolioInvestmentView({
       </header>
 
       {/* Segmented Control 3-Tab Bar (Fits 100% Mobile Screen with Zero Cutoff) */}
-      <div className="grid grid-cols-3 gap-1 rounded-2xl border border-[#E5E7EB] bg-[#F1F3F5] p-1 dark:border-[#27272A] dark:bg-[#1A1A20]">
+      <div className="grid grid-cols-3 gap-1 rounded-2xl border border-border bg-secondary p-1">
         {(
           [
             ["portfolio", isEn ? "Portfolio" : "Portofolio", Layers],
@@ -1328,8 +1328,8 @@ export function PortfolioInvestmentView({
             className={cn(
               "flex min-h-10.5 cursor-pointer items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-center text-xs font-bold transition-all sm:min-h-11",
               tab === value
-                ? "bg-white text-[#0F172A] shadow-xs dark:bg-[#121215] dark:text-[#FAFAFA]"
-                : "text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8] dark:hover:text-[#FAFAFA]",
+                ? "bg-surface text-foreground shadow-xs dark:bg-surface"
+                : "text-muted-foreground hover:text-foreground",
             )}
           >
             <Icon className="h-3.5 w-3.5 shrink-0" />
@@ -1417,10 +1417,10 @@ export function PortfolioInvestmentView({
             })}
           </div>
           {stocks.length + cryptos.length + etfs.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-[#E5E7EB] bg-white p-12 text-center text-xs text-[#64748B] dark:border-[#27272A] dark:bg-[#121215]">
-              <Layers className="mx-auto mb-2 h-8 w-8 text-[#94A3B8]" />
+            <div className="rounded-2xl border border-dashed border-border bg-surface p-12 text-center text-xs text-muted-foreground">
+              <Layers className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
               <p className="font-bold">{i18n.emptyHoldingsTitle}</p>
-              <p className="mt-1 text-[11px] text-[#94A3B8]">
+              <p className="mt-1 text-[11px] text-muted-foreground">
                 {i18n.emptyHoldingsDesc}
               </p>
               <div className="mt-4 flex justify-center gap-2">
@@ -1438,10 +1438,10 @@ export function PortfolioInvestmentView({
       {tab === "activity" && (
         <section className="flex flex-col gap-3">
           {/* Filter Bar (100% full width on mobile, no empty spaces) */}
-          <div className="flex flex-col gap-2 rounded-2xl border border-[#E5E7EB] bg-white p-3 shadow-2xs dark:border-[#27272A] dark:bg-[#121215] sm:p-4">
+          <div className="flex flex-col gap-2 rounded-2xl border border-border bg-surface p-3 shadow-2xs dark:border-border dark:bg-surface sm:p-4">
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {/* Asset Kind Filter: Full-width 4-columns */}
-              <div className="grid grid-cols-4 gap-1 rounded-xl bg-[#F8F9FA] p-1 dark:bg-[#1A1A20]">
+              <div className="grid grid-cols-4 gap-1 rounded-xl bg-canvas p-1 dark:bg-surface-subtle">
                 {(
                   [
                     ["all", isEn ? "All" : "Semua"],
@@ -1457,8 +1457,8 @@ export function PortfolioInvestmentView({
                     className={cn(
                       "h-9 rounded-lg px-1 text-center text-xs font-bold transition-all truncate",
                       activityKindFilter === kind
-                        ? "bg-white text-[#0F172A] shadow-xs dark:bg-[#27272A] dark:text-[#FAFAFA]"
-                        : "text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8]",
+                        ? "bg-surface text-foreground shadow-xs dark:bg-surface-muted"
+                        : "text-muted-foreground hover:text-foreground",
                     )}
                   >
                     {label}
@@ -1467,7 +1467,7 @@ export function PortfolioInvestmentView({
               </div>
 
               {/* Action Filter: Full-width 3-columns */}
-              <div className="grid grid-cols-3 gap-1 rounded-xl bg-[#F8F9FA] p-1 dark:bg-[#1A1A20]">
+              <div className="grid grid-cols-3 gap-1 rounded-xl bg-canvas p-1 dark:bg-surface-subtle">
                 {(
                   [
                     ["all", isEn ? "All Types" : "Semua Tipe"],
@@ -1482,8 +1482,8 @@ export function PortfolioInvestmentView({
                     className={cn(
                       "h-9 rounded-lg px-1 text-center text-xs font-bold transition-all truncate",
                       activityActionFilter === act
-                        ? "bg-white text-[#0F172A] shadow-xs dark:bg-[#27272A] dark:text-[#FAFAFA]"
-                        : "text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8]",
+                        ? "bg-surface text-foreground shadow-xs dark:bg-surface-muted"
+                        : "text-muted-foreground hover:text-foreground",
                     )}
                   >
                     {label}
@@ -1494,7 +1494,7 @@ export function PortfolioInvestmentView({
 
             {/* Search Input */}
             <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#94A3B8]" />
+              <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
                 value={activitySearch}
@@ -1504,7 +1504,7 @@ export function PortfolioInvestmentView({
                     ? "Search ticker, symbol, account, notes..."
                     : "Cari emiten, koin, akun, atau catatan..."
                 }
-                className="w-full rounded-xl border border-[#E5E7EB] bg-[#F8F9FA] py-2 pl-9 pr-3 text-xs font-medium text-[#0F172A] placeholder:text-[#94A3B8] dark:border-[#27272A] dark:bg-[#1A1A20] dark:text-[#F8FAFC]"
+                className="w-full rounded-xl border border-border bg-surface-subtle py-2 pl-9 pr-3 text-xs font-medium text-foreground placeholder:text-foreground-muted"
               />
             </div>
           </div>
@@ -1531,7 +1531,7 @@ export function PortfolioInvestmentView({
               return (
                 <div
                   key={activity.id}
-                  className="flex flex-col gap-2.5 rounded-2xl border border-[#E5E7EB] bg-white p-3.5 shadow-2xs transition-all hover:border-[#CBD5E1] dark:border-[#27272A] dark:bg-[#121215] dark:hover:border-[#3F3F46] sm:gap-3 sm:p-4"
+                  className="flex flex-col gap-2.5 rounded-2xl border border-border bg-surface p-3.5 shadow-2xs transition-all hover:border-border-strong dark:border-border dark:bg-surface dark:hover:border-border-strong sm:gap-3 sm:p-4"
                 >
                   {/* Card Header Row */}
                   <div className="flex items-start justify-between gap-2">
@@ -1542,15 +1542,15 @@ export function PortfolioInvestmentView({
                       />
                       <div>
                         <div className="flex flex-wrap items-center gap-1.5">
-                          <span className="font-black text-sm tracking-tight text-[#0F172A] dark:text-[#F8FAFC]">
+                          <span className="font-black text-sm tracking-tight text-foreground">
                             {symbolText}
                           </span>
                           <span
                             className={cn(
                               "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider",
                               isBuy
-                                ? "border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800/40 dark:bg-emerald-950/40 dark:text-emerald-300"
-                                : "border border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800/40 dark:bg-rose-950/40 dark:text-rose-300",
+                                ? "border border-success/30 bg-success-muted text-success"
+                                : "border border-destructive/30 bg-destructive-muted text-destructive",
                             )}
                           >
                             {isBuy ? (
@@ -1574,11 +1574,11 @@ export function PortfolioInvestmentView({
                                   ? i18n.sellBtn
                                   : cryptoI18n.sell}
                           </span>
-                          <span className="rounded-md border border-[#E5E7EB] bg-[#F8F9FA] px-1.5 py-0.5 text-[9px] font-bold text-[#64748B] dark:border-[#27272A] dark:bg-[#1A1A20] dark:text-[#94A3B8]">
+                          <span className="rounded-md border border-border bg-surface-subtle px-1.5 py-0.5 text-[9px] font-bold text-muted-foreground">
                             {isEtf ? i18n.etf.title : isStock ? i18n.stock : i18n.cryptoAsset}
                           </span>
                         </div>
-                        <p className="mt-0.5 text-[10px] text-[#64748B] dark:text-[#94A3B8]">
+                        <p className="mt-0.5 text-[10px] text-muted-foreground">
                           {new Date(activity.trade_date).toLocaleDateString(
                             isEn ? "en-US" : "id-ID",
                             {
@@ -1645,7 +1645,7 @@ export function PortfolioInvestmentView({
                           setEditTradeType(activity.type);
                           setModal("edit");
                         }}
-                        className="flex h-8 w-8 min-h-9 min-w-9 items-center justify-center rounded-xl text-[#94A3B8] transition-colors hover:bg-[#F1F3F5] hover:text-[#0F172A] dark:hover:bg-[#1A1A20] dark:hover:text-[#F8FAFC]"
+                        className="flex h-8 w-8 min-h-9 min-w-9 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                         title={i18n.editTradeSuccess || "Edit"}
                       >
                         <Edit2 className="h-3.5 w-3.5" />
@@ -1661,7 +1661,7 @@ export function PortfolioInvestmentView({
                                   activity as EnrichedCryptoTrade,
                                 )
                         }
-                        className="flex h-8 w-8 min-h-9 min-w-9 items-center justify-center rounded-xl text-[#94A3B8] transition-colors hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/30 dark:hover:text-rose-400"
+                        className="flex h-8 w-8 min-h-9 min-w-9 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-destructive-muted hover:text-destructive"
                         title={i18n.deleteSuccess || "Hapus"}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -1672,17 +1672,17 @@ export function PortfolioInvestmentView({
                   {/* Execution Details Row */}
                   <div
                     className={cn(
-                      "grid gap-2 rounded-xl bg-[#F8F9FA] p-2.5 text-xs dark:bg-[#1A1A20]",
+                      "grid gap-2 rounded-xl bg-canvas p-2.5 text-xs dark:bg-surface-subtle",
                       hasPnl
                         ? "grid-cols-2 sm:grid-cols-4"
                         : "grid-cols-2 sm:grid-cols-3",
                     )}
                   >
                     <div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                         {isEn ? "Volume" : "Volume"}
                       </span>
-                      <p className="font-mono text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                      <p className="font-mono text-xs font-bold text-foreground">
                         {isStock
                           ? `${(activity as EnrichedStockTrade).lots || 0} Lot (${(activity as EnrichedStockTrade).shares || 0} lbr)`
                           : isEtf
@@ -1692,10 +1692,10 @@ export function PortfolioInvestmentView({
                     </div>
 
                     <div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                         {isEn ? "Execution Price" : "Harga Eksekusi"}
                       </span>
-                      <p className="font-mono text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                      <p className="font-mono text-xs font-bold text-foreground">
                         {isStock
                           ? `${fmt(Number((activity as EnrichedStockTrade).price_per_share || 0), settlementCurrency)}/lbr`
                           : isEtf
@@ -1717,31 +1717,31 @@ export function PortfolioInvestmentView({
                     </div>
 
                     <div className={cn(!hasPnl && "col-span-2 sm:col-span-1")}>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                         {isEn ? "Total Settlement" : "Total Eksekusi"}
                       </span>
-                      <p className="whitespace-nowrap font-mono text-xs font-black text-[#0F172A] dark:text-[#F8FAFC]">
+                      <p className="whitespace-nowrap font-mono text-xs font-black text-foreground">
                         {fmt(totalAmount, settlementCurrency)}
-                        <span className="ml-1 text-[10px] font-semibold text-[#94A3B8]">({settlementCurrency})</span>
+                        <span className="ml-1 text-[10px] font-semibold text-muted-foreground">({settlementCurrency})</span>
                       </p>
                     </div>
 
                     {hasPnl && (
                       <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                           Realized P&L
                         </span>
                         <p
                           className={cn(
                             "font-mono text-xs font-black",
                             pnl >= 0
-                              ? "text-emerald-600 dark:text-emerald-400"
-                              : "text-rose-600 dark:text-rose-400",
+                              ? "text-success"
+                              : "text-destructive",
                           )}
                         >
                           {pnl >= 0 ? "+" : ""}
                           {fmt(pnl, settlementCurrency)}
-                          <span className="ml-1 text-[10px] font-semibold text-[#94A3B8]">({settlementCurrency})</span>
+                          <span className="ml-1 text-[10px] font-semibold text-muted-foreground">({settlementCurrency})</span>
                         </p>
                       </div>
                     )}
@@ -1749,7 +1749,7 @@ export function PortfolioInvestmentView({
 
                   {/* Notes if any */}
                   {activity.notes && (
-                    <p className="text-[11px] italic text-[#64748B] dark:text-[#94A3B8]">
+                    <p className="text-[11px] italic text-muted-foreground">
                       &ldquo;{activity.notes}&rdquo;
                     </p>
                   )}
@@ -1758,14 +1758,14 @@ export function PortfolioInvestmentView({
             })}
 
             {filteredActivities.length === 0 && (
-              <div className="rounded-2xl border border-dashed border-[#E5E7EB] bg-white p-12 text-center text-xs text-[#64748B] dark:border-[#27272A] dark:bg-[#121215]">
-                <History className="mx-auto mb-2 h-8 w-8 text-[#94A3B8]" />
+              <div className="rounded-2xl border border-dashed border-border bg-surface p-12 text-center text-xs text-muted-foreground">
+                <History className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
                 <p className="font-bold">
                   {isEn
                     ? "No transactions found"
                     : "Tidak ada transaksi yang cocok"}
                 </p>
-                <p className="mt-1 text-[11px] text-[#94A3B8]">
+                <p className="mt-1 text-[11px] text-muted-foreground">
                   {isEn
                     ? "Try adjusting your filter or search query."
                     : "Ubah filter atau kata kunci pencarian."}
@@ -1780,16 +1780,16 @@ export function PortfolioInvestmentView({
       {tab === "reporting" && (
         <section className="flex flex-col gap-3.5 sm:gap-4">
           {/* Period Filter Card (Without "last_month", perfectly balanced 4-columns) */}
-          <div className="flex flex-col gap-2.5 rounded-2xl border border-[#E5E7EB] bg-white p-3 shadow-2xs dark:border-[#27272A] dark:bg-[#121215] sm:p-4">
+          <div className="flex flex-col gap-2.5 rounded-2xl border border-border bg-surface p-3 shadow-2xs dark:border-border dark:bg-surface sm:p-4">
             <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-[#94A3B8]" />
-              <span className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <span className="text-xs font-bold text-foreground">
                 {isEn ? "Analysis Period" : "Periode Analisis"}
               </span>
             </div>
 
             {/* Segmented Controls (4 Equal Columns) */}
-            <div className="grid grid-cols-2 gap-1 rounded-xl border border-[#E5E7EB] bg-[#F1F3F5] p-1 dark:border-[#27272A] dark:bg-[#1A1A20] sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-1 rounded-xl border border-border bg-secondary p-1 sm:grid-cols-4">
               {(
                 [
                   ["all", isEn ? "All Time" : "Semua Waktu"],
@@ -1805,8 +1805,8 @@ export function PortfolioInvestmentView({
                   className={cn(
                     "cursor-pointer rounded-lg px-2.5 py-2 text-center text-xs font-bold transition-all",
                     reportPeriod === periodKey
-                      ? "bg-white text-[#0F172A] shadow-xs dark:bg-[#121215] dark:text-[#FAFAFA]"
-                      : "text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8] dark:hover:text-[#FAFAFA]",
+                      ? "bg-surface text-foreground shadow-xs dark:bg-surface"
+                      : "text-muted-foreground hover:text-foreground",
                   )}
                 >
                   {label}
@@ -1816,8 +1816,8 @@ export function PortfolioInvestmentView({
 
             {/* Custom Date Range Picker Input */}
             {reportPeriod === "custom" && (
-              <div className="flex flex-col gap-2 rounded-xl border border-[#E5E7EB] bg-[#F8F9FA] p-3 dark:border-[#27272A] dark:bg-[#1A1A20] sm:flex-row sm:items-center sm:justify-between">
-                <span className="flex items-center gap-1.5 text-xs font-semibold text-[#64748B] dark:text-[#94A3B8]">
+              <div className="flex flex-col gap-2 rounded-xl border border-border bg-canvas p-3 dark:border-border dark:bg-surface-subtle sm:flex-row sm:items-center sm:justify-between">
+                <span className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
                   <Calendar className="h-3.5 w-3.5" />
                   <span>
                     {isEn ? "Custom Date Interval:" : "Rentang Tanggal:"}
@@ -1865,10 +1865,10 @@ export function PortfolioInvestmentView({
           </div>
 
           {/* Win Rate & Trading Efficiency Card */}
-          <div className="flex flex-col gap-4 rounded-2xl border border-[#E5E7EB] bg-white p-3.5 shadow-2xs dark:border-[#27272A] dark:bg-[#121215] sm:p-5">
+          <div className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-3.5 shadow-2xs dark:border-border dark:bg-surface sm:p-5">
             <div className="flex items-center gap-2">
-              <Percent className="h-4 w-4 text-emerald-600" />
-              <h3 className="text-xs font-black uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
+              <Percent className="h-4 w-4 text-success" />
+              <h3 className="text-xs font-black uppercase tracking-wider text-foreground">
                 {isEn
                   ? "Trading Win Rate & Discipline"
                   : "Win Rate & Hasil Penjualan"}
@@ -1892,7 +1892,7 @@ export function PortfolioInvestmentView({
                         r={r}
                         fill="none"
                         strokeWidth={stroke}
-                        className="stroke-[#E5E7EB] dark:stroke-[#27272A]"
+                        className="stroke-border"
                       />
                       <circle
                         cx={size / 2}
@@ -1901,16 +1901,16 @@ export function PortfolioInvestmentView({
                         fill="none"
                         strokeWidth={stroke}
                         strokeLinecap="round"
-                        className="stroke-emerald-500 transition-all duration-500"
+                        className="stroke-[var(--token-success)] transition-all duration-500"
                         strokeDasharray={c}
                         strokeDashoffset={offset}
                       />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="font-mono text-2xl font-black leading-none text-[#0F172A] dark:text-[#F8FAFC]">
+                      <span className="font-mono text-2xl font-black leading-none text-foreground">
                         {win}%
                       </span>
-                      <span className="mt-1 text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
+                      <span className="mt-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                         Win Rate
                       </span>
                     </div>
@@ -1918,28 +1918,28 @@ export function PortfolioInvestmentView({
                 );
               })()}
 
-              <div className="flex flex-1 flex-col divide-y divide-[#E5E7EB] text-xs dark:divide-[#27272A]">
+              <div className="flex flex-1 flex-col divide-y divide-border text-xs">
                 <div className="flex items-center justify-between gap-3 py-2.5">
-                  <span className="text-[11px] font-semibold text-[#64748B] dark:text-[#94A3B8]">
+                  <span className="text-[11px] font-semibold text-muted-foreground">
                     {isEn ? "Total Closed" : "Total Penjualan"}
                   </span>
-                  <span className="font-mono text-sm font-black text-[#0F172A] dark:text-[#F8FAFC]">
+                  <span className="font-mono text-sm font-black text-foreground">
                     {reportingStats.totalClosedCount}
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-3 py-2.5">
-                  <span className="text-[11px] font-semibold text-[#64748B] dark:text-[#94A3B8]">
+                  <span className="text-[11px] font-semibold text-muted-foreground">
                     {isEn ? "Profitable" : "Untung (Cuan)"}
                   </span>
-                  <span className="font-mono text-sm font-black text-emerald-600 dark:text-emerald-400">
+                  <span className="font-mono text-sm font-black text-success">
                     {reportingStats.winningTradesCount}
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-3 py-2.5">
-                  <span className="text-[11px] font-semibold text-[#64748B] dark:text-[#94A3B8]">
+                  <span className="text-[11px] font-semibold text-muted-foreground">
                     {isEn ? "Losses" : "Rugi (Cut Loss)"}
                   </span>
-                  <span className="font-mono text-sm font-black text-rose-600 dark:text-rose-400">
+                  <span className="font-mono text-sm font-black text-destructive">
                     {reportingStats.losingTradesCount}
                   </span>
                 </div>
@@ -1951,8 +1951,8 @@ export function PortfolioInvestmentView({
               whitespace di P&L dipindah ke atas, chart nempel bawah */}
           <div className="grid gap-3 sm:grid-cols-2">
             {/* Donut — Alokasi Portofolio */}
-            <div className="flex flex-col gap-3 rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-2xs dark:border-[#27272A] dark:bg-[#121215]">
-              <h3 className="text-xs font-black uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
+            <div className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-4 shadow-2xs dark:border-border dark:bg-surface">
+              <h3 className="text-xs font-black uppercase tracking-wider text-foreground">
                 {isEn ? "Portfolio Allocation" : "Alokasi Portofolio"}
               </h3>
               {allocationData.length > 0 ? (
@@ -1979,17 +1979,18 @@ export function PortfolioInvestmentView({
                           const name = String(entry.name ?? "");
                           const val = Number(entry.value ?? 0);
                           return (
-                            <div style={{ fontSize: 11, borderRadius: 12, border: "1px solid #E5E7EB" }} className="bg-white px-2.5 py-1.5 shadow-lg dark:bg-[#121215]">
-                              <span style={{ color: "#0F172A" }} className="font-bold dark:text-[#F8FAFC]">{name}</span>
-                              <span style={{ color: "#0F172A" }} className="ml-2 font-mono font-bold dark:text-[#F8FAFC]">{fmt(val, "IDR")}</span>
+                            <div style={{ fontSize: 11, borderRadius: 12, border: "1px solid var(--token-border)", backgroundColor: "var(--token-surface)", color: "var(--token-foreground)" }} className="px-2.5 py-1.5 shadow-lg">
+                              <span className="font-bold text-foreground">{name}</span>
+                              <span className="ml-2 font-mono font-bold text-foreground">{fmt(val, "IDR")}</span>
                             </div>
                           );
                         }}
                         contentStyle={{
                           fontSize: 11,
                           borderRadius: 12,
-                          border: "1px solid #E5E7EB",
-                          color: "#0F172A",
+                          border: "1px solid var(--token-border)",
+                          backgroundColor: "var(--token-surface)",
+                          color: "var(--token-foreground)",
                         }}
                       />
                     </PieChart>
@@ -2005,11 +2006,11 @@ export function PortfolioInvestmentView({
                             className="h-2.5 w-2.5 rounded-full shrink-0"
                             style={{ backgroundColor: d.color }}
                           />
-                          <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">
+                          <span className="text-xs text-muted-foreground">
                             {d.name}
                           </span>
                         </div>
-                        <span className="font-mono text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                        <span className="font-mono text-xs font-bold text-foreground">
                           {totalPortfolioValue > 0
                             ? `${Math.round((d.value / totalPortfolioValue) * 100)}%`
                             : "—"}
@@ -2019,13 +2020,13 @@ export function PortfolioInvestmentView({
                   </div>
                 </>
               ) : (
-                <p className="text-center text-xs text-[#94A3B8] py-8">—</p>
+                <p className="text-center text-xs text-muted-foreground py-8">—</p>
               )}
             </div>
 
             {/* Bar Chart — P&L per Aset */}
-            <div className="flex flex-col gap-3 rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-2xs dark:border-[#27272A] dark:bg-[#121215]">
-              <h3 className="text-xs font-black uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
+            <div className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-4 shadow-2xs dark:border-border dark:bg-surface">
+              <h3 className="text-xs font-black uppercase tracking-wider text-foreground">
                 {isEn ? "P&L by Asset" : "P&L per Aset"}
               </h3>
               <div className="mt-auto mb-2 w-full">
@@ -2054,14 +2055,14 @@ export function PortfolioInvestmentView({
                           return `${v >= 0 ? "+" : ""}${Math.round(v)}`;
                         return `${v >= 0 ? "+" : ""}${(v / 1000).toFixed(1)}k`;
                       }}
-                      tick={{ fontSize: 10, fill: "#94A3B8" }}
+                      tick={{ fontSize: 10, fill: "var(--token-muted-foreground)" }}
                       axisLine={false}
                       tickLine={false}
                     />
                     <YAxis
                       type="category"
                       dataKey="symbol"
-                      tick={{ fontSize: 10, fill: "#94A3B8" }}
+                      tick={{ fontSize: 10, fill: "var(--token-muted-foreground)" }}
                       axisLine={false}
                       tickLine={false}
                       width={56}
@@ -2073,31 +2074,32 @@ export function PortfolioInvestmentView({
                         const name = String(entry?.payload?.symbol ?? entry?.name ?? "");
                         const val = Number(entry?.value ?? 0);
                         return (
-                          <div style={{ fontSize: 11, borderRadius: 12, border: "1px solid #E5E7EB" }} className="bg-white px-2.5 py-1.5 shadow-lg dark:bg-[#121215]">
-                            <span style={{ color: "#0F172A" }} className="font-bold dark:text-[#F8FAFC]">{name}</span>
-                            <span style={{ color: "#0F172A" }} className="ml-2 font-mono font-bold dark:text-[#F8FAFC]">{val >= 0 ? "+" : ""}{fmt(val, "IDR")}</span>
+                          <div style={{ fontSize: 11, borderRadius: 12, border: "1px solid var(--token-border)", backgroundColor: "var(--token-surface)", color: "var(--token-foreground)" }} className="px-2.5 py-1.5 shadow-lg">
+                            <span className="font-bold text-foreground">{name}</span>
+                            <span className="ml-2 font-mono font-bold text-foreground">{val >= 0 ? "+" : ""}{fmt(val, "IDR")}</span>
                           </div>
                         );
                       }}
                       contentStyle={{
                         fontSize: 11,
                         borderRadius: 12,
-                        border: "1px solid #E5E7EB",
-                        color: "#0F172A",
+                        border: "1px solid var(--token-border)",
+                        backgroundColor: "var(--token-surface)",
+                        color: "var(--token-foreground)",
                       }}
                     />
                     <Bar dataKey="pnl" radius={[0, 6, 6, 0]} maxBarSize={22}>
                       {pnlBarData.map((d, i) => (
                         <Cell
                           key={i}
-                          fill={d.pnl >= 0 ? "#10B981" : "#F43F5E"}
+                          fill={d.pnl >= 0 ? "var(--token-success)" : "var(--token-destructive)"}
                         />
                       ))}
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <p className="text-center text-xs text-[#94A3B8] py-8">
+                <p className="text-center text-xs text-muted-foreground py-8">
                   {isEn ? "No closed trades yet" : "Belum ada transaksi jual"}
                 </p>
               )}
@@ -2105,7 +2107,7 @@ export function PortfolioInvestmentView({
                 <button
                   type="button"
                   onClick={() => setShowAllPnl(!showAllPnl)}
-                  className="mt-2 w-full rounded-lg border border-[#E5E7EB] py-2 text-[11px] font-bold text-[#64748B] hover:text-[#0F172A] dark:border-[#27272A] dark:text-[#94A3B8] dark:hover:text-[#FAFAFA]"
+                  className="mt-2 w-full rounded-lg border border-border py-2 text-[11px] font-bold text-muted-foreground hover:text-foreground"
                 >
                   {showAllPnl
                     ? (isEn ? "Show top 5" : "Tampilkan top 5")
@@ -2118,8 +2120,8 @@ export function PortfolioInvestmentView({
 
           {/* Line Chart — Kumulatif P&L */}
           {cumulativePnlData.length > 0 && (
-            <div className="flex flex-col gap-3 rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-2xs dark:border-[#27272A] dark:bg-[#121215]">
-              <h3 className="text-xs font-black uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
+            <div className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-4 shadow-2xs dark:border-border dark:bg-surface">
+              <h3 className="text-xs font-black uppercase tracking-wider text-foreground">
                 {isEn ? "Cumulative P&L Over Time" : "Tren P&L Kumulatif"}
               </h3>
               <ResponsiveContainer width="100%" height={200}>
@@ -2127,10 +2129,10 @@ export function PortfolioInvestmentView({
                   data={cumulativePnlData}
                   margin={{ top: 4, right: 16, left: 8, bottom: 0 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--token-border)" />
                   <XAxis
                     dataKey="date"
-                    tick={{ fontSize: 10, fill: "#94A3B8" }}
+                    tick={{ fontSize: 10, fill: "var(--token-muted-foreground)" }}
                     axisLine={false}
                     tickLine={false}
                     tickFormatter={(d) =>
@@ -2141,7 +2143,7 @@ export function PortfolioInvestmentView({
                     }
                   />
                   <YAxis
-                    tick={{ fontSize: 10, fill: "#94A3B8" }}
+                    tick={{ fontSize: 10, fill: "var(--token-muted-foreground)" }}
                     axisLine={false}
                     tickLine={false}
                     tickFormatter={(v) => {
@@ -2157,9 +2159,9 @@ export function PortfolioInvestmentView({
                       const val = Number(payload[0].value ?? 0);
                       const isProfit = val >= 0;
                       return (
-                        <div style={{ fontSize: 11, borderRadius: 12, border: "1px solid #E5E7EB" }} className="bg-white px-2.5 py-1.5 shadow-lg dark:bg-[#121215]">
-                          <div style={{ color: "#0F172A" }} className="font-bold dark:text-[#F8FAFC]">{String(label ?? "")}</div>
-                          <div style={{ color: isProfit ? "#059669" : "#E11D48" }} className="font-mono font-bold">
+                        <div style={{ fontSize: 11, borderRadius: 12, border: "1px solid var(--token-border)", backgroundColor: "var(--token-surface)", color: "var(--token-foreground)" }} className="px-2.5 py-1.5 shadow-lg">
+                          <div className="font-bold text-foreground">{String(label ?? "")}</div>
+                          <div className={cn("font-mono font-bold", isProfit ? "text-success" : "text-destructive")}>
                             {isProfit ? "+" : ""}{fmt(val, "IDR")}
                           </div>
                         </div>
@@ -2178,13 +2180,15 @@ export function PortfolioInvestmentView({
                     contentStyle={{
                       fontSize: 11,
                       borderRadius: 12,
-                      border: "1px solid #E5E7EB",
+                      border: "1px solid var(--token-border)",
+                      backgroundColor: "var(--token-surface)",
+                      color: "var(--token-foreground)",
                     }}
                   />
                   <Line
                     type="monotone"
                     dataKey="cumulative"
-                    stroke="#6366F1"
+                    stroke="var(--token-info)"
                     strokeWidth={2}
                     dot={cumulativePnlData.length <= 10}
                     activeDot={{ r: 4 }}
@@ -2195,14 +2199,14 @@ export function PortfolioInvestmentView({
           )}
 
           {/* Breakdown Per Aset: "Tau Untung Disini, Rugi Disini" */}
-          <div className="overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-2xs dark:border-[#27272A] dark:bg-[#121215]">
-            <div className="border-b border-[#E5E7EB] px-4 py-3 dark:border-[#27272A]">
-              <h2 className="text-sm font-black text-[#0F172A] dark:text-[#F8FAFC]">
+          <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-2xs dark:border-border dark:bg-surface">
+            <div className="border-b border-border px-4 py-3 dark:border-border">
+              <h2 className="text-sm font-black text-foreground">
                 {isEn
                   ? "Asset Breakdown: Profit & Loss Tracker"
                   : "Rincian Per Aset: Pantau Untung & Rugi"}
               </h2>
-              <p className="text-[11px] text-[#64748B] dark:text-[#94A3B8]">
+              <p className="text-[11px] text-muted-foreground">
                 {isEn
                   ? "Ranked from your top performers down to assets that resulted in a cut loss."
                   : "Diurutkan dari aset yang menyumbang cuan bersih terbesar hingga aset yang mengalami kerugian."}
@@ -2210,7 +2214,7 @@ export function PortfolioInvestmentView({
             </div>
 
             {reportingStats.assetPerformance.length > 0 ? (
-              <div className="divide-y divide-[#E5E7EB] dark:divide-[#27272A]">
+              <div className="divide-y divide-border">
                 {reportingStats.assetPerformance.map((asset) => {
                   const isProfit = asset.netPnl > 0;
                   return (
@@ -2222,17 +2226,17 @@ export function PortfolioInvestmentView({
                         <AssetLogo kind={asset.kind} symbol={asset.symbol} />
                         <div className="min-w-0">
                           <div className="flex items-center gap-1.5">
-                            <span className="font-black text-xs text-[#0F172A] dark:text-[#F8FAFC]">
+                            <span className="font-black text-xs text-foreground">
                               {asset.symbol}
                             </span>
                             <span
                               className={cn(
                                 "rounded-md px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider",
                                 asset.netPnl > 0
-                                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                                  ? "bg-success-muted text-success"
                                   : asset.netPnl < 0
-                                    ? "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300"
-                                    : "bg-[#F1F3F5] text-[#64748B] dark:bg-[#27272A] dark:text-[#94A3B8]",
+                                    ? "bg-destructive-muted text-destructive"
+                                    : "bg-surface-muted text-muted-foreground",
                               )}
                             >
                               {asset.netPnl > 0
@@ -2248,7 +2252,7 @@ export function PortfolioInvestmentView({
                                     : "IMPAS"}
                             </span>
                           </div>
-                          <p className="truncate text-[10px] text-[#64748B] dark:text-[#94A3B8]">
+                          <p className="truncate text-[10px] text-muted-foreground">
                             {asset.tradesCount} {isEn ? "sales" : "penjualan"} ·{" "}
                             {asset.winCount} {isEn ? "wins" : "cuan"}
                           </p>
@@ -2260,14 +2264,14 @@ export function PortfolioInvestmentView({
                           className={cn(
                             "font-mono text-xs font-black whitespace-nowrap sm:text-sm",
                             isProfit
-                              ? "text-emerald-600 dark:text-emerald-400"
-                              : "text-rose-600 dark:text-rose-400",
+                              ? "text-success"
+                              : "text-destructive",
                           )}
                         >
                           {isProfit ? "+" : ""}
                           {fmt(asset.netPnl, "IDR")}
                         </p>
-                        <p className="font-mono text-[9px] text-[#94A3B8] whitespace-nowrap sm:text-[10px]">
+                        <p className="font-mono text-[9px] text-muted-foreground whitespace-nowrap sm:text-[10px]">
                           +{fmt(asset.gain, "IDR")} | -
                           {fmt(asset.loss, "IDR")}
                         </p>
@@ -2277,7 +2281,7 @@ export function PortfolioInvestmentView({
                 })}
               </div>
             ) : (
-              <div className="p-8 text-center text-xs text-[#64748B] dark:text-[#94A3B8]">
+              <div className="p-8 text-center text-xs text-muted-foreground">
                 {isEn
                   ? "No closed sales recorded in this period yet."
                   : "Belum ada transaksi penjualan di periode ini."}
@@ -2286,19 +2290,19 @@ export function PortfolioInvestmentView({
           </div>
 
           {/* Fee & Cost Transparency Breakdown (No squeezed numbers) */}
-          <div className="overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-2xs dark:border-[#27272A] dark:bg-[#121215]">
-            <div className="border-b border-[#E5E7EB] p-3.5 dark:border-[#27272A] sm:p-4">
+          <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-2xs dark:border-border dark:bg-surface">
+            <div className="border-b border-border p-3.5 dark:border-border sm:p-4">
               <div className="flex items-center justify-between gap-3">
-                <h2 className="text-sm font-black text-[#0F172A] dark:text-[#F8FAFC]">
+                <h2 className="text-sm font-black text-foreground">
                   {isEn
                     ? "Fee & Cost Transparency"
                     : "Transparansi Biaya Terbayar"}
                 </h2>
-                <span className="shrink-0 font-mono text-sm font-black text-rose-600 whitespace-nowrap dark:text-rose-400">
+                <span className="shrink-0 font-mono text-sm font-black text-destructive whitespace-nowrap">
                   {fmt(reportingStats.totalFees, "IDR")}
                 </span>
               </div>
-              <p className="mt-1 text-[11px] text-[#64748B] dark:text-[#94A3B8]">
+              <p className="mt-1 text-[11px] text-muted-foreground">
                 {isEn
                   ? "Indonesian stocks only: Indonesian stamp duty (bea materai), exchange fees, and platform funding costs (already reflected in net P&L). US ETFs/foreign assets have separate US fees and no Indonesian stamp duty."
                   : "Khusus saham Indonesia: bea materai saham, biaya transaksi bursa kripto, dan transfer platform (sudah otomatis terhitung di laba/rugi bersih). ETF AS/asset luar negeri fee-nya terpisah fee AS dan tanpa bea materai Indonesia."}
@@ -2306,35 +2310,35 @@ export function PortfolioInvestmentView({
             </div>
 
             {reportingStats.feeRecords.length > 0 ? (
-              <div className="divide-y divide-[#E5E7EB] dark:divide-[#27272A]">
+              <div className="divide-y divide-border">
                 {reportingStats.feeRecords.map((detail) => (
                   <div
                     key={detail.id}
                     className="grid gap-1.5 px-3.5 py-3 sm:grid-cols-[120px_1fr_auto] sm:items-center sm:px-4"
                   >
-                    <span className="text-[11px] text-[#64748B] dark:text-[#94A3B8]">
+                    <span className="text-[11px] text-muted-foreground">
                       {new Date(detail.date).toLocaleDateString(
                         isEn ? "en-US" : "id-ID",
                       )}
                     </span>
                     <div className="min-w-0">
-                      <p className="truncate text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                      <p className="truncate text-xs font-bold text-foreground">
                         {detail.type}
                       </p>
                       {detail.reference ? (
-                        <p className="truncate text-[10px] text-[#64748B] dark:text-[#94A3B8]">
+                        <p className="truncate text-[10px] text-muted-foreground">
                           {detail.reference}
                         </p>
                       ) : null}
                     </div>
-                    <span className="font-mono text-xs font-bold text-rose-600 whitespace-nowrap dark:text-rose-400">
+                    <span className="font-mono text-xs font-bold text-destructive whitespace-nowrap">
                       -{fmt(detail.amount, "IDR")}
                     </span>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="p-6 text-center text-xs text-[#64748B] dark:text-[#94A3B8]">
+              <p className="p-6 text-center text-xs text-muted-foreground">
                 {i18n.feesEmpty}
               </p>
             )}
@@ -2368,15 +2372,15 @@ export function PortfolioInvestmentView({
       >
         <form onSubmit={submitTransaction} className="flex flex-col gap-3.5">
           {modal !== "edit" && !selectedId && (
-            <div className="grid grid-cols-3 gap-2 rounded-xl bg-[#F8F9FA] p-1.5 dark:bg-[#1A1A20]">
+            <div className="grid grid-cols-3 gap-2 rounded-xl bg-canvas p-1.5 dark:bg-surface-subtle">
               <button
                 type="button"
                 onClick={() => handleKindSwitch("stock")}
                 className={cn(
                   "min-h-9 rounded-lg px-3 py-2 text-xs font-bold transition-all",
                   assetKind === "stock"
-                    ? "bg-white text-[#0F172A] shadow-xs dark:bg-[#27272A] dark:text-[#FAFAFA]"
-                    : "text-[#64748B]",
+                    ? "bg-surface text-foreground shadow-xs dark:bg-surface-muted"
+                    : "text-muted-foreground",
                 )}
               >
                 {i18n.stock}
@@ -2387,8 +2391,8 @@ export function PortfolioInvestmentView({
                 className={cn(
                   "min-h-9 rounded-lg px-3 py-2 text-xs font-bold transition-all",
                   assetKind === "crypto"
-                    ? "bg-white text-[#0F172A] shadow-xs dark:bg-[#27272A] dark:text-[#FAFAFA]"
-                    : "text-[#64748B]",
+                    ? "bg-surface text-foreground shadow-xs dark:bg-surface-muted"
+                    : "text-muted-foreground",
                 )}
               >
                 {i18n.cryptoAsset}
@@ -2399,8 +2403,8 @@ export function PortfolioInvestmentView({
                 className={cn(
                   "min-h-9 rounded-lg px-3 py-2 text-xs font-bold transition-all",
                   assetKind === "etf"
-                    ? "bg-white text-[#0F172A] shadow-xs dark:bg-[#27272A] dark:text-[#FAFAFA]"
-                    : "text-[#64748B]",
+                    ? "bg-surface text-foreground shadow-xs dark:bg-surface-muted"
+                    : "text-muted-foreground",
                 )}
               >
                 {i18n.etf.title}
@@ -2409,7 +2413,7 @@ export function PortfolioInvestmentView({
           )}
 
           {modal === "buy" && selectedId && (
-            <div className="rounded-xl bg-emerald-50 p-2.5 text-[11px] font-bold text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200">
+            <div className="rounded-xl bg-success-muted p-2.5 text-[11px] font-bold text-success">
               {assetKind === "stock" ? ticker || i18n.stock : symbol || "BTC"} ·{" "}
               {i18n.addPosition}
             </div>
@@ -2436,7 +2440,7 @@ export function PortfolioInvestmentView({
           {assetKind === "stock" ? (
             <>
               {selectedId ? (
-                <div className="rounded-xl border border-[#E5E7EB] px-3 py-2 text-xs font-bold dark:border-[#27272A]">
+                <div className="rounded-xl border border-border px-3 py-2 text-xs font-bold dark:border-border">
                   {ticker}
                 </div>
               ) : (
@@ -2532,7 +2536,7 @@ export function PortfolioInvestmentView({
               {modal === "buy" &&
                 formSettlementCurrency === "IDR" &&
                 Number(amount) > 10_000_000 && (
-                  <p className="rounded-xl bg-amber-50 p-3 text-xs text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+                  <p className="rounded-xl bg-warning-muted p-3 text-xs text-warning">
                     {i18n.stampDutyNotice}
                   </p>
                 )}
@@ -2540,7 +2544,7 @@ export function PortfolioInvestmentView({
           ) : (
             <>
               {selectedId ? (
-                <div className="rounded-xl border border-[#E5E7EB] px-3 py-2 text-xs font-bold dark:border-[#27272A]">
+                <div className="rounded-xl border border-border px-3 py-2 text-xs font-bold dark:border-border">
                   {symbol}
                 </div>
               ) : (
@@ -2806,7 +2810,7 @@ export function PortfolioInvestmentView({
           )}
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
               {i18n.tradeDateLabel}
             </label>
             <DatePicker value={date} onChange={setDate} clearable={false} />
@@ -2875,7 +2879,7 @@ function PercentageSlider({
       <div className="relative w-full">
         {/* Floating tooltip above thumb */}
         <div
-          className="pointer-events-none absolute -top-7 whitespace-nowrap rounded-md bg-[#0F172A] px-1.5 py-0.5 font-mono text-[10px] font-black text-white shadow-xs dark:bg-[#FAFAFA] dark:text-[#0F172A]"
+          className="pointer-events-none absolute -top-7 whitespace-nowrap rounded-md bg-surface-inverse px-1.5 py-0.5 font-mono text-[10px] font-black text-foreground-inverse shadow-xs"
           style={{
             left: `${safeValue}%`,
             transform: `translateX(${safeValue === 0 ? "0%" : safeValue === 100 ? "-100%" : "-50%"})`,
@@ -2885,10 +2889,10 @@ function PercentageSlider({
         </div>
 
         {/* Track background */}
-        <div className="relative h-1.5 w-full rounded-full bg-[#E5E7EB] dark:bg-[#27272A]">
+        <div className="relative h-1.5 w-full rounded-full bg-border">
           {/* Filled range */}
           <div
-            className="absolute h-full rounded-full bg-emerald-600 dark:bg-emerald-500"
+            className="absolute h-full rounded-full bg-success"
             style={{ width: `${safeValue}%` }}
           />
         </div>
@@ -2905,8 +2909,8 @@ function PercentageSlider({
             className={cn(
               "absolute top-0 -translate-y-1/4 h-2.5 w-2.5 rounded-full border-2 transition-all cursor-pointer z-10",
               safeValue >= dot
-                ? "border-emerald-600 bg-white dark:border-emerald-400 dark:bg-[#121215]"
-                : "border-[#D1D5DB] bg-white dark:border-[#3F3F46] dark:bg-[#1A1A20]",
+                ? "border-success bg-surface"
+                : "border-border bg-surface dark:border-border dark:bg-surface-subtle",
             )}
             style={{
               left: `calc(${dot}% - ${dot === 0 ? "0px" : dot === 100 ? "10px" : "5px"})`,
@@ -2928,7 +2932,7 @@ function PercentageSlider({
         />
 
         <div
-          className="absolute top-0 -translate-y-1/4 z-10 h-4 w-4 rounded-full border-2 border-white bg-emerald-600 shadow-md pointer-events-none dark:border-[#121215] dark:bg-emerald-400"
+          className="absolute top-0 -translate-y-1/4 z-10 h-4 w-4 rounded-full border-2 border-surface bg-success shadow-md pointer-events-none"
           style={{
             left: `calc(${safeValue}% - ${safeValue === 0 ? "0px" : safeValue === 100 ? "16px" : "8px"})`,
           }}
@@ -2936,7 +2940,7 @@ function PercentageSlider({
       </div>
 
       {/* Label row */}
-      <div className="relative mt-2 h-4 text-[9px] font-bold text-[#94A3B8]">
+      <div className="relative mt-2 h-4 text-[9px] font-bold text-muted-foreground">
         {disabled && hint ? (
           <span className="italic">{hint}</span>
         ) : (
@@ -2945,7 +2949,7 @@ function PercentageSlider({
               key={dot}
               type="button"
               onClick={() => onChange(dot)}
-              className="absolute cursor-pointer transition-colors hover:text-[#0F172A] dark:hover:text-[#FAFAFA]"
+              className="absolute cursor-pointer transition-colors hover:text-foreground"
               style={{
                 left: `${dot}%`,
                 transform: `translateX(${dot === 0 ? "0%" : dot === 100 ? "-100%" : "-50%"})`,
@@ -2976,8 +2980,8 @@ function Summary({
   tone?: "neutral" | "positive" | "negative";
 }) {
   return (
-    <div className="rounded-2xl border border-[#E5E7EB] bg-white p-3 shadow-2xs dark:border-[#27272A] dark:bg-[#121215] sm:p-4">
-      <p className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
+    <div className="rounded-2xl border border-border bg-surface p-3 shadow-2xs dark:border-border dark:bg-surface sm:p-4">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
         {label}
       </p>
       <p
@@ -2985,10 +2989,10 @@ function Summary({
         className={cn(
           "mt-1 font-mono text-xs font-black leading-tight sm:text-base",
           tone === "positive"
-            ? "text-emerald-600 dark:text-emerald-400"
+            ? "text-success"
             : tone === "negative"
-              ? "text-rose-600 dark:text-rose-400"
-              : "text-[#0F172A] dark:text-[#F8FAFC]",
+              ? "text-destructive"
+              : "text-foreground",
         )}
       >
         {value}
@@ -3036,48 +3040,48 @@ function EtfCard({
       })
     : "";
   return (
-    <div className="overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-2xs dark:border-[#27272A] dark:bg-[#121215]">
+    <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-2xs dark:border-border dark:bg-surface">
       <div className="flex items-center justify-between gap-3 px-4 py-3.5">
         <div className="flex min-w-0 items-center gap-2.5">
           <AssetLogo kind="etf" symbol={holding.ticker} />
           <div className="min-w-0">
-            <p className="font-black text-sm text-[#0F172A] dark:text-[#F8FAFC]">{holding.ticker}</p>
-            <p className="truncate text-[10px] text-[#64748B] dark:text-[#94A3B8]">{isEn ? "US ETF" : "ETF AS"}</p>
+            <p className="font-black text-sm text-foreground">{holding.ticker}</p>
+            <p className="truncate text-[10px] text-muted-foreground">{isEn ? "US ETF" : "ETF AS"}</p>
           </div>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-0.5">
-          <span className="rounded-full border border-[#E5E7EB] px-2 py-0.5 text-[10px] font-semibold text-[#64748B] dark:border-[#27272A] dark:text-[#94A3B8]">{holding.account?.name || "Broker"} ({settlementCurrency})</span>
+          <span className="rounded-full border border-border px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">{holding.account?.name || "Broker"} ({settlementCurrency})</span>
           {marketVal !== undefined && (
             <>
-              <span className="font-mono text-sm font-black text-[#0F172A] dark:text-[#F8FAFC] tnum">{fmt(marketVal, "IDR")}</span>
-              <span className={cn("font-mono text-[10px] font-bold", pnl >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400")}>
+              <span className="font-mono text-sm font-black text-foreground tnum">{fmt(marketVal, "IDR")}</span>
+              <span className={cn("font-mono text-[10px] font-bold", pnl >= 0 ? "text-success" : "text-destructive")}>
                 {pnl >= 0 ? "+" : ""}{pnlPct.toFixed(2)}%
               </span>
             </>
           )}
         </div>
       </div>
-      <div className="flex flex-col divide-y divide-[#F1F3F5] px-4 py-1 dark:divide-[#1E1E24]">
+      <div className="flex flex-col divide-y divide-secondary px-4 py-1">
         <div className="flex items-center justify-between py-2">
-          <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">{i18n.quantityLabel}</span>
+          <span className="text-xs text-muted-foreground">{i18n.quantityLabel}</span>
           <span className="font-mono text-xs font-bold tnum">{holding.quantity} shares</span>
         </div>
         <div className="flex items-center justify-between py-2">
-          <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">{i18n.capitalLabel}</span>
+          <span className="text-xs text-muted-foreground">{i18n.capitalLabel}</span>
           <span className="font-mono text-xs font-bold tnum">{formatCurrency(cost, settlementCurrency)} ({settlementCurrency})</span>
         </div>
         <div className="flex items-center justify-between py-2">
-          <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">{isEn ? "Avg Price / Share" : "Harga Rata-rata / Unit"}</span>
+          <span className="text-xs text-muted-foreground">{isEn ? "Avg Price / Share" : "Harga Rata-rata / Unit"}</span>
           <span className="font-mono text-xs font-bold tnum">{Number(holding.avg_buy_price) > 0 ? `${formatCurrency(Number(holding.avg_buy_price), settlementCurrency)} (${settlementCurrency})` : "—"}</span>
         </div>
         {(isRefreshing || quote) && (
           <div className="flex items-center justify-between py-2">
-            <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">
+            <span className="text-xs text-muted-foreground">
               {isEn ? "Market price" : "Harga pasar"}
               {!isRefreshing && marketDate ? ` · ${marketDate}` : ""}
             </span>
             {isRefreshing ? (
-              <span className="inline-block h-3.5 w-20 animate-pulse rounded bg-slate-200 dark:bg-[#27272A]" />
+              <span className="inline-block h-3.5 w-20 animate-pulse rounded bg-surface-muted" />
             ) : (
               quote && <span className="font-mono text-xs font-bold tnum">{fmt(quote.price, quote.currency)}</span>
             )}
@@ -3132,27 +3136,27 @@ function StockCard({
     : "";
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-2xs dark:border-[#27272A] dark:bg-[#121215]">
+    <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-2xs dark:border-border dark:bg-surface">
       <div className="flex items-center justify-between gap-3 px-4 py-3.5">
         <div className="flex min-w-0 items-center gap-2.5">
           <AssetLogo kind="stock" symbol={holding.ticker} />
           <div className="min-w-0">
-            <p className="font-black text-sm text-[#0F172A] dark:text-[#F8FAFC]">{holding.ticker}</p>
-            <p className="truncate text-[10px] text-[#64748B] dark:text-[#94A3B8]">{isEn ? "IDX Stocks" : "Saham IDX"}</p>
+            <p className="font-black text-sm text-foreground">{holding.ticker}</p>
+            <p className="truncate text-[10px] text-muted-foreground">{isEn ? "IDX Stocks" : "Saham IDX"}</p>
           </div>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-0.5">
-          <span className="rounded-full border border-[#E5E7EB] px-2 py-0.5 text-[10px] font-semibold text-[#64748B] dark:border-[#27272A] dark:text-[#94A3B8]">{holding.account?.name || "RDN"} ({settlementCurrency})</span>
+          <span className="rounded-full border border-border px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">{holding.account?.name || "RDN"} ({settlementCurrency})</span>
           {isRefreshing ? (
             <div className="flex flex-col items-end gap-1">
-              <span className="inline-block h-4 w-24 animate-pulse rounded bg-slate-200 dark:bg-[#27272A]" />
-              <span className="inline-block h-3 w-14 animate-pulse rounded bg-slate-100 dark:bg-[#1E1E24]" />
+              <span className="inline-block h-4 w-24 animate-pulse rounded bg-surface-muted" />
+              <span className="inline-block h-3 w-14 animate-pulse rounded bg-surface-subtle" />
             </div>
           ) : (
             marketVal !== undefined && (
               <>
-                <span className="font-mono text-sm font-black text-[#0F172A] dark:text-[#F8FAFC] tnum">{fmt(marketVal, "IDR")}</span>
-                <span className={cn("font-mono text-[10px] font-bold", pnl >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400")}>
+                <span className="font-mono text-sm font-black text-foreground tnum">{fmt(marketVal, "IDR")}</span>
+                <span className={cn("font-mono text-[10px] font-bold", pnl >= 0 ? "text-success" : "text-destructive")}>
                   {pnl >= 0 ? "+" : ""}{pnlPct.toFixed(2)}%
                 </span>
               </>
@@ -3160,27 +3164,27 @@ function StockCard({
           )}
         </div>
       </div>
-      <div className="flex flex-col divide-y divide-[#F1F3F5] px-4 py-1 dark:divide-[#1E1E24]">
+      <div className="flex flex-col divide-y divide-secondary px-4 py-1">
         <div className="flex items-center justify-between py-2">
-          <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">{i18n.quantityLabel}</span>
+          <span className="text-xs text-muted-foreground">{i18n.quantityLabel}</span>
           <span className="font-mono text-xs font-bold tnum">{lots} lot</span>
         </div>
         <div className="flex items-center justify-between py-2">
-          <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">{i18n.capitalLabel}</span>
+          <span className="text-xs text-muted-foreground">{i18n.capitalLabel}</span>
           <span className="font-mono text-xs font-bold tnum">{formatCurrency(cost, settlementCurrency)} ({settlementCurrency})</span>
         </div>
         <div className="flex items-center justify-between py-2">
-          <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">{isEn ? "Avg Price / Share" : "Harga Rata-rata / Lembar"}</span>
+          <span className="text-xs text-muted-foreground">{isEn ? "Avg Price / Share" : "Harga Rata-rata / Lembar"}</span>
           <span className="font-mono text-xs font-bold tnum">{Number(holding.avg_buy_price) > 0 ? `${formatCurrency(Number(holding.avg_buy_price), settlementCurrency)} (${settlementCurrency}) / lbr` : "—"}</span>
         </div>
         {(isRefreshing || quote) && (
           <div className="flex items-center justify-between py-2">
-            <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">
+            <span className="text-xs text-muted-foreground">
               {isEn ? "Market price" : "Harga pasar"}
               {!isRefreshing && marketDate ? ` · ${marketDate}` : ""}
             </span>
             {isRefreshing ? (
-              <span className="inline-block h-3.5 w-20 animate-pulse rounded bg-slate-200 dark:bg-[#27272A]" />
+              <span className="inline-block h-3.5 w-20 animate-pulse rounded bg-surface-muted" />
             ) : (
               quote && <span className="font-mono text-xs font-bold tnum">{fmt(quote.price, quote.currency)}</span>
             )}
@@ -3233,27 +3237,27 @@ function CryptoCard({
     : "";
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-2xs dark:border-[#27272A] dark:bg-[#121215]">
+    <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-2xs dark:border-border dark:bg-surface">
       <div className="flex items-center justify-between gap-3 px-4 py-3.5">
         <div className="flex min-w-0 items-center gap-2.5">
           <AssetLogo kind="crypto" symbol={holding.symbol} />
           <div className="min-w-0">
-            <p className="font-black text-sm text-[#0F172A] dark:text-[#F8FAFC]">{holding.symbol}</p>
-            <p className="truncate text-[10px] text-[#64748B] dark:text-[#94A3B8]">{i18n.cryptoAsset}</p>
+            <p className="font-black text-sm text-foreground">{holding.symbol}</p>
+            <p className="truncate text-[10px] text-muted-foreground">{i18n.cryptoAsset}</p>
           </div>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-0.5">
-          <span className="rounded-full border border-[#E5E7EB] px-2 py-0.5 text-[10px] font-semibold text-[#64748B] dark:border-[#27272A] dark:text-[#94A3B8]">{holding.account?.name || i18n.accountFallback} ({settlementCurrency})</span>
+          <span className="rounded-full border border-border px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">{holding.account?.name || i18n.accountFallback} ({settlementCurrency})</span>
           {isRefreshing ? (
             <div className="flex flex-col items-end gap-1">
-              <span className="inline-block h-4 w-24 animate-pulse rounded bg-slate-200 dark:bg-[#27272A]" />
-              <span className="inline-block h-3 w-14 animate-pulse rounded bg-slate-100 dark:bg-[#1E1E24]" />
+              <span className="inline-block h-4 w-24 animate-pulse rounded bg-surface-muted" />
+              <span className="inline-block h-3 w-14 animate-pulse rounded bg-surface-subtle" />
             </div>
           ) : (
             marketVal !== undefined && (
               <>
-                <span className="font-mono text-sm font-black text-[#0F172A] dark:text-[#F8FAFC] tnum">{fmt(marketVal, "IDR")}</span>
-                <span className={cn("font-mono text-[10px] font-bold", pnl >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400")}>
+                <span className="font-mono text-sm font-black text-foreground tnum">{fmt(marketVal, "IDR")}</span>
+                <span className={cn("font-mono text-[10px] font-bold", pnl >= 0 ? "text-success" : "text-destructive")}>
                   {pnl >= 0 ? "+" : ""}{pnlPct.toFixed(2)}%
                 </span>
               </>
@@ -3261,27 +3265,27 @@ function CryptoCard({
           )}
         </div>
       </div>
-      <div className="flex flex-col divide-y divide-[#F1F3F5] px-4 py-1 dark:divide-[#1E1E24]">
+      <div className="flex flex-col divide-y divide-secondary px-4 py-1">
         <div className="flex items-center justify-between py-2">
-          <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">{i18n.quantityLabel}</span>
+          <span className="text-xs text-muted-foreground">{i18n.quantityLabel}</span>
           <span className="font-mono text-xs font-bold tnum break-all">{formatCryptoQuantity(holding.quantity)} {holding.symbol}</span>
         </div>
         <div className="flex items-center justify-between py-2">
-          <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">{i18n.capitalLabel}</span>
+          <span className="text-xs text-muted-foreground">{i18n.capitalLabel}</span>
           <span className="font-mono text-xs font-bold tnum">{formatCurrency(cost, settlementCurrency)} ({settlementCurrency})</span>
         </div>
         <div className="flex items-center justify-between py-2">
-          <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">{isEn ? `Avg Buy Price / ${holding.symbol}` : `Harga Rata-rata / ${holding.symbol}`}</span>
+          <span className="text-xs text-muted-foreground">{isEn ? `Avg Buy Price / ${holding.symbol}` : `Harga Rata-rata / ${holding.symbol}`}</span>
           <span className="font-mono text-xs font-bold tnum">{Number(holding.average_buy_price) > 0 ? `${formatCurrency(Number(holding.average_buy_price), settlementCurrency)} (${settlementCurrency})` : "—"}</span>
         </div>
         {(isRefreshing || quote) && (
           <div className="flex items-center justify-between py-2">
-            <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">
+            <span className="text-xs text-muted-foreground">
               {isEn ? "Market price" : "Harga pasar"}
               {!isRefreshing && marketDate ? ` · ${marketDate}` : ""}
             </span>
             {isRefreshing ? (
-              <span className="inline-block h-3.5 w-20 animate-pulse rounded bg-slate-200 dark:bg-[#27272A]" />
+              <span className="inline-block h-3.5 w-20 animate-pulse rounded bg-surface-muted" />
             ) : (
               quote && <span className="font-mono text-xs font-bold tnum">{fmt(quote.price, quote.currency)}</span>
             )}
@@ -3315,8 +3319,8 @@ function AssetLogo({
       className={cn(
         "flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full shadow-2xs sm:h-9 sm:w-9",
         kind === "stock"
-          ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300"
-          : "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300",
+          ? "bg-info-muted text-info"
+          : "bg-warning-muted text-warning",
       )}
     >
       {!hasError && logoUrl ? (
@@ -3343,11 +3347,11 @@ function AssetActions({
 }) {
   const { t } = useLanguage();
   return (
-    <div className="mt-3.5 flex gap-2 border-t border-[#E5E7EB] pt-3 dark:border-[#27272A] sm:mt-4">
+    <div className="mt-3.5 flex gap-2 border-t border-border pt-3 dark:border-border sm:mt-4">
       <button
         type="button"
         onClick={onBuy}
-        className="inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-[#D1D5DB] bg-white px-3 py-2 text-xs font-bold text-[#0F172A] transition-all hover:bg-[#F8F9FA] dark:border-[#3F3F46] dark:bg-[#121215] dark:text-[#F8FAFC] dark:hover:bg-[#1A1A20] sm:min-h-11"
+        className="inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-border bg-surface px-3 py-2 text-xs font-bold text-foreground transition-all hover:bg-canvas dark:bg-surface dark:hover:bg-surface-subtle sm:min-h-11"
       >
         <Plus className="h-3.5 w-3.5" />
         {t.investments.buy}
@@ -3355,7 +3359,7 @@ function AssetActions({
       <button
         type="button"
         onClick={onSell}
-        className="inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-[#D1D5DB] bg-white px-3 py-2 text-xs font-bold text-[#0F172A] transition-all hover:bg-[#F8F9FA] dark:border-[#3F3F46] dark:bg-[#121215] dark:text-[#F8FAFC] dark:hover:bg-[#1A1A20] sm:min-h-11"
+        className="inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-border bg-surface px-3 py-2 text-xs font-bold text-foreground transition-all hover:bg-canvas dark:bg-surface dark:hover:bg-surface-subtle sm:min-h-11"
       >
         <ArrowUpRight className="h-3.5 w-3.5" />
         {t.investments.sell}

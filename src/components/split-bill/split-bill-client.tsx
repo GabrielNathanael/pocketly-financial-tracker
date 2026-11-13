@@ -114,15 +114,15 @@ export function SplitBillClient({
         <div className="flex items-center gap-2 min-w-0">
           <Link
             href="/split-bill"
-            className="w-10 h-10 shrink-0 rounded-full border border-[#E5E7EB] dark:border-[#27272A] bg-white dark:bg-[#121215] flex items-center justify-center hover:bg-[#F8F9FA] dark:hover:bg-[#1A1A20] transition-colors"
+            className="w-10 h-10 shrink-0 rounded-full border border-border bg-surface flex items-center justify-center hover:bg-canvas dark:hover:bg-surface-subtle transition-colors"
             aria-label={t.common.back}
             title={t.common.back}
           >
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <div className="min-w-0">
-            <h1 className="text-lg font-bold text-[#0F172A] dark:text-[#FAFAFA] truncate">{t.splitBill.history}</h1>
-            <p className="text-xs text-[#64748B] dark:text-[#94A3B8] truncate">{bills.length} {t.splitBill.title.toLowerCase()}</p>
+            <h1 className="text-lg font-bold text-foreground truncate">{t.splitBill.history}</h1>
+            <p className="text-xs text-foreground-secondary truncate">{bills.length} {t.splitBill.title.toLowerCase()}</p>
           </div>
         </div>
         {bills.length > 0 && (
@@ -132,14 +132,14 @@ export function SplitBillClient({
                 <button
                   type="button"
                   onClick={selectAllFiltered}
-                  className="h-9 px-3 rounded-full border border-[#E5E7EB] dark:border-[#27272A] bg-white dark:bg-[#121215] text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA] hover:bg-[#F8F9FA] dark:hover:bg-[#1A1A20] transition-colors"
+                  className="h-9 px-3 rounded-full border border-border bg-surface text-xs font-semibold text-foreground hover:bg-canvas dark:hover:bg-surface-subtle transition-colors"
                 >
                   {allFilteredSelected ? (language === "id" ? "Batal pilih semua" : "Deselect all") : (language === "id" ? "Pilih semua" : "Select all")}
                 </button>
                 <button
                   type="button"
                   onClick={clearSelection}
-                  className="w-9 h-9 rounded-full border border-[#E5E7EB] dark:border-[#27272A] bg-white dark:bg-[#121215] flex items-center justify-center text-[#64748B] hover:bg-[#F8F9FA] dark:hover:bg-[#1A1A20] transition-colors"
+                  className="w-9 h-9 rounded-full border border-border bg-surface flex items-center justify-center text-foreground-secondary hover:bg-canvas dark:hover:bg-surface-subtle transition-colors"
                   aria-label={t.common.cancel}
                   title={t.common.cancel}
                 >
@@ -150,7 +150,7 @@ export function SplitBillClient({
               <button
                 type="button"
                 onClick={() => setSelectMode(true)}
-                className="h-9 px-3 rounded-full border border-[#E5E7EB] dark:border-[#27272A] bg-white dark:bg-[#121215] text-xs font-semibold text-[#0F172A] dark:text-[#FAFAFA] hover:bg-[#F8F9FA] dark:hover:bg-[#1A1A20] transition-colors"
+                className="h-9 px-3 rounded-full border border-border bg-surface text-xs font-semibold text-foreground hover:bg-canvas dark:hover:bg-surface-subtle transition-colors"
               >
                 {language === "id" ? "Pilih" : "Select"}
               </button>
@@ -174,8 +174,8 @@ export function SplitBillClient({
                 className={cn(
                   "shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors",
                   active
-                    ? "bg-[#0F172A] text-white dark:bg-[#FAFAFA] dark:text-[#0F172A] border-transparent"
-                    : "bg-white dark:bg-[#121215] border-[#E5E7EB] dark:border-[#27272A] text-[#64748B] dark:text-[#94A3B8] hover:border-[#94A3B8]",
+                    ? "bg-primary text-primary-foreground border-transparent"
+                    : "bg-surface border-border text-foreground-secondary hover:border-foreground-muted",
                 )}
               >
                 {f.label}
@@ -187,14 +187,14 @@ export function SplitBillClient({
       )}
 
       {bills.length === 0 ? (
-        <div className="rounded-xl border border-[#E5E7EB] dark:border-[#27272A] bg-white dark:bg-[#121215] p-8 text-center">
-          <Split className="w-8 h-8 mx-auto text-[#94A3B8] mb-2" />
-          <p className="text-sm font-semibold text-[#0F172A] dark:text-[#FAFAFA]">{t.splitBill.noBills}</p>
-          <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-1">{t.splitBill.noBillsDesc}</p>
+        <div className="rounded-xl border border-border bg-surface p-8 text-center">
+          <Split className="w-8 h-8 mx-auto text-foreground-muted mb-2" />
+          <p className="text-sm font-semibold text-foreground">{t.splitBill.noBills}</p>
+          <p className="text-xs text-foreground-secondary mt-1">{t.splitBill.noBillsDesc}</p>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-[#CBD5E1] dark:border-[#334155] bg-white dark:bg-[#121215] p-8 text-center">
-          <p className="text-sm font-semibold text-[#0F172A] dark:text-[#FAFAFA]">
+        <div className="rounded-xl border border-dashed border-border-strong/40 bg-surface p-8 text-center">
+          <p className="text-sm font-semibold text-foreground">
             {language === "id" ? "Tidak ada patungan di filter ini" : "No split bills in this filter"}
           </p>
         </div>
@@ -206,10 +206,10 @@ export function SplitBillClient({
               <div
                 key={b.id}
                 className={cn(
-                  "group flex items-center gap-3 p-3.5 rounded-2xl border bg-white dark:bg-[#121215] transition-colors",
+                  "group flex items-center gap-3 p-3.5 rounded-2xl border bg-surface transition-colors",
                   selected
-                    ? "border-[#0F172A] dark:border-[#FAFAFA]"
-                    : "border-[#E5E7EB] dark:border-[#27272A] hover:border-[#CBD5E1] dark:hover:border-[#334155]",
+                    ? "border-border-strong"
+                    : "border-border hover:border-border-strong/40",
                 )}
               >
                 {selectMode ? (
@@ -223,15 +223,15 @@ export function SplitBillClient({
                       className={cn(
                         "w-5 h-5 rounded-[5px] border flex items-center justify-center transition-colors",
                         selected
-                          ? "bg-[#0F172A] border-[#0F172A] text-white dark:bg-[#FAFAFA] dark:border-[#FAFAFA] dark:text-[#0F172A]"
-                          : "border-[#94A3B8] dark:border-[#64748B] bg-transparent",
+                          ? "bg-primary border-border-strong text-primary-foreground"
+                          : "border-foreground-muted bg-transparent",
                       )}
                     >
                       {selected && <Check className="w-3.5 h-3.5" strokeWidth={3} />}
                     </span>
                   </button>
                 ) : (
-                  <span className="w-10 h-10 shrink-0 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] flex items-center justify-center text-[#64748B] dark:text-[#94A3B8]">
+                  <span className="w-10 h-10 shrink-0 rounded-xl bg-surface-subtle flex items-center justify-center text-foreground-secondary">
                     <Receipt className="w-4 h-4" />
                   </span>
                 )}
@@ -246,30 +246,30 @@ export function SplitBillClient({
                   className="flex-1 min-w-0"
                 >
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <p className="text-sm font-bold text-[#0F172A] dark:text-[#FAFAFA] truncate">
+                    <p className="text-sm font-bold text-foreground truncate">
                       {b.title || "Split Bill"}
                     </p>
                     <span className={cn("text-[10px] px-2 py-0.5 rounded-full font-semibold",
-                      b.status === "balanced" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" : "bg-[#F1F3F5] text-[#64748B] dark:bg-[#1A1A20] dark:text-[#94A3B8]")}>
+                      b.status === "balanced" ? "bg-success-muted text-success" : "bg-surface-subtle text-foreground-muted dark:text-foreground-secondary")}>
                       {b.status === "balanced" ? t.splitBill.balanced : t.splitBill.draft}
                     </span>
                     {b.split_mode === "equal" && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold border border-[#E5E7EB] dark:border-[#27272A] text-[#64748B] dark:text-[#94A3B8]">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold border border-border text-foreground-secondary">
                         {t.splitBill.equalSplit}
                       </span>
                     )}
                     {b.my_recorded_transaction_id && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-[#F1F3F5] text-[#0F172A] dark:bg-[#27272A] dark:text-[#FAFAFA]">{t.splitBill.recorded}</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-surface-subtle text-foreground dark:bg-border dark:text-foreground">{t.splitBill.recorded}</span>
                     )}
                   </div>
-                  <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-1">
+                  <p className="text-xs text-foreground-secondary mt-1">
                     {(b.bill_date
                       ? new Date(b.bill_date + "T00:00:00").toLocaleDateString(language === "id" ? "id-ID" : "en-US", { day: "numeric", month: "short", year: "numeric" })
                       : "-")} • {formatCurrency(Number(b.grand_total_amount) || 0, b.currency)}
                   </p>
                 </Link>
                 {!selectMode && (
-                  <button onClick={() => setPendingDelete(b)} className="p-2 text-[#94A3B8] hover:text-[#E11D48] cursor-pointer shrink-0" title={t.splitBill.delete} aria-label={t.splitBill.delete}><Trash2 className="w-4 h-4" /></button>
+                  <button onClick={() => setPendingDelete(b)} className="p-2 text-foreground-muted hover:text-destructive cursor-pointer shrink-0" title={t.splitBill.delete} aria-label={t.splitBill.delete}><Trash2 className="w-4 h-4" /></button>
                 )}
               </div>
             );
@@ -278,14 +278,14 @@ export function SplitBillClient({
       )}
 
       {selectMode && selectedIds.size > 0 && (
-        <div className="sticky bottom-3 mt-2 flex items-center justify-between gap-3 rounded-2xl border border-[#E5E7EB] dark:border-[#27272A] bg-white/95 dark:bg-[#121215]/95 backdrop-blur p-3 shadow-sm">
-          <p className="text-sm font-semibold text-[#0F172A] dark:text-[#FAFAFA]">
+        <div className="sticky bottom-3 mt-2 flex items-center justify-between gap-3 rounded-2xl border border-border bg-surface/95 backdrop-blur p-3 shadow-sm">
+          <p className="text-sm font-semibold text-foreground">
             {selectedIds.size} {language === "id" ? "dipilih" : "selected"}
           </p>
           <button
             type="button"
             onClick={() => setShowBulkDelete(true)}
-            className="h-9 px-4 rounded-full bg-[#E11D48] text-white text-xs font-bold hover:bg-[#BE123C] transition-colors"
+            className="h-9 px-4 rounded-full bg-destructive text-destructive-foreground text-xs font-bold hover:bg-destructive-hover transition-colors"
           >
             {language === "id" ? "Hapus terpilih" : "Delete selected"}
           </button>
