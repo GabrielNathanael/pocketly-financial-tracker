@@ -67,7 +67,8 @@ export function getItemTotal(
 ): number {
   const printed = parseFloat(item.subtotal ?? "");
   if (!isNaN(printed) && printed > 0) return printed;
-  const q = parseFloat(item.quantity) || 1;
+  const qRaw = parseFloat(item.quantity);
+  const q = Number.isFinite(qRaw) && qRaw > 0 ? qRaw : 1;
   const p = parseFloat(item.price) || 0;
   const code = (currency || "IDR").toUpperCase() as keyof typeof SUPPORTED_CURRENCIES;
   const decimals = SUPPORTED_CURRENCIES[code]?.decimals ?? 0;
@@ -223,14 +224,20 @@ export function normalizeStoredItems(raw: unknown): TransactionItem[] {
 export function formatItemsSummary(
   items: TransactionItem[],
   currency: string,
-): string {  const validItems = items.filter(
+): string {
+  const validItems = items.filter(
     (i) => i.name.trim() && parseFloat(i.price) > 0,
   );
   return validItems
     .map((i) => {
-      const q = parseFloat(i.quantity) || 1;
+      const qRaw = parseFloat(i.quantity);
+      const q = Number.isFinite(qRaw) && qRaw > 0 ? qRaw : 1;
       const p = parseFloat(i.price) || 0;
       const sub = getItemTotal(i, currency);
+      const mySub = getItemMyTotal(i, currency);
+      const shares = parseFloat(i.shareCount ?? "");
+      const isShared =
+        (!isNaN(shares) && shares >= 2) || (i.mySubtotal != null && mySub !== sub);
       const label = q !== 1 ? `${i.name.trim()} x${q}` : i.name.trim();
       const unit = formatCurrency(p, currency);
       // Store printed subtotal explicitly whenever qty != 1 so the
@@ -239,9 +246,13 @@ export function formatItemsSummary(
       // (discount / rounding), even for qty == 1.
       const needsSubtotal =
         sub > 0 && (q !== 1 || (i.subtotal != null && sub !== p));
-      return needsSubtotal
+      const base = needsSubtotal
         ? `${label} (${unit}) = ${formatCurrency(sub, currency)}`
         : `${label} (${unit})`;
+      if (!isShared) return base;
+      const shareInfo =
+        !isNaN(shares) && shares >= 2 ? `÷${shares}` : "split";
+      return `${base} [${shareInfo}, mine ${formatCurrency(mySub, currency)}]`;
     })
     .join(", ");
 }

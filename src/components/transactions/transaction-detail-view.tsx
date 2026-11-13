@@ -337,7 +337,8 @@ export function TransactionDetailView({
             </div>
             <div className="flex flex-col gap-1.5 max-h-36 overflow-y-auto pr-0.5">
               {itemsList.map((item, idx) => {
-                const qty = parseFloat(item.quantity) || 1;
+                const qRaw = parseFloat(item.quantity);
+                const qty = Number.isFinite(qRaw) && qRaw > 0 ? qRaw : 1;
                 const unit = parseFloat(item.price) || 0;
                 const subtotal = getItemTotal(item, transaction.currency);
                 const mySubtotal = getItemMyTotal(item, transaction.currency);

@@ -1,12 +1,21 @@
 import { z } from 'zod'
 
 /** Rincian item transaksi (disimpan di kolom `transactions.items` JSONB). */
+const positiveNumericString = (max = 40) =>
+  z
+    .string()
+    .max(max)
+    .refine((v) => {
+      const n = parseFloat(v);
+      return Number.isFinite(n) && n > 0;
+    }, "Must be greater than 0");
+
 const transactionItemSchema = z.object({
   name: z.string().max(200),
-  quantity: z.string().max(40).optional(),
+  quantity: positiveNumericString().optional(),
   price: z.string().max(40).optional(),
   subtotal: z.string().max(40).optional(),
-  shareCount: z.string().max(40).optional(),
+  shareCount: positiveNumericString().optional(),
   mySubtotal: z.string().max(40).optional(),
 })
 

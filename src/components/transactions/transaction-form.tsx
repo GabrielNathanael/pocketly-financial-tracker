@@ -1120,18 +1120,12 @@ export function TransactionForm({
                         {/* Minus */}
                         <button
                           type="button"
-                          onClick={() =>
-                            handleUpdateItem(
-                              idx,
-                              "quantity",
-                              String(
-                                Math.max(
-                                  0,
-                                  (parseFloat(item.quantity) || 1) - 1,
-                                ),
-                              ),
-                            )
-                          }
+                          onClick={() => {
+                            const base = parseFloat(item.quantity);
+                            const cur = Number.isFinite(base) && base > 0 ? base : 1;
+                            const next = cur > 1 ? cur - 1 : cur;
+                            handleUpdateItem(idx, "quantity", String(Number(next.toFixed(6))));
+                          }}
                           className="flex h-6 w-6 items-center justify-center rounded-md border border-[#E5E7EB] dark:border-[#27272A] text-[#64748B] dark:text-[#94A3B8] text-sm"
                         >
                           −
@@ -1140,23 +1134,36 @@ export function TransactionForm({
                         <input
                           type="number"
                           inputMode="decimal"
+                          min={0.001}
+                          step="any"
                           value={item.quantity}
-                          onChange={(e) =>
-                            handleUpdateItem(idx, "quantity", e.target.value)
-                          }
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            if (v === "") {
+                              handleUpdateItem(idx, "quantity", "");
+                              return;
+                            }
+                            const n = parseFloat(v);
+                            if (Number.isFinite(n) && n <= 0) return;
+                            handleUpdateItem(idx, "quantity", v);
+                          }}
+                          onBlur={(e) => {
+                            const n = parseFloat(e.target.value);
+                            if (!Number.isFinite(n) || n <= 0) {
+                              handleUpdateItem(idx, "quantity", "1");
+                            }
+                          }}
                           className="w-10 bg-transparent text-xs text-center text-[#0F172A] dark:text-[#FAFAFA] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
 
                         {/* Plus */}
                         <button
                           type="button"
-                          onClick={() =>
-                            handleUpdateItem(
-                              idx,
-                              "quantity",
-                              String((parseFloat(item.quantity) || 1) + 1),
-                            )
-                          }
+                          onClick={() => {
+                            const base = parseFloat(item.quantity);
+                            const cur = Number.isFinite(base) && base > 0 ? base : 1;
+                            handleUpdateItem(idx, "quantity", String(Number((cur + 1).toFixed(6))));
+                          }}
                           className="flex h-6 w-6 items-center justify-center rounded-md border border-[#E5E7EB] dark:border-[#27272A] text-[#64748B] dark:text-[#94A3B8] text-sm"
                         >
                           +

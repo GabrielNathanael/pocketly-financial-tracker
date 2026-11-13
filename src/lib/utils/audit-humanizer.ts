@@ -4,26 +4,19 @@ import { formatDate } from "@/lib/utils/date";
 import { getCleanDescription } from "@/lib/utils/description";
 import {
   formatItemsSummary,
+  normalizeStoredItems,
   parseItemsSummary,
+  type TransactionItem,
 } from "@/lib/utils/transaction-items";
 
-type AuditRow = Record<string, unknown>;
-
-const str = (v: unknown, fallback = ""): string => {
+const asStr = (v: unknown, fallback = ""): string => {
   if (typeof v === "string") return v;
   if (v == null) return fallback;
   if (typeof v === "number" || typeof v === "boolean") return String(v);
   return fallback;
 };
 
-const optStr = (v: unknown): string | undefined => {
-  if (v == null) return undefined;
-  if (typeof v === "string") return v;
-  if (typeof v === "number" || typeof v === "boolean") return String(v);
-  return undefined;
-};
-
-const num = (v: unknown, fallback = 0): number => {
+const asNum = (v: unknown, fallback = 0): number => {
   if (typeof v === "number" && Number.isFinite(v)) return v;
   if (typeof v === "string" && v.trim() !== "") {
     const n = Number(v);
@@ -31,11 +24,6 @@ const num = (v: unknown, fallback = 0): number => {
   }
   return fallback;
 };
-
-const bool = (v: unknown): boolean => v === true;
-
-const strArr = (v: unknown): string[] =>
-  Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
 
 export interface HumanizedAuditLog {
   title: string;
@@ -59,8 +47,20 @@ export function humanizeAuditLog(
   lang: "id" | "en" = "id",
 ): HumanizedAuditLog {
   const isId = lang === "id";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const oldVal = (log.old_values || {}) as Record<string, any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const newVal = (log.new_values || {}) as Record<string, any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const getTxItems = (v: Record<string, any>): TransactionItem[] => {
+    const stored = normalizeStoredItems(v.items);
+    if (stored.length > 0) return stored;
+    const rawDesc = asStr(v.description);
+    const m = rawDesc.match(/\[Items:\s*([^\]]+)\]/);
+    return m ? parseItemsSummary(m[1]) : [];
+  };
+  const sameItems = (a: TransactionItem[], b: TransactionItem[]) =>
+    JSON.stringify(a) === JSON.stringify(b);
   const table = log.table_name;
 
   // ==========================================
@@ -1634,25 +1634,22 @@ export function humanizeAuditLog(
   // ==========================================
   if (log.action === "INSERT") {
     const amount = newVal.amount
-      ? formatCurrency(Number(newVal.amount), newVal.currency || "IDR")
+      ? formatCurrency(asNum(newVal.amount), asStr(newVal.currency) || "IDR")
       : "";
     const typeLabel =
-      newVal.type === "income"
+      asStr(newVal.type) === "income"
         ? isId
           ? "Pemasukan"
           : "Income"
         : isId
           ? "Pengeluaran"
           : "Expense";
-    const cleanDesc = getCleanDescription(newVal.description);
-
-    // Parse items and memo for structured display — only these shown in changes
-    const rawDesc = newVal.description || "";
-    const itemsMatch = rawDesc.match(/\[Items:\s*([^\]]+)\]/);
+    const cleanDesc = getCleanDescription(asStr(newVal.description));
+    const txItems = getTxItems(newVal);
+    const rawDesc = asStr(newVal.description);
     const memoMatch = rawDesc.match(/\[Memo:\s*([^\]]+)\]/);
-
     const txDateFormatted = newVal.transaction_date
-      ? formatDate(newVal.transaction_date.substring(0, 10), "d MMM yyyy", lang)
+      ? formatDate(asStr(newVal.transaction_date).substring(0, 10), "d MMM yyyy", lang)
       : "";
 
     return {
@@ -1669,20 +1666,13 @@ export function humanizeAuditLog(
         ...(memoMatch
           ? [{ field: isId ? "Catatan Memo" : "Memo", to: memoMatch[1].trim() }]
           : []),
-        ...(itemsMatch
+        ...(txItems.length > 0
           ? [
               {
                 field: isId ? "Rincian Item" : "Items Breakdown",
-                // Re-format via shared parser so legacy rows without a
-                // stored "= Rp SUBTOTAL" still show the POS-rounded
-                // subtotal (e.g. 0.414 x 24.900 -> = Rp 10.309).
-                to:
-                  formatItemsSummary(
-                    parseItemsSummary(itemsMatch[1]),
-                    newVal.currency || "IDR",
-                  ) || itemsMatch[1].trim(),
-                items: parseItemsSummary(itemsMatch[1]),
-                currency: newVal.currency || "IDR",
+                to: formatItemsSummary(txItems, asStr(newVal.currency) || "IDR"),
+                items: txItems,
+                currency: asStr(newVal.currency) || "IDR",
               },
             ]
           : []),
@@ -1694,19 +1684,20 @@ export function humanizeAuditLog(
 
   if (log.action === "DELETE") {
     const amount = oldVal.amount
-      ? formatCurrency(Number(oldVal.amount), oldVal.currency || "IDR")
+      ? formatCurrency(asNum(oldVal.amount), asStr(oldVal.currency) || "IDR")
       : "";
-    const cleanDesc = getCleanDescription(oldVal.description);
-    const rawDesc = oldVal.description || "";
-    const itemsMatch = rawDesc.match(/\[Items:\s*([^\]]+)\]/);
+    const cleanDesc = getCleanDescription(asStr(oldVal.description));
+    const rawDesc = asStr(oldVal.description);
+    const txItems = getTxItems(oldVal);
     const memoMatch = rawDesc.match(/\[Memo:\s*([^\]]+)\]/);
-    const currency = oldVal.currency || "IDR";
+    const currency = asStr(oldVal.currency) || "IDR";
+    const tagArr = Array.isArray(oldVal.tags) ? (oldVal.tags as unknown[]) : [];
     const deletedTags: string[] = Array.from(
       new Set([
-        ...(Array.isArray(oldVal.tags) ? oldVal.tags : []),
-        ...((rawDesc.match(/#[a-zA-Z0-9_\-]+/g) || []).map((t: string) =>
+        ...tagArr.filter((x): x is string => typeof x === "string"),
+        ...((rawDesc.match(/#[a-zA-Z0-9_\-]+/g) || []).map((t) =>
           t.replace(/^#/, "").toLowerCase(),
-        ) as string[]),
+        )),
       ]),
     );
 
@@ -1717,55 +1708,32 @@ export function humanizeAuditLog(
         ? `Menghapus transaksi senilai ${amount}${cleanDesc ? ` (${cleanDesc})` : ""}`
         : `Deleted transaction record of ${amount}${cleanDesc ? ` (${cleanDesc})` : ""}`,
       changes: [
-        ...(oldVal.amount
-          ? [
-              {
-                field: isId ? "Nominal Dihapus" : "Deleted Amount",
-                from: amount,
-              },
-            ]
+        ...(oldVal.amount != null
+          ? [{ field: isId ? "Nominal Dihapus" : "Deleted Amount", from: amount }]
           : []),
-        ...(cleanDesc
-          ? [{ field: isId ? "Keterangan" : "Note", from: cleanDesc }]
-          : []),
+        ...(cleanDesc ? [{ field: isId ? "Keterangan" : "Note", from: cleanDesc }] : []),
         ...(oldVal.transaction_date
           ? [
               {
                 field: isId ? "Tanggal Transaksi" : "Transaction Date",
                 from: formatDate(
-                  String(oldVal.transaction_date).substring(0, 10),
+                  asStr(oldVal.transaction_date).substring(0, 10),
                   "d MMM yyyy",
                   lang,
                 ),
               },
             ]
           : []),
-        ...(memoMatch
-          ? [
-              {
-                field: isId ? "Catatan Memo" : "Memo",
-                from: memoMatch[1].trim(),
-              },
-            ]
-          : []),
+        ...(memoMatch ? [{ field: isId ? "Catatan Memo" : "Memo", from: memoMatch[1].trim() }] : []),
         ...(deletedTags.length > 0
-          ? [
-              {
-                field: isId ? "Tagar (#tags)" : "Tags",
-                from: deletedTags.map((t: string) => `#${t}`).join(", "),
-              },
-            ]
+          ? [{ field: isId ? "Tagar (#tags)" : "Tags", from: deletedTags.map((t) => `#${t}`).join(", ") }]
           : []),
-        ...(itemsMatch
+        ...(txItems.length > 0
           ? [
               {
                 field: isId ? "Rincian Item" : "Items Breakdown",
-                from:
-                  formatItemsSummary(
-                    parseItemsSummary(itemsMatch[1]),
-                    currency,
-                  ) || itemsMatch[1].trim(),
-                items: parseItemsSummary(itemsMatch[1]),
+                from: formatItemsSummary(txItems, currency),
+                items: txItems,
                 currency,
               },
             ]
@@ -1785,17 +1753,19 @@ export function humanizeAuditLog(
   ) {
     changes.push({
       field: isId ? "Nominal Transaksi" : "Amount",
-      from: oldVal.amount
-        ? formatCurrency(Number(oldVal.amount), oldVal.currency || "IDR")
-        : "-",
-      to: newVal.amount
-        ? formatCurrency(Number(newVal.amount), newVal.currency || "IDR")
-        : "-",
+      from:
+        oldVal.amount != null
+          ? formatCurrency(asNum(oldVal.amount), asStr(oldVal.currency) || "IDR")
+          : "-",
+      to:
+        newVal.amount != null
+          ? formatCurrency(asNum(newVal.amount), asStr(newVal.currency) || "IDR")
+          : "-",
     });
   }
 
-  const oldCleanDesc = getCleanDescription(oldVal.description);
-  const newCleanDesc = getCleanDescription(newVal.description);
+  const oldCleanDesc = getCleanDescription(asStr(oldVal.description));
+  const newCleanDesc = getCleanDescription(asStr(newVal.description));
   if (oldCleanDesc !== newCleanDesc) {
     changes.push({
       field: isId ? "Catatan / Keterangan" : "Description Note",
@@ -1804,28 +1774,18 @@ export function humanizeAuditLog(
     });
   }
 
-  const oldItemsMatch = (oldVal.description || "").match(
-    /\[Items:\s*([^\]]+)\]/,
-  );
-  const newItemsMatch = (newVal.description || "").match(
-    /\[Items:\s*([^\]]+)\]/,
-  );
-  const oldItemsRaw = oldItemsMatch ? oldItemsMatch[1].trim() : "";
-  const newItemsRaw = newItemsMatch ? newItemsMatch[1].trim() : "";
-  if (oldItemsRaw !== newItemsRaw) {
-    const fmt = (raw: string, currency: string) =>
-      raw
-        ? formatItemsSummary(parseItemsSummary(raw), currency) || raw
-        : isId
-          ? "(Kosong)"
-          : "(Empty)";
+  const oldItems = getTxItems(oldVal);
+  const newItems = getTxItems(newVal);
+  if (!sameItems(oldItems, newItems)) {
+    const oldCur = asStr(oldVal.currency) || "IDR";
+    const newCur = asStr(newVal.currency) || oldCur;
     changes.push({
       field: isId ? "Rincian Item" : "Items Breakdown",
-      from: fmt(oldItemsRaw, oldVal.currency || "IDR"),
-      to: fmt(newItemsRaw, newVal.currency || "IDR"),
-      itemsFrom: oldItemsRaw ? parseItemsSummary(oldItemsRaw) : undefined,
-      items: newItemsRaw ? parseItemsSummary(newItemsRaw) : undefined,
-      currency: newVal.currency || oldVal.currency || "IDR",
+      from: oldItems.length ? formatItemsSummary(oldItems, oldCur) : (isId ? "(Kosong)" : "(Empty)"),
+      to: newItems.length ? formatItemsSummary(newItems, newCur) : (isId ? "(Kosong)" : "(Empty)"),
+      itemsFrom: oldItems.length ? oldItems : undefined,
+      items: newItems.length ? newItems : undefined,
+      currency: newCur,
     });
   }
 
