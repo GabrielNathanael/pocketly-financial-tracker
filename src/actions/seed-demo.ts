@@ -12,7 +12,6 @@
 
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { seedUserDefaultCategories } from '@/actions/categories'
-import { getCanonicalCategoryName } from '@/lib/utils/category-i18n'
 import { revalidatePath } from 'next/cache'
 
 export async function seedDemoData(): Promise<{ success: boolean; error?: string }> {
@@ -31,8 +30,7 @@ export async function seedDemoData(): Promise<{ success: boolean; error?: string
     await seedUserDefaultCategories(user.id)
 
     // Fetch existing categories
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: categories } = await (supabase.from('categories') as any)
+    const { data: categories } = await supabase.from('categories')
       .select('*')
       .eq('user_id', user.id)
 
@@ -102,9 +100,9 @@ export async function seedDemoData(): Promise<{ success: boolean; error?: string
 
     const getCat = (name: string, type: 'income' | 'expense' = 'expense') => {
       const canonical = categoryLookup[name] || name
-      const found = (categories || []).find((c: any) => c.name.toLowerCase() === canonical.toLowerCase() && c.type === type)
-        || (categories || []).find((c: any) => c.name.toLowerCase() === canonical.toLowerCase())
-        || (categories || []).find((c: any) => c.type === type && c.name !== 'Discrepancy')
+      const found = (categories || []).find((c: { name?: string; type?: string }) => c.name.toLowerCase() === canonical.toLowerCase() && c.type === type)
+        || (categories || []).find((c: { name?: string; type?: string }) => c.name.toLowerCase() === canonical.toLowerCase())
+        || (categories || []).find((c: { name?: string; type?: string }) => c.type === type && c.name !== 'Discrepancy')
         || categories?.[0]
       return found?.id || ''
     }
@@ -183,8 +181,7 @@ export async function seedDemoData(): Promise<{ success: boolean; error?: string
       },
     ]
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: createdAccounts, error: accErr } = await (supabase.from('accounts') as any)
+    const { data: createdAccounts, error: accErr } = await supabase.from('accounts')
       .insert(demoAccounts)
       .select()
 
@@ -408,8 +405,7 @@ export async function seedDemoData(): Promise<{ success: boolean; error?: string
       },
     ]
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from('transactions') as any).insert(demoTransactions)
+    await supabase.from('transactions').insert(demoTransactions)
 
     // 4. Create Cross-Currency Transfers with Snapshot Rates
     const demoTransfers = [
@@ -448,8 +444,7 @@ export async function seedDemoData(): Promise<{ success: boolean; error?: string
       },
     ]
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from('transfers') as any).insert(demoTransfers)
+    await supabase.from('transfers').insert(demoTransfers)
 
     // 5. Create Active Category Budgets for Current Period
     const currentPeriodStr = `${yyyy}-${mm}-01`
@@ -486,8 +481,7 @@ export async function seedDemoData(): Promise<{ success: boolean; error?: string
       },
     ]
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from('budgets') as any).upsert(demoBudgets, {
+    await supabase.from('budgets').upsert(demoBudgets, {
       onConflict: 'user_id,category_id,period_start_date',
     })
 
@@ -528,8 +522,7 @@ export async function seedDemoData(): Promise<{ success: boolean; error?: string
       },
     ]
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: createdDebts } = await (supabase.from('debts') as any).insert(demoDebts).select()
+    const { data: createdDebts } = await supabase.from('debts').insert(demoDebts).select()
 
     if (createdDebts && createdDebts.length > 0) {
       // Add payment records
@@ -555,8 +548,7 @@ export async function seedDemoData(): Promise<{ success: boolean; error?: string
           payment_date: d(12),
         },
       ]
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase.from('debt_payments') as any).insert(demoPayments)
+      await supabase.from('debt_payments').insert(demoPayments)
     }
 
     // 7. Create Recurring Transactions & Subscriptions (Phase 2 Feature)
@@ -643,8 +635,7 @@ export async function seedDemoData(): Promise<{ success: boolean; error?: string
       },
     ]
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from('recurring_transactions') as any).insert(demoRecurring)
+    await supabase.from('recurring_transactions').insert(demoRecurring)
 
     // 8. Create Savings Goals & Deposits History (Phase 3 Feature)
     const demoGoals = [
@@ -702,11 +693,9 @@ export async function seedDemoData(): Promise<{ success: boolean; error?: string
       },
     ]
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: createdGoals } = await (supabase.from('savings_goals') as any).insert(demoGoals).select()
+    const { data: createdGoals } = await supabase.from('savings_goals').insert(demoGoals).select()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let demoDeposits: any[] = []
+    let demoDeposits: Array<Record<string, unknown>> = []
 
     if (createdGoals && createdGoals.length > 0) {
       const emergencyGoal = createdGoals.find((g: { name: string }) => g.name === 'Dana Darurat 6 Bulan') || createdGoals[0]
@@ -814,8 +803,7 @@ export async function seedDemoData(): Promise<{ success: boolean; error?: string
         },
       ]
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase.from('savings_goal_deposits') as any).insert(demoDeposits)
+      await supabase.from('savings_goal_deposits').insert(demoDeposits)
     }
 
     // 8. Create Realistic Stock Holdings & Trade Logs (RDN)
@@ -843,8 +831,7 @@ export async function seedDemoData(): Promise<{ success: boolean; error?: string
         },
       ]
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase.from('stock_holdings') as any).insert(demoHoldings)
+      await supabase.from('stock_holdings').insert(demoHoldings)
 
       const demoTrades = [
         {
@@ -901,8 +888,7 @@ export async function seedDemoData(): Promise<{ success: boolean; error?: string
         },
       ]
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase.from('stock_trades') as any).insert(demoTrades)
+      await supabase.from('stock_trades').insert(demoTrades)
     }
 
     // 9. Reconcile and calculate exact mathematically accurate account balances
@@ -941,8 +927,7 @@ export async function seedDemoData(): Promise<{ success: boolean; error?: string
         })
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase.from('accounts') as any)
+      await supabase.from('accounts')
         .update({ current_balance: balance })
         .eq('id', acc.id)
     }
@@ -977,8 +962,7 @@ export async function seedStockTestData(): Promise<{ success: boolean; error?: s
 
   try {
     // 1. Find or create an investment (RDN) account
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let { data: rdnAcc } = await (supabase.from('accounts') as any)
+    let { data: rdnAcc } = await supabase.from('accounts')
       .select('*')
       .eq('user_id', user.id)
       .eq('type', 'investment')
@@ -986,8 +970,7 @@ export async function seedStockTestData(): Promise<{ success: boolean; error?: s
       .maybeSingle()
 
     if (!rdnAcc) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: newRdn, error: rdnErr } = await (supabase.from('accounts') as any)
+      const { data: newRdn, error: rdnErr } = await supabase.from('accounts')
         .insert({
           user_id: user.id,
           name: 'RDN Mandiri Sekuritas',
@@ -1008,10 +991,8 @@ export async function seedStockTestData(): Promise<{ success: boolean; error?: s
     }
 
     // Clear existing stock data for clean seed
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from('stock_trades') as any).delete().eq('user_id', user.id)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from('stock_holdings') as any).delete().eq('user_id', user.id)
+    await supabase.from('stock_trades').delete().eq('user_id', user.id)
+    await supabase.from('stock_holdings').delete().eq('user_id', user.id)
 
     // Insert sample holdings
     const demoHoldings = [
@@ -1037,8 +1018,7 @@ export async function seedStockTestData(): Promise<{ success: boolean; error?: s
       },
     ]
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from('stock_holdings') as any).insert(demoHoldings)
+    await supabase.from('stock_holdings').insert(demoHoldings)
 
     const now = new Date()
     const dDate = (dayOffset: number) => {
@@ -1102,8 +1082,7 @@ export async function seedStockTestData(): Promise<{ success: boolean; error?: s
       },
     ]
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from('stock_trades') as any).insert(demoTrades)
+    await supabase.from('stock_trades').insert(demoTrades)
 
     revalidatePath('/investments')
     revalidatePath('/accounts')
@@ -1127,56 +1106,44 @@ export async function clearUserData(): Promise<{ success: boolean; error?: strin
   try {
     // Delete all user data in foreign-key safe order
     // 0. Stock trades & stock holdings
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from('stock_trades') as any).delete().eq('user_id', user.id)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from('stock_holdings') as any).delete().eq('user_id', user.id)
+    await supabase.from('stock_trades').delete().eq('user_id', user.id)
+    await supabase.from('stock_holdings').delete().eq('user_id', user.id)
 
     // 1. Savings goal deposits & savings goals
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: errDeposits } = await (supabase.from('savings_goal_deposits') as any).delete().eq('user_id', user.id)
+    const { error: errDeposits } = await supabase.from('savings_goal_deposits').delete().eq('user_id', user.id)
     if (errDeposits) console.warn('Error clearing deposits:', errDeposits)
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: errGoals } = await (supabase.from('savings_goals') as any).delete().eq('user_id', user.id)
+    const { error: errGoals } = await supabase.from('savings_goals').delete().eq('user_id', user.id)
     if (errGoals) console.warn('Error clearing goals:', errGoals)
 
     // 2. Recurring transactions
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: errRecurring } = await (supabase.from('recurring_transactions') as any).delete().eq('user_id', user.id)
+    const { error: errRecurring } = await supabase.from('recurring_transactions').delete().eq('user_id', user.id)
     if (errRecurring) console.warn('Error clearing recurring:', errRecurring)
 
     // 3. Debt payments & debts
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: userDebts } = await (supabase.from('debts') as any).select('id').eq('user_id', user.id)
+    const { data: userDebts } = await supabase.from('debts').select('id').eq('user_id', user.id)
     if (userDebts && userDebts.length > 0) {
       const debtIds = userDebts.map((d: { id: string }) => d.id)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase.from('debt_payments') as any).delete().in('debt_id', debtIds)
+      await supabase.from('debt_payments').delete().in('debt_id', debtIds)
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: errDebts } = await (supabase.from('debts') as any).delete().eq('user_id', user.id)
+    const { error: errDebts } = await supabase.from('debts').delete().eq('user_id', user.id)
     if (errDebts) console.warn('Error clearing debts:', errDebts)
 
     // 4. Transfers & transactions
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: errTransfers } = await (supabase.from('transfers') as any).delete().eq('user_id', user.id)
+    const { error: errTransfers } = await supabase.from('transfers').delete().eq('user_id', user.id)
     if (errTransfers) console.warn('Error clearing transfers:', errTransfers)
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: errTx } = await (supabase.from('transactions') as any).delete().eq('user_id', user.id)
+    const { error: errTx } = await supabase.from('transactions').delete().eq('user_id', user.id)
     if (errTx) {
       console.error('Error clearing transactions:', errTx)
       return { success: false, error: `Gagal menghapus transaksi: ${errTx.message}` }
     }
 
     // 5. Budgets & accounts
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: errBudgets } = await (supabase.from('budgets') as any).delete().eq('user_id', user.id)
+    const { error: errBudgets } = await supabase.from('budgets').delete().eq('user_id', user.id)
     if (errBudgets) console.warn('Error clearing budgets:', errBudgets)
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: errAccounts } = await (supabase.from('accounts') as any).delete().eq('user_id', user.id)
+    const { error: errAccounts } = await supabase.from('accounts').delete().eq('user_id', user.id)
     if (errAccounts) {
       console.error('Error clearing accounts:', errAccounts)
       return { success: false, error: `Gagal menghapus akun: ${errAccounts.message}` }

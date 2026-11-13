@@ -99,7 +99,7 @@ export function CategoriesManager({ categories }: CategoriesManagerProps) {
             <button
               key={cat.id}
               onClick={() => handleEdit(cat)}
-              className="flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors cursor-pointer text-left group min-h-[58px]"
+              className="flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors cursor-pointer text-left group min-h-14.5"
             >
               <div className="w-8 h-8 rounded-lg bg-[#F1F3F5] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] flex items-center justify-center shrink-0">
                 <DynamicIcon name={cat.icon} className="w-4 h-4" />

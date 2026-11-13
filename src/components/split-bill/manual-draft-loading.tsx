@@ -37,7 +37,7 @@ export function ManualDraftLoading() {
           return;
         }
         router.replace(`/split-bill/${res.id}?manual=1`);
-      } catch (e) {
+      } catch {
         if (cancelled) return;
         toast.error("Gagal memulai patungan manual.");
         router.replace("/split-bill");

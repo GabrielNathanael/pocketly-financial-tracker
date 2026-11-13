@@ -1,13 +1,12 @@
 'use client';
 
-import React, { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import React, { useMemo } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { parseSplitBillUiCookie } from "@/lib/utils/split-bill";
 import { DetailHeaderSkeleton, DetailStepperSkeleton, SplitBillDetailStepSkeleton } from "@/components/split-bill/split-bill-step-skeleton";
 
-function getDetailUi(pathname: string | null): { step: 1 | 2 | 3 | 4; editing: boolean } {
-  const isManual = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("manual") === "1";
+function getDetailUi(pathname: string | null, isManual: boolean): { step: 1 | 2 | 3 | 4; editing: boolean } {
   const fallback = isManual ? { step: 1 as const, editing: true } : { step: 1 as const, editing: false };
   if (typeof document === "undefined") return fallback;
   const id = pathname?.match(/\/split-bill\/([^/]+)/)?.[1];
@@ -27,18 +26,14 @@ function getDetailUi(pathname: string | null): { step: 1 | 2 | 3 | 4; editing: b
 
 export default function SplitBillLoading() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const isDetailRoute = /\/split-bill\/(?!history(?:\/|$))[^/]+/.test(pathname || "");
   const isManualStart =
-    !isDetailRoute &&
-    pathname === "/split-bill" &&
-    typeof window !== "undefined" &&
-    new URLSearchParams(window.location.search).get("mode") === "manual";
-  const [ui, setUi] = useState<{ step: 1 | 2 | 3 | 4; editing: boolean }>(
-    isManualStart ? { step: 1, editing: true } : { step: 1, editing: false },
-  );
-  useEffect(() => {
-    if (isDetailRoute || isManualStart) setUi(getDetailUi(pathname));
-  }, [pathname, isDetailRoute, isManualStart]);
+    !isDetailRoute && pathname === "/split-bill" && searchParams.get("mode") === "manual";
+  const ui = useMemo(() => {
+    if (isDetailRoute || isManualStart) return getDetailUi(pathname, searchParams.get("manual") === "1" || isManualStart);
+    return { step: 1 as const, editing: false };
+  }, [pathname, isDetailRoute, isManualStart, searchParams]);
 
   if (isDetailRoute || isManualStart) {
     return (

@@ -11,10 +11,8 @@ import { getUserTimeZone } from "@/lib/utils/timezone-server";
  * Automatically recalculate and synchronize a stock holding's lots, total_shares,
  * total_cost, and avg_buy_price directly from the user's trade history for that ticker.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function syncStockHolding(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  supabase: any,
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
   userId: string,
   accountId: string,
   ticker: string,
@@ -136,8 +134,7 @@ export async function getInvestmentHoldings(): Promise<EnrichedStockHolding[]> {
   } = await supabase.auth.getUser();
   if (!user) return [];
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase.from("stock_holdings") as any)
+  const { data, error } = await supabase.from("stock_holdings")
     .select(
       `
       *,
@@ -170,8 +167,7 @@ export async function getInvestmentHoldings(): Promise<EnrichedStockHolding[]> {
   }
 
   if (hasSyncedAny) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: refreshed } = await (supabase.from("stock_holdings") as any)
+    const { data: refreshed } = await supabase.from("stock_holdings")
       .select(`*, account:accounts(*)`)
       .eq("user_id", user.id)
       .gt("total_cost", 0)
@@ -194,8 +190,7 @@ export async function getInvestmentTradesHistory(): Promise<
   } = await supabase.auth.getUser();
   if (!user) return [];
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase.from("stock_trades") as any)
+  const { data, error } = await supabase.from("stock_trades")
     .select(
       `
       *,
@@ -232,8 +227,7 @@ export async function getDailyTradingVolume(
   const { startUtc: startOfDay, endUtcExclusive: endNextDay } =
     getLocalDateRangeBoundsUTC(dateStr, dateStr, timeZone);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: trades, error } = await (supabase.from("stock_trades") as any)
+  const { data: trades, error } = await supabase.from("stock_trades")
     .select("net_amount, stamp_duty")
     .eq("user_id", user.id)
     .eq("account_id", accountId)
@@ -296,8 +290,7 @@ export async function recordStockBuy(input: {
   }
 
   // 1. Fetch RDN Account
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: acc, error: accErr } = await (supabase.from("accounts") as any)
+  const { data: acc, error: accErr } = await supabase.from("accounts")
     .select("*")
     .eq("id", input.accountId)
     .eq("user_id", user.id)
@@ -329,8 +322,7 @@ export async function recordStockBuy(input: {
   }
 
   // Deduct RDN Balance
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error: updBalErr } = await (supabase.from("accounts") as any)
+  const { error: updBalErr } = await supabase.from("accounts")
     .update({ current_balance: currentBal - netAmount })
     .eq("id", acc.id);
 
@@ -343,9 +335,8 @@ export async function recordStockBuy(input: {
   const pricePerShare = netAmount / sharesToAdd;
   const txDate = normalizeISODate(input.tradeDate, await getUserTimeZone());
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: trade, error: tradeErr } = await (
-    supabase.from("stock_trades") as any
+    supabase.from("stock_trades") as unknown
   )
     .insert({
       user_id: user.id,
@@ -369,7 +360,7 @@ export async function recordStockBuy(input: {
 
   if (tradeErr) {
     console.error("Error inserting stock trade:", tradeErr);
-    await (supabase.from("accounts") as any)
+    await supabase.from("accounts")
       .update({ current_balance: currentBal })
       .eq("id", acc.id)
       .eq("user_id", user.id);
@@ -378,8 +369,7 @@ export async function recordStockBuy(input: {
 
   // 4. Record Stamp Duty as Expense Transaction if applied
   if (stampDutyToApply > 0) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: stampCat } = await (supabase.from("categories") as any)
+    const { data: stampCat } = await supabase.from("categories")
       .select("id")
       .eq("user_id", user.id)
       .eq("name", "Stamp Duty")
@@ -393,9 +383,8 @@ export async function recordStockBuy(input: {
         ? `Stock Trading Stamp Duty (${acc.name})`
         : `Bea Materai Transaksi Saham (${acc.name})`;
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error: stampError } = await (
-        supabase.from("transactions") as any
+        supabase.from("transactions") as unknown
       ).insert({
         user_id: user.id,
         account_id: acc.id,
@@ -408,11 +397,11 @@ export async function recordStockBuy(input: {
         transaction_date: txDate,
       });
       if (stampError) {
-        await (supabase.from("stock_trades") as any)
+        await supabase.from("stock_trades")
           .delete()
           .eq("id", trade.id)
           .eq("user_id", user.id);
-        await (supabase.from("accounts") as any)
+        await supabase.from("accounts")
           .update({ current_balance: currentBal })
           .eq("id", acc.id)
           .eq("user_id", user.id);
@@ -470,9 +459,8 @@ export async function recordStockSell(input: {
   }
 
   // 1. Fetch holding & account
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: holding, error: holdErr } = await (
-    supabase.from("stock_holdings") as any
+    supabase.from("stock_holdings") as unknown
   )
     .select("*, account:accounts(*)")
     .eq("id", input.holdingId)
@@ -517,8 +505,7 @@ export async function recordStockSell(input: {
 
   // 3. Credit RDN balance with net sell proceeds (minus stamp duty if triggered)
   const currentBal = Number(acc.current_balance) || 0;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error: updBalErr } = await (supabase.from("accounts") as any)
+  const { error: updBalErr } = await supabase.from("accounts")
     .update({ current_balance: currentBal + netAmount })
     .eq("id", acc.id);
 
@@ -528,9 +515,8 @@ export async function recordStockSell(input: {
 
   // 4. Record Trade Log
   const txDate = normalizeISODate(input.tradeDate, await getUserTimeZone());
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: trade, error: tradeErr } = await (
-    supabase.from("stock_trades") as any
+    supabase.from("stock_trades") as unknown
   )
     .insert({
       user_id: user.id,
@@ -554,7 +540,7 @@ export async function recordStockSell(input: {
 
   if (tradeErr) {
     console.error("Error inserting stock trade:", tradeErr);
-    await (supabase.from("accounts") as any)
+    await supabase.from("accounts")
       .update({ current_balance: currentBal })
       .eq("id", acc.id)
       .eq("user_id", user.id);
@@ -563,8 +549,7 @@ export async function recordStockSell(input: {
 
   // 5. Record Stamp Duty as Expense Transaction if applied
   if (stampDutyToApply > 0) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: stampCat } = await (supabase.from("categories") as any)
+    const { data: stampCat } = await supabase.from("categories")
       .select("id")
       .eq("user_id", user.id)
       .eq("name", "Stamp Duty")
@@ -578,9 +563,8 @@ export async function recordStockSell(input: {
         ? `Stock Trading Stamp Duty (${acc.name})`
         : `Bea Materai Transaksi Saham (${acc.name})`;
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error: stampError } = await (
-        supabase.from("transactions") as any
+        supabase.from("transactions") as unknown
       ).insert({
         user_id: user.id,
         account_id: acc.id,
@@ -593,11 +577,11 @@ export async function recordStockSell(input: {
         transaction_date: txDate,
       });
       if (stampError) {
-        await (supabase.from("stock_trades") as any)
+        await supabase.from("stock_trades")
           .delete()
           .eq("id", trade.id)
           .eq("user_id", user.id);
-        await (supabase.from("accounts") as any)
+        await supabase.from("accounts")
           .update({ current_balance: currentBal })
           .eq("id", acc.id)
           .eq("user_id", user.id);
@@ -632,9 +616,8 @@ export async function deleteStockTrade(id: string) {
   if (!user) return { error: "Unauthorized" };
 
   // 1. Fetch trade first
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: trade, error: fetchErr } = await (
-    supabase.from("stock_trades") as any
+    supabase.from("stock_trades") as unknown
   )
     .select("*, account:accounts(*)")
     .eq("id", id)
@@ -647,29 +630,25 @@ export async function deleteStockTrade(id: string) {
 
   const acc = trade.account;
   const tradeAmount = Number(trade.net_amount) || 0;
-  const stampDuty = Number(trade.stamp_duty) || 0;
 
   // 2. Revert RDN account balance
   if (acc) {
     const curBal = Number(acc.current_balance) || 0;
     if (trade.type === "buy") {
       // Revert buy by returning funds + stamp duty back to RDN
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase.from("accounts") as any)
+      await supabase.from("accounts")
         .update({ current_balance: curBal + tradeAmount })
         .eq("id", acc.id);
     } else {
       // Revert sell by deducting proceeds
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase.from("accounts") as any)
+      await supabase.from("accounts")
         .update({ current_balance: curBal - tradeAmount })
         .eq("id", acc.id);
     }
   }
 
   // 3. Delete the trade record
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase.from("stock_trades") as any)
+  const { error } = await supabase.from("stock_trades")
     .delete()
     .eq("id", id)
     .eq("user_id", user.id);
@@ -715,9 +694,8 @@ export async function updateStockTrade(input: UpdateStockTradeInput) {
   }
 
   // 1. Fetch current trade record
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: trade, error: tradeErr } = await (
-    supabase.from("stock_trades") as any
+    supabase.from("stock_trades") as unknown
   )
     .select("*, account:accounts(*)")
     .eq("id", input.id)
@@ -746,14 +724,12 @@ export async function updateStockTrade(input: UpdateStockTradeInput) {
           error: `Saldo RDN tidak mencukupi untuk penyesuaian nominal (${acc.name})`,
         };
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase.from("accounts") as any)
+      await supabase.from("accounts")
         .update({ current_balance: currentBal - delta })
         .eq("id", acc.id);
     } else {
       // Sell: proceeds change
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase.from("accounts") as any)
+      await supabase.from("accounts")
         .update({ current_balance: currentBal + delta })
         .eq("id", acc.id);
     }
@@ -771,8 +747,7 @@ export async function updateStockTrade(input: UpdateStockTradeInput) {
     : trade.trade_date;
 
   // 4. Update the trade row
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error: updErr } = await (supabase.from("stock_trades") as any)
+  const { error: updErr } = await supabase.from("stock_trades")
     .update({
       ticker: cleanTicker,
       currency: acc?.currency || trade.currency || "IDR",

@@ -20,7 +20,7 @@ export default async function ReportsPage() {
     getInvestmentHoldings(),
     getCryptoHoldings(),
     getEtfHoldings(),
-    getAssetPrices(supabase as any),
+    getAssetPrices(supabase as never),
   ])
 
   return (

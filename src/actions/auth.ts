@@ -32,7 +32,8 @@ export async function login(input: FormData | { email: string; password: string 
   return { success: true }
 }
 
-export async function register(input: FormData | { email: string; password: string }) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- registration disabled; signature kept for API compatibility
+export async function register(_input: FormData | { email: string; password: string }) {
   // Jalur pendaftaran akun baru dinonaktifkan untuk buku kas pribadi
   return {
     error: 'Pendaftaran akun baru saat ini dinonaktifkan oleh administrator.',

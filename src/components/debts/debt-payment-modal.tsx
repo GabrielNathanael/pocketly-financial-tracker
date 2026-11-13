@@ -51,7 +51,8 @@ export function DebtPaymentModal({
 
   // Auto-select default or first matching account whenever modal opens
   useEffect(() => {
-    if (isOpen && debt) {
+    if (!isOpen || !debt) return;
+    queueMicrotask(() => {
       const defaultMatch = matchingAccounts.find((a) => a.is_default);
       if (defaultMatch) {
         setSelectedAccountId(defaultMatch.id);
@@ -62,8 +63,8 @@ export function DebtPaymentModal({
       }
       setAmount("");
       setError(null);
-    }
-  }, [isOpen, debt?.id]);
+    });
+  }, [isOpen, debt, matchingAccounts]);
 
   const selectedAccount = matchingAccounts.find(
     (a) => a.id === selectedAccountId,

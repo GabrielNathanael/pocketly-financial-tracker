@@ -28,12 +28,8 @@ import {
   Pin,
   Check,
   Calendar,
-  Wallet,
-  Tag,
   FileText,
   ListPlus,
-  ArrowUpRight,
-  ArrowDownRight,
   Hash,
 } from "lucide-react";
 import { format } from "date-fns";
@@ -53,7 +49,7 @@ export function TransactionDetailView({
   const { language, t } = useLanguage();
   const { queueDelete } = useUndo();
   const [isEditing, setIsEditing] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
 

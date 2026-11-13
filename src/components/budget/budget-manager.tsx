@@ -298,7 +298,7 @@ export function BudgetManager({
             value={currencyFilter}
             onValueChange={(val) => setCurrencyFilter(val as BudgetCurrencyFilter)}
           >
-            <SelectTrigger className="h-8 w-[110px] shrink-0 text-[11px]">
+            <SelectTrigger className="h-8 w-27.5 shrink-0 text-[11px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent align="end">

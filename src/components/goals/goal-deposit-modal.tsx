@@ -59,7 +59,8 @@ export function GoalDepositModal({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isOpen && goal) {
+    if (!isOpen || !goal) return;
+    queueMicrotask(() => {
       setType("deposit");
       setAmount("");
       // Prioritize default/primary account if currency matches, then default account, then first currency match, then accounts[0]
@@ -71,7 +72,7 @@ export function GoalDepositModal({
       setDepositDate(format(new Date(), "yyyy-MM-dd"));
       setNotes("");
       setErrorMsg(null);
-    }
+    });
   }, [isOpen, goal, accounts]);
 
   if (!goal) return null;

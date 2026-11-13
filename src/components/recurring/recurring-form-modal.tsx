@@ -77,41 +77,43 @@ export function RecurringFormModal({
 
   // Initialize or reset form values
   useEffect(() => {
-    if (editItem) {
-      setName(editItem.name);
-      setType(editItem.type);
-      setAmount(String(editItem.amount));
-      setCurrency(editItem.currency);
-      setAccountId(editItem.account_id);
-      setCategoryId(editItem.category_id || "none");
-      setFrequency(editItem.frequency);
-      setIntervalCount(editItem.interval_count || 1);
-      setStartDate(editItem.start_date.split("T")[0]);
-      setNextDueDate(editItem.next_due_date.split("T")[0]);
-      setEndDate(editItem.end_date ? editItem.end_date.split("T")[0] : "");
-      setAutoProcess(editItem.auto_process || false);
-      setNotes(editItem.notes || "");
-      setShowMemo(!!editItem.notes);
-    } else {
-      setName("");
-      setType("expense");
-      setAmount("");
-      const defaultAcc = accounts.find((a) => a.is_default) || accounts[0];
-      setCurrency(defaultAcc?.currency || "IDR");
-      setAccountId(defaultAcc?.id || "");
-      const defaultCat = categories.find((c) => c.type === "expense");
-      setCategoryId(defaultCat?.id || "none");
-      setFrequency("monthly");
-      setIntervalCount(1);
-      const today = format(new Date(), "yyyy-MM-dd");
-      setStartDate(today);
-      setNextDueDate(today);
-      setEndDate("");
-      setAutoProcess(false);
-      setNotes("");
-      setShowMemo(false);
-    }
-    setErrorMsg(null);
+    queueMicrotask(() => {
+      if (editItem) {
+        setName(editItem.name);
+        setType(editItem.type);
+        setAmount(String(editItem.amount));
+        setCurrency(editItem.currency);
+        setAccountId(editItem.account_id);
+        setCategoryId(editItem.category_id || "none");
+        setFrequency(editItem.frequency);
+        setIntervalCount(editItem.interval_count || 1);
+        setStartDate(editItem.start_date.split("T")[0]);
+        setNextDueDate(editItem.next_due_date.split("T")[0]);
+        setEndDate(editItem.end_date ? editItem.end_date.split("T")[0] : "");
+        setAutoProcess(editItem.auto_process || false);
+        setNotes(editItem.notes || "");
+        setShowMemo(!!editItem.notes);
+      } else {
+        setName("");
+        setType("expense");
+        setAmount("");
+        const defaultAcc = accounts.find((a) => a.is_default) || accounts[0];
+        setCurrency(defaultAcc?.currency || "IDR");
+        setAccountId(defaultAcc?.id || "");
+        const defaultCat = categories.find((c) => c.type === "expense");
+        setCategoryId(defaultCat?.id || "none");
+        setFrequency("monthly");
+        setIntervalCount(1);
+        const today = format(new Date(), "yyyy-MM-dd");
+        setStartDate(today);
+        setNextDueDate(today);
+        setEndDate("");
+        setAutoProcess(false);
+        setNotes("");
+        setShowMemo(false);
+      }
+      setErrorMsg(null);
+    });
   }, [editItem, isOpen, accounts, categories]);
 
   // Sync category options when type changes

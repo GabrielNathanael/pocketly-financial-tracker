@@ -2,8 +2,14 @@ import { computeNetWorthForUser } from "@/lib/net-worth/compute";
 import { getAssetPrices } from "@/lib/net-worth/prices";
 import type { ForexRatesMap } from "@/lib/utils/currency";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyClient = { from: (table: string) => any };
+type QueryChain = {
+  upsert: (
+    values: unknown,
+    options: { onConflict: string },
+  ) => PromiseLike<{ error?: { message?: string } | null }>;
+};
+
+type AnyClient = { from: (table: string) => QueryChain };
 
 /**
  * Snapshot one user's net worth for `snapshotDate` (YYYY-MM-DD).
@@ -16,8 +22,15 @@ export async function snapshotNetWorthForUser(
   snapshotDate: string,
   rates: ForexRatesMap,
 ): Promise<{ ok: boolean; error?: string }> {
-  const prices = await getAssetPrices(supabase);
-  const computed = await computeNetWorthForUser(supabase, userId, rates, prices);
+  const prices = await getAssetPrices(
+    supabase as unknown as Parameters<typeof getAssetPrices>[0],
+  );
+  const computed = await computeNetWorthForUser(
+    supabase as unknown as Parameters<typeof computeNetWorthForUser>[0],
+    userId,
+    rates,
+    prices,
+  );
 
   const breakdown = {
     accounts: computed.totalAccountsIdr,
@@ -29,8 +42,7 @@ export async function snapshotNetWorthForUser(
     debts: computed.totalDebtsIdr,
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase.from("net_worth_snapshots") as any).upsert(
+  const { error } = await supabase.from("net_worth_snapshots").upsert(
     {
       user_id: userId,
       snapshot_date: snapshotDate,

@@ -26,7 +26,9 @@ export function UndoProvider({ children }: { children: React.ReactNode }) {
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const pendingActionRef = useRef<PendingDeleteAction | null>(null)
 
-  pendingActionRef.current = pendingAction
+  useEffect(() => {
+    pendingActionRef.current = pendingAction
+  }, [pendingAction])
 
   // Function to finalize and execute the actual backend delete
   const executePendingDelete = useCallback(async () => {

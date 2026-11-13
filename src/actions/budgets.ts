@@ -55,26 +55,24 @@ export async function getBudgetsWithActuals(
   const catMap = new Map((categories as Category[]).map((c) => [c.id, c]));
 
   // 2. Get budgets for this period
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: budgets } = await (supabase.from("budgets") as any)
+  const { data: budgets } = await supabase
+    .from("budgets")
     .select("*")
     .eq("period_start_date", periodStartDate);
 
   // 3. Get prior active budgets for auto-carryover if current period hasn't been set
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: priorBudgets } = await (supabase.from("budgets") as any)
+  const { data: priorBudgets } = await supabase
+    .from("budgets")
     .select("*")
     .lt("period_start_date", periodStartDate)
     .gt("amount", 0)
     .order("period_start_date", { ascending: false });
 
   // Map latest prior budget by `${categoryId}:${currency}`
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const latestPriorMap = new Map<string, any>();
+  const latestPriorMap = new Map<string, (typeof priorBudgets extends Array<infer T> | null ? T : never)>();
   if (priorBudgets) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    for (const pb of priorBudgets as any[]) {
-      const cur: CurrencyCode = pb.currency || "IDR";
+    for (const pb of priorBudgets) {
+      const cur: CurrencyCode = (pb.currency as CurrencyCode) || "IDR";
       const key = `${pb.category_id}:${cur}`;
       if (!latestPriorMap.has(key)) {
         latestPriorMap.set(key, pb);
@@ -88,8 +86,8 @@ export async function getBudgetsWithActuals(
   const { startUtc: startDate, endUtcExclusive: endDate } =
     getLocalDateRangeBoundsUTC(periodStartDate, periodEndDate, timeZone);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: txs } = await (supabase.from("transactions") as any)
+  const { data: txs } = await supabase
+    .from("transactions")
     .select("category_id, amount, currency, type")
     .eq("type", "expense")
     .gte("transaction_date", startDate)
@@ -98,9 +96,8 @@ export async function getBudgetsWithActuals(
   // Map actual spending per categoryId and currency: key = `${categoryId}:${currency}`
   const actualSpentMap = new Map<string, number>();
   if (txs) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    for (const t of txs as any[]) {
-      const cur: CurrencyCode = t.currency || "IDR";
+    for (const t of txs) {
+      const cur: CurrencyCode = (t.currency as CurrencyCode) || "IDR";
       const key = `${t.category_id}:${cur}`;
       const current = actualSpentMap.get(key) || 0;
       actualSpentMap.set(key, current + Number(t.amount));
@@ -112,12 +109,11 @@ export async function getBudgetsWithActuals(
 
   // A. Add explicit saved budgets for current period
   if (budgets) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    for (const b of budgets as any[]) {
+    for (const b of budgets) {
       const cat = catMap.get(b.category_id);
       if (!cat) continue;
 
-      const cur: CurrencyCode = b.currency || "IDR";
+      const cur: CurrencyCode = (b.currency as CurrencyCode) || "IDR";
       const key = `${b.category_id}:${cur}`;
       processedKeys.add(key);
 
@@ -219,8 +215,8 @@ export async function setBudget(input: {
     return { error: "Unauthorized" };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase.from("budgets") as any)
+  const { data, error } = await supabase
+    .from("budgets")
     .upsert(
       {
         user_id: user.id,
@@ -257,8 +253,8 @@ export async function deleteBudget(budgetId: string) {
     return { error: "Unauthorized" };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase.from("budgets") as any)
+  const { error } = await supabase
+    .from("budgets")
     .delete()
     .eq("id", budgetId)
     .eq("user_id", user.id);
@@ -299,8 +295,8 @@ export async function getCategoryBudgetHistory(
 
   for (const m of months) {
     // 1. Budget for specified currency (with fallback to latest prior for accurate historical graph)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let { data: budget } = await (supabase.from("budgets") as any)
+    let { data: budget } = await supabase
+      .from("budgets")
       .select("amount")
       .eq("category_id", categoryId)
       .eq("currency", currency)
@@ -309,8 +305,8 @@ export async function getCategoryBudgetHistory(
 
     if (!budget) {
       // Check prior
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: pb } = await (supabase.from("budgets") as any)
+      const { data: pb } = await supabase
+        .from("budgets")
         .select("amount")
         .eq("category_id", categoryId)
         .eq("currency", currency)
@@ -328,8 +324,8 @@ export async function getCategoryBudgetHistory(
     const { startUtc: startDate, endUtcExclusive: endDate } =
       getLocalDateRangeBoundsUTC(m.periodStart, periodEnd, timeZone);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: txs } = await (supabase.from("transactions") as any)
+    const { data: txs } = await supabase
+      .from("transactions")
       .select("amount")
       .eq("category_id", categoryId)
       .eq("currency", currency)
@@ -337,9 +333,8 @@ export async function getCategoryBudgetHistory(
       .gte("transaction_date", startDate)
       .lt("transaction_date", endDate);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const spent = (txs || []).reduce(
-      (acc: number, t: any) => acc + Number(t.amount),
+      (acc: number, t) => acc + Number(t.amount),
       0,
     );
 

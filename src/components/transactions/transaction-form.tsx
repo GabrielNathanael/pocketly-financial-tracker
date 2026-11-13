@@ -11,7 +11,6 @@ import {
 import { createTransaction, updateTransaction } from "@/actions/transactions";
 import { DatePicker } from "@/components/ui/date-picker";
 import { NumberInput } from "@/components/ui/number-input";
-import { DynamicIcon } from "@/components/ui/dynamic-icon";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useLanguage } from "@/lib/i18n/language-context";
 import { formatCurrency } from "@/lib/utils/currency";
@@ -25,7 +24,6 @@ import { formatCategoryName } from "@/lib/utils/category-i18n";
 import {
   ArrowDownRight,
   ArrowUpRight,
-  ChevronDown,
   ListPlus,
   AlignLeft,
   Plus,
@@ -39,7 +37,6 @@ import {
   Camera,
   Loader2,
   Calculator,
-  Search,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { toast } from "sonner";
@@ -245,7 +242,7 @@ export function TransactionForm({
       }
 
       toast.success(t.quickAdd.scanSuccess);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("OCR Error:", err);
       toast.error(t.quickAdd.scanFailed);
     } finally {
@@ -519,8 +516,8 @@ export function TransactionForm({
       } else {
         router.push("/transactions");
       }
-    } catch (err: any) {
-      setError(err?.message || "Failed to save transaction");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to save transaction");
     } finally {
       setIsLoading(false);
     }
@@ -799,7 +796,7 @@ export function TransactionForm({
               onClick={() => setIsNumpadOpen(false)}
               className="col-span-2 py-3.5 sm:py-4 rounded-xl bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] font-bold text-xs flex items-center justify-center gap-1.5 hover:opacity-90 active:scale-95 shadow-md transition-all cursor-pointer select-none"
             >
-              <Check className="w-4 h-4 stroke-[3]" />
+              <Check className="w-4 h-4 stroke-3" />
               <span>{t.transactions.doneLabel}</span>
             </button>
           </div>
@@ -980,7 +977,7 @@ export function TransactionForm({
               <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
                 {t.transactions.tagLabel}
               </span>
-              <div className="flex flex-wrap items-center gap-1.5 min-h-[28px]">
+              <div className="flex flex-wrap items-center gap-1.5 min-h-7">
                 {tags.map((tag) => (
                   <span
                     key={tag}
@@ -1018,7 +1015,7 @@ export function TransactionForm({
                       ? t.transactions.tagPlaceholder
                       : t.common.moreTagsPlaceholder
                   }
-                  className="flex-1 min-w-[120px] px-2 py-1 bg-transparent text-xs text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8] focus:outline-none"
+                  className="flex-1 min-w-30 px-2 py-1 bg-transparent text-xs text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8] focus:outline-none"
                 />
               </div>
             </div>
@@ -1250,7 +1247,7 @@ export function TransactionForm({
               disabled={isLoading}
               className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer disabled:opacity-60"
             >
-              <Check className="w-3.5 h-3.5 stroke-[3]" />
+              <Check className="w-3.5 h-3.5 stroke-3" />
               <span>{isLoading ? t.common.loading : t.common.save}</span>
             </button>
           </div>

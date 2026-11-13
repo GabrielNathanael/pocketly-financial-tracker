@@ -58,11 +58,8 @@ import {
   Sparkles,
   AlertTriangle,
   FileSpreadsheet,
-  Download,
   CheckCircle2,
   PieChart as PieChartIcon,
-  ChevronLeft,
-  ChevronRight,
   Scale,
   Hash,
   X,
@@ -191,7 +188,7 @@ export function ReportsView({
         priorIntervalStart: pStart,
         priorIntervalEnd: pEnd,
       };
-    }, [period, customRange]);
+    }, [period, customRange, now]);
 
   // Filter current & prior period transactions (with tag support)
   const currentPeriodTx = useMemo(() => {
@@ -717,6 +714,7 @@ export function ReportsView({
     displayCurrency,
     rates,
     isExcludedTx,
+    excludedCategoryIds,
   ]);
 
   // Top 5 / Top 10 Expenses
@@ -900,6 +898,7 @@ export function ReportsView({
   }, [categoryBreakdown]);
 
   // Export CSV
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleExportCSV = () => {
     const headers = [
       t.reports.csvDate,
@@ -1646,7 +1645,7 @@ export function ReportsView({
                       setSelectedCategoryFilter(null);
                     }}
                   >
-                    <SelectTrigger className="h-[40px] text-xs font-semibold bg-white dark:bg-[#121215] border-[#E5E7EB] dark:border-[#27272A] rounded-xl px-3">
+                    <SelectTrigger className="h-10 text-xs font-semibold bg-white dark:bg-[#121215] border-[#E5E7EB] dark:border-[#27272A] rounded-xl px-3">
                       <div className="flex items-center gap-1.5 truncate">
                         <Hash className="w-3.5 h-3.5 text-[#64748B] shrink-0" />
                         <SelectValue placeholder={t.reports.allTags} />
@@ -1673,7 +1672,7 @@ export function ReportsView({
                   setIsExcludeSheetOpen(true);
                 }}
                 className={cn(
-                  "h-[40px] px-3 text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 shrink-0 cursor-pointer transition-colors",
+                  "h-10 px-3 text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 shrink-0 cursor-pointer transition-colors",
                   availableTags.length === 0 ? "w-full sm:w-auto" : "",
                   excludedCategoryIds.length > 0
                     ? "bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-400 font-bold"
@@ -1778,7 +1777,7 @@ export function ReportsView({
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {/* Card 1: Savings Rate */}
           <div className="p-4 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col justify-between gap-2 shadow-2xs">
-            <div className="flex items-center justify-between gap-1 min-h-[28px]">
+            <div className="flex items-center justify-between gap-1 min-h-7">
               <span className="text-[11px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] leading-tight">
                 {t.reports.savingsRate}
               </span>
@@ -1817,7 +1816,7 @@ export function ReportsView({
 
           {/* Card 2: Total Income */}
           <div className="p-4 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col justify-between gap-2 shadow-2xs">
-            <div className="flex items-center justify-between gap-1 min-h-[28px]">
+            <div className="flex items-center justify-between gap-1 min-h-7">
               <span className="text-[11px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] leading-tight">
                 {t.reports.totalIncome}
               </span>
@@ -1857,7 +1856,7 @@ export function ReportsView({
 
           {/* Card 3: Total Expense & Growth */}
           <div className="p-4 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col justify-between gap-2 shadow-2xs">
-            <div className="flex items-center justify-between gap-1 min-h-[28px]">
+            <div className="flex items-center justify-between gap-1 min-h-7">
               <span className="text-[11px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] leading-tight">
                 {t.reports.totalExpense}
               </span>
@@ -1897,7 +1896,7 @@ export function ReportsView({
 
           {/* Card 4: Daily Burn Rate & Net */}
           <div className="p-4 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col justify-between gap-2 shadow-2xs">
-            <div className="flex items-center justify-between gap-1 min-h-[28px]">
+            <div className="flex items-center justify-between gap-1 min-h-7">
               <span className="text-[11px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] leading-tight">
                 {t.reports.dailyBurnRate}
               </span>
@@ -1950,10 +1949,12 @@ export function ReportsView({
               <div
                 className="grid grid-cols-1 md:grid-cols-2 gap-3"
                 onTouchStart={(e) => {
-                  (e.currentTarget as any)._touchX = e.touches[0].clientX;
+                  const target = e.currentTarget as HTMLDivElement & { _touchX?: number };
+                  target._touchX = e.touches[0].clientX;
                 }}
                 onTouchEnd={(e) => {
-                  const startX = (e.currentTarget as any)._touchX as number | undefined;
+                  const target = e.currentTarget as HTMLDivElement & { _touchX?: number };
+                  const startX = target._touchX;
                   if (startX === undefined) return;
                   const dx = e.changedTouches[0].clientX - startX;
                   const totalSlides = Math.ceil(smartInsights.length / INSIGHTS_PER_SLIDE);
@@ -2194,7 +2195,7 @@ export function ReportsView({
                 />
                 <Tooltip
                   labelFormatter={(label) => String(label ?? "")}
-                  content={({ active, payload, label }: any) => {
+                  content={({ active, payload, label }) => {
                     if (!active || !payload?.length) return null;
                     const point = payload[0]?.payload as
                       | { income?: number; expense?: number }
@@ -2293,7 +2294,7 @@ export function ReportsView({
             </div>
 
             {/* Expense vs Income Toggle Buttons */}
-            <div className="flex items-center p-1 bg-[#F1F3F5] dark:bg-[#1A1A20] rounded-xl border border-[#E5E7EB] dark:border-[#27272A] w-full max-w-[240px]">
+            <div className="flex items-center p-1 bg-[#F1F3F5] dark:bg-[#1A1A20] rounded-xl border border-[#E5E7EB] dark:border-[#27272A] w-full max-w-60">
               <button
                 type="button"
                 onClick={() => {
@@ -2357,7 +2358,7 @@ export function ReportsView({
                     />
                   ))}
                 </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-4 max-w-[150px] mx-auto">
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-4 max-w-37.5 mx-auto">
                   <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#94A3B8] leading-tight">
                     {selectedCategoryFilter
                       ? categoryBreakdown.find(
@@ -2434,7 +2435,7 @@ export function ReportsView({
                 {t.reports.noDataDesc}
               </div>
             ) : (
-              <div className="flex flex-col gap-2.5 max-h-[340px] overflow-y-auto pr-1">
+              <div className="flex flex-col gap-2.5 max-h-85 overflow-y-auto pr-1">
                 {categoryBreakdown.map((cat, idx) => {
                   const isSelected = selectedCategoryFilter === cat.id;
                   return (
@@ -2763,7 +2764,10 @@ export function ReportsView({
                 ...stocks.map((h) => {
                   const settlementCurrency = h.currency || h.account?.currency || "IDR";
                   const costIdr = convertAmount(Number(h.total_cost) || 0, settlementCurrency, "IDR", rates);
-                  const shares = Number((h as any).total_shares) || Number(h.lots || 0) * 100 || 0;
+                  const shares =
+                    Number((h as { total_shares?: number }).total_shares) ||
+                    Number(h.lots || 0) * 100 ||
+                    0;
                   const mv = marketOrCost("stock", h.ticker || "", shares, costIdr);
                   return {
                     kind: t.reports.pdfStockKind,
@@ -2982,7 +2986,7 @@ export function ReportsView({
           </div>
 
           {/* Scrollable Categories List */}
-          <div className="max-h-[300px] overflow-y-auto space-y-2 pr-1">
+          <div className="max-h-75 overflow-y-auto space-y-2 pr-1">
             {filteredSheetCategories.length === 0 ? (
               <div className="py-8 text-center text-xs text-[#94A3B8]">
                 {t.reports.noDataDesc}
@@ -3011,7 +3015,7 @@ export function ReportsView({
                             : "border-[#CBD5E1] dark:border-[#475569] bg-transparent",
                         )}
                       >
-                        {isExcluded && <Check className="w-3 h-3 stroke-[3]" />}
+                        {isExcluded && <Check className="w-3 h-3 stroke-3" />}
                       </div>
 
                       {/* Icon */}

@@ -1,12 +1,11 @@
 ﻿'use client';
 
-import React, { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import React, { useMemo } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import { parseSplitBillUiCookie } from "@/lib/utils/split-bill";
 import { DetailHeaderSkeleton, DetailStepperSkeleton, SplitBillDetailStepSkeleton } from "@/components/split-bill/split-bill-step-skeleton";
 
-function getUiFromPath(pathname: string | null): { step: 1 | 2 | 3 | 4; editing: boolean } {
-  const isManual = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("manual") === "1";
+function getUiFromPath(pathname: string | null, isManual: boolean): { step: 1 | 2 | 3 | 4; editing: boolean } {
   const fallback = isManual ? { step: 1 as const, editing: true } : { step: 1 as const, editing: false };
   if (typeof document === "undefined") return fallback;
   const id = pathname?.match(/\/split-bill\/([^/]+)/)?.[1];
@@ -26,10 +25,9 @@ function getUiFromPath(pathname: string | null): { step: 1 | 2 | 3 | 4; editing:
 
 export default function SplitBillDetailLoading() {
   const pathname = usePathname();
-  const [ui, setUi] = useState<{ step: 1 | 2 | 3 | 4; editing: boolean }>({ step: 1, editing: false });
-  React.useEffect(() => {
-    setUi(getUiFromPath(pathname));
-  }, [pathname]);
+  const searchParams = useSearchParams();
+  const isManual = searchParams.get("manual") === "1";
+  const ui = useMemo(() => getUiFromPath(pathname, isManual), [pathname, isManual]);
 
   return (
     <div

@@ -161,7 +161,7 @@ export function SplitBillClient({
 
       {/* Filter status */}
       {bills.length > 0 && (
-        <div className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {filters.map((f) => {
             const count = f.id === "all" ? bills.length : bills.filter((b) => b.status === f.id).length;
             if (count === 0 && f.id !== "all") return null;

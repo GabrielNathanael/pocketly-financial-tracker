@@ -13,11 +13,12 @@ export function UndoSnackbar() {
 
   // Reset countdown animation key whenever a new delete action is queued
   useEffect(() => {
-    if (pendingAction) {
+    if (!pendingAction) return
+    queueMicrotask(() => {
       setIsClosing(false)
       setProgressKey((prev) => prev + 1)
-    }
-  }, [pendingAction?.id])
+    })
+  }, [pendingAction])
 
   if (!pendingAction) return null
 
@@ -39,7 +40,7 @@ export function UndoSnackbar() {
     <div
       role="status"
       aria-live="polite"
-      className="fixed z-50 bottom-20 md:bottom-6 left-4 right-4 md:left-1/2 md:-translate-x-1/2 md:w-auto md:min-w-[340px] md:max-w-md pointer-events-none"
+      className="fixed z-50 bottom-20 md:bottom-6 left-4 right-4 md:left-1/2 md:-translate-x-1/2 md:w-auto md:min-w-85 md:max-w-md pointer-events-none"
     >
       <div
         className={`pointer-events-auto relative overflow-hidden rounded-2xl border border-white/10 dark:border-[#27272A] bg-[#121316]/95 dark:bg-[#09090B]/95 text-white shadow-[0_20px_50px_rgba(0,0,0,0.4)] backdrop-blur-xl px-4 py-3 flex items-center justify-between gap-3.5 ${
@@ -83,7 +84,7 @@ export function UndoSnackbar() {
         </div>
 
         {/* Linear Countdown Progress Bar */}
-        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-white/5 overflow-hidden">
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white/5 overflow-hidden">
           <div
             key={progressKey}
             className="h-full bg-white/40 origin-left"

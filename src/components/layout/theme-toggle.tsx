@@ -1,10 +1,14 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useSyncExternalStore } from 'react'
 import { useTheme } from '@/components/layout/theme-provider'
 import { useLanguage } from '@/lib/i18n/language-context'
 import { Sun, Moon, Monitor } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
+
+const subscribe = () => () => {}
+const getSnapshot = () => true
+const getServerSnapshot = () => false
 
 export function ThemeToggle({
   className,
@@ -15,11 +19,7 @@ export function ThemeToggle({
 }) {
   const { theme, setTheme } = useTheme()
   const { t } = useLanguage()
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  const mounted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 
   const items = [
     {

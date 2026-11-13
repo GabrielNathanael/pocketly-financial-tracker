@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -231,8 +231,10 @@ export function PortfolioInvestmentView({
     () => new Map(prices.map((p) => [`${p.kind}:${p.symbol.toUpperCase()}`, p])),
     [prices],
   );
-  const toIdr = (amount: number, currency: string) =>
-    convertAmount(amount, currency, "IDR", rates);
+  const toIdr = useCallback(
+    (amount: number, currency: string) => convertAmount(amount, currency, "IDR", rates),
+    [rates],
+  );
   const marketValue = (
     kind: "stock" | "crypto" | "etf",
     symbol: string,
@@ -266,7 +268,9 @@ export function PortfolioInvestmentView({
   );
   const stockValue = stocks.reduce((total, holding) => {
     const shares =
-      Number((holding as any).total_shares) || Number(holding.lots || 0) * 100 || 0;
+      Number((holding as { total_shares?: number }).total_shares) ||
+      Number(holding.lots || 0) * 100 ||
+      0;
     return (
       total +
       marketValue(
@@ -366,40 +370,51 @@ export function PortfolioInvestmentView({
     return { intervalStart: null, intervalEnd: null };
   }, [reportPeriod, customRange]);
 
-  const isDateInInterval = (dateStr: string) => {
-    if (!intervalStart || !intervalEnd) return true;
-    try {
-      const d = parseISO(dateStr.slice(0, 10));
-      return isWithinInterval(d, { start: intervalStart, end: intervalEnd });
-    } catch {
-      return true;
-    }
-  };
+  const isDateInInterval = useCallback(
+    (dateStr: string) => {
+      if (!intervalStart || !intervalEnd) return true;
+      try {
+        const d = parseISO(dateStr.slice(0, 10));
+        return isWithinInterval(d, { start: intervalStart, end: intervalEnd });
+      } catch {
+        return true;
+      }
+    },
+    [intervalStart, intervalEnd],
+  );
 
   const reportStockTrades = useMemo(
     () => stockTrades.filter((tr) => isDateInInterval(tr.trade_date)),
-    [stockTrades, intervalStart, intervalEnd],
+    [stockTrades, isDateInInterval],
   );
 
   const reportCryptoTrades = useMemo(
     () => cryptoTrades.filter((tr) => isDateInInterval(tr.trade_date)),
-    [cryptoTrades, intervalStart, intervalEnd],
+    [cryptoTrades, isDateInInterval],
   );
 
   const reportEtfTrades = useMemo(
     () => etfTrades.filter((tr) => isDateInInterval(tr.trade_date)),
-    [etfTrades, intervalStart, intervalEnd],
+    [etfTrades, isDateInInterval],
   );
 
   const reportTransfers = useMemo(
-    () =>
-      investmentTransfers.filter((tr) => isDateInInterval(tr.transfer_date)),
-    [investmentTransfers, intervalStart, intervalEnd],
+    () => investmentTransfers.filter((tr) => isDateInInterval(tr.transfer_date)),
+    [investmentTransfers, isDateInInterval],
   );
 
   // Reporting Analytics Calculations (normalized to IDR for cross-currency correctness):
   const reportingStats = useMemo(() => {
-    const tradeCurrency = (tr: any, kind: AssetKind) =>
+    const tradeCurrency = (
+      tr: {
+        currency?: string | null;
+        fee_currency?: string | null;
+        price_currency?: string | null;
+        from_currency?: string | null;
+        account?: { currency?: string | null } | null;
+      },
+      kind: AssetKind,
+    ) =>
       tr.currency ||
       (kind === "crypto" ? tr.fee_currency || tr.price_currency : null) ||
       tr.account?.currency ||
@@ -417,7 +432,7 @@ export function PortfolioInvestmentView({
 
     for (const trade of allSales) {
       const kind = "ticker" in trade && "lots" in trade ? "stock" : "symbol" in trade ? "crypto" : "etf";
-      const pnl = toIdr(Number(trade.realized_pnl) || 0, tradeCurrency(trade as any, kind as AssetKind));
+      const pnl = toIdr(Number(trade.realized_pnl) || 0, tradeCurrency(trade, kind as AssetKind));
       if (pnl > 0) {
         totalGain += pnl;
         winningTradesCount += 1;
@@ -431,7 +446,7 @@ export function PortfolioInvestmentView({
     const netRealizedPnl = totalGain - totalLoss;
 
     const stockStampDuty = reportStockTrades.reduce(
-      (sum, tr) => sum + toIdr(Number(tr.stamp_duty) || 0, tradeCurrency(tr as any, "stock")),
+      (sum, tr) => sum + toIdr(Number(tr.stamp_duty) || 0, tradeCurrency(tr, "stock")),
       0,
     );
     const cryptoFees = reportCryptoTrades.reduce(
@@ -439,12 +454,12 @@ export function PortfolioInvestmentView({
         sum +
         toIdr(
           Number(tr.fee_amount) || 0,
-          (tr as any).fee_currency || tradeCurrency(tr as any, "crypto"),
+          tr.fee_currency || tradeCurrency(tr, "crypto"),
         ),
       0,
     );
     const etfFees = reportEtfTrades.reduce(
-      (sum, tr) => sum + toIdr(Number(tr.fee_amount) || 0, tradeCurrency(tr as any, "etf")),
+      (sum, tr) => sum + toIdr(Number(tr.fee_amount) || 0, tradeCurrency(tr, "etf")),
       0,
     );
     const transferFees = reportTransfers.reduce(
@@ -452,7 +467,9 @@ export function PortfolioInvestmentView({
         sum +
         toIdr(
           Number(tr.fee_amount) || 0,
-          (tr as any).from_currency || (tr as any).fee_currency || "IDR",
+          (tr as { from_currency?: string | null; fee_currency?: string | null }).from_currency ||
+            (tr as { from_currency?: string | null; fee_currency?: string | null }).fee_currency ||
+            "IDR",
         ),
       0,
     );
@@ -477,7 +494,7 @@ export function PortfolioInvestmentView({
 
     for (const trade of stockSales) {
       const sym = trade.ticker;
-      const pnl = toIdr(Number(trade.realized_pnl) || 0, tradeCurrency(trade as any, "stock"));
+      const pnl = toIdr(Number(trade.realized_pnl) || 0, tradeCurrency(trade, "stock"));
       const curr = assetMap.get(sym) || {
         kind: "stock",
         symbol: sym,
@@ -500,7 +517,7 @@ export function PortfolioInvestmentView({
 
     for (const trade of cryptoSales) {
       const sym = trade.symbol;
-      const pnl = toIdr(Number(trade.realized_pnl) || 0, tradeCurrency(trade as any, "crypto"));
+      const pnl = toIdr(Number(trade.realized_pnl) || 0, tradeCurrency(trade, "crypto"));
       const curr = assetMap.get(sym) || {
         kind: "crypto",
         symbol: sym,
@@ -523,7 +540,7 @@ export function PortfolioInvestmentView({
 
     for (const trade of etfSales) {
       const sym = trade.ticker;
-      const pnl = toIdr(Number(trade.realized_pnl) || 0, tradeCurrency(trade as any, "etf"));
+      const pnl = toIdr(Number(trade.realized_pnl) || 0, tradeCurrency(trade, "etf"));
       const curr = assetMap.get(sym) || {
         kind: "etf",
         symbol: sym,
@@ -558,7 +575,7 @@ export function PortfolioInvestmentView({
           date: tr.trade_date,
           type: i18n.feesStock,
           reference: "",
-          amount: toIdr(Number(tr.stamp_duty), tradeCurrency(tr as any, "stock")),
+          amount: toIdr(Number(tr.stamp_duty), tradeCurrency(tr, "stock")),
         })),
       ...reportCryptoTrades
         .filter((tr) => Number(tr.fee_amount) > 0)
@@ -566,10 +583,10 @@ export function PortfolioInvestmentView({
           id: `crypto-${tr.id}`,
           date: tr.trade_date,
           type: i18n.feesCrypto,
-          reference: `${tr.symbol} · ${tr.type === "buy" ? i18n.buy : i18n.sell}`,
+          reference: `${tr.symbol} Â· ${tr.type === "buy" ? i18n.buy : i18n.sell}`,
           amount: toIdr(
             Number(tr.fee_amount),
-            (tr as any).fee_currency || tradeCurrency(tr as any, "crypto"),
+            tr.fee_currency || tradeCurrency(tr, "crypto"),
           ),
         })),
       ...reportEtfTrades
@@ -578,8 +595,8 @@ export function PortfolioInvestmentView({
           id: `etf-${tr.id}`,
           date: tr.trade_date,
           type: isEn ? "US ETF broker fee" : "Fee broker ETF AS",
-          reference: `${tr.ticker} · ${tr.type === "buy" ? i18n.buy : i18n.sell}`,
-          amount: toIdr(Number(tr.fee_amount), tradeCurrency(tr as any, "etf")),
+          reference: `${tr.ticker} Â· ${tr.type === "buy" ? i18n.buy : i18n.sell}`,
+          amount: toIdr(Number(tr.fee_amount), tradeCurrency(tr, "etf")),
         })),
       ...reportTransfers
         .filter((tr) => Number(tr.fee_amount) > 0)
@@ -589,10 +606,12 @@ export function PortfolioInvestmentView({
           type: i18n.feesTransfer,
           reference:
             tr.description ||
-            `${tr.from_account?.name || "—"} → ${tr.to_account?.name || "—"}`,
+            `${tr.from_account?.name || "â€”"} â†’ ${tr.to_account?.name || "â€”"}`,
           amount: toIdr(
             Number(tr.fee_amount),
-            (tr as any).from_currency || (tr as any).fee_currency || "IDR",
+            (tr as { from_currency?: string | null; fee_currency?: string | null }).from_currency ||
+              (tr as { from_currency?: string | null; fee_currency?: string | null }).fee_currency ||
+              "IDR",
           ),
         })),
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -615,7 +634,7 @@ export function PortfolioInvestmentView({
     };
   }, [reportStockTrades, reportCryptoTrades, reportEtfTrades, reportTransfers, i18n, isEn, toIdr]);
 
-  // Donut chart data — warna paten per jenis aset (biar ETF & Kas beda,
+  // Donut chart data â€” warna paten per jenis aset (biar ETF & Kas beda,
   // dan nggak geser kalau salah satu nilainya 0)
   const allocationData = useMemo(
     () =>
@@ -628,7 +647,7 @@ export function PortfolioInvestmentView({
     [cashValue, stockValue, cryptoValue, etfValue, isEn],
   );
 
-  // Bar chart data — P&L per aset (dari reportingStats yang sudah ada)
+  // Bar chart data â€” P&L per aset (dari reportingStats yang sudah ada)
   const [showAllPnl, setShowAllPnl] = useState(false);
   const pnlBarDataFull = useMemo(
     () =>
@@ -648,10 +667,18 @@ export function PortfolioInvestmentView({
     [pnlBarDataFull, showAllPnl],
   );
 
-  // Line chart — kumulatif P&L over time (ikut filter periode), normalized to IDR
+  // Line chart â€” kumulatif P&L over time (ikut filter periode), normalized to IDR
   const cumulativePnlData = useMemo(() => {
     const dailyPnl = new Map<string, number>();
-    const tradeCurrency = (tr: any, kind: AssetKind) =>
+    const tradeCurrency = (
+      tr: {
+        currency?: string | null;
+        fee_currency?: string | null;
+        price_currency?: string | null;
+        account?: { currency?: string | null } | null;
+      },
+      kind: AssetKind,
+    ) =>
       tr.currency ||
       (kind === "crypto" ? tr.fee_currency || tr.price_currency : null) ||
       tr.account?.currency ||
@@ -661,15 +688,15 @@ export function PortfolioInvestmentView({
     };
     for (const t of reportStockTrades) {
       if (t.type === "sell")
-        addSell(t.trade_date.slice(0, 10), Number(t.realized_pnl) || 0, tradeCurrency(t as any, "stock"));
+        addSell(t.trade_date.slice(0, 10), Number(t.realized_pnl) || 0, tradeCurrency(t, "stock"));
     }
     for (const t of reportCryptoTrades) {
       if (t.type === "sell")
-        addSell(t.trade_date.slice(0, 10), Number(t.realized_pnl) || 0, tradeCurrency(t as any, "crypto"));
+        addSell(t.trade_date.slice(0, 10), Number(t.realized_pnl) || 0, tradeCurrency(t, "crypto"));
     }
     for (const t of reportEtfTrades) {
       if (t.type === "sell")
-        addSell(t.trade_date.slice(0, 10), Number(t.realized_pnl) || 0, tradeCurrency(t as any, "etf"));
+        addSell(t.trade_date.slice(0, 10), Number(t.realized_pnl) || 0, tradeCurrency(t, "etf"));
     }
     const sorted = Array.from(dailyPnl.entries())
       .sort((a, b) => a[0].localeCompare(b[0]))
@@ -786,7 +813,7 @@ export function PortfolioInvestmentView({
     holding?: EnrichedStockHolding | EnrichedCryptoHolding | EnrichedEtfHolding,
   ) => {
     setAssetKind(kind);
-    setSelectedId((holding as any)?.id || "");
+    setSelectedId(holding?.id || "");
     setCryptoPercent(0);
     if (holding) {
       if (kind === "stock") {
@@ -813,7 +840,7 @@ export function PortfolioInvestmentView({
     holding?: EnrichedStockHolding | EnrichedCryptoHolding | EnrichedEtfHolding,
   ) => {
     setAssetKind(kind);
-    setSelectedId((holding as any)?.id || "");
+    setSelectedId(holding?.id || "");
     setCryptoPercent(0);
     if (holding) {
       setAccountId(holding.account_id);
@@ -1299,7 +1326,7 @@ export function PortfolioInvestmentView({
             type="button"
             onClick={() => setTab(value)}
             className={cn(
-              "flex min-h-[42px] cursor-pointer items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-center text-xs font-bold transition-all sm:min-h-[44px]",
+              "flex min-h-10.5 cursor-pointer items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-center text-xs font-bold transition-all sm:min-h-11",
               tab === value
                 ? "bg-white text-[#0F172A] shadow-xs dark:bg-[#121215] dark:text-[#FAFAFA]"
                 : "text-[#64748B] hover:text-[#0F172A] dark:text-[#94A3B8] dark:hover:text-[#FAFAFA]",
@@ -1317,7 +1344,7 @@ export function PortfolioInvestmentView({
           <div className="grid gap-3 sm:grid-cols-2">
             {stocks.map((holding) => {
               const shares =
-                Number((holding as any).total_shares) ||
+                Number((holding as { total_shares?: number }).total_shares) ||
                 Number(holding.lots || 0) * 100 ||
                 0;
               const quote = priceMap.get(`stock:${(holding.ticker || "").toUpperCase()}`);
@@ -1397,7 +1424,7 @@ export function PortfolioInvestmentView({
                 {i18n.emptyHoldingsDesc}
               </p>
               <div className="mt-4 flex justify-center gap-2">
-                <Button onClick={() => openBuy("crypto")} className="min-h-[40px]">
+                <Button onClick={() => openBuy("crypto")} className="min-h-10">
                   <Plus className="mr-1 h-3.5 w-3.5" />
                   {i18n.addTradeBtn}
                 </Button>
@@ -1494,9 +1521,9 @@ export function PortfolioInvestmentView({
               const pnl = Number(activity.realized_pnl) || 0;
               const hasPnl = !isBuy;
               const settlementCurrency =
-                (activity as any).currency ||
+                (activity as { currency?: string }).currency ||
                 (kind === "crypto"
-                  ? (activity as any).price_currency
+                  ? (activity as { price_currency?: string }).price_currency
                   : null) ||
                 activity.account?.currency ||
                 "IDR";
@@ -1568,7 +1595,7 @@ export function PortfolioInvestmentView({
                             },
                           )}
                           <span className="block">
-                            {activity.account?.name || "Platform"} · {settlementCurrency}
+                            {activity.account?.name || "Platform"} Â· {settlementCurrency}
                           </span>
                         </p>
                       </div>
@@ -1582,7 +1609,7 @@ export function PortfolioInvestmentView({
                           if (isEtf) {
                             const trade = activity as EnrichedEtfTrade;
                             setAccountId(trade.account_id);
-                            setEditSettlementCurrency((trade as any).currency || trade.account?.currency || "IDR");
+                            setEditSettlementCurrency((trade as { currency?: string; account?: { currency?: string } }).currency || trade.account?.currency || "IDR");
                             setSymbol(trade.ticker);
                             setQuantity(String(trade.quantity));
                             setAmount(String(trade.gross_amount));
@@ -1594,7 +1621,7 @@ export function PortfolioInvestmentView({
                           } else if (isStock) {
                             const trade = activity as EnrichedStockTrade;
                             setAccountId(trade.account_id);
-                            setEditSettlementCurrency((trade as any).currency || trade.account?.currency || "IDR");
+                            setEditSettlementCurrency((trade as { currency?: string; account?: { currency?: string } }).currency || trade.account?.currency || "IDR");
                             setTicker(trade.ticker);
                             setLots(String(trade.lots || 1));
                             setAmount(String(trade.net_amount));
@@ -1604,7 +1631,7 @@ export function PortfolioInvestmentView({
                           } else {
                             const trade = activity as EnrichedCryptoTrade;
                             setAccountId(trade.account_id);
-                            setEditSettlementCurrency((trade as any).currency || trade.account?.currency || "IDR");
+                            setEditSettlementCurrency((trade as { currency?: string; account?: { currency?: string } }).currency || trade.account?.currency || "IDR");
                             setSymbol(trade.symbol);
                             setQuantity(String(trade.quantity));
                             setAmount(String(trade.gross_amount));
@@ -1618,7 +1645,7 @@ export function PortfolioInvestmentView({
                           setEditTradeType(activity.type);
                           setModal("edit");
                         }}
-                        className="flex h-8 w-8 min-h-[36px] min-w-[36px] items-center justify-center rounded-xl text-[#94A3B8] transition-colors hover:bg-[#F1F3F5] hover:text-[#0F172A] dark:hover:bg-[#1A1A20] dark:hover:text-[#F8FAFC]"
+                        className="flex h-8 w-8 min-h-9 min-w-9 items-center justify-center rounded-xl text-[#94A3B8] transition-colors hover:bg-[#F1F3F5] hover:text-[#0F172A] dark:hover:bg-[#1A1A20] dark:hover:text-[#F8FAFC]"
                         title={i18n.editTradeSuccess || "Edit"}
                       >
                         <Edit2 className="h-3.5 w-3.5" />
@@ -1634,7 +1661,7 @@ export function PortfolioInvestmentView({
                                   activity as EnrichedCryptoTrade,
                                 )
                         }
-                        className="flex h-8 w-8 min-h-[36px] min-w-[36px] items-center justify-center rounded-xl text-[#94A3B8] transition-colors hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/30 dark:hover:text-rose-400"
+                        className="flex h-8 w-8 min-h-9 min-w-9 items-center justify-center rounded-xl text-[#94A3B8] transition-colors hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/30 dark:hover:text-rose-400"
                         title={i18n.deleteSuccess || "Hapus"}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -1920,10 +1947,10 @@ export function PortfolioInvestmentView({
             </div>
           </div>
 
-          {/* Charts Row — stretch aja biar tinggi sama,
+          {/* Charts Row â€” stretch aja biar tinggi sama,
               whitespace di P&L dipindah ke atas, chart nempel bawah */}
           <div className="grid gap-3 sm:grid-cols-2">
-            {/* Donut — Alokasi Portofolio */}
+            {/* Donut â€” Alokasi Portofolio */}
             <div className="flex flex-col gap-3 rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-2xs dark:border-[#27272A] dark:bg-[#121215]">
               <h3 className="text-xs font-black uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
                 {isEn ? "Portfolio Allocation" : "Alokasi Portofolio"}
@@ -1946,7 +1973,7 @@ export function PortfolioInvestmentView({
                         ))}
                       </Pie>
                       <Tooltip
-                        content={({ active, payload }: any) => {
+                        content={({ active, payload }) => {
                           if (!active || !payload?.length) return null;
                           const entry = payload[0];
                           const name = String(entry.name ?? "");
@@ -1985,18 +2012,18 @@ export function PortfolioInvestmentView({
                         <span className="font-mono text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
                           {totalPortfolioValue > 0
                             ? `${Math.round((d.value / totalPortfolioValue) * 100)}%`
-                            : "—"}
+                            : "â€”"}
                         </span>
                       </div>
                     ))}
                   </div>
                 </>
               ) : (
-                <p className="text-center text-xs text-[#94A3B8] py-8">—</p>
+                <p className="text-center text-xs text-[#94A3B8] py-8">â€”</p>
               )}
             </div>
 
-            {/* Bar Chart — P&L per Aset */}
+            {/* Bar Chart â€” P&L per Aset */}
             <div className="flex flex-col gap-3 rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-2xs dark:border-[#27272A] dark:bg-[#121215]">
               <h3 className="text-xs font-black uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
                 {isEn ? "P&L by Asset" : "P&L per Aset"}
@@ -2040,7 +2067,7 @@ export function PortfolioInvestmentView({
                       width={56}
                     />
                     <Tooltip
-                      content={({ active, payload }: any) => {
+                      content={({ active, payload }) => {
                         if (!active || !payload?.length) return null;
                         const entry = payload[0];
                         const name = String(entry?.payload?.symbol ?? entry?.name ?? "");
@@ -2089,7 +2116,7 @@ export function PortfolioInvestmentView({
             </div>
           </div>
 
-          {/* Line Chart — Kumulatif P&L */}
+          {/* Line Chart â€” Kumulatif P&L */}
           {cumulativePnlData.length > 0 && (
             <div className="flex flex-col gap-3 rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-2xs dark:border-[#27272A] dark:bg-[#121215]">
               <h3 className="text-xs font-black uppercase tracking-wider text-[#0F172A] dark:text-[#F8FAFC]">
@@ -2125,7 +2152,7 @@ export function PortfolioInvestmentView({
                     }}
                   />
                   <Tooltip
-                    content={({ active, payload, label }: any) => {
+                    content={({ active, payload, label }) => {
                       if (!active || !payload?.length) return null;
                       const val = Number(payload[0].value ?? 0);
                       const isProfit = val >= 0;
@@ -2222,7 +2249,7 @@ export function PortfolioInvestmentView({
                             </span>
                           </div>
                           <p className="truncate text-[10px] text-[#64748B] dark:text-[#94A3B8]">
-                            {asset.tradesCount} {isEn ? "sales" : "penjualan"} ·{" "}
+                            {asset.tradesCount} {isEn ? "sales" : "penjualan"} Â·{" "}
                             {asset.winCount} {isEn ? "wins" : "cuan"}
                           </p>
                         </div>
@@ -2322,10 +2349,10 @@ export function PortfolioInvestmentView({
         title={
           modal === "edit"
             ? assetKind === "crypto"
-              ? `${i18n.editCryptoTrade || "Edit Kripto"} · ${editTradeType === "buy" ? i18n.buy : i18n.sell}`
+              ? `${i18n.editCryptoTrade || "Edit Kripto"} Â· ${editTradeType === "buy" ? i18n.buy : i18n.sell}`
               : assetKind === "etf"
-                ? `${i18n.etf.editTitle} · ${editTradeType === "buy" ? i18n.buy : i18n.sell}`
-                : `${i18n.modalEditTradeTitle} · ${editTradeType === "buy" ? i18n.buy : i18n.sell}`
+                ? `${i18n.etf.editTitle} Â· ${editTradeType === "buy" ? i18n.buy : i18n.sell}`
+                : `${i18n.modalEditTradeTitle} Â· ${editTradeType === "buy" ? i18n.buy : i18n.sell}`
             : modal === "buy"
               ? assetKind === "stock"
                 ? i18n.modalBuyTitle
@@ -2346,7 +2373,7 @@ export function PortfolioInvestmentView({
                 type="button"
                 onClick={() => handleKindSwitch("stock")}
                 className={cn(
-                  "min-h-[36px] rounded-lg px-3 py-2 text-xs font-bold transition-all",
+                  "min-h-9 rounded-lg px-3 py-2 text-xs font-bold transition-all",
                   assetKind === "stock"
                     ? "bg-white text-[#0F172A] shadow-xs dark:bg-[#27272A] dark:text-[#FAFAFA]"
                     : "text-[#64748B]",
@@ -2358,7 +2385,7 @@ export function PortfolioInvestmentView({
                 type="button"
                 onClick={() => handleKindSwitch("crypto")}
                 className={cn(
-                  "min-h-[36px] rounded-lg px-3 py-2 text-xs font-bold transition-all",
+                  "min-h-9 rounded-lg px-3 py-2 text-xs font-bold transition-all",
                   assetKind === "crypto"
                     ? "bg-white text-[#0F172A] shadow-xs dark:bg-[#27272A] dark:text-[#FAFAFA]"
                     : "text-[#64748B]",
@@ -2370,7 +2397,7 @@ export function PortfolioInvestmentView({
                 type="button"
                 onClick={() => handleKindSwitch("etf")}
                 className={cn(
-                  "min-h-[36px] rounded-lg px-3 py-2 text-xs font-bold transition-all",
+                  "min-h-9 rounded-lg px-3 py-2 text-xs font-bold transition-all",
                   assetKind === "etf"
                     ? "bg-white text-[#0F172A] shadow-xs dark:bg-[#27272A] dark:text-[#FAFAFA]"
                     : "text-[#64748B]",
@@ -2383,7 +2410,7 @@ export function PortfolioInvestmentView({
 
           {modal === "buy" && selectedId && (
             <div className="rounded-xl bg-emerald-50 p-2.5 text-[11px] font-bold text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200">
-              {assetKind === "stock" ? ticker || i18n.stock : symbol || "BTC"} ·{" "}
+              {assetKind === "stock" ? ticker || i18n.stock : symbol || "BTC"} Â·{" "}
               {i18n.addPosition}
             </div>
           )}
@@ -2398,7 +2425,7 @@ export function PortfolioInvestmentView({
             <SelectContent>
               {investmentAccounts.map((account) => (
                 <SelectItem key={account.id} value={account.id}>
-                  {account.name} ({account.currency}) ·{" "}
+                  {account.name} ({account.currency}) Â·{" "}
                   {fmt(account.current_balance, account.currency)}
                 </SelectItem>
               ))}
@@ -2792,7 +2819,7 @@ export function PortfolioInvestmentView({
             placeholder={i18n.notesPlaceholder}
           />
 
-          <Button type="submit" disabled={busy} className="min-h-[44px]">
+          <Button type="submit" disabled={busy} className="min-h-11">
             {busy
               ? i18n.saving
               : modal === "edit"
@@ -2888,7 +2915,7 @@ function PercentageSlider({
           />
         ))}
 
-        {/* Native range input — sits on top, invisible, handles drag */}
+        {/* Native range input â€” sits on top, invisible, handles drag */}
         <input
           type="range"
           min={0}
@@ -2935,119 +2962,8 @@ function PercentageSlider({
 
 function formatCryptoQuantity(value: number | string): string {
   const numericValue = Number(value);
-  if (!Number.isFinite(numericValue)) return "—";
+  if (!Number.isFinite(numericValue)) return "â€”";
   return numericValue.toFixed(8).replace(/\.?0+$/, "");
-}
-
-function useAssetColor(src: string | null, fallback: string) {
-  const [color, setColor] = useState(fallback);
-
-  useEffect(() => {
-    if (!src) return;
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.src = src;
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      ctx.drawImage(img, 0, 0);
-      const { data } = ctx.getImageData(0, 0, img.width, img.height);
-
-      let r = 0,
-        g = 0,
-        b = 0,
-        count = 0;
-      for (let i = 0; i < data.length; i += 16) {
-        const alpha = data[i + 3];
-        if (alpha < 128) continue;
-        r += data[i];
-        g += data[i + 1];
-        b += data[i + 2];
-        count++;
-      }
-      if (count === 0) return;
-      r = Math.round(r / count);
-      g = Math.round(g / count);
-      b = Math.round(b / count);
-
-      const pastel = (c: number) => Math.round(c * 0.4 + 255 * 0.6);
-      setColor(`rgb(${pastel(r)}, ${pastel(g)}, ${pastel(b)})`);
-    };
-  }, [src]);
-
-  return color;
-}
-
-function MarketQuoteRow({
-  quote,
-  marketValue,
-  cost,
-  fmt,
-  isEn,
-}: {
-  quote?: { price: number; currency: string; fetchedAt: string };
-  marketValue?: number;
-  cost: number;
-  fmt: (amount: number, currency?: string) => string;
-  isEn: boolean;
-}) {
-  if (!quote || marketValue === undefined) return null;
-  const pnl = marketValue - cost;
-  const fetchedDate = quote.fetchedAt
-    ? new Date(quote.fetchedAt).toLocaleString(isEn ? "en-US" : "id-ID", {
-        day: "numeric",
-        month: "short",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : "";
-  const isStale = quote.fetchedAt
-    ? Date.now() - new Date(quote.fetchedAt).getTime() > 48 * 3600000
-    : false;
-  return (
-    <div className="col-span-2 flex flex-col gap-1 border-t border-[#E5E7EB] pt-2.5 dark:border-[#27272A]">
-      <div className="flex items-baseline justify-between">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
-          {isEn ? "Market Price" : "Harga Pasar"}
-        </p>
-        <p className="font-mono text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-          {fmt(quote.price, quote.currency)}
-          {isStale && (
-            <span className="ml-1 rounded bg-amber-500/10 px-1 py-0.5 text-[9px] font-bold text-amber-600 dark:text-amber-400">
-              {isEn ? "Stale" : "Lama"}
-            </span>
-          )}
-        </p>
-      </div>
-      <div className="flex items-start justify-between gap-2">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8] leading-tight">
-          {isEn ? "Market Value" : "Nilai Pasar"}
-          {fetchedDate && (
-            <span className="block text-[9px] font-semibold normal-case text-[#94A3B8]">
-              {fetchedDate}
-            </span>
-          )}
-        </p>
-        <p
-          className={cn(
-            "text-right font-mono text-xs font-bold leading-tight",
-            pnl >= 0
-              ? "text-emerald-600 dark:text-emerald-400"
-              : "text-rose-600 dark:text-rose-400",
-          )}
-        >
-          {fmt(marketValue, "IDR")}
-          <span className="block text-[10px] font-semibold">
-            ({pnl >= 0 ? "+" : ""}
-            {fmt(pnl, "IDR")})
-          </span>
-        </p>
-      </div>
-    </div>
-  );
 }
 
 function Summary({
@@ -3108,8 +3024,6 @@ function EtfCard({
   const settlementCurrency = holding.currency || holding.account?.currency || "IDR";
   const fmt = (amount: number, currency: string = settlementCurrency) =>
     maskCurrency(formatCurrency(convertAmount(amount, currency, displayCurrency, rates), displayCurrency), isPrivate);
-  const fmtDisplay = (amount: number, currency: string = "IDR") =>
-    maskCurrency(formatCurrency(convertAmount(amount, currency, displayCurrency, rates), displayCurrency), isPrivate);
   const cost = Number(holding.total_cost) || 0;
   const pnl = marketVal !== undefined ? marketVal - costIdr : 0;
   const pnlPct = costIdr > 0 ? (pnl / costIdr) * 100 : 0;
@@ -3150,17 +3064,17 @@ function EtfCard({
         </div>
         <div className="flex items-center justify-between py-2">
           <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">{i18n.capitalLabel}</span>
-          <span className="font-mono text-xs font-bold tnum">{formatCurrency(cost, settlementCurrency as any)} ({settlementCurrency})</span>
+          <span className="font-mono text-xs font-bold tnum">{formatCurrency(cost, settlementCurrency)} ({settlementCurrency})</span>
         </div>
         <div className="flex items-center justify-between py-2">
           <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">{isEn ? "Avg Price / Share" : "Harga Rata-rata / Unit"}</span>
-          <span className="font-mono text-xs font-bold tnum">{Number(holding.avg_buy_price) > 0 ? `${formatCurrency(Number(holding.avg_buy_price), settlementCurrency as any)} (${settlementCurrency})` : "—"}</span>
+          <span className="font-mono text-xs font-bold tnum">{Number(holding.avg_buy_price) > 0 ? `${formatCurrency(Number(holding.avg_buy_price), settlementCurrency)} (${settlementCurrency})` : "â€”"}</span>
         </div>
         {(isRefreshing || quote) && (
           <div className="flex items-center justify-between py-2">
             <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">
               {isEn ? "Market price" : "Harga pasar"}
-              {!isRefreshing && marketDate ? ` · ${marketDate}` : ""}
+              {!isRefreshing && marketDate ? ` Â· ${marketDate}` : ""}
             </span>
             {isRefreshing ? (
               <span className="inline-block h-3.5 w-20 animate-pulse rounded bg-slate-200 dark:bg-[#27272A]" />
@@ -3204,14 +3118,7 @@ function StockCard({
   const settlementCurrency = holding.currency || holding.account?.currency || "IDR";
   const fmt = (amount: number, currency: string = settlementCurrency) =>
     maskCurrency(formatCurrency(convertAmount(amount, currency, displayCurrency, rates), displayCurrency), isPrivate);
-  const fmtDisplay = (amount: number, currency: string = "IDR") =>
-    maskCurrency(formatCurrency(convertAmount(amount, currency, displayCurrency, rates), displayCurrency), isPrivate);
   const lots = Number(holding.lots) || Number(holding.total_shares) / 100;
-
-  const publishableKey = process.env.NEXT_PUBLIC_LOGO_DEV_PUBLISHABLE_KEY;
-  const logoUrl = publishableKey
-    ? `https://img.logo.dev/ticker/${holding.ticker.toLowerCase()}.jk?token=${publishableKey}`
-    : null;
   const cost = Number(holding.total_cost) || 0;
   const pnl = marketVal !== undefined ? marketVal - costIdr : 0;
   const pnlPct = costIdr > 0 ? (pnl / costIdr) * 100 : 0;
@@ -3260,17 +3167,17 @@ function StockCard({
         </div>
         <div className="flex items-center justify-between py-2">
           <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">{i18n.capitalLabel}</span>
-          <span className="font-mono text-xs font-bold tnum">{formatCurrency(cost, settlementCurrency as any)} ({settlementCurrency})</span>
+          <span className="font-mono text-xs font-bold tnum">{formatCurrency(cost, settlementCurrency)} ({settlementCurrency})</span>
         </div>
         <div className="flex items-center justify-between py-2">
           <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">{isEn ? "Avg Price / Share" : "Harga Rata-rata / Lembar"}</span>
-          <span className="font-mono text-xs font-bold tnum">{Number(holding.avg_buy_price) > 0 ? `${formatCurrency(Number(holding.avg_buy_price), settlementCurrency as any)} (${settlementCurrency}) / lbr` : "—"}</span>
+          <span className="font-mono text-xs font-bold tnum">{Number(holding.avg_buy_price) > 0 ? `${formatCurrency(Number(holding.avg_buy_price), settlementCurrency)} (${settlementCurrency}) / lbr` : "â€”"}</span>
         </div>
         {(isRefreshing || quote) && (
           <div className="flex items-center justify-between py-2">
             <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">
               {isEn ? "Market price" : "Harga pasar"}
-              {!isRefreshing && marketDate ? ` · ${marketDate}` : ""}
+              {!isRefreshing && marketDate ? ` Â· ${marketDate}` : ""}
             </span>
             {isRefreshing ? (
               <span className="inline-block h-3.5 w-20 animate-pulse rounded bg-slate-200 dark:bg-[#27272A]" />
@@ -3313,13 +3220,6 @@ function CryptoCard({
   const settlementCurrency = holding.price_currency || "IDR";
   const fmt = (amount: number, currency: string = settlementCurrency) =>
     maskCurrency(formatCurrency(convertAmount(amount, currency, displayCurrency, rates), displayCurrency), isPrivate);
-  const fmtDisplay = (amount: number, currency: string = "IDR") =>
-    maskCurrency(formatCurrency(convertAmount(amount, currency, displayCurrency, rates), displayCurrency), isPrivate);
-
-  const publishableKey = process.env.NEXT_PUBLIC_LOGO_DEV_PUBLISHABLE_KEY;
-  const logoUrl = publishableKey
-    ? `https://img.logo.dev/crypto/${holding.symbol.toLowerCase()}?token=${publishableKey}`
-    : null;
   const cost = Number(holding.cost_basis) || 0;
   const pnl = marketVal !== undefined ? marketVal - costIdr : 0;
   const pnlPct = costIdr > 0 ? (pnl / costIdr) * 100 : 0;
@@ -3368,17 +3268,17 @@ function CryptoCard({
         </div>
         <div className="flex items-center justify-between py-2">
           <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">{i18n.capitalLabel}</span>
-          <span className="font-mono text-xs font-bold tnum">{formatCurrency(cost, settlementCurrency as any)} ({settlementCurrency})</span>
+          <span className="font-mono text-xs font-bold tnum">{formatCurrency(cost, settlementCurrency)} ({settlementCurrency})</span>
         </div>
         <div className="flex items-center justify-between py-2">
           <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">{isEn ? `Avg Buy Price / ${holding.symbol}` : `Harga Rata-rata / ${holding.symbol}`}</span>
-          <span className="font-mono text-xs font-bold tnum">{Number(holding.average_buy_price) > 0 ? `${formatCurrency(Number(holding.average_buy_price), settlementCurrency as any)} (${settlementCurrency})` : "—"}</span>
+          <span className="font-mono text-xs font-bold tnum">{Number(holding.average_buy_price) > 0 ? `${formatCurrency(Number(holding.average_buy_price), settlementCurrency)} (${settlementCurrency})` : "â€”"}</span>
         </div>
         {(isRefreshing || quote) && (
           <div className="flex items-center justify-between py-2">
             <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">
               {isEn ? "Market price" : "Harga pasar"}
-              {!isRefreshing && marketDate ? ` · ${marketDate}` : ""}
+              {!isRefreshing && marketDate ? ` Â· ${marketDate}` : ""}
             </span>
             {isRefreshing ? (
               <span className="inline-block h-3.5 w-20 animate-pulse rounded bg-slate-200 dark:bg-[#27272A]" />
@@ -3420,6 +3320,7 @@ function AssetLogo({
       )}
     >
       {!hasError && logoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={logoUrl}
           alt=""
@@ -3433,35 +3334,6 @@ function AssetLogo({
   );
 }
 
-function AssetMetric({
-  label,
-  value,
-  valueClassName = "",
-  align = "left",
-}: {
-  label: string;
-  value: string;
-  valueClassName?: string;
-  align?: "left" | "right";
-}) {
-  return (
-    <div
-      className={cn("min-w-0", align === "right" ? "text-right" : "text-left")}
-    >
-      <p className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
-        {label}
-      </p>
-      <p
-        className={cn(
-          "mt-1 font-mono text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC]",
-          valueClassName,
-        )}
-      >
-        {value}
-      </p>
-    </div>
-  );
-}
 function AssetActions({
   onBuy,
   onSell,
@@ -3475,7 +3347,7 @@ function AssetActions({
       <button
         type="button"
         onClick={onBuy}
-        className="inline-flex min-h-[40px] flex-1 items-center justify-center gap-1.5 rounded-xl border border-[#D1D5DB] bg-white px-3 py-2 text-xs font-bold text-[#0F172A] transition-all hover:bg-[#F8F9FA] dark:border-[#3F3F46] dark:bg-[#121215] dark:text-[#F8FAFC] dark:hover:bg-[#1A1A20] sm:min-h-[44px]"
+        className="inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-[#D1D5DB] bg-white px-3 py-2 text-xs font-bold text-[#0F172A] transition-all hover:bg-[#F8F9FA] dark:border-[#3F3F46] dark:bg-[#121215] dark:text-[#F8FAFC] dark:hover:bg-[#1A1A20] sm:min-h-11"
       >
         <Plus className="h-3.5 w-3.5" />
         {t.investments.buy}
@@ -3483,7 +3355,7 @@ function AssetActions({
       <button
         type="button"
         onClick={onSell}
-        className="inline-flex min-h-[40px] flex-1 items-center justify-center gap-1.5 rounded-xl border border-[#D1D5DB] bg-white px-3 py-2 text-xs font-bold text-[#0F172A] transition-all hover:bg-[#F8F9FA] dark:border-[#3F3F46] dark:bg-[#121215] dark:text-[#F8FAFC] dark:hover:bg-[#1A1A20] sm:min-h-[44px]"
+        className="inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-[#D1D5DB] bg-white px-3 py-2 text-xs font-bold text-[#0F172A] transition-all hover:bg-[#F8F9FA] dark:border-[#3F3F46] dark:bg-[#121215] dark:text-[#F8FAFC] dark:hover:bg-[#1A1A20] sm:min-h-11"
       >
         <ArrowUpRight className="h-3.5 w-3.5" />
         {t.investments.sell}

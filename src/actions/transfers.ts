@@ -10,8 +10,7 @@ export async function getTransfers(): Promise<EnrichedTransfer[]> {
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase.from("transfers") as any)
+  const { data, error } = await supabase.from("transfers")
     .select(
       `
       *,
@@ -58,17 +57,13 @@ export async function createTransfer(input: {
   const fee = Number(input.transferFee) || 0;
 
   // 1. Fetch Accounts
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: fromAcc, error: fromErr } = await (
-    supabase.from("accounts") as any
-  )
+  const { data: fromAcc, error: fromErr } = await supabase.from("accounts")
     .select("id, name, currency, current_balance")
     .eq("id", input.fromAccountId)
     .eq("user_id", user.id)
     .single();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: toAcc, error: toErr } = await (supabase.from("accounts") as any)
+  const { data: toAcc, error: toErr } = await supabase.from("accounts")
     .select("id, name, currency, current_balance")
     .eq("id", input.toAccountId)
     .eq("user_id", user.id)
@@ -97,8 +92,7 @@ export async function createTransfer(input: {
   }
 
   // 3. Execute Transfer
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase.from("transfers") as any)
+  const { data, error } = await supabase.from("transfers")
     .insert({
       user_id: user.id,
       from_account_id: input.fromAccountId,
@@ -125,8 +119,7 @@ export async function createTransfer(input: {
   // 4. Record Admin/Transfer Fee as Expense Transaction if fee > 0
   if (fee > 0) {
     // Find Transfer Fee system category
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let { data: expCat } = await (supabase.from("categories") as any)
+    let { data: expCat } = await supabase.from("categories")
       .select("id")
       .eq("user_id", user.id)
       .eq("name", "Transfer Fee")
@@ -136,8 +129,7 @@ export async function createTransfer(input: {
 
     if (!expCat) {
       // Fallback: look for Transfer or Other Expense
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: fallbackCat } = await (supabase.from("categories") as any)
+      const { data: fallbackCat } = await supabase.from("categories")
         .select("id")
         .eq("user_id", user.id)
         .in("name", ["Transfer", "Other Expense"])
@@ -151,10 +143,7 @@ export async function createTransfer(input: {
       // Pakai timestamp yang sama persis dengan transfernya (bukan jam 12.00 UTC
       // yang dipatok), supaya biaya admin tercatat di waktu transfer sebenarnya.
       const feeTxDate = data.transfer_date || new Date().toISOString();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: feeErr } = await (
-        supabase.from("transactions") as any
-      ).insert({
+      const { error: feeErr } = await supabase.from("transactions").insert({
         user_id: user.id,
         account_id: input.fromAccountId,
         category_id: expCat.id,
@@ -192,10 +181,7 @@ export async function deleteTransfer(id: string) {
   if (!user) return { error: "Unauthorized" };
 
   // 1. Fetch Transfer before delete to check receiver balance
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: transfer, error: tErr } = await (
-    supabase.from("transfers") as any
-  )
+  const { data: transfer, error: tErr } = await supabase.from("transfers")
     .select("*, to_account:accounts!transfers_to_account_id_fkey(*)")
     .eq("id", id)
     .eq("user_id", user.id)

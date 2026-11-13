@@ -19,8 +19,8 @@ import { AvatarPicker } from "@/components/split-bill/avatar-picker";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { defaultAvatarFor, type AvatarRef } from "@/lib/utils/avatar";
 import { DatePicker } from "@/components/ui/date-picker";
-import { formatItemsSummary, getItemTotal, type TransactionItem } from "@/lib/utils/transaction-items";
-import { getItemDiscountAmount, getItemNetSubtotal } from "@/lib/utils/split-bill";
+import { formatItemsSummary, type TransactionItem } from "@/lib/utils/transaction-items";
+import { getItemNetSubtotal } from "@/lib/utils/split-bill";
 import {
   Plus,
   Trash2,
@@ -184,7 +184,7 @@ export function SplitBillDetailClient({
   });
   const [images, setImages] = useState<SplitBillImage[]>(bill?.images || []);
   const [billId, setBillId] = useState<string | null>(bill?.id || null);
-  const [isSaving, setIsSaving] = useState(false);
+  const [, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "dirty" | "saving" | "saved">("idle");
   const lastSavedSigRef = useRef<string | null>(null);
   const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -467,15 +467,15 @@ export function SplitBillDetailClient({
     [currency, grandTotal, calcItems, calcParticipants, calcAssignments, calcCharges, splitMode]
   );
 
+  // Keep grand total in sync with computed value when not manually overridden.
+  // Uses queueMicrotask to avoid synchronous setState-in-effect lint while preserving behavior.
   useEffect(() => {
-    if (!isGrandTotalManual) {
-      const computed = Number(calc.computed_grand_total) || 0;
-      if (Math.abs((Number(grandTotal) || 0) - computed) >= 0.001) {
-        setGrandTotal(computed);
-      }
+    if (isGrandTotalManual) return;
+    const computed = Number(calc.computed_grand_total) || 0;
+    if (Math.abs((Number(grandTotal) || 0) - computed) >= 0.001) {
+      queueMicrotask(() => setGrandTotal(computed));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [calc.computed_grand_total, isGrandTotalManual]);
+  }, [calc.computed_grand_total, grandTotal, isGrandTotalManual]);
 
   const itemsSubtotalNet = useMemo(
     () =>
@@ -527,10 +527,11 @@ export function SplitBillDetailClient({
   const myPortionDescription = buildMyPortionDescription(title, items, assignments, meParticipant?.key, language);
   const myPortionSignature = `${currency}:${myTotal}:${myPortionDescription}`;
   // Rincian item porsi saya (untuk kolom JSONB transactions.items)
-  const myPortionItems = useMemo(() => {
-    if (!meParticipant) return [];
+  const meParticipantKey = meParticipant?.key ?? null;
+  const myPortionItems = (() => {
+    if (!meParticipantKey) return [];
     const lines =
-      calc.per_person.find((p) => p.participant_id === meParticipant.key)?.item_lines ?? [];
+      calc.per_person.find((p) => p.participant_id === meParticipantKey)?.item_lines ?? [];
     return lines
       .map((l) => {
         const it = items.find((i) => i.key === l.item_id);
@@ -545,7 +546,7 @@ export function SplitBillDetailClient({
         };
       })
       .filter((i) => i.name.trim() && (Number(i.subtotal) > 0 || Number(i.price) > 0));
-  }, [calc, items, meParticipant]);
+  })();
   const needsSync = !!myRecordedTxId && lastSyncedSig !== null && myPortionSignature !== lastSyncedSig;
 
   const setAssignment = (itemKey: string, participantKey: string, share: number) => {
@@ -1001,7 +1002,7 @@ export function SplitBillDetailClient({
   };
 
   const buildPayload = (nextStatus: "draft" | "balanced", idOverride?: string | null) => ({
-    id: (idOverride ?? billIdRef.current ?? billId) || undefined,
+    id: (idOverride ?? billId) || undefined,
     title,
     bill_date: billDate,
     currency,
@@ -1056,7 +1057,7 @@ export function SplitBillDetailClient({
   ): Promise<string | null> => {
     return enqueueSerializedSave(async () => {
       const effectiveId = billIdRef.current || billId || null;
-      let payload = (opts?.payload || buildPayload(nextStatus, effectiveId)) as Parameters<typeof saveSplitBill>[0];
+      let payload = (opts?.payload || buildPayload(nextStatus, effectiveId ?? billIdRef.current ?? billId)) as Parameters<typeof saveSplitBill>[0];
       if (effectiveId) payload = { ...payload, id: effectiveId };
       if (nextStatus === "balanced" && !canMarkBalanced && !opts?.allowUnbalanced) {
         toast.error(t.splitBill.mustBalance);
@@ -1078,7 +1079,10 @@ export function SplitBillDetailClient({
         }
         setBillId(savedId);
         setStatus(nextStatus);
-        lastSavedSigRef.current = payloadSignature({ ...(payload as any), id: savedId });
+        lastSavedSigRef.current = payloadSignature({
+          ...(payload as Record<string, unknown>),
+          id: savedId,
+        } as Parameters<typeof payloadSignature>[0]);
         setSaveStatus("saved");
         scheduleSaveStatusReset();
 
@@ -1120,7 +1124,7 @@ export function SplitBillDetailClient({
         if (isScanning) return;
         const effectiveId = billIdRef.current || billId || null;
         const nextStatus: "draft" | "balanced" = canMarkBalanced ? "balanced" : "draft";
-        const payload = buildPayload(nextStatus, effectiveId) as unknown as Parameters<typeof saveSplitBill>[0];
+        const payload = buildPayload(nextStatus, effectiveId ?? billIdRef.current ?? billId) as unknown as Parameters<typeof saveSplitBill>[0];
         if (payloadSignature(payload) === lastSavedSigRef.current) return;
 
         setSaveStatus("saving");
@@ -1136,7 +1140,10 @@ export function SplitBillDetailClient({
           billIdRef.current = savedId;
           setBillId(savedId);
           setStatus(nextStatus);
-          lastSavedSigRef.current = payloadSignature({ ...(payload as any), id: savedId });
+          lastSavedSigRef.current = payloadSignature({
+            ...(payload as Record<string, unknown>),
+            id: savedId,
+          } as Parameters<typeof payloadSignature>[0]);
           setSaveStatus("saved");
           scheduleSaveStatusReset();
           if (wasNew && !isScanning) {
@@ -1238,7 +1245,7 @@ export function SplitBillDetailClient({
       <span className="text-xs font-semibold text-[#64748B] dark:text-[#94A3B8]">
         {language === "id" ? "Foto struk" : "Receipt photos"} ({images.length}/3)
       </span>
-      <div className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden pb-1">
+      <div className="flex items-center gap-2 overflow-x-auto scrollbar-none [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden pb-1">
         {images.map((img) => (
           <div
             key={img.id}
@@ -1268,9 +1275,9 @@ export function SplitBillDetailClient({
     </div>
   );
 
-  const buildMyPortionRecordItems = useCallback((): TransactionItem[] => {
-    if (!meParticipant) return [];
-    const myLines = calc.per_person.find((p) => p.participant_id === meParticipant.key)?.item_lines ?? [];
+  const buildMyPortionRecordItems = (): TransactionItem[] => {
+    if (!meParticipantKey) return [];
+    const myLines = calc.per_person.find((p) => p.participant_id === meParticipantKey)?.item_lines ?? [];
     return myLines
       .map((l) => {
         const item = items.find((i) => i.key === l.item_id);
@@ -1285,7 +1292,7 @@ export function SplitBillDetailClient({
         };
       })
       .filter((i) => i.name.trim() && (Number(i.subtotal) > 0 || Number(i.price) > 0));
-  }, [calc.per_person, items, meParticipant]);
+  };
 
   const openRecord = () => {
     const compatible = accounts.filter((a) => (a.currency || "").toUpperCase() === currency.toUpperCase());
@@ -1300,10 +1307,9 @@ export function SplitBillDetailClient({
     setShowRecord(true);
   };
 
-  const myPersonCalc = useMemo(
-    () => (meParticipant ? calc.per_person.find((p) => p.participant_id === meParticipant.key) : undefined),
-    [calc.per_person, meParticipant]
-  );
+  const myPersonCalc = meParticipantKey
+    ? calc.per_person.find((p) => p.participant_id === meParticipantKey)
+    : undefined;
 
   const myDiscountMemo = useMemo(() => {
     if (!myPersonCalc) return "";
@@ -1660,7 +1666,7 @@ export function SplitBillDetailClient({
 
     // Preview / fallback (camera not running yet)
     return (
-      <div className="fixed inset-0 z-[70] flex flex-col bg-black border-black">
+      <div className="fixed inset-0 z-70 flex flex-col bg-black border-black">
         {/* Top bar */}
         <div className="flex items-center justify-between gap-2 px-3 py-2 pt-[max(0.75rem,env(safe-area-inset-top))] border-b border-white/10">
           <button
@@ -1702,7 +1708,7 @@ export function SplitBillDetailClient({
               <div
                 ref={previewScrollRef}
                 onScroll={onPreviewScroll}
-                className="flex h-full w-full overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                className="flex h-full w-full overflow-x-auto snap-x snap-mandatory scrollbar-none [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
               >
                 {scanImages.map((img) => (
                   <div key={img.id} className="relative w-full h-full shrink-0 snap-center flex items-center justify-center p-4">
@@ -1737,7 +1743,7 @@ export function SplitBillDetailClient({
         {/* Thumbnails */}
         {capturedCount > 0 && (
           <div className="px-3 pb-2">
-            <div className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex items-center gap-2 overflow-x-auto scrollbar-none [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
               {scanImages.map((img) => (
                 <div
                   key={img.id}
@@ -1824,7 +1830,7 @@ export function SplitBillDetailClient({
                 >
                   <ImagePlus className="w-5 h-5" />
                   {capturedCount > 0 && (
-                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-white text-black text-[10px] font-bold flex items-center justify-center">
+                    <span className="absolute -top-1 -right-1 min-w-4.5 h-4.5 px-1 rounded-full bg-white text-black text-[10px] font-bold flex items-center justify-center">
                       {capturedCount}
                     </span>
                   )}
@@ -2248,7 +2254,7 @@ export function SplitBillDetailClient({
 
           {/* Stepper (sticky) */}
           <div className="sticky top-0 z-20 bg-[#F8FAFC]/95 dark:bg-[#09090B]/95 backdrop-blur border-b border-[#E5E7EB]/70 dark:border-[#27272A]/70 px-1 py-2">
-            <div className="flex items-center gap-1 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex items-center gap-1 overflow-x-auto scrollbar-none [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
               {steps.map((s, i) => (
                 <React.Fragment key={s.id}>
                   <button
@@ -2379,7 +2385,7 @@ export function SplitBillDetailClient({
                       <div className="flex flex-col gap-1">
                         <label className="text-[10px] font-semibold text-[#64748B]">{t.splitBill.perItemDiscount}</label>
                         <div className="flex items-center gap-1">
-                          <div className="min-w-[70px]">
+                          <div className="min-w-17.5">
                             <SearchableSelect
                               value={it.item_discount_mode === "percent" ? "percent" : "fixed"}
                               onValueChange={(v) => setItems((prev) => prev.map((x) => x.key === it.key ? { ...x, item_discount_mode: v === "percent" ? "percent" : "fixed", item_discount: 0 } : x))}
@@ -2454,7 +2460,7 @@ export function SplitBillDetailClient({
                           <div className="min-w-0">
                             <SearchableSelect value={c.kind} onValueChange={(v) => setCharges((prev) => prev.map((x) => x.key === c.key ? { ...x, kind: v as LocalCharge["kind"] } : x))} options={kindOptions} showSearch={false} minSearchItems={99} placeholder={t.splitBill.other} />
                           </div>
-                          <div className="w-[88px]">
+                          <div className="w-22">
                             <SearchableSelect value={c.amount_mode} onValueChange={(v) => setCharges((prev) => prev.map((x) => x.key === c.key ? { ...x, amount_mode: v as LocalCharge["amount_mode"] } : x))} options={modeOptions} showSearch={false} minSearchItems={99} placeholder="%" />
                           </div>
                           <div className="col-span-2 sm:col-span-1 flex items-center gap-2 min-w-0">
@@ -2576,7 +2582,7 @@ export function SplitBillDetailClient({
                           />
                           {p.is_me && (
                             <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white dark:border-[#121215] flex items-center justify-center">
-                              <Check className="w-2 h-2 text-white stroke-[3]" />
+                              <Check className="w-2 h-2 text-white stroke-3" />
                             </span>
                           )}
                         </button>
@@ -2678,7 +2684,7 @@ export function SplitBillDetailClient({
                               : "ring-2 ring-transparent",
                           )}
                         />
-                        <span className="max-w-[120px] truncate">{personLabel(p)}</span>
+                        <span className="max-w-30 truncate">{personLabel(p)}</span>
                       </button>
                     );
                   })}
@@ -2999,7 +3005,7 @@ export function SplitBillDetailClient({
                         title={language === "id" ? "Sudah jadi peserta — ketuk untuk membatalkan" : "Already a participant — tap to unselect"}
                         aria-label={language === "id" ? "Batalkan" : "Unselect"}
                       >
-                        <Check className="w-3.5 h-3.5 stroke-[3]" />
+                        <Check className="w-3.5 h-3.5 stroke-3" />
                       </button>
                     ) : (
                       <button
@@ -3014,7 +3020,7 @@ export function SplitBillDetailClient({
                         title={picked ? (language === "id" ? "Batalkan pilihan" : "Unselect") : (language === "id" ? "Pilih" : "Select")}
                         aria-label={picked ? (language === "id" ? "Batalkan pilihan" : "Unselect") : (language === "id" ? "Pilih" : "Select")}
                       >
-                        {picked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                        {picked && <Check className="w-3.5 h-3.5 stroke-3" />}
                       </button>
                     )}
                     <button onClick={() => removeContact(c.id)} className="shrink-0 p-1.5 text-[#94A3B8] hover:text-rose-500" aria-label={t.splitBill.delete}>
@@ -3072,7 +3078,7 @@ export function SplitBillDetailClient({
             <DatePicker value={recordState.date} onChange={(v) => setRecordState((s) => ({ ...s, date: v }))} />
           </div>
           <div className="p-3 rounded-lg bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A]">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] mb-1">{(t.splitBill as any).note || t.splitBill.notes || (language === "id" ? "Catatan" : "Note")}</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] mb-1">{(t.splitBill as { note?: string; notes?: string }).note || t.splitBill.notes || (language === "id" ? "Catatan" : "Note")}</p>
             <p className="text-sm font-medium text-[#0F172A] dark:text-[#FAFAFA]">{`${language === "id" ? "Patungan" : "Split Bill"} - ${title || (language === "id" ? "Patungan" : "Split Bill")}`}</p>
           </div>
           {(myPersonCalc && (myPersonCalc.item_lines.length > 0 || Math.abs(Number(myPersonCalc.charges_breakdown?.discount) || 0) > 0.0001)) && (

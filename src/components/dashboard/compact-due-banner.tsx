@@ -11,7 +11,6 @@ import {
   CalendarClock,
   ArrowRight,
   CheckCircle2,
-  AlertCircle,
   BellRing,
 } from 'lucide-react'
 import { differenceInCalendarDays, parseISO } from 'date-fns'
@@ -113,7 +112,7 @@ export function CompactDueBanner({
     <div
       className={
         totalUrgentCount > 0
-          ? 'p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-rose-500/10 via-amber-500/10 to-transparent border border-rose-500/30 dark:border-rose-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'
+          ? 'p-3.5 sm:p-4 rounded-2xl bg-linear-to-r from-rose-500/10 via-amber-500/10 to-transparent border border-rose-500/30 dark:border-rose-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'
           : 'p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'
       }
     >

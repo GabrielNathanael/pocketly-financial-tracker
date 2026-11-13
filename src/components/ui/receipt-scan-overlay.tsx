@@ -24,8 +24,8 @@ function ScanEffect({ showCorners }: { showCorners: boolean }) {
       )}
 
       {/* Beam: glow trail above a bright scan line, travels top -> bottom of the receipt */}
-      <div className="receipt-scan-trail absolute left-0 right-0 h-20 bg-gradient-to-b from-transparent via-indigo-500/25 to-indigo-300/70">
-        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-white to-transparent shadow-[0_0_14px_3px_rgba(129,140,248,0.55),0_0_34px_8px_rgba(99,102,241,0.25)]" />
+      <div className="receipt-scan-trail absolute left-0 right-0 h-20 bg-linear-to-b from-transparent via-indigo-500/25 to-indigo-300/70">
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r from-transparent via-white to-transparent shadow-[0_0_14px_3px_rgba(129,140,248,0.55),0_0_34px_8px_rgba(99,102,241,0.25)]" />
       </div>
     </div>
   );
@@ -125,7 +125,7 @@ export function ReceiptScanOverlay({
   return (
     <div
       className={cn(
-        contained ? "absolute inset-0 z-10" : "fixed inset-0 z-[80]",
+        contained ? "absolute inset-0 z-10" : "fixed inset-0 z-80",
         "flex items-center justify-center overflow-hidden",
         className,
       )}
@@ -168,7 +168,7 @@ export function ReceiptScanOverlay({
 
       {/* Status / progress / error */}
       {showStatus && (showScan || error) && (
-        <div className="absolute inset-x-0 bottom-0 px-4 pt-6 pb-[max(1rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-black/80 via-black/45 to-transparent z-10">
+        <div className="absolute inset-x-0 bottom-0 px-4 pt-6 pb-[max(1rem,env(safe-area-inset-bottom))] bg-linear-to-t from-black/80 via-black/45 to-transparent z-10">
           {showScan && (
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between gap-3">
@@ -192,7 +192,7 @@ export function ReceiptScanOverlay({
           {error && (
             <div className="flex flex-col gap-2">
               <p className="text-sm font-semibold text-white">{status || "Error"}</p>
-              {error && <p className="text-[11px] text-white/80 break-words">{error}</p>}
+              {error && <p className="text-[11px] text-white/80 wrap-break-word">{error}</p>}
               {(onRetry || onClose) && (
                 <div className="flex items-center gap-2 mt-1">
                   {onRetry && (

@@ -19,7 +19,7 @@ type FacingMode = "environment" | "user";
  * `<input type=file capture>` is silently ignored on desktop browsers
  * (they fall back to a file picker), so "Take photo" needs getUserMedia
  * to actually open the webcam on laptop. This modal sits above the
- * BottomSheet (z-[60]) and does NOT touch body overflow — the parent
+ * BottomSheet (z-60) and does NOT touch body overflow — the parent
  * sheet already locks scrolling.
  */
 export function CameraCaptureModal({
@@ -95,9 +95,13 @@ export function CameraCaptureModal({
 
   useEffect(() => {
     if (isOpen) {
-      void startCamera(facingMode);
+      queueMicrotask(() => {
+        void startCamera(facingMode);
+      });
     } else {
-      stopStream();
+      queueMicrotask(() => {
+        stopStream();
+      });
     }
     return () => stopStream();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -139,7 +143,7 @@ export function CameraCaptureModal({
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
       <div
         className="fixed inset-0 bg-[#0F172A]/80 dark:bg-black/90"
         onClick={handleClose}

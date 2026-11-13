@@ -947,7 +947,7 @@ export async function syncMyPortionTransaction(input: {
     }
 
     const description = (input.description || "Split Bill - porsi saya").slice(0, 2000);
-    const { data, error } = await sb
+    const { error } = await sb
       .from("transactions")
       .update({
         amount,

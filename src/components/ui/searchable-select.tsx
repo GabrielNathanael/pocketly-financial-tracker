@@ -52,12 +52,12 @@ export function SearchableSelect({
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
 
-  // Reset search query when popover closes
-  React.useEffect(() => {
-    if (!open) {
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen);
+    if (!nextOpen) {
       setSearch("");
     }
-  }, [open]);
+  };
 
   const selectedOption = options.find((opt) => opt.value === value);
 
@@ -78,7 +78,7 @@ export function SearchableSelect({
 
   return (
     <div className={cn("relative w-full", className)}>
-      <PopoverPrimitive.Root open={open} onOpenChange={setOpen}>
+      <PopoverPrimitive.Root open={open} onOpenChange={handleOpenChange}>
         <PopoverPrimitive.Trigger asChild disabled={disabled}>
           <button
             type="button"
@@ -118,7 +118,7 @@ export function SearchableSelect({
             // CRITICAL: onOpenAutoFocus prevents autofocusing search bar so keyboard doesn't pop up immediately
             onOpenAutoFocus={(e) => e.preventDefault()}
             className={cn(
-              "z-50 w-[var(--radix-popover-trigger-width)] min-w-[13rem] max-w-sm rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] shadow-xl p-1 overflow-hidden animate-in fade-in-0 zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2",
+              "z-50 w-[var(--radix-popover-trigger-width)] min-w-52 max-w-sm rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] shadow-xl p-1 overflow-hidden animate-in fade-in-0 zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2",
               contentClassName,
             )}
           >

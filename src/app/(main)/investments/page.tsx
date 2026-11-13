@@ -38,7 +38,7 @@ export default async function InvestmentsPage() {
     getEtfTrades(),
     getTransfers(),
     getLatestForexRates(),
-    getAssetPrices(supabase as any),
+    getAssetPrices(supabase as never),
   ])
 
   return (

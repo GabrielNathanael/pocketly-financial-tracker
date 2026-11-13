@@ -783,14 +783,14 @@ export interface Database {
         };
       };
     };
-    Views: {};
-    Functions: {};
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
   };
 }
 
 export type Tables<T extends keyof Database["public"]["Tables"]> =
   Database["public"]["Tables"][T]["Row"];
-export type Enums<T extends keyof Database["public"]> = never;
+export type Enums<T extends keyof Database["public"]> = T extends T ? never : never;
 
 export type Account = Tables<"accounts">;
 export type Category = Tables<"categories">;

@@ -163,7 +163,7 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
   const activeCategory = assetCategories.find((c) => c.id === selectedSlice);
 
   // Full donut via arc paths (gap between slices, clean edges).
-  const donut = useMemo(() => {
+  const donut = (() => {
     const cx = 100;
     const cy = 100;
     const outerR = 84;
@@ -209,7 +209,7 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
         path: `M ${fmtN(x1)} ${fmtN(y1)} A ${outerR} ${outerR} 0 ${largeArc} 1 ${fmtN(x2)} ${fmtN(y2)} L ${fmtN(ix2)} ${fmtN(iy2)} A ${innerR} ${innerR} 0 ${largeArc} 0 ${fmtN(ix1)} ${fmtN(iy1)} Z`,
       };
     });
-  }, [assetCategories]);
+  })();
 
   const trendData = useMemo(() => {
     const days = RANGE_DAYS[range];
@@ -252,14 +252,14 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
       </div>
 
       {/* HERO — dark balance-sheet card */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0F172A] to-[#1E293B] p-5 sm:p-8 text-white shadow-md">
+      <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-[#0F172A] to-[#1E293B] p-5 sm:p-8 text-white shadow-md">
         <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-sky-500/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-indigo-500/20 blur-3xl" />
         <div className="relative flex flex-col gap-3">
           <span className="text-[10px] font-bold uppercase tracking-widest text-slate-300">
             {t.netWorth.netWorthLabel} ({displayCurrency})
           </span>
-          <h1 className="font-mono text-4xl sm:text-5xl font-black tracking-tight tnum leading-none break-words">
+          <h1 className="font-mono text-4xl sm:text-5xl font-black tracking-tight tnum leading-none wrap-break-word">
             {fmt(netWorth)}
           </h1>
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-xs">
@@ -385,7 +385,7 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
                 }
               />
               <Tooltip
-                content={({ active, payload, label }: any) => {
+                content={({ active, payload, label }) => {
                   if (!active || !payload?.length) return null;
                   const point = payload[0]?.payload as
                     | { netWorth?: number; assets?: number; liabilities?: number }
@@ -455,7 +455,7 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
           {t.netWorth.allocationTitle}
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-[220px_1fr] gap-5 items-center">
-          <div className="relative mx-auto h-[200px] w-[200px] shrink-0">
+          <div className="relative mx-auto h-50 w-50 shrink-0">
             <svg width="200" height="200" viewBox="0 0 200 200" className="select-none">
               <circle cx="100" cy="100" r="73" fill="none" stroke="#F1F3F5" strokeWidth="22" className="dark:stroke-[#1E1E24]" />
               {donut.map((seg) => (

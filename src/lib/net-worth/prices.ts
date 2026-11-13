@@ -1,4 +1,15 @@
-type AnyClient = { from: (table: string) => any };
+type QueryResult<T> = PromiseLike<{ data: T[] | null; error?: unknown }>;
+type QueryChain<T> = {
+  select: (columns: string) => QueryChain<T>;
+  gt: (column: string, value: unknown) => QueryChain<T>;
+  limit: (count: number) => QueryChain<T>;
+  upsert: (
+    values: unknown,
+    options: { onConflict: string },
+  ) => PromiseLike<{ error?: { message?: string } | null }>;
+} & QueryResult<T>;
+
+type AnyClient = { from: (table: string) => QueryChain<Record<string, unknown>> };
 
 export interface AssetPrice {
   kind: "stock" | "crypto" | "etf";
@@ -6,6 +17,19 @@ export interface AssetPrice {
   price: number;
   currency: string;
   fetchedAt: string;
+}
+
+interface HoldingSymbolRow {
+  ticker?: string | null;
+  symbol?: string | null;
+}
+
+interface AssetPriceRow {
+  kind?: string | null;
+  symbol?: string | null;
+  price?: number | string | null;
+  currency?: string | null;
+  fetched_at?: string | null;
 }
 
 const COINGECKO_IDS: Record<string, string> = {
@@ -209,30 +233,36 @@ export async function refreshAssetPrices(
 
   // Distinct owned symbols per kind
   const [stocksRes, cryptoRes, etfRes] = await Promise.all([
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (supabase.from("stock_holdings") as any)
-      .select("ticker")
-      .gt("total_cost", 0),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (supabase.from("crypto_holdings") as any)
+    supabase.from("stock_holdings").select("ticker").gt("total_cost", 0),
+    supabase
+      .from("crypto_holdings")
       .select("symbol")
       .gt("quantity", 0)
       .gt("cost_basis", 0),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (supabase.from("etf_holdings") as any)
-      .select("ticker")
-      .gt("total_cost", 0),
+    supabase.from("etf_holdings").select("ticker").gt("total_cost", 0),
   ]);
 
   const stockSymbols = Array.from(
-    new Set(((stocksRes.data || []) as any[]).map((r) => String(r.ticker || "").toUpperCase()).filter(Boolean)),
-  ) as string[];
+    new Set(
+      ((stocksRes.data || []) as HoldingSymbolRow[])
+        .map((r) => String(r.ticker || "").toUpperCase())
+        .filter(Boolean),
+    ),
+  );
   const cryptoSymbols = Array.from(
-    new Set(((cryptoRes.data || []) as any[]).map((r) => String(r.symbol || "").toUpperCase()).filter(Boolean)),
-  ) as string[];
+    new Set(
+      ((cryptoRes.data || []) as HoldingSymbolRow[])
+        .map((r) => String(r.symbol || "").toUpperCase())
+        .filter(Boolean),
+    ),
+  );
   const etfSymbols = Array.from(
-    new Set(((etfRes.data || []) as any[]).map((r) => String(r.ticker || "").toUpperCase()).filter(Boolean)),
-  ) as string[];
+    new Set(
+      ((etfRes.data || []) as HoldingSymbolRow[])
+        .map((r) => String(r.ticker || "").toUpperCase())
+        .filter(Boolean),
+    ),
+  );
 
   const batches: Array<{
     kind: "stock" | "crypto" | "etf";
@@ -263,8 +293,7 @@ export async function refreshAssetPrices(
   let updated = 0;
   for (const batch of batches) {
     for (const row of batch.rows) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase.from("asset_prices") as any).upsert(
+      const { error } = await supabase.from("asset_prices").upsert(
         {
           kind: batch.kind,
           symbol: row.symbol,
@@ -285,18 +314,21 @@ export async function refreshAssetPrices(
 export async function getAssetPrices(
   supabase: AnyClient,
 ): Promise<Map<string, AssetPrice>> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data } = await (supabase.from("asset_prices") as any)
+  const { data } = await supabase
+    .from("asset_prices")
     .select("kind, symbol, price, currency, fetched_at")
     .limit(1000);
   const map = new Map<string, AssetPrice>();
-  for (const r of (data || []) as any[]) {
-    map.set(`${r.kind}:${r.symbol}`, {
-      kind: r.kind,
-      symbol: r.symbol,
+  for (const r of (data || []) as AssetPriceRow[]) {
+    const kind = r.kind === "stock" || r.kind === "crypto" || r.kind === "etf" ? r.kind : null;
+    const symbol = String(r.symbol || "").toUpperCase();
+    if (!kind || !symbol) continue;
+    map.set(`${kind}:${symbol}`, {
+      kind,
+      symbol,
       price: Number(r.price) || 0,
       currency: r.currency || "IDR",
-      fetchedAt: r.fetched_at,
+      fetchedAt: String(r.fetched_at || ""),
     });
   }
   return map;

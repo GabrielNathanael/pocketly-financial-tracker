@@ -12,10 +12,9 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { DynamicIcon } from "@/components/ui/dynamic-icon";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { formatCategoryName } from "@/lib/utils/category-i18n";
-import { Search, Filter, X, ArrowDownRight, ArrowUpRight, Wallet, Hash, Loader2 } from "lucide-react";
+import { Search, Filter, X, ArrowDownRight, ArrowUpRight, Hash, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 interface TransactionFiltersProps {

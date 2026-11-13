@@ -155,7 +155,9 @@ function QuickAddSheetContent({
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const scanPreviewUrlRef = React.useRef<string | null>(null);
   const lastScanFileRef = React.useRef<File | null>(null);
-  const scanHideTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scanHideTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   const clearScanPreview = React.useCallback(() => {
     if (scanHideTimerRef.current) {
@@ -182,8 +184,7 @@ function QuickAddSheetContent({
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [pinnedTemplates] =
-    useState<PinnedTemplate[]>(getPinnedTemplates);
+  const [pinnedTemplates] = useState<PinnedTemplate[]>(getPinnedTemplates);
 
   // Receipt OCR File Handler
   // Step 1: keep the photo & show a preview first, so the user can retake
@@ -531,7 +532,11 @@ function QuickAddSheetContent({
     // Build compound description if items or memo exist (capped to validation limit)
     const defaultTypeLabel =
       type === "expense" ? t.quickAdd.expense : t.quickAdd.income;
-    const baseDesc = (description.trim() || activeCategory?.name || defaultTypeLabel).slice(0, 120);
+    const baseDesc = (
+      description.trim() ||
+      activeCategory?.name ||
+      defaultTypeLabel
+    ).slice(0, 120);
     const memoPart =
       showFreeMemo && freeTextMemo.trim()
         ? ` [Memo: ${freeTextMemo.trim().slice(0, 200)}]`
@@ -602,7 +607,8 @@ function QuickAddSheetContent({
         description: finalDesc,
         tags: finalTags.length > 0 ? finalTags : undefined,
         // Rincian item disimpan juga di kolom JSONB `transactions.items`
-        items: showItemsBreakdown && validItems.length > 0 ? validItems : undefined,
+        items:
+          showItemsBreakdown && validItems.length > 0 ? validItems : undefined,
         transactionDate: localDateToISO(txDate),
       });
 
@@ -722,121 +728,123 @@ function QuickAddSheetContent({
 
       {/* 2. Interactive Amount Card (Click to Open Numpad) */}
       <div className="relative">
-      <div
-        className={cn(
-          "relative rounded-xl bg-white dark:bg-[#121215] border shadow-2xs overflow-hidden transition-all group",
-          isAmountShaking
-            ? "border-[#E11D48] dark:border-[#E11D48] ring-2 ring-[#E11D48]/20 animate-[shake_0.3s_ease-in-out]"
-            : highlightScan
-              ? "border-indigo-400/70 ring-2 ring-indigo-400/30"
-              : isNumpadOpen
-                ? "border-[#0F172A] dark:border-[#FAFAFA] ring-2 ring-[#0F172A]/10 dark:ring-[#FAFAFA]/10"
-                : "border-[#E5E7EB] dark:border-[#27272A]",
-        )}
-      >
         <div
-          onClick={() => setIsNumpadOpen(!isNumpadOpen)}
           className={cn(
-            "w-full flex flex-col text-left cursor-pointer hover:bg-[#F8F9FA] dark:hover:bg-[#16161A] transition-all",
-            isNumpadOpen ? "p-4 gap-1.5" : "p-3 gap-1",
+            "relative rounded-xl bg-white dark:bg-[#121215] border shadow-2xs overflow-hidden transition-all group",
+            isAmountShaking
+              ? "border-[#E11D48] dark:border-[#E11D48] ring-2 ring-[#E11D48]/20 animate-[shake_0.3s_ease-in-out]"
+              : highlightScan
+                ? "border-indigo-400/70 ring-2 ring-indigo-400/30"
+                : isNumpadOpen
+                  ? "border-[#0F172A] dark:border-[#FAFAFA] ring-2 ring-[#0F172A]/10 dark:ring-[#FAFAFA]/10"
+                  : "border-[#E5E7EB] dark:border-[#27272A]",
           )}
         >
-          <div className="flex items-center justify-between pr-8">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
-              {t.quickAdd.nominal}
-            </span>
-
-            <Calculator
-              className={cn(
-                "w-4 h-4 transition-colors",
-                isNumpadOpen
-                  ? "text-[#0F172A] dark:text-[#FAFAFA]"
-                  : "text-[#94A3B8] group-hover:text-blue-500",
-              )}
-            />
-          </div>
-
-          {isNumpadOpen && (
-            <div
-              className="overflow-x-auto whitespace-nowrap text-right text-xs font-mono font-semibold tracking-wide text-[#64748B] dark:text-[#94A3B8] no-scrollbar"
-              aria-label={`Input nominal: ${amountStr}`}
-            >
-              {amountStr}
-            </div>
-          )}
-
           <div
+            onClick={() => setIsNumpadOpen(!isNumpadOpen)}
             className={cn(
-              "flex items-baseline gap-2",
-              isNumpadOpen ? "pt-1" : "pt-0.5",
+              "w-full flex flex-col text-left cursor-pointer hover:bg-[#F8F9FA] dark:hover:bg-[#16161A] transition-all",
+              isNumpadOpen ? "p-4 gap-1.5" : "p-3 gap-1",
             )}
           >
-            <span
+            <div className="flex items-center justify-between pr-8">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
+                {t.quickAdd.nominal}
+              </span>
+
+              <Calculator
+                className={cn(
+                  "w-4 h-4 transition-colors",
+                  isNumpadOpen
+                    ? "text-[#0F172A] dark:text-[#FAFAFA]"
+                    : "text-[#94A3B8] group-hover:text-blue-500",
+                )}
+              />
+            </div>
+
+            {isNumpadOpen && (
+              <div
+                className="overflow-x-auto whitespace-nowrap text-right text-xs font-mono font-semibold tracking-wide text-[#64748B] dark:text-[#94A3B8] no-scrollbar"
+                aria-label={`Input nominal: ${amountStr}`}
+              >
+                {amountStr}
+              </div>
+            )}
+
+            <div
               className={cn(
-                "font-bold text-[#0F172A] dark:text-[#F8FAFC]",
-                isNumpadOpen ? "text-2xl" : "text-xl",
+                "flex items-baseline gap-2",
+                isNumpadOpen ? "pt-1" : "pt-0.5",
               )}
             >
-              {currentCurrency}
-            </span>
-            <span
+              <span
+                className={cn(
+                  "font-bold text-[#0F172A] dark:text-[#F8FAFC]",
+                  isNumpadOpen ? "text-2xl" : "text-xl",
+                )}
+              >
+                {currentCurrency}
+              </span>
+              <span
+                className={cn(
+                  "flex-1 min-w-0 font-mono font-bold tracking-tight truncate",
+                  isNumpadOpen
+                    ? "text-4xl sm:text-5xl"
+                    : "text-2xl sm:text-3xl",
+                  numericAmount > 0
+                    ? "text-[#0F172A] dark:text-[#F8FAFC]"
+                    : "text-[#94A3B8]",
+                )}
+              >
+                {formatCurrency(numericAmount, currentCurrency)}
+              </span>
+            </div>
+          </div>
+
+          {/* Pin Toggle Button */}
+          <div className="absolute right-2 top-2 z-10">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsPinned(!isPinned);
+              }}
+              title={isPinned ? t.common.pinActive : t.common.pinInactive}
               className={cn(
-                "flex-1 min-w-0 font-mono font-bold tracking-tight truncate",
-                isNumpadOpen ? "text-4xl sm:text-5xl" : "text-2xl sm:text-3xl",
-                numericAmount > 0
-                  ? "text-[#0F172A] dark:text-[#F8FAFC]"
-                  : "text-[#94A3B8]",
+                "p-1.5 rounded-lg transition-colors cursor-pointer",
+                isPinned
+                  ? "bg-amber-50 dark:bg-amber-950/40 text-amber-500"
+                  : "text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]",
               )}
             >
-              {formatCurrency(numericAmount, currentCurrency)}
-            </span>
+              <Pin className={cn("w-3.5 h-3.5", isPinned && "fill-current")} />
+            </button>
           </div>
         </div>
-
-        {/* Pin Toggle Button */}
-        <div className="absolute right-2 top-2 z-10">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsPinned(!isPinned);
-            }}
-            title={isPinned ? t.common.pinActive : t.common.pinInactive}
-            className={cn(
-              "p-1.5 rounded-lg transition-colors cursor-pointer",
-              isPinned
-                ? "bg-amber-50 dark:bg-amber-950/40 text-amber-500"
-                : "text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#FAFAFA]",
-            )}
-          >
-            <Pin className={cn("w-3.5 h-3.5", isPinned && "fill-current")} />
-          </button>
-        </div>
-      </div>
-      {/* Scan receipt — beside Calculator, OUTSIDE the overflow-hidden card
+        {/* Scan receipt — beside Calculator, OUTSIDE the overflow-hidden card
           so the button isn't clipped at the card edge (like edit form).
           Opens the full-screen camera view directly. */}
-      <div className="absolute right-[72px] top-2 z-20">
-        <button
-          type="button"
-          disabled={isScanning}
-          onClick={(e) => {
-            e.stopPropagation();
-            setCameraError(null);
-            clearScanPreview();
-            setIsScanFullOpen(true);
-          }}
-          title={t.quickAdd.scanReceiptBtn}
-          aria-label={t.quickAdd.scanReceiptBtn}
-          className="flex h-7 w-7 items-center justify-center rounded-lg text-[#94A3B8] transition-colors hover:bg-[#F1F3F5] hover:text-[#0F172A] dark:hover:bg-[#1A1A20] dark:hover:text-[#FAFAFA] disabled:opacity-60"
-        >
-          {isScanning ? (
-            <Loader2 className="h-4 w-4 animate-spin text-indigo-500" />
-          ) : (
-            <Camera className="h-4 w-4 text-indigo-500" />
-          )}
-        </button>
-      </div>
+        <div className="absolute right-18 top-2 z-20">
+          <button
+            type="button"
+            disabled={isScanning}
+            onClick={(e) => {
+              e.stopPropagation();
+              setCameraError(null);
+              clearScanPreview();
+              setIsScanFullOpen(true);
+            }}
+            title={t.quickAdd.scanReceiptBtn}
+            aria-label={t.quickAdd.scanReceiptBtn}
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-[#94A3B8] transition-colors hover:bg-[#F1F3F5] hover:text-[#0F172A] dark:hover:bg-[#1A1A20] dark:hover:text-[#FAFAFA] disabled:opacity-60"
+          >
+            {isScanning ? (
+              <Loader2 className="h-4 w-4 animate-spin text-indigo-500" />
+            ) : (
+              <Camera className="h-4 w-4 text-indigo-500" />
+            )}
+          </button>
+        </div>
       </div>
 
       {/*
@@ -863,7 +871,7 @@ function QuickAddSheetContent({
                 type="button"
                 tabIndex={isNumpadOpen ? 0 : -1}
                 onClick={() => handleKeypadPress(n)}
-                className="h-full min-h-16 sm:min-h-[4.75rem] rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-2xl sm:text-3xl hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
+                className="h-full min-h-16 sm:min-h-19 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-2xl sm:text-3xl hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
               >
                 {n}
               </button>
@@ -872,7 +880,7 @@ function QuickAddSheetContent({
               type="button"
               tabIndex={isNumpadOpen ? 0 : -1}
               onClick={handleKeypadBackspace}
-              className="h-full min-h-16 sm:min-h-[4.75rem] rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] flex items-center justify-center text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none"
+              className="h-full min-h-16 sm:min-h-19 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] flex items-center justify-center text-[#64748B] hover:text-[#0F172A] dark:hover:text-[#FAFAFA] hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none"
             >
               <Delete className="w-6 h-6" />
             </button>
@@ -883,7 +891,7 @@ function QuickAddSheetContent({
                 type="button"
                 tabIndex={isNumpadOpen ? 0 : -1}
                 onClick={() => handleKeypadPress(n)}
-                className="h-full min-h-16 sm:min-h-[4.75rem] rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-2xl sm:text-3xl hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
+                className="h-full min-h-16 sm:min-h-19 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-2xl sm:text-3xl hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
               >
                 {n}
               </button>
@@ -892,7 +900,7 @@ function QuickAddSheetContent({
               type="button"
               tabIndex={isNumpadOpen ? 0 : -1}
               onClick={() => handleKeypadPress("000")}
-              className="h-full min-h-16 sm:min-h-[4.75rem] rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-base sm:text-lg hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
+              className="h-full min-h-16 sm:min-h-19 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-base sm:text-lg hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
             >
               .000
             </button>
@@ -903,7 +911,7 @@ function QuickAddSheetContent({
                 type="button"
                 tabIndex={isNumpadOpen ? 0 : -1}
                 onClick={() => handleKeypadPress(n)}
-                className="h-full min-h-16 sm:min-h-[4.75rem] rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-2xl sm:text-3xl hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
+                className="h-full min-h-16 sm:min-h-19 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-2xl sm:text-3xl hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
               >
                 {n}
               </button>
@@ -915,7 +923,7 @@ function QuickAddSheetContent({
                 triggerHaptic();
                 setAmountStr("0");
               }}
-              className="h-full min-h-16 sm:min-h-[4.75rem] rounded-xl bg-[#FFF1F2] dark:bg-[#881337]/20 text-[#E11D48] font-mono font-bold text-lg sm:text-xl hover:bg-[#FFE4E6] dark:hover:bg-[#881337]/40 border border-[#FECDD3] dark:border-[#9F1239]/40 active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
+              className="h-full min-h-16 sm:min-h-19 rounded-xl bg-[#FFF1F2] dark:bg-[#881337]/20 text-[#E11D48] font-mono font-bold text-lg sm:text-xl hover:bg-[#FFE4E6] dark:hover:bg-[#881337]/40 border border-[#FECDD3] dark:border-[#9F1239]/40 active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
             >
               C
             </button>
@@ -924,7 +932,7 @@ function QuickAddSheetContent({
               type="button"
               tabIndex={isNumpadOpen ? 0 : -1}
               onClick={() => handleKeypadPress("00")}
-              className="h-full min-h-16 sm:min-h-[4.75rem] rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-lg sm:text-xl hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
+              className="h-full min-h-16 sm:min-h-19 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-lg sm:text-xl hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
             >
               00
             </button>
@@ -932,7 +940,7 @@ function QuickAddSheetContent({
               type="button"
               tabIndex={isNumpadOpen ? 0 : -1}
               onClick={() => handleKeypadPress("0")}
-              className="h-full min-h-16 sm:min-h-[4.75rem] rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-2xl sm:text-3xl hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
+              className="h-full min-h-16 sm:min-h-19 rounded-xl bg-[#F1F3F5] dark:bg-[#1A1A20] font-mono font-bold text-2xl sm:text-3xl hover:bg-[#E9ECEF] dark:hover:bg-[#26262E] text-[#0F172A] dark:text-[#F8FAFC] border border-[#E5E7EB] dark:border-[#27272A] active:scale-95 transition-all cursor-pointer select-none flex items-center justify-center"
             >
               0
             </button>
@@ -948,7 +956,7 @@ function QuickAddSheetContent({
             }}
             className="w-full min-h-14 rounded-xl bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] font-bold text-sm sm:text-base flex items-center justify-center gap-1.5 hover:opacity-90 active:scale-95 shadow-md transition-all cursor-pointer select-none"
           >
-            <Check className="w-5 h-5 stroke-[3]" />
+            <Check className="w-5 h-5 stroke-3" />
             <span>{t.quickAdd.done}</span>
           </button>
         </div>
@@ -1102,7 +1110,7 @@ function QuickAddSheetContent({
               <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
                 {t.transactions.tagLabel}
               </span>
-              <div className="flex flex-wrap items-center gap-1.5 min-h-[28px]">
+              <div className="flex flex-wrap items-center gap-1.5 min-h-7">
                 {tags.map((tag) => (
                   <span
                     key={tag}
@@ -1140,7 +1148,7 @@ function QuickAddSheetContent({
                       ? t.transactions.tagPlaceholder
                       : t.common.moreTagsPlaceholder
                   }
-                  className="flex-1 min-w-[120px] px-2 py-1 bg-transparent text-xs text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8] focus:outline-none"
+                  className="flex-1 min-w-30 px-2 py-1 bg-transparent text-xs text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8] focus:outline-none"
                 />
               </div>
             </div>
@@ -1187,10 +1195,7 @@ function QuickAddSheetContent({
                         />
                         <div className="w-28 shrink-0">
                           <NumberInput
-                            value={
-                              item.subtotal ??
-                              String(getItemTotal(item))
-                            }
+                            value={item.subtotal ?? String(getItemTotal(item))}
                             onValueChange={(value) =>
                               handleUpdateItem(idx, "subtotal", value)
                             }
@@ -1382,7 +1387,7 @@ function QuickAddSheetContent({
               disabled={numericAmount <= 0}
               className="flex-1 py-2.5 h-auto font-bold text-xs rounded-xl bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] hover:opacity-90 active:scale-95 shadow-sm"
             >
-              <Check className="w-3.5 h-3.5 mr-1 stroke-[3]" />
+              <Check className="w-3.5 h-3.5 mr-1 stroke-3" />
               <span>{t.quickAdd.recordBtn}</span>
             </Button>
           </div>
@@ -1399,93 +1404,93 @@ function QuickAddSheetContent({
         createPortal(
           <>
             {scanPhase === null ? (
-            <CameraLiveView
-              isOpen={isScanFullOpen}
-              onClose={() => {
-                setIsScanFullOpen(false);
-                clearScanPreview();
-              }}
-              onCapture={prepareScanPreview}
-              onPickImage={() => fileInputRef.current?.click()}
-              error={cameraError}
-              onError={setCameraError}
-              onRetry={() => setCameraError(null)}
-            />
-          ) : scanPhase === "preview" ? (
-            /* Preview dulu: user bisa ganti foto sebelum struk dipindai */
-            <>
-              <ReceiptScanOverlay
-                imageUrl={scanPreviewUrl}
-                showStatus={false}
+              <CameraLiveView
+                isOpen={isScanFullOpen}
                 onClose={() => {
                   setIsScanFullOpen(false);
                   clearScanPreview();
                 }}
-                closeLabel={t.common.close}
+                onCapture={prepareScanPreview}
+                onPickImage={() => fileInputRef.current?.click()}
+                error={cameraError}
+                onError={setCameraError}
+                onRetry={() => setCameraError(null)}
               />
-              <div className="absolute inset-x-0 bottom-0 z-[90] px-4 pt-6 pb-[max(1rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-black/85 via-black/50 to-transparent">
-                <p className="text-sm font-semibold text-white text-center">
-                  {t.quickAdd.scanPreviewTitle}
-                </p>
-                <p className="text-[11px] text-white/70 text-center mt-0.5 mb-3">
-                  {t.quickAdd.scanPreviewHint}
-                </p>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      clearScanPreview();
-                      setCameraError(null);
-                    }}
-                    className="h-12 flex-1 rounded-xl border border-white/50 text-white text-xs font-semibold bg-black/25 active:scale-[0.98] transition-transform"
-                  >
-                    {t.quickAdd.retakePhoto}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void runReceiptScan()}
-                    className="h-12 flex-[2] rounded-xl bg-white text-black text-sm font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
-                  >
-                    <ScanLine className="w-4 h-4" />
-                    {t.quickAdd.useThisPhoto}
-                  </button>
+            ) : scanPhase === "preview" ? (
+              /* Preview dulu: user bisa ganti foto sebelum struk dipindai */
+              <>
+                <ReceiptScanOverlay
+                  imageUrl={scanPreviewUrl}
+                  showStatus={false}
+                  onClose={() => {
+                    setIsScanFullOpen(false);
+                    clearScanPreview();
+                  }}
+                  closeLabel={t.common.close}
+                />
+                <div className="absolute inset-x-0 bottom-0 z-90 px-4 pt-6 pb-[max(1rem,env(safe-area-inset-bottom))] bg-linear-to-t from-black/85 via-black/50 to-transparent">
+                  <p className="text-sm font-semibold text-white text-center">
+                    {t.quickAdd.scanPreviewTitle}
+                  </p>
+                  <p className="text-[11px] text-white/70 text-center mt-0.5 mb-3">
+                    {t.quickAdd.scanPreviewHint}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        clearScanPreview();
+                        setCameraError(null);
+                      }}
+                      className="h-12 flex-1 rounded-xl border border-white/50 text-white text-xs font-semibold bg-black/25 active:scale-[0.98] transition-transform"
+                    >
+                      {t.quickAdd.retakePhoto}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void runReceiptScan()}
+                      className="h-12 flex-2 rounded-xl bg-white text-black text-sm font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+                    >
+                      <ScanLine className="w-4 h-4" />
+                      {t.quickAdd.useThisPhoto}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </>
-          ) : (
-            <ReceiptScanOverlay
-              imageUrl={scanPreviewUrl}
-              scanning={scanPhase === "scanning"}
-              progress={scanPhase === "scanning" ? ocrProgress : undefined}
-              status={
-                scanPhase === "error"
-                  ? language === "id"
-                    ? "Gagal membaca struk"
-                    : "Failed to read receipt"
-                  : ocrProgress < 30
-                    ? t.quickAdd.scanPreparing
-                    : ocrProgress < 72
-                      ? t.quickAdd.scanReading
-                      : t.quickAdd.scanBuilding
-              }
-              error={scanPhase === "error" ? scanErrorMsg : null}
-              onClose={() => {
-                setIsScanFullOpen(false);
-                clearScanPreview();
-              }}
-              onRetry={
-                scanPhase === "error"
-                  ? () => {
-                      // Back to the preview so the photo can be re-checked/confirmed
-                      setScanPhase("preview");
-                      setScanErrorMsg("");
-                    }
-                  : undefined
-              }
-              retryLabel={language === "id" ? "Coba lagi" : "Retry scan"}
-              closeLabel={language === "id" ? "Tutup" : "Close"}
-            />
-          )}
+              </>
+            ) : (
+              <ReceiptScanOverlay
+                imageUrl={scanPreviewUrl}
+                scanning={scanPhase === "scanning"}
+                progress={scanPhase === "scanning" ? ocrProgress : undefined}
+                status={
+                  scanPhase === "error"
+                    ? language === "id"
+                      ? "Gagal membaca struk"
+                      : "Failed to read receipt"
+                    : ocrProgress < 30
+                      ? t.quickAdd.scanPreparing
+                      : ocrProgress < 72
+                        ? t.quickAdd.scanReading
+                        : t.quickAdd.scanBuilding
+                }
+                error={scanPhase === "error" ? scanErrorMsg : null}
+                onClose={() => {
+                  setIsScanFullOpen(false);
+                  clearScanPreview();
+                }}
+                onRetry={
+                  scanPhase === "error"
+                    ? () => {
+                        // Back to the preview so the photo can be re-checked/confirmed
+                        setScanPhase("preview");
+                        setScanErrorMsg("");
+                      }
+                    : undefined
+                }
+                retryLabel={language === "id" ? "Coba lagi" : "Retry scan"}
+                closeLabel={language === "id" ? "Tutup" : "Close"}
+              />
+            )}
           </>,
           document.body,
         )}

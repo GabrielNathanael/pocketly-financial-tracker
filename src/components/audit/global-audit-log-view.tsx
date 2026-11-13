@@ -4,7 +4,7 @@ import React, { useState, useEffect, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AuditLog } from "@/types/database";
-import { formatDate, getLocalDateString } from "@/lib/utils/date";
+import { formatDate } from "@/lib/utils/date";
 import { humanizeAuditLog } from "@/lib/utils/audit-humanizer";
 import { AuditItemsList } from "@/components/audit/audit-items-list";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
@@ -18,7 +18,6 @@ import {
   ArrowRight,
   ArrowLeft,
   History,
-  Filter,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
@@ -110,16 +109,6 @@ export function GlobalAuditLogView({
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
-
-  const setStartDate = (val: string) => {
-    setStartDateLocal(val);
-    pushParams({ start: val, page: "1" });
-  };
-
-  const setEndDate = (val: string) => {
-    setEndDateLocal(val);
-    pushParams({ end: val, page: "1" });
-  };
 
   const moduleOptions: Array<{ label: string; value: ModuleFilter }> = [
     { label: t.auditLog.modules.all, value: "all" },

@@ -46,8 +46,7 @@ export async function GET(req: NextRequest) {
   const prices = await refreshAssetPrices(supabase);
 
   // 2) Recurring auto-process (catch-up)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: dueRules, error: dueErr } = await (supabase.from("recurring_transactions") as any)
+  const { data: dueRules, error: dueErr } = await (supabase.from("recurring_transactions") as never)
     .select("*")
     .eq("is_active", true)
     .eq("auto_process", true)
@@ -77,9 +76,8 @@ export async function GET(req: NextRequest) {
     ) {
       iterations++;
       const result = await processOneRecurringPeriod(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        supabase as any,
-        rule,
+        supabase as never,
+        rule as never,
         CRON_TIME_ZONE,
       );
       if (!result.ok) {
@@ -97,15 +95,18 @@ export async function GET(req: NextRequest) {
   }
 
   // 3) Net worth snapshot per user (distinct owners with an account)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: accountOwners } = await (supabase.from("accounts") as any)
+  const { data: accountOwners } = await (supabase.from("accounts") as never)
     .select("user_id")
     .eq("is_active", true)
     .limit(1000);
 
   const userIds = Array.from(
-    new Set(((accountOwners || []) as any[]).map((r) => r.user_id).filter(Boolean)),
-  ) as string[];
+    new Set(
+      ((accountOwners || []) as Array<{ user_id: string | null }>)
+        .map((r) => r.user_id)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  );
 
   let snapshotted = 0;
   const snapshotFailed: Array<{ userId: string; error: string }> = [];

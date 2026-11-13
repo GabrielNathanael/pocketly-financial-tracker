@@ -39,8 +39,7 @@ export async function GET(req: NextRequest) {
 
   const todayStr = getTodayDateStringInTimeZone(CRON_TIME_ZONE);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: dueRules, error: dueErr } = await (supabase.from("recurring_transactions") as any)
+  const { data: dueRules, error: dueErr } = await (supabase.from("recurring_transactions") as never)
     .select("*")
     .eq("is_active", true)
     .eq("auto_process", true)
@@ -72,9 +71,8 @@ export async function GET(req: NextRequest) {
     ) {
       iterations++;
       const result = await processOneRecurringPeriod(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        supabase as any,
-        rule,
+        supabase as never,
+        rule as never,
         CRON_TIME_ZONE,
       );
       if (!result.ok) {

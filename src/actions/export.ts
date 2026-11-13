@@ -196,11 +196,9 @@ export async function exportAllFinancialData(
   // Hanya query tabel yang dipilih.
   const skipped = Promise.resolve({ data: [], error: null });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let txQuery: any = null;
+  let txQuery = null as unknown;
   if (sections.includes("transactions")) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    txQuery = (supabase.from("transactions") as any)
+    txQuery = supabase.from("transactions")
       .select("*, account:accounts(name), category:categories(name)")
       .order("transaction_date", { ascending: false });
 
@@ -211,11 +209,8 @@ export async function exportAllFinancialData(
     if (rangeEnd) txQuery = txQuery.lt("transaction_date", rangeEnd);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const dateQuery = (table: string, dateColumn: string) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let query: any = (supabase as any)
-      .from(table)
+    let query = (supabase as unknown as { from: (t: string) => { select: (q: string) => { order: (c: string, o: { ascending: boolean }) => { gte: (c: string, v: string) => unknown; lt: (c: string, v: string) => unknown } & Record<string, (c: string, v: string) => unknown> } } }).from(table)
       .select("*, account:accounts(name)")
       .order(dateColumn, { ascending: false });
     if (rangeStart) query = query.gte(dateColumn, rangeStart);
@@ -223,33 +218,29 @@ export async function exportAllFinancialData(
     return query;
   };
 
-  /* eslint-disable @typescript-eslint/no-explicit-any */
   const [txsRes, accsRes, debtsRes, budgetsRes, catsRes] = await Promise.all([
     txQuery ?? skipped,
     sections.includes("accounts")
-      ? (supabase.from("accounts") as any)
+      ? supabase.from("accounts")
           .select("*")
           .order("created_at", { ascending: true })
       : skipped,
     sections.includes("debts")
-      ? (supabase.from("debts") as any)
+      ? supabase.from("debts")
           .select("*, payments:debt_payments(*)")
           .order("created_at", { ascending: false })
       : skipped,
     sections.includes("budgets")
-      ? (supabase.from("budgets") as any).select("*, category:categories(name)")
+      ? supabase.from("budgets").select("*, category:categories(name)")
       : skipped,
     sections.includes("categories")
-      ? (supabase.from("categories") as any).select("*")
+      ? supabase.from("categories").select("*")
       : skipped,
   ]);
-  /* eslint-enable @typescript-eslint/no-explicit-any */
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let transferQuery: any = null;
+  let transferQuery = null as unknown;
   if (sections.includes("transfers")) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    transferQuery = (supabase.from("transfers") as any)
+    transferQuery = supabase.from("transfers")
       .select(
         "*, from_account:accounts!transfers_from_account_id_fkey(name), to_account:accounts!transfers_to_account_id_fkey(name)",
       )
@@ -269,7 +260,7 @@ export async function exportAllFinancialData(
   ] = await Promise.all([
     transferQuery ?? skipped,
     sections.includes("stockHoldings")
-      ? (supabase.from("stock_holdings") as any)
+      ? supabase.from("stock_holdings")
           .select("*, account:accounts(name, currency)")
           .order("ticker", { ascending: true })
       : skipped,
@@ -277,7 +268,7 @@ export async function exportAllFinancialData(
       ? dateQuery("stock_trades", "trade_date")
       : skipped,
     sections.includes("cryptoHoldings")
-      ? (supabase.from("crypto_holdings") as any)
+      ? supabase.from("crypto_holdings")
           .select("*, account:accounts(name)")
           .order("symbol", { ascending: true })
       : skipped,
@@ -285,8 +276,7 @@ export async function exportAllFinancialData(
       ? dateQuery("crypto_trades", "trade_date")
       : skipped,
     sections.includes("etfHoldings")
-      ? (supabase as any)
-          .from("etf_holdings")
+      ? (supabase as unknown as { from: (t: string) => { select: (q: string) => { order: (c: string, o: { ascending: boolean }) => unknown } } }).from("etf_holdings")
           .select("*, account:accounts(name, currency)")
           .order("ticker", { ascending: true })
       : skipped,
@@ -335,14 +325,8 @@ export async function exportAllFinancialData(
   );
   const [prices, rates] = needsValuation
     ? await Promise.all([
-        getAssetPrices(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          supabase as any,
-        ),
-        getLatestForexRatesAdmin(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          supabase as any,
-        ),
+        getAssetPrices(supabase as unknown as Parameters<typeof getAssetPrices>[0]),
+        getLatestForexRatesAdmin(supabase as unknown as Parameters<typeof getLatestForexRatesAdmin>[0]),
       ])
     : [new Map<string, AssetPrice>(), undefined];
 
@@ -364,8 +348,7 @@ export async function exportAllFinancialData(
     if (sections.includes("transactions")) {
       let csv =
         "ID,Date,Type,Amount,Currency,Account,Category,Description,Created_At\n";
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      for (const t of transactions as any[]) {
+      for (const t of transactions as Array<Record<string, unknown> & { id: string; transaction_date: string; type: string; amount: number; currency: string; created_at: string; account?: {name?: string}; category?: {name?: string}; description?: string | null }>) {
         csv += `${t.id},${t.transaction_date},${t.type},${t.amount},${t.currency},${csvCell(t.account?.name)},${csvCell(t.category?.name)},${csvCell(t.description)},${t.created_at}\n`;
       }
       result.csvTransactions = csv;
@@ -374,8 +357,7 @@ export async function exportAllFinancialData(
     if (sections.includes("accounts")) {
       let csv =
         "ID,Name,Type,Currency,Current_Balance,Initial_Balance,Is_Active\n";
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      for (const a of accounts as any[]) {
+      for (const a of accounts as Array<Record<string, unknown> & { id: string; name: string; type: string; currency: string; current_balance: number; initial_balance: number; is_active: boolean }>) {
         csv += `${a.id},${csvCell(a.name)},${a.type},${a.currency},${a.current_balance},${a.initial_balance},${a.is_active}\n`;
       }
       result.csvAccounts = csv;
@@ -384,8 +366,7 @@ export async function exportAllFinancialData(
     if (sections.includes("debts")) {
       let csv =
         "ID,Counterparty,Type,Principal_Amount,Remaining_Amount,Currency,Status,Due_Date,Notes\n";
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      for (const d of debts as any[]) {
+      for (const d of debts as Array<Record<string, unknown> & { id: string; counterparty_name: string; type: string; initial_amount: number; remaining_amount: number; currency: string; status: string; due_date?: string | null; notes?: string | null }>) {
         csv += `${d.id},${csvCell(d.counterparty_name)},${d.type},${d.initial_amount},${d.remaining_amount},${d.currency},${d.status},${d.due_date || ""},${csvCell(d.notes)}\n`;
       }
       result.csvDebts = csv;
@@ -394,7 +375,7 @@ export async function exportAllFinancialData(
     if (sections.includes("transfers")) {
       let csv =
         "ID,Transfer_Date,From_Account,To_Account,Amount,From_Currency,To_Currency,Exchange_Rate,Fee_Amount,Fee_Mode,Net_Amount,Description\n";
-      for (const transfer of transfers as any[]) {
+      for (const transfer of transfers as Array<Record<string, unknown> & { id: string; transfer_date: string; amount: number; from_currency: string; to_currency: string; exchange_rate_used: number; fee_amount: number; fee_mode: string; net_amount: number; description?: string | null; from_account?: {name?: string}; to_account?: {name?: string} }>) {
         csv += `${transfer.id},${transfer.transfer_date},${csvCell(transfer.from_account?.name)},${csvCell(transfer.to_account?.name)},${transfer.amount},${transfer.from_currency},${transfer.to_currency},${transfer.exchange_rate_used},${transfer.fee_amount},${transfer.fee_mode},${transfer.net_amount},${csvCell(transfer.description)}\n`;
       }
       result.csvTransfers = csv;
@@ -403,7 +384,7 @@ export async function exportAllFinancialData(
     if (sections.includes("stockHoldings")) {
       let csv =
         "ID,Ticker,Account,Settlement_Currency,Lots,Total_Shares,Total_Cost,Average_Buy_Price,Market_Price,Market_Price_Currency,Market_Value_IDR,Unrealized_PnL_IDR,Unrealized_PnL_Pct,Price_Fetched_At,Valuation_Source,Notes,Created_At,Updated_At\n";
-      for (const holding of stockHoldings as any[]) {
+      for (const holding of stockHoldings as Array<Record<string, unknown>>) {
         const shares =
           Number(holding.total_shares) || Number(holding.lots || 0) * 100 || 0;
         const settlementCurrency =
@@ -425,7 +406,7 @@ export async function exportAllFinancialData(
     if (sections.includes("stockTrades")) {
       let csv =
         "ID,Trade_Date,Ticker,Type,Account,Settlement_Currency,Lots,Shares,Price_Per_Share,Net_Amount,Buy_Cost,Realized_PnL,Stamp_Duty,Notes\n";
-      for (const trade of stockTrades as any[]) {
+      for (const trade of stockTrades as Array<Record<string, unknown>>) {
         const settlementCurrency =
           trade.currency || trade.account?.currency || "IDR";
         csv += `${trade.id},${trade.trade_date},${trade.ticker},${trade.type},${csvCell(trade.account?.name)},${csvCell(settlementCurrency)},${trade.lots},${trade.shares},${trade.price_per_share},${trade.net_amount},${trade.buy_cost},${trade.realized_pnl},${trade.stamp_duty},${csvCell(trade.notes)}\n`;
@@ -436,7 +417,7 @@ export async function exportAllFinancialData(
     if (sections.includes("cryptoHoldings")) {
       let csv =
         "ID,Symbol,Name,Account,Settlement_Currency,Quantity,Cost_Basis,Average_Buy_Price,Manual_Price,Price_Currency,Market_Price,Market_Price_Currency,Market_Value_IDR,Unrealized_PnL_IDR,Unrealized_PnL_Pct,Price_Fetched_At,Valuation_Source,Notes,Created_At,Updated_At\n";
-      for (const holding of cryptoHoldings as any[]) {
+      for (const holding of cryptoHoldings as Array<Record<string, unknown>>) {
         const settlementCurrency = holding.price_currency || "IDR";
         const v = valueHolding(
           prices,
@@ -455,7 +436,7 @@ export async function exportAllFinancialData(
     if (sections.includes("cryptoTrades")) {
       let csv =
         "ID,Trade_Date,Symbol,Type,Account,Settlement_Currency,Quantity,Gross_Amount,Fee_Amount,Fee_Currency,Price_Per_Unit,Cost_Basis,Realized_PnL,Notes\n";
-      for (const trade of cryptoTrades as any[]) {
+      for (const trade of cryptoTrades as Array<Record<string, unknown>>) {
         const settlementCurrency =
           trade.currency || trade.fee_currency || "IDR";
         csv += `${trade.id},${trade.trade_date},${trade.symbol},${trade.type},${csvCell(trade.account?.name)},${csvCell(settlementCurrency)},${trade.quantity},${trade.gross_amount},${trade.fee_amount},${trade.fee_currency},${trade.price_per_unit},${trade.cost_basis},${trade.realized_pnl},${csvCell(trade.notes)}\n`;
@@ -466,7 +447,7 @@ export async function exportAllFinancialData(
     if (sections.includes("etfHoldings")) {
       let csv =
         "ID,Ticker,Account,Settlement_Currency,Quantity,Total_Cost,Average_Buy_Price,Broker,Market_Price,Market_Price_Currency,Market_Value_IDR,Unrealized_PnL_IDR,Unrealized_PnL_Pct,Price_Fetched_At,Valuation_Source,Notes,Created_At,Updated_At\n";
-      for (const holding of etfHoldings as any[]) {
+      for (const holding of etfHoldings as Array<Record<string, unknown>>) {
         const settlementCurrency =
           holding.currency || holding.account?.currency || "IDR";
         const v = valueHolding(
@@ -486,7 +467,7 @@ export async function exportAllFinancialData(
     if (sections.includes("etfTrades")) {
       let csv =
         "ID,Trade_Date,Ticker,Type,Account,Settlement_Currency,Quantity,Price_Per_Unit,Gross_Amount,Fee_Amount,Buy_Cost,Realized_PnL,Notes\n";
-      for (const trade of etfTrades as any[]) {
+      for (const trade of etfTrades as Array<Record<string, unknown>>) {
         const settlementCurrency =
           trade.currency || trade.account?.currency || "IDR";
         csv += `${trade.id},${trade.trade_date},${trade.ticker},${trade.type},${csvCell(trade.account?.name)},${csvCell(settlementCurrency)},${trade.quantity},${trade.price_per_unit},${trade.gross_amount},${trade.fee_amount},${trade.buy_cost},${trade.realized_pnl},${csvCell(trade.notes)}\n`;
@@ -501,20 +482,14 @@ export async function exportAllFinancialData(
       includes: sections,
     };
     const enrichHoldings = (
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      rows: any[],
+      rows: Array<Record<string, unknown>>,
       kind: "stock" | "crypto" | "etf",
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      getSymbol: (h: any) => string,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      getQuantity: (h: any) => number,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      getCost: (h: any) => number,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      getCostCurrency: (h: any) => string,
+      getSymbol: (h: Record<string, unknown>) => string,
+      getQuantity: (h: Record<string, unknown>) => number,
+      getCost: (h: Record<string, unknown>) => number,
+      getCostCurrency: (h: Record<string, unknown>) => string,
     ) =>
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      rows.map((h: any) => {
+      rows.map((h) => {
         const v = valueHolding(
           prices,
           rates,
@@ -553,7 +528,7 @@ export async function exportAllFinancialData(
         (h) => h.currency || h.account?.currency || "IDR",
       );
     if (sections.includes("stockTrades"))
-      payload.stockTrades = stockTrades.map((t: any) => ({
+      payload.stockTrades = stockTrades.map((t: Record<string, unknown>) => ({
         ...t,
         settlementCurrency: t.currency || t.account?.currency || "IDR",
       }));
@@ -567,7 +542,7 @@ export async function exportAllFinancialData(
         (h) => h.price_currency || "IDR",
       );
     if (sections.includes("cryptoTrades"))
-      payload.cryptoTrades = cryptoTrades.map((t: any) => ({
+      payload.cryptoTrades = cryptoTrades.map((t: Record<string, unknown>) => ({
         ...t,
         settlementCurrency: t.currency || t.fee_currency || "IDR",
       }));
@@ -581,7 +556,7 @@ export async function exportAllFinancialData(
         (h) => h.currency || h.account?.currency || "IDR",
       );
     if (sections.includes("etfTrades"))
-      payload.etfTrades = etfTrades.map((t: any) => ({
+      payload.etfTrades = etfTrades.map((t: Record<string, unknown>) => ({
         ...t,
         settlementCurrency: t.currency || t.account?.currency || "IDR",
       }));

@@ -73,6 +73,7 @@ export function RecurringManager({
 
   // Calculate Monthly Normalized Recurring Commitment
   const { monthlyOutflow, monthlyInflow, netMonthly, dueSoonCount } = useMemo(() => {
+    const now = new Date()
     let outSum = 0
     let inSum = 0
     let dueSoon = 0
@@ -100,7 +101,7 @@ export function RecurringManager({
 
       try {
         const dueDate = parseISO(item.next_due_date)
-        const daysDiff = differenceInCalendarDays(dueDate, today)
+        const daysDiff = differenceInCalendarDays(dueDate, now)
         if (daysDiff <= 7) {
           dueSoon += 1
         }
@@ -115,7 +116,7 @@ export function RecurringManager({
       netMonthly: inSum - outSum,
       dueSoonCount: dueSoon,
     }
-  }, [recurringTransactions, displayCurrency, rates, today])
+  }, [recurringTransactions, displayCurrency, rates])
 
   // Filter items based on tab and search query
   const filteredItems = useMemo(() => {
@@ -227,7 +228,7 @@ export function RecurringManager({
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
         {/* Card 1: Monthly Outflow */}
         <div className="p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col justify-between gap-1.5 shadow-2xs">
-          <div className="flex items-center justify-between gap-1 min-h-[22px]">
+          <div className="flex items-center justify-between gap-1 min-h-5.5">
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] leading-tight">
               {t.recurring.monthlyCommitment}
             </span>
@@ -245,7 +246,7 @@ export function RecurringManager({
 
         {/* Card 2: Monthly Inflow */}
         <div className="p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col justify-between gap-1.5 shadow-2xs">
-          <div className="flex items-center justify-between gap-1 min-h-[22px]">
+          <div className="flex items-center justify-between gap-1 min-h-5.5">
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] leading-tight">
               {t.recurring.monthlyIncome}
             </span>
@@ -263,7 +264,7 @@ export function RecurringManager({
 
         {/* Card 3: Net Cashflow */}
         <div className="p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col justify-between gap-1.5 shadow-2xs">
-          <div className="flex items-center justify-between gap-1 min-h-[22px]">
+          <div className="flex items-center justify-between gap-1 min-h-5.5">
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] leading-tight">
               {t.recurring.netCommitment}
             </span>
@@ -289,7 +290,7 @@ export function RecurringManager({
 
         {/* Card 4: Due in 7 Days */}
         <div className="p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col justify-between gap-1.5 shadow-2xs">
-          <div className="flex items-center justify-between gap-1 min-h-[22px]">
+          <div className="flex items-center justify-between gap-1 min-h-5.5">
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] leading-tight">
               {t.recurring.dueSoonBadge}
             </span>

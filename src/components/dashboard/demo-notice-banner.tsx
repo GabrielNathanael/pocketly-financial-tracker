@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { AlertTriangle, X, ShieldAlert, Sparkles } from "lucide-react";
+import { AlertTriangle, X } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/language-context";
 
 interface DemoNoticeBannerProps {

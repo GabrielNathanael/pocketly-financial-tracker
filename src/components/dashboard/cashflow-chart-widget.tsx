@@ -36,10 +36,9 @@ export function CashflowChartWidget({
   const [period, setPeriod] = useState<PeriodFilter>('this_month')
   const [activeTab, setActiveTab] = useState<'cashflow' | 'categories'>('cashflow')
 
-  const now = new Date()
-
   // Filter transactions by selected period
   const filteredTransactions = useMemo(() => {
+    const now = new Date()
     return transactions.filter((tx) => {
       const txDate = parseISO(tx.transaction_date)
 
@@ -64,7 +63,7 @@ export function CashflowChartWidget({
 
       return true
     })
-  }, [transactions, period, now])
+  }, [transactions, period])
 
   // Compute Aggregates in displayCurrency
   const { totalIncome, totalExpense, netSavings, categoryDistribution } = useMemo(() => {

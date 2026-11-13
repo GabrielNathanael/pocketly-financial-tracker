@@ -23,6 +23,14 @@ interface TransactionsPageProps {
 }
 
 async function TransactionsContent({ params }: { params: Awaited<TransactionsPageProps['searchParams']> }) {
+  const sort =
+    params.sort === 'date_desc' ||
+    params.sort === 'date_asc' ||
+    params.sort === 'amount_desc' ||
+    params.sort === 'amount_asc'
+      ? params.sort
+      : undefined
+
   const filterParams: TransactionFilterParams = {
     type: params.type as TransactionType | 'all',
     accountId: params.accountId,
@@ -31,8 +39,7 @@ async function TransactionsContent({ params }: { params: Awaited<TransactionsPag
     startDate: params.startDate,
     endDate: params.endDate,
     search: params.search,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    sort: params.sort as any,
+    sort,
   }
 
   const [transactions, accounts, categories, availableTags, exchangeRates] = await Promise.all([

@@ -187,7 +187,7 @@ export function CameraLiveView({
     "w-12 h-12 rounded-full bg-black/30 backdrop-blur-md border border-white/40 text-white flex items-center justify-center active:bg-black/50 transition-colors disabled:opacity-40";
 
   return createPortal(
-    <div className={cn("fixed inset-0 z-[80] bg-black", className)}>
+    <div className={cn("fixed inset-0 z-80 bg-black", className)}>
       {/* Live preview fills the whole screen */}
       <video
         ref={videoRef}
@@ -260,9 +260,9 @@ export function CameraLiveView({
           disabled={isStarting || isCapturing || !!shownError}
           aria-label={t.quickAdd.capture}
           title={t.quickAdd.capture}
-          className="flex h-[76px] w-[76px] items-center justify-center rounded-full border-[5px] border-white bg-transparent active:scale-95 transition-transform disabled:opacity-40"
+          className="flex h-19 w-19 items-center justify-center rounded-full border-[5px] border-white bg-transparent active:scale-95 transition-transform disabled:opacity-40"
         >
-          <span className="flex h-[58px] w-[58px] items-center justify-center rounded-full bg-white">
+          <span className="flex h-14.5 w-14.5 items-center justify-center rounded-full bg-white">
             {isCapturing && (
               <Loader2 className="h-6 w-6 animate-spin text-[#0F172A]" />
             )}

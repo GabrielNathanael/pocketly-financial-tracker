@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useState } from 'react'
 import { Language, translations } from '@/lib/i18n/translations'
 
 interface LanguageContextType {
@@ -12,14 +12,11 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<Language>('en')
-
-  useEffect(() => {
+  const [language, setLanguageState] = useState<Language>(() => {
+    if (typeof window === 'undefined') return 'en'
     const saved = localStorage.getItem('pocketly_lang') as Language | null
-    if (saved === 'id' || saved === 'en') {
-      setLanguageState(saved)
-    }
-  }, [])
+    return saved === 'id' || saved === 'en' ? saved : 'en'
+  })
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang)

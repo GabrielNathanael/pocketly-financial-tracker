@@ -466,7 +466,7 @@ export async function scanReceipt(
 
   // Set PSM to 6 (Assume a single uniform block of text - optimal for receipts & tabular data)
   await worker.setParameters({
-    tessedit_pageseg_mode: "6" as any,
+    tessedit_pageseg_mode: "6" as unknown as Parameters<typeof worker.setParameters>[0]["tessedit_pageseg_mode"],
     preserve_interword_spaces: "1",
   });
 

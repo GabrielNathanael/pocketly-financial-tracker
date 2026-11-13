@@ -69,30 +69,32 @@ export function GoalFormModal({
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   useEffect(() => {
-    if (editItem) {
-      setName(editItem.name)
-      setTargetAmount(String(editItem.target_amount))
-      setInitialSaved(String(editItem.current_amount))
-      setCurrency(editItem.currency)
-      setTargetDate(editItem.target_date.split('T')[0])
-      setIcon(editItem.icon || 'Target')
-      setColor(editItem.color || '#0D9488')
-      setStatus(editItem.status)
-      setNotes(editItem.notes || '')
-      setShowMemo(!!editItem.notes)
-    } else {
-      setName('')
-      setTargetAmount('')
-      setInitialSaved('')
-      setCurrency('IDR')
-      setTargetDate(format(addMonths(new Date(), 6), 'yyyy-MM-dd'))
-      setIcon('Target')
-      setColor('#0D9488')
-      setStatus('in_progress')
-      setNotes('')
-      setShowMemo(false)
-    }
-    setErrorMsg(null)
+    queueMicrotask(() => {
+      if (editItem) {
+        setName(editItem.name)
+        setTargetAmount(String(editItem.target_amount))
+        setInitialSaved(String(editItem.current_amount))
+        setCurrency(editItem.currency)
+        setTargetDate(editItem.target_date.split('T')[0])
+        setIcon(editItem.icon || 'Target')
+        setColor(editItem.color || '#0D9488')
+        setStatus(editItem.status)
+        setNotes(editItem.notes || '')
+        setShowMemo(!!editItem.notes)
+      } else {
+        setName('')
+        setTargetAmount('')
+        setInitialSaved('')
+        setCurrency('IDR')
+        setTargetDate(format(addMonths(new Date(), 6), 'yyyy-MM-dd'))
+        setIcon('Target')
+        setColor('#0D9488')
+        setStatus('in_progress')
+        setNotes('')
+        setShowMemo(false)
+      }
+      setErrorMsg(null)
+    })
   }, [editItem, isOpen])
 
   const handleSubmit = async (e: React.FormEvent) => {

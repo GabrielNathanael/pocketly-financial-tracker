@@ -28,12 +28,6 @@ export function setDefaultAccountId(accountId: string | null): void {
   }
 }
 
-function subscribeDefaultAccount(callback: () => void) {
-  window.addEventListener("pocketly_default_account_updated", callback);
-  return () =>
-    window.removeEventListener("pocketly_default_account_updated", callback);
-}
-
 export function useDefaultAccountId(): string | null {
   // Hook ini sekarang deprecated, gunakan accounts.find(a => a.is_default)
   // Dibiarkan agar tidak breaking pada komponen yang belum dimigrasi

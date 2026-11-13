@@ -20,9 +20,7 @@ import {
 } from "@/actions/exchange-rate";
 import {
   formatCurrency,
-  formatNaturalForexRate,
   getNaturalPairInfo,
-  getCrossRate,
   ForexRatesMap,
   DEFAULT_FALLBACK_RATES,
 } from "@/lib/utils/currency";
@@ -99,7 +97,7 @@ function TransferForm({
     useState<string>(getLocalDateString());
   const [rates, setRates] = useState<ForexRatesMap>(DEFAULT_FALLBACK_RATES);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isFetchingRates, setIsFetchingRates] = useState<boolean>(false);
+  const [isFetchingRates, setIsFetchingRates] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   const fromAccount =
@@ -153,7 +151,6 @@ function TransferForm({
   // Fetch forex rates once on mount
   useEffect(() => {
     let isMounted = true;
-    setIsFetchingRates(true);
     getLatestForexRates()
       .then((live) => {
         if (isMounted) {
@@ -508,7 +505,7 @@ function TransferForm({
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder={t.transfer.notePlaceholder}
-          className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#F8FAFC] placeholder:text-[#94A3B8] focus:outline-none focus:ring-1 focus:ring-[#0F172A] dark:focus:ring-white resize-y min-h-[56px] max-h-[160px] transition-colors"
+          className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] text-[#0F172A] dark:text-[#F8FAFC] placeholder:text-[#94A3B8] focus:outline-none focus:ring-1 focus:ring-[#0F172A] dark:focus:ring-white resize-y min-h-14 max-h-40 transition-colors"
         />
       </div>
 

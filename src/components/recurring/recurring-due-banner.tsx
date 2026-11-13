@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import Link from 'next/link'
 import { EnrichedRecurringTransaction } from '@/types/database'
 import { formatCurrency } from '@/lib/utils/currency'
-import { usePreferredCurrency } from '@/lib/storage/preferred-currency'
+
 import { usePrivacyMode, maskCurrency } from '@/lib/storage/privacy-mode'
 import { useLanguage } from '@/lib/i18n/language-context'
 import { processRecurringPayment } from '@/actions/recurring'
@@ -17,7 +17,6 @@ interface RecurringDueBannerProps {
 
 export function RecurringDueBanner({ recurringTransactions }: RecurringDueBannerProps) {
   const { t } = useLanguage()
-  const displayCurrency = usePreferredCurrency()
   const isPrivate = usePrivacyMode()
   const today = new Date()
 

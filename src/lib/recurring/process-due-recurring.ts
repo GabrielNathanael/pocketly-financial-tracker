@@ -9,8 +9,23 @@ import type { RecurringFrequency } from "@/types/database";
  * admin client (cron), since balance is maintained by the DB trigger.
  */
 export interface RecurringSupabaseClient {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  from: (table: string) => any;
+  from: (table: string) => {
+    select: (columns: string) => {
+      eq: (column: string, value: unknown) => {
+        eq: (column: string, value: unknown) => {
+          single: () => PromiseLike<{ data: Record<string, unknown> | null; error: { message?: string } | null }>;
+        };
+      };
+    };
+    insert: (values: unknown) => {
+      select: (columns: string) => {
+        single: () => PromiseLike<{ data: { id: string } | null; error: { message?: string } | null }>;
+      };
+    };
+    update: (values: unknown) => {
+      eq: (column: string, value: unknown) => PromiseLike<{ error: { message?: string } | null }>;
+    };
+  };
 }
 
 export interface DueRecurringRule {
@@ -62,8 +77,8 @@ export async function processOneRecurringPeriod(
     return { ok: false, reason: "no_category" };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: account, error: accErr } = await (supabase.from("accounts") as any)
+  const { data: account, error: accErr } = await supabase
+    .from("accounts")
     .select("id, current_balance, currency")
     .eq("id", rule.account_id)
     .eq("user_id", rule.user_id)
@@ -87,8 +102,8 @@ export async function processOneRecurringPeriod(
     ? `${rule.name} • ${rule.notes}`
     : rule.name;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: tx, error: txErr } = await (supabase.from("transactions") as any)
+  const { data: tx, error: txErr } = await supabase
+    .from("transactions")
     .insert({
       user_id: rule.user_id,
       account_id: rule.account_id,
@@ -118,8 +133,8 @@ export async function processOneRecurringPeriod(
   const shouldDeactivate =
     !!rule.end_date && parseISO(nextDueDate) > parseISO(rule.end_date);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error: updErr } = await (supabase.from("recurring_transactions") as any)
+  const { error: updErr } = await supabase
+    .from("recurring_transactions")
     .update({
       next_due_date: nextDueDate,
       last_processed_date: processedDate,

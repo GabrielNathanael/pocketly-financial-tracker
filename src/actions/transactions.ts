@@ -31,8 +31,7 @@ export async function getTransactions(
   params: TransactionFilterParams = {},
 ): Promise<EnrichedTransaction[]> {
   const supabase = await createServerSupabaseClient();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let query = (supabase.from("transactions") as any).select(`
+  let query = supabase.from("transactions").select(`
       *,
       account:accounts(*),
       category:categories(*)
@@ -124,8 +123,8 @@ export async function getTransactionById(
   id: string,
 ): Promise<EnrichedTransaction | null> {
   const supabase = await createServerSupabaseClient();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase.from("transactions") as any)
+  const { data, error } = await supabase
+    .from("transactions")
     .select(
       `
       *,
@@ -192,8 +191,8 @@ export async function createTransaction(input: {
 
   // Demo Account Safeguard: Cap at 50 transactions to prevent spam scripts
   if (user.email?.toLowerCase() === "demo@pocketly.app") {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { count } = await (supabase.from("transactions") as any)
+    const { count } = await supabase
+      .from("transactions")
       .select("id", { count: "exact", head: true })
       .eq("user_id", user.id);
 
@@ -206,10 +205,8 @@ export async function createTransaction(input: {
   }
 
   // 1. Fetch Account Details
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: acc, error: accError } = await (
-    supabase.from("accounts") as any
-  )
+  const { data: acc, error: accError } = await supabase
+    .from("accounts")
     .select("id, name, currency, current_balance")
     .eq("id", input.accountId)
     .eq("user_id", user.id)
@@ -239,8 +236,8 @@ export async function createTransaction(input: {
   }
 
   // 3. Insert Transaction
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase.from("transactions") as any)
+  const { data, error } = await supabase
+    .from("transactions")
     .insert({
       user_id: user.id,
       account_id: input.accountId,
@@ -300,10 +297,8 @@ export async function updateTransaction(
   }
 
   // 1. Fetch Existing Transaction
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: oldTx, error: oldTxErr } = await (
-    supabase.from("transactions") as any
-  )
+  const { data: oldTx, error: oldTxErr } = await supabase
+    .from("transactions")
     .select("*, account:accounts(*)")
     .eq("id", id)
     .eq("user_id", user.id)
@@ -314,10 +309,8 @@ export async function updateTransaction(
   }
 
   // 2. Fetch Target Account
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: targetAcc, error: targetAccErr } = await (
-    supabase.from("accounts") as any
-  )
+  const { data: targetAcc, error: targetAccErr } = await supabase
+    .from("accounts")
     .select("id, name, currency, current_balance")
     .eq("id", input.accountId)
     .eq("user_id", user.id)
@@ -357,8 +350,8 @@ export async function updateTransaction(
   } else {
     // Different Account: Check old account and new account separately
     // Old account loses oldEffect
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: oldAcc } = await (supabase.from("accounts") as any)
+    const { data: oldAcc } = await supabase
+      .from("accounts")
       .select("id, name, currency, current_balance")
       .eq("id", oldTx.account_id)
       .single();
@@ -384,8 +377,8 @@ export async function updateTransaction(
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase.from("transactions") as any)
+  const { error } = await supabase
+    .from("transactions")
     .update({
       account_id: input.accountId,
       category_id: input.categoryId,
@@ -419,10 +412,8 @@ export async function deleteTransaction(id: string) {
   const supabase = await createServerSupabaseClient();
 
   // 1. Fetch transaction and account before delete
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: tx, error: txErr } = await (
-    supabase.from("transactions") as any
-  )
+  const { data: tx, error: txErr } = await supabase
+    .from("transactions")
     .select("*, account:accounts(*)")
     .eq("id", id)
     .single();
@@ -635,8 +626,8 @@ export async function getAllUserTags(): Promise<string[]> {
   } = await supabase.auth.getUser();
   if (!user) return [];
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase.from("transactions") as any)
+  const { data, error } = await supabase
+    .from("transactions")
     .select("tags")
     .eq("user_id", user.id);
 
@@ -661,8 +652,7 @@ export async function getMostUsedCategoriesByAccount(): Promise<
   } = await supabase.auth.getUser();
   if (!user) return {};
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase.rpc as any)(
+  const { data, error } = await (supabase.rpc as unknown as (fn: string, args: { p_user_id: string }) => Promise<{ data: unknown; error: unknown }>)(
     "get_most_used_categories_by_account",
     {
       p_user_id: user.id,

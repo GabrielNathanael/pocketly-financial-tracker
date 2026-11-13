@@ -62,16 +62,16 @@ export function DateRangePicker({
   const [hoverDay, setHoverDay] = React.useState<Date | null>(null)
   const [selectingStart, setSelectingStart] = React.useState<Date | null>(null)
 
-  // Reset internal selection state whenever popover opens
-  React.useEffect(() => {
-    if (open) {
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen)
+    if (nextOpen) {
       setSelectingStart(null)
       setHoverDay(null)
       if (parsedStart) {
         setNavMonth(parsedStart)
       }
     }
-  }, [open, parsedStart])
+  }
 
   const daysInMonth = React.useMemo(() => {
     const start = startOfMonth(navMonth)
@@ -157,7 +157,7 @@ export function DateRangePicker({
   }, [parsedStart, parsedEnd, language, locale, defaultPlaceholder])
 
   return (
-    <PopoverPrimitive.Root open={open} onOpenChange={setOpen}>
+    <PopoverPrimitive.Root open={open} onOpenChange={handleOpenChange}>
       <PopoverPrimitive.Trigger asChild>
         <button
           type="button"

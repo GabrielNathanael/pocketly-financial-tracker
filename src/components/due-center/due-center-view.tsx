@@ -7,7 +7,7 @@ import { EnrichedRecurringTransaction, EnrichedSavingsGoal, Account } from '@/ty
 import { EnrichedDebtWithPayments } from '@/actions/debts'
 import { processRecurringPayment } from '@/actions/recurring'
 import { useLanguage } from '@/lib/i18n/language-context'
-import { formatCurrency, convertAmount } from '@/lib/utils/currency'
+import { formatCurrency } from '@/lib/utils/currency'
 import { DynamicIcon } from '@/components/ui/dynamic-icon'
 import {
   Select,
@@ -19,23 +19,14 @@ import {
 import {
   CalendarClock,
   CheckCircle2,
-  AlertCircle,
   AlertTriangle,
   ArrowRight,
-  Sparkles,
-  Repeat,
-  Scale,
-  Target,
   Search,
-  Filter,
   Check,
-  Coins,
-  ArrowUpRight,
-  ArrowDownRight,
   Clock,
 } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
-import { differenceInCalendarDays, parseISO, format } from 'date-fns'
+import { differenceInCalendarDays, parseISO } from 'date-fns'
 import { toast } from 'sonner'
 
 interface DueCenterViewProps {
@@ -68,8 +59,6 @@ export function DueCenterView({
   recurringTransactions,
   debts,
   goals,
-  accounts,
-  exchangeRate = 15800,
 }: DueCenterViewProps) {
   const { t } = useLanguage()
   const router = useRouter()
@@ -195,8 +184,10 @@ export function DueCenterView({
         toast.success(t.dueCenter.billPaymentSuccess)
         router.refresh()
       }
-    } catch (err: any) {
-      toast.error('Terjadi Kesalahan', { description: err.message })
+    } catch (err: unknown) {
+      toast.error('Terjadi Kesalahan', {
+        description: err instanceof Error ? err.message : undefined,
+      })
     } finally {
       setProcessingId(null)
     }
@@ -220,7 +211,7 @@ export function DueCenterView({
       {/* Filter & Search Bar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 sm:p-4 rounded-2xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] shadow-xs">
         {/* Search Bar */}
-        <div className="relative flex-1 min-w-[200px]">
+        <div className="relative flex-1 min-w-50">
           <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
           <input
             type="text"
@@ -234,8 +225,13 @@ export function DueCenterView({
         {/* Dropdown Filters Container */}
         <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
           {/* Source Select */}
-          <div className="flex-1 sm:flex-none min-w-[160px]">
-            <Select value={filterSource} onValueChange={(val: any) => setFilterSource(val)}>
+          <div className="flex-1 sm:flex-none min-w-40">
+            <Select
+              value={filterSource}
+              onValueChange={(val) =>
+                setFilterSource(val as "all" | "recurring" | "debt" | "goal")
+              }
+            >
               <SelectTrigger className="px-3 py-2 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] text-xs font-semibold">
                 <SelectValue placeholder={t.dueCenter.allSources} />
               </SelectTrigger>
@@ -257,8 +253,13 @@ export function DueCenterView({
           </div>
 
           {/* Urgency Select */}
-          <div className="flex-1 sm:flex-none min-w-[160px]">
-            <Select value={filterUrgency} onValueChange={(val: any) => setFilterUrgency(val)}>
+          <div className="flex-1 sm:flex-none min-w-40">
+            <Select
+              value={filterUrgency}
+              onValueChange={(val) =>
+                setFilterUrgency(val as "all" | "overdue" | "today" | "soon" | "later")
+              }
+            >
               <SelectTrigger className="px-3 py-2 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] text-xs font-semibold">
                 <SelectValue placeholder={t.dueCenter.allUrgencies} />
               </SelectTrigger>

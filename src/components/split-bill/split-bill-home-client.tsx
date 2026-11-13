@@ -72,7 +72,7 @@ export function SplitBillHomeClient({ bills }: { bills: SplitBill[] }) {
         >
           <History className="w-5 h-5 text-[#0F172A] dark:text-[#FAFAFA]" />
           {total > 0 && (
-            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] text-[10px] font-bold flex items-center justify-center">
+            <span className="absolute -top-1 -right-1 min-w-4.5 h-4.5 px-1 rounded-full bg-[#0F172A] dark:bg-[#FAFAFA] text-white dark:text-[#0F172A] text-[10px] font-bold flex items-center justify-center">
               {total}
             </span>
           )}

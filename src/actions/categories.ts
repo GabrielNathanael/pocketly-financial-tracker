@@ -55,10 +55,8 @@ export async function deduplicateUserCategories(userId?: string) {
 
   if (!targetUserId) return { success: false, error: "Unauthorized" };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: allCategories, error } = await (
-    supabase.from("categories") as any
-  )
+  const { data: allCategories, error } = await supabase
+    .from("categories")
     .select("*")
     .eq("user_id", targetUserId);
 
@@ -89,8 +87,8 @@ export async function deduplicateUserCategories(userId?: string) {
 
       // Ensure survivor has the canonical English name
       if (survivor.name !== canonicalEnglishName) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase.from("categories") as any)
+        await supabase
+          .from("categories")
           .update({ name: canonicalEnglishName, is_default: true })
           .eq("id", survivor.id);
       }
@@ -99,38 +97,37 @@ export async function deduplicateUserCategories(userId?: string) {
       const deleteIds = toDelete.map((c) => c.id);
 
       // Re-point transactions
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase.from("transactions") as any)
+      await supabase
+        .from("transactions")
         .update({ category_id: survivor.id })
         .in("category_id", deleteIds);
 
       // Re-point budgets
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase.from("budgets") as any)
+      await supabase
+        .from("budgets")
         .update({ category_id: survivor.id })
         .in("category_id", deleteIds);
 
       // Re-point recurring_transactions
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase.from("recurring_transactions") as any)
+      await supabase
+        .from("recurring_transactions")
         .update({ category_id: survivor.id })
         .in("category_id", deleteIds);
 
       // Re-point savings_goals
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase.from("savings_goals") as any)
+      await supabase
+        .from("savings_goals")
         .update({ category_id: survivor.id })
         .in("category_id", deleteIds);
 
       // Delete duplicate category records
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase.from("categories") as any).delete().in("id", deleteIds);
+      await supabase.from("categories").delete().in("id", deleteIds);
     } else if (catList.length === 1) {
       // Single category: check if it's currently an Indonesian default name that needs renaming to English
       const singleCat = catList[0];
       if (singleCat.name !== canonicalEnglishName) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase.from("categories") as any)
+        await supabase
+          .from("categories")
           .update({ name: canonicalEnglishName, is_default: true })
           .eq("id", singleCat.id);
       }
@@ -153,10 +150,8 @@ export async function seedUserDefaultCategories(userId?: string) {
 
   if (!targetUserId) return;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: existingCategories } = await (
-    supabase.from("categories") as any
-  )
+  const { data: existingCategories } = await supabase
+    .from("categories")
     .select("id, name, type")
     .eq("user_id", targetUserId);
 
@@ -180,16 +175,14 @@ export async function seedUserDefaultCategories(userId?: string) {
       })),
     ];
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from("categories") as any).insert(toInsert);
+    await supabase.from("categories").insert(toInsert);
     return;
   }
 
   // Ensure essential system categories 'Discrepancy' & 'Loan & Debt' exist for both expense and income
   const checkHasCategory = (name: string, type: "expense" | "income") =>
     existingCategories.some(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (c: any) =>
+      (c) =>
         c.type === type &&
         (c.name?.toLowerCase() === name.toLowerCase() ||
           getCanonicalCategoryName(c.name).toLowerCase() ===
@@ -279,8 +272,7 @@ export async function seedUserDefaultCategories(userId?: string) {
   }
 
   if (missingCategories.length > 0) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from("categories") as any).insert(missingCategories);
+    await supabase.from("categories").insert(missingCategories);
   }
 
   // Run deduplication in case duplicate defaults existed
@@ -302,8 +294,8 @@ export async function createCategory(formData: {
     return { error: "Unauthorized" };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase.from("categories") as any)
+  const { data, error } = await supabase
+    .from("categories")
     .insert({
       user_id: user.id,
       name: formData.name.trim(),
@@ -335,8 +327,8 @@ export async function updateCategory(
 ) {
   const supabase = await createServerSupabaseClient();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: existing } = await (supabase.from("categories") as any)
+  const { data: existing } = await supabase
+    .from("categories")
     .select("id, name")
     .eq("id", id)
     .single();
@@ -352,8 +344,8 @@ export async function updateCategory(
   // If system category, preserve its canonical name
   const finalName = isProtectedSystem ? canonicalName : formData.name.trim();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase.from("categories") as any)
+  const { error } = await supabase
+    .from("categories")
     .update({
       name: finalName,
       type: formData.type,
@@ -375,8 +367,8 @@ export async function deleteCategory(id: string) {
   const supabase = await createServerSupabaseClient();
 
   // Check if system category
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: existing } = await (supabase.from("categories") as any)
+  const { data: existing } = await supabase
+    .from("categories")
     .select("id, name")
     .eq("id", id)
     .single();

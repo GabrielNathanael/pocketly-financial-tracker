@@ -321,7 +321,7 @@ export function DebtForm({
           placeholder={t.debts.notesPlaceholder}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          className="w-full px-3.5 py-2.5 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-xs text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0F172A] dark:focus:ring-[#FAFAFA] transition-all resize-y min-h-[70px] leading-relaxed"
+          className="w-full px-3.5 py-2.5 rounded-xl bg-[#F8F9FA] dark:bg-[#1A1A20] border border-[#E5E7EB] dark:border-[#27272A] text-xs text-[#0F172A] dark:text-[#FAFAFA] placeholder:text-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0F172A] dark:focus:ring-[#FAFAFA] transition-all resize-y min-h-17.5 leading-relaxed"
         />
       </div>
 

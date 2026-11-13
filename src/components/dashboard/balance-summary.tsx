@@ -80,7 +80,7 @@ export function BalanceSummary({
 
         {/* Big Balance with Auto-Scale */}
         <div className="flex flex-col gap-1 min-w-0">
-          <h2 className={`font-extrabold text-[#0F172A] dark:text-[#FAFAFA] font-mono tracking-tight tnum break-words leading-none ${getBigBalanceFontSize(formattedTotal.length)}`}>
+          <h2 className={`font-extrabold text-[#0F172A] dark:text-[#FAFAFA] font-mono tracking-tight tnum wrap-break-word leading-none ${getBigBalanceFontSize(formattedTotal.length)}`}>
             {formattedTotal}
           </h2>
           {displayCurrency !== 'IDR' && (

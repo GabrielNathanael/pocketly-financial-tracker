@@ -26,8 +26,68 @@ export interface NetWorthComputation {
   goals: NetWorthBreakdownItem[];
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyClient = { from: (table: string) => any };
+type QueryResult<T> = PromiseLike<{ data: T[] | null; error?: unknown }>;
+type QueryChain<T> = {
+  select: (columns: string) => QueryChain<T>;
+  eq: (column: string, value: unknown) => QueryChain<T>;
+  gt: (column: string, value: unknown) => QueryChain<T>;
+} & QueryResult<T>;
+
+type AnyClient = { from: (table: string) => QueryChain<Record<string, unknown>> };
+
+interface AccountRow {
+  id: string;
+  name?: string | null;
+  current_balance?: number | string | null;
+  currency?: string | null;
+}
+
+interface HoldingAccountRef {
+  currency?: string | null;
+}
+
+interface StockRow {
+  id: string;
+  ticker?: string | null;
+  currency?: string | null;
+  total_cost?: number | string | null;
+  lots?: number | string | null;
+  total_shares?: number | string | null;
+  account?: HoldingAccountRef | null;
+}
+
+interface CryptoRow {
+  id: string;
+  symbol?: string | null;
+  quantity?: number | string | null;
+  cost_basis?: number | string | null;
+  price_currency?: string | null;
+}
+
+interface EtfRow {
+  id: string;
+  ticker?: string | null;
+  currency?: string | null;
+  quantity?: number | string | null;
+  total_cost?: number | string | null;
+  account?: HoldingAccountRef | null;
+}
+
+interface DebtRow {
+  id: string;
+  type?: string | null;
+  counterparty_name?: string | null;
+  remaining_amount?: number | string | null;
+  currency?: string | null;
+  status?: string | null;
+}
+
+interface GoalRow {
+  id: string;
+  name?: string | null;
+  current_amount?: number | string | null;
+  currency?: string | null;
+}
 
 /**
  * Compute net worth for one user in IDR (canonical base).
@@ -80,13 +140,12 @@ export async function computeNetWorthForUser(
         .gt("current_amount", 0),
     ]);
 
-  const accounts: NetWorthBreakdownItem[] = ((accountsRes.data || []) as any[]).map(
-    (a) => ({
-      id: a.id,
-      name: a.name || "Akun",
-      amountIdr: toIdr(Number(a.current_balance) || 0, a.currency),
-    }),
-  );
+  const accountRows = (accountsRes.data || []) as AccountRow[];
+  const accounts: NetWorthBreakdownItem[] = accountRows.map((a) => ({
+    id: a.id,
+    name: a.name || "Akun",
+    amountIdr: toIdr(Number(a.current_balance) || 0, a.currency || "IDR"),
+  }));
   const totalAccountsIdr = accounts.reduce((s, a) => s + a.amountIdr, 0);
 
   // Market value if cached price exists, else fall back to cost basis.
@@ -101,69 +160,67 @@ export async function computeNetWorthForUser(
     return toIdr(quantity * cached.price, cached.currency);
   };
 
-  const stocks: NetWorthBreakdownItem[] = ((stocksRes.data || []) as any[]).map(
-    (h) => {
-      const costIdr = toIdr(
-        Number(h.total_cost) || 0,
-        h.currency || h.account?.currency || "IDR",
-      );
-      const shares =
-        Number(h.total_shares) || Number(h.lots || 0) * 100 || 0;
-      return {
-        id: h.id,
-        name: h.ticker || "Saham",
-        amountIdr: marketOrCost("stock", h.ticker || "", shares, costIdr),
-      };
-    },
-  );
+  const stockRows = (stocksRes.data || []) as StockRow[];
+  const stocks: NetWorthBreakdownItem[] = stockRows.map((h) => {
+    const costIdr = toIdr(
+      Number(h.total_cost) || 0,
+      h.currency || h.account?.currency || "IDR",
+    );
+    const shares =
+      Number(h.total_shares) || Number(h.lots || 0) * 100 || 0;
+    return {
+      id: h.id,
+      name: h.ticker || "Saham",
+      amountIdr: marketOrCost("stock", h.ticker || "", shares, costIdr),
+    };
+  });
   const totalStockHoldingsIdr = stocks.reduce((s, x) => s + x.amountIdr, 0);
 
-  const crypto: NetWorthBreakdownItem[] = ((cryptoRes.data || []) as any[]).map(
-    (h) => {
-      const costIdr = toIdr(
-        Number(h.cost_basis) || 0,
-        h.price_currency || "IDR",
-      );
-      return {
-        id: h.id,
-        name: h.symbol || "Kripto",
-        amountIdr: marketOrCost(
-          "crypto",
-          h.symbol || "",
-          Number(h.quantity) || 0,
-          costIdr,
-        ),
-      };
-    },
-  );
+  const cryptoRows = (cryptoRes.data || []) as CryptoRow[];
+  const crypto: NetWorthBreakdownItem[] = cryptoRows.map((h) => {
+    const costIdr = toIdr(
+      Number(h.cost_basis) || 0,
+      h.price_currency || "IDR",
+    );
+    return {
+      id: h.id,
+      name: h.symbol || "Kripto",
+      amountIdr: marketOrCost(
+        "crypto",
+        h.symbol || "",
+        Number(h.quantity) || 0,
+        costIdr,
+      ),
+    };
+  });
   const totalCryptoHoldingsIdr = crypto.reduce((s, x) => s + x.amountIdr, 0);
 
-  const etf: NetWorthBreakdownItem[] = ((etfRes.data || []) as any[]).map(
-    (h) => {
-      const costIdr = toIdr(
-        Number(h.total_cost) || 0,
-        h.currency || h.account?.currency || "IDR",
-      );
-      return {
-        id: h.id,
-        name: h.ticker || "ETF",
-        amountIdr: marketOrCost(
-          "etf",
-          h.ticker || "",
-          Number(h.quantity) || 0,
-          costIdr,
-        ),
-      };
-    },
-  );
+  const etfRows = (etfRes.data || []) as EtfRow[];
+  const etf: NetWorthBreakdownItem[] = etfRows.map((h) => {
+    const costIdr = toIdr(
+      Number(h.total_cost) || 0,
+      h.currency || h.account?.currency || "IDR",
+    );
+    return {
+      id: h.id,
+      name: h.ticker || "ETF",
+      amountIdr: marketOrCost(
+        "etf",
+        h.ticker || "",
+        Number(h.quantity) || 0,
+        costIdr,
+      ),
+    };
+  });
   const totalEtfHoldingsIdr = etf.reduce((s, x) => s + x.amountIdr, 0);
 
   const receivables: NetWorthBreakdownItem[] = [];
   const debts: NetWorthBreakdownItem[] = [];
   let totalReceivablesIdr = 0;
   let totalDebtsIdr = 0;
-  for (const d of (debtsRes.data || []) as any[]) {
-    const amt = toIdr(Number(d.remaining_amount) || 0, d.currency);
+  const debtRows = (debtsRes.data || []) as DebtRow[];
+  for (const d of debtRows) {
+    const amt = toIdr(Number(d.remaining_amount) || 0, d.currency || "IDR");
     const item = {
       id: d.id,
       name: d.counterparty_name || "Pihak lain",
@@ -178,13 +235,12 @@ export async function computeNetWorthForUser(
     }
   }
 
-  const goals: NetWorthBreakdownItem[] = ((goalsRes.data || []) as any[]).map(
-    (g) => ({
-      id: g.id,
-      name: g.name || "Target",
-      amountIdr: toIdr(Number(g.current_amount) || 0, g.currency),
-    }),
-  );
+  const goalRows = (goalsRes.data || []) as GoalRow[];
+  const goals: NetWorthBreakdownItem[] = goalRows.map((g) => ({
+    id: g.id,
+    name: g.name || "Target",
+    amountIdr: toIdr(Number(g.current_amount) || 0, g.currency || "IDR"),
+  }));
   const totalSavingsGoalsIdr = goals.reduce((s, x) => s + x.amountIdr, 0);
 
   const totalAssetsIdr =

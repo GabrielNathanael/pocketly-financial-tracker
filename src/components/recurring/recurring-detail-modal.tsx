@@ -11,19 +11,14 @@ import { formatDate } from '@/lib/utils/date'
 import { useLanguage } from '@/lib/i18n/language-context'
 import { getRecurringPaymentHistory } from '@/actions/recurring'
 import { cn } from '@/lib/utils/cn'
-import { parseISO, differenceInCalendarDays } from 'date-fns'
+
 import {
   Calendar,
-  Sparkles,
   Edit2,
   Trash2,
   PauseCircle,
   PlayCircle,
   CheckCircle2,
-  Clock,
-  AlertCircle,
-  ArrowRight,
-  Zap,
   Wallet,
   History,
   ArrowDownLeft,
@@ -47,7 +42,6 @@ export function RecurringDetailModal({
   isOpen,
   onClose,
   recurring,
-  rates,
   onPayNow,
   onEdit,
   onToggleActive,
@@ -61,18 +55,24 @@ export function RecurringDetailModal({
   const [displayLimit, setDisplayLimit] = useState(25)
 
   useEffect(() => {
-    if (isOpen && recurring) {
-      setIsLoadingHistory(true)
-      getRecurringPaymentHistory(recurring.name, recurring.category_id || undefined, recurring.account_id)
-        .then((data) => {
-          setHistory(data as EnrichedTransaction[])
-        })
-        .catch(() => {
-          setHistory([])
-        })
-        .finally(() => {
-          setIsLoadingHistory(false)
-        })
+    if (!isOpen || !recurring) return
+    let cancelled = false
+    queueMicrotask(() => {
+      if (!cancelled) setIsLoadingHistory(true)
+    })
+    getRecurringPaymentHistory(recurring.name, recurring.category_id || undefined, recurring.account_id)
+      .then((data) => {
+        if (!cancelled) setHistory(data as EnrichedTransaction[])
+      })
+      .catch(() => {
+        if (!cancelled) setHistory([])
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingHistory(false)
+      })
+
+    return () => {
+      cancelled = true
     }
   }, [isOpen, recurring])
 
@@ -82,19 +82,7 @@ export function RecurringDetailModal({
   const isPaused = !recurring.is_active
   const amount = Number(recurring.amount)
 
-  const today = new Date()
-  let daysUntil = 0
-  let isOverdue = false
-  let isDueToday = false
-
-  try {
-    const dueDate = parseISO(recurring.next_due_date)
-    daysUntil = differenceInCalendarDays(dueDate, today)
-    isOverdue = daysUntil < 0
-    isDueToday = daysUntil === 0
-  } catch {
-    // ignore
-  }
+  // Due-date indicators intentionally not shown in this modal header.
 
   // Calculate annual commitment projection
   let annualMultiplier = 12

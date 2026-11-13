@@ -47,7 +47,7 @@ export function AvatarPicker({
               <DiceAvatar name="" style={o.style} seed={o.seed} size="xl" className="w-full h-auto aspect-square" />
               {selected && (
                 <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-[#0F172A] dark:bg-[#FAFAFA] flex items-center justify-center">
-                  <Check className="w-3 h-3 text-white dark:text-[#0F172A] stroke-[3]" />
+                  <Check className="w-3 h-3 text-white dark:text-[#0F172A] stroke-3" />
                 </span>
               )}
             </button>

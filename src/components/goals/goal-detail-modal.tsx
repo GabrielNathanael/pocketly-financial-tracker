@@ -9,12 +9,8 @@ import { formatCurrency } from '@/lib/utils/currency'
 import { formatDate } from '@/lib/utils/date'
 import { useLanguage } from '@/lib/i18n/language-context'
 import { cn } from '@/lib/utils/cn'
-import { parseISO, differenceInCalendarDays, differenceInCalendarMonths } from 'date-fns'
+import { parseISO, differenceInCalendarMonths } from 'date-fns'
 import {
-  Calendar,
-  Sparkles,
-  Trophy,
-  Target,
   Edit2,
   Trash2,
   PauseCircle,
@@ -60,14 +56,12 @@ export function GoalDetailModal({
   const isPaused = goal.status === 'paused'
 
   const today = new Date()
-  let daysLeft = 0
   let monthsLeft = 0
   let monthlyNeeded = 0
 
   if (goal.target_date) {
     try {
       const targetDateObj = parseISO(goal.target_date)
-      daysLeft = differenceInCalendarDays(targetDateObj, today)
       monthsLeft = Math.max(1, differenceInCalendarMonths(targetDateObj, today))
       if (remainingAmt > 0 && monthsLeft > 0) {
         monthlyNeeded = remainingAmt / monthsLeft

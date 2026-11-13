@@ -11,8 +11,7 @@ interface DynamicIconProps extends Omit<LucideProps, 'name'> {
 
 export function DynamicIcon({ name, fallback = 'Tag', ...props }: DynamicIconProps) {
   const iconKey = (name || fallback) as keyof typeof Icons
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const IconComponent = (Icons[iconKey] as React.ComponentType<any>) || Icons.Tag
+  const IconComponent = (Icons[iconKey] as React.ComponentType<LucideProps>) || Icons.Tag
 
   return <IconComponent {...props} />
 }

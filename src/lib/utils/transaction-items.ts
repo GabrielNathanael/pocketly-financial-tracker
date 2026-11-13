@@ -168,17 +168,18 @@ export function parseItemsFromDescription(
 export function normalizeStoredItems(raw: unknown): TransactionItem[] {
   if (!Array.isArray(raw)) return [];
   const out: TransactionItem[] = [];
-  for (const it of raw as any[]) {
+  for (const it of raw) {
     if (!it || typeof it !== "object") continue;
-    const name = String(it.name ?? "").trim();
+    const rec = it as Record<string, unknown>;
+    const name = String(rec.name ?? "").trim();
     if (!name) continue;
     const item: TransactionItem = {
       name: name.slice(0, 200),
-      quantity: it.quantity != null ? String(it.quantity) : "1",
-      price: it.price != null ? String(it.price) : "",
+      quantity: rec.quantity != null ? String(rec.quantity) : "1",
+      price: rec.price != null ? String(rec.price) : "",
     };
-    if (it.subtotal != null && String(it.subtotal).trim() !== "") {
-      item.subtotal = String(it.subtotal);
+    if (rec.subtotal != null && String(rec.subtotal).trim() !== "") {
+      item.subtotal = String(rec.subtotal);
     }
     out.push(item);
   }

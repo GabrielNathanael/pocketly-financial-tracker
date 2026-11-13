@@ -205,10 +205,8 @@ export async function adjustAccountBalance(input: {
   if (!user) return { error: "Unauthorized" };
 
   // 1. Fetch current account
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: account, error: accErr } = await (
-    supabase.from("accounts") as any
-  )
+  const { data: account, error: accErr } = await supabase
+    .from("accounts")
     .select("id, name, currency, current_balance")
     .eq("id", input.accountId)
     .single();
@@ -231,8 +229,8 @@ export async function adjustAccountBalance(input: {
   const txType = diff > 0 ? "income" : "expense";
   const absAmount = Math.abs(diff);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let { data: cat } = await (supabase.from("categories") as any)
+  let { data: cat } = await supabase
+    .from("categories")
     .select("id")
     .eq("user_id", user.id)
     .eq("name", "Discrepancy")
@@ -242,8 +240,8 @@ export async function adjustAccountBalance(input: {
 
   if (!cat) {
     // Fallback: look for generic Discrepancy regardless of type
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: genericCat } = await (supabase.from("categories") as any)
+    const { data: genericCat } = await supabase
+      .from("categories")
       .select("id")
       .eq("user_id", user.id)
       .eq("name", "Discrepancy")
@@ -256,8 +254,8 @@ export async function adjustAccountBalance(input: {
   if (!cat) {
     // Fallback: look for Other Income / Other Expense
     const fallbackName = txType === "income" ? "Other Income" : "Other Expense";
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: fallbackCat } = await (supabase.from("categories") as any)
+    const { data: fallbackCat } = await supabase
+      .from("categories")
       .select("id")
       .eq("user_id", user.id)
       .eq("name", fallbackName)
@@ -268,8 +266,8 @@ export async function adjustAccountBalance(input: {
   }
 
   if (!cat) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: anyCat } = await (supabase.from("categories") as any)
+    const { data: anyCat } = await supabase
+      .from("categories")
       .select("id")
       .eq("user_id", user.id)
       .eq("type", txType)
@@ -285,8 +283,7 @@ export async function adjustAccountBalance(input: {
     ? `Balance Correction (${account.name})${noteSuffix}`
     : `Koreksi Saldo Fisik (${account.name})${noteSuffix}`;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error: txErr } = await (supabase.from("transactions") as any).insert({
+  const { error: txErr } = await supabase.from("transactions").insert({
     user_id: user.id,
     account_id: account.id,
     category_id: cat?.id || null,

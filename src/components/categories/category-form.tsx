@@ -711,7 +711,6 @@ const AVAILABLE_ICONS: IconEntry[] = [
 export function CategoryForm({
   initialData,
   onSuccess,
-  onClose,
 }: CategoryFormProps) {
   const router = useRouter();
   const { t, language } = useLanguage();

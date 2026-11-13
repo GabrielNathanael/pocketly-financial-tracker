@@ -3,8 +3,22 @@ import {
   type ForexRatesMap,
 } from "@/lib/utils/currency";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyClient = { from: (table: string) => any };
+type QueryResult<T> = PromiseLike<{ data: T[] | null; error?: unknown }>;
+type QueryChain<T> = {
+  select: (columns: string) => QueryChain<T>;
+  eq: (column: string, value: unknown) => QueryChain<T>;
+  order: (column: string, opts: { ascending: boolean }) => QueryChain<T>;
+  limit: (count: number) => QueryChain<T>;
+  insert: (values: unknown) => PromiseLike<{ error?: { message?: string } | null }>;
+} & QueryResult<T>;
+
+type AnyClient = { from: (table: string) => QueryChain<Record<string, unknown>> };
+
+interface ExchangeRateRow {
+  target_currency?: string | null;
+  rate?: number | string | null;
+  fetched_at?: string | null;
+}
 
 /**
  * Fetch live USD-based rates and persist them to exchange_rates.
@@ -25,8 +39,7 @@ export async function fetchAndSaveForexRatesAdmin(
     if (!idr || !sgd) throw new Error("Invalid rates payload");
 
     const now = new Date().toISOString();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase.from("exchange_rates") as any).insert([
+    const { error } = await supabase.from("exchange_rates").insert([
       { base_currency: "USD", target_currency: "IDR", rate: idr, fetched_at: now },
       { base_currency: "USD", target_currency: "SGD", rate: sgd, fetched_at: now },
     ]);
@@ -41,8 +54,8 @@ export async function fetchAndSaveForexRatesAdmin(
 export async function getLatestForexRatesAdmin(
   supabase: AnyClient,
 ): Promise<ForexRatesMap> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data } = await (supabase.from("exchange_rates") as any)
+  const { data } = await supabase
+    .from("exchange_rates")
     .select("target_currency, rate, fetched_at")
     .eq("base_currency", "USD")
     .order("fetched_at", { ascending: false })
@@ -50,7 +63,7 @@ export async function getLatestForexRatesAdmin(
 
   const rates: ForexRatesMap = { ...DEFAULT_FALLBACK_RATES };
   const seen = new Set<string>();
-  for (const r of (data ?? []) as any[]) {
+  for (const r of (data ?? []) as ExchangeRateRow[]) {
     if (!r.target_currency || !r.rate || seen.has(r.target_currency)) continue;
     seen.add(r.target_currency);
     rates[r.target_currency] = Number(r.rate);

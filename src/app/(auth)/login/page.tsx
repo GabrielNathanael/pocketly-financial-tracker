@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { login } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
@@ -12,12 +13,12 @@ import {
   Lock,
   Mail,
   Sparkles,
-  KeyRound,
   Copy,
   Check,
 } from "lucide-react";
 
 export default function LoginPage() {
+  const router = useRouter();
   const { language, setLanguage } = useLanguage();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -44,7 +45,7 @@ export default function LoginPage() {
         setError(res.error);
         setIsLoading(false);
       } else {
-        window.location.href = "/dashboard";
+        router.push("/dashboard");
       }
     } catch (err) {
       const msg = (err as Error).message;

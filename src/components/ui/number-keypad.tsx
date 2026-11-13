@@ -36,6 +36,7 @@ export function NumberKeypad({
   decimalScale,
   minorUnitMode = false,
   maxDigits = 24,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   showThousandsShortcuts = true,
   doneLabel = "Selesai",
   compact = false,
@@ -118,15 +119,15 @@ export function NumberKeypad({
   };
 
   const buttonClass =
-    "min-h-16 rounded-xl border border-[#E5E7EB] bg-[#F1F3F5] font-mono font-bold text-[#0F172A] transition-all hover:bg-[#E9ECEF] active:scale-95 dark:border-[#27272A] dark:bg-[#1A1A20] dark:text-[#F8FAFC] dark:hover:bg-[#26262E] sm:min-h-[4.75rem]";
+    "min-h-16 rounded-xl border border-[#E5E7EB] bg-[#F1F3F5] font-mono font-bold text-[#0F172A] transition-all hover:bg-[#E9ECEF] active:scale-95 dark:border-[#27272A] dark:bg-[#1A1A20] dark:text-[#F8FAFC] dark:hover:bg-[#26262E] sm:min-h-19";
   const numberClass = cn(
     buttonClass,
     compact ? "text-xl" : "text-2xl sm:text-3xl",
   );
   const clearClass =
-    "min-h-16 rounded-xl border border-[#FECDD3] bg-[#FFF1F2] font-mono text-lg font-bold text-[#E11D48] transition-all hover:bg-[#FFE4E6] active:scale-95 dark:border-[#9F1239]/40 dark:bg-[#881337]/20 dark:hover:bg-[#881337]/40 sm:min-h-[4.75rem]";
+    "min-h-16 rounded-xl border border-[#FECDD3] bg-[#FFF1F2] font-mono text-lg font-bold text-[#E11D48] transition-all hover:bg-[#FFE4E6] active:scale-95 dark:border-[#9F1239]/40 dark:bg-[#881337]/20 dark:hover:bg-[#881337]/40 sm:min-h-19";
   const doneClass =
-    "flex min-h-16 items-center justify-center gap-1.5 rounded-xl bg-[#0F172A] text-sm font-bold text-white shadow-md transition-all hover:opacity-90 active:scale-95 dark:bg-[#FAFAFA] dark:text-[#0F172A] sm:min-h-[4.75rem]";
+    "flex min-h-16 items-center justify-center gap-1.5 rounded-xl bg-[#0F172A] text-sm font-bold text-white shadow-md transition-all hover:opacity-90 active:scale-95 dark:bg-[#FAFAFA] dark:text-[#0F172A] sm:min-h-19";
   const key = (value: string) => (
     <button
       key={value}
@@ -158,7 +159,7 @@ export function NumberKeypad({
       onClick={onDone}
       className={cn(doneClass, allowDecimal ? "col-span-3" : "col-span-2")}
     >
-      <Check className="h-4 w-4 stroke-[3]" />
+      <Check className="h-4 w-4 stroke-3" />
       {doneLabel}
     </button>
   ) : null;

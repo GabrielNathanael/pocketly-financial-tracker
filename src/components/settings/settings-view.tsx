@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { ExportDataCard } from "@/components/settings/export-data-card";
@@ -49,7 +49,6 @@ interface SettingsViewProps {
 }
 
 export function SettingsView({ userEmail }: SettingsViewProps) {
-  const router = useRouter();
   const { language, setLanguage, t } = useLanguage();
   const [forexRates, setForexRates] = useState<ForexRatesMap>(
     DEFAULT_FALLBACK_RATES,

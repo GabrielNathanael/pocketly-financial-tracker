@@ -42,12 +42,14 @@ export function BottomSheet({
 
   useEffect(() => {
     if (isOpen) {
-      setIsMounted(true);
-      document.body.style.overflow = "hidden";
-      setDragOffset(0);
-      setIsClosing(false);
-      setIsEntered(false);
-      setIsEntering(true);
+      queueMicrotask(() => {
+        setIsMounted(true);
+        document.body.style.overflow = "hidden";
+        setDragOffset(0);
+        setIsClosing(false);
+        setIsEntered(false);
+        setIsEntering(true);
+      });
       const frame = requestAnimationFrame(() => {
         enterFrameRef.current = requestAnimationFrame(() =>
           setIsEntered(true),
@@ -65,8 +67,10 @@ export function BottomSheet({
       };
     } else {
       document.body.style.overflow = "unset";
-      setIsEntered(false);
-      setIsClosing(true);
+      queueMicrotask(() => {
+        setIsEntered(false);
+        setIsClosing(true);
+      });
       const timeout = setTimeout(() => setIsMounted(false), 200);
       return () => clearTimeout(timeout);
     }

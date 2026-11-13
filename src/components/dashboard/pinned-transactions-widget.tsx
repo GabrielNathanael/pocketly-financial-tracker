@@ -102,7 +102,7 @@ export function PinnedTransactionsWidget() {
           return (
             <div
               key={tpl.id}
-              className="relative min-w-[160px] sm:min-w-[190px] shrink-0 p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors flex flex-col justify-between group shadow-2xs"
+              className="relative min-w-40 sm:min-w-47.5 shrink-0 p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] hover:border-[#0F172A] dark:hover:border-[#FAFAFA] transition-colors flex flex-col justify-between group shadow-2xs"
             >
               <button
                 type="button"

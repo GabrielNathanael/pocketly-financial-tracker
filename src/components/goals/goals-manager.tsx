@@ -34,7 +34,6 @@ import {
   PauseCircle,
   PlayCircle,
   Coins,
-  CheckCircle2,
 } from 'lucide-react'
 
 interface GoalsManagerProps {
@@ -196,7 +195,7 @@ export function GoalsManager({
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
         {/* Card 1: Total Target */}
         <div className="p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col justify-between gap-1.5 shadow-2xs">
-          <div className="flex items-center justify-between gap-1 min-h-[22px]">
+          <div className="flex items-center justify-between gap-1 min-h-5.5">
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] leading-tight">
               {t.goals.totalTarget}
             </span>
@@ -214,7 +213,7 @@ export function GoalsManager({
 
         {/* Card 2: Total Saved */}
         <div className="p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col justify-between gap-1.5 shadow-2xs">
-          <div className="flex items-center justify-between gap-1 min-h-[22px]">
+          <div className="flex items-center justify-between gap-1 min-h-5.5">
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] leading-tight">
               {t.goals.totalSaved}
             </span>
@@ -232,7 +231,7 @@ export function GoalsManager({
 
         {/* Card 3: Overall Progress */}
         <div className="p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col justify-between gap-1.5 shadow-2xs">
-          <div className="flex items-center justify-between gap-1 min-h-[22px]">
+          <div className="flex items-center justify-between gap-1 min-h-5.5">
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] leading-tight">
               {t.goals.overallProgress}
             </span>
@@ -253,7 +252,7 @@ export function GoalsManager({
 
         {/* Card 4: Goals Achieved */}
         <div className="p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col justify-between gap-1.5 shadow-2xs">
-          <div className="flex items-center justify-between gap-1 min-h-[22px]">
+          <div className="flex items-center justify-between gap-1 min-h-5.5">
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8] leading-tight">
               {t.goals.completedCount}
             </span>

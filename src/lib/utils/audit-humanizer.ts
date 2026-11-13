@@ -29,10 +29,8 @@ export function humanizeAuditLog(
   lang: "id" | "en" = "id",
 ): HumanizedAuditLog {
   const isId = lang === "id";
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const oldVal = (log.old_values || {}) as Record<string, any>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const newVal = (log.new_values || {}) as Record<string, any>;
+  const oldVal = (log.old_values || {}) as Record<string, unknown>;
+  const newVal = (log.new_values || {}) as Record<string, unknown>;
   const table = log.table_name;
 
   // ==========================================
@@ -1413,10 +1411,6 @@ export function humanizeAuditLog(
     const cur = newVal.currency || oldVal.currency || "IDR";
     const targetAmt = formatCurrency(
       Number(newVal.target_amount || oldVal.target_amount || 0),
-      cur,
-    );
-    const currentAmt = formatCurrency(
-      Number(newVal.current_amount || oldVal.current_amount || 0),
       cur,
     );
 

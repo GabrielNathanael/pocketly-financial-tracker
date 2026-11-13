@@ -23,8 +23,6 @@ import {
   RefreshCw,
   Target,
   History,
-  Shield,
-  SunMoon,
   CalendarClock,
   TrendingUp,
   Split,

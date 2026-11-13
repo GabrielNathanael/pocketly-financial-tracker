@@ -21,14 +21,14 @@ export function NetWorthSkeleton() {
             ))}
           </div>
         </div>
-        <Skeleton className="h-[200px] w-full rounded-xl bg-slate-100 dark:bg-[#1A1A20]" />
+        <Skeleton className="h-50 w-full rounded-xl bg-slate-100 dark:bg-[#1A1A20]" />
       </div>
 
       {/* Allocation */}
       <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#121215] border border-[#E5E7EB] dark:border-[#27272A] flex flex-col gap-3">
         <Skeleton className="h-4 w-32 rounded bg-slate-200 dark:bg-[#27272A]" />
         <div className="grid grid-cols-1 sm:grid-cols-[220px_1fr] gap-5 items-center">
-          <Skeleton className="mx-auto h-[200px] w-[200px] rounded-full bg-slate-100 dark:bg-[#1A1A20]" />
+          <Skeleton className="mx-auto h-50 w-50 rounded-full bg-slate-100 dark:bg-[#1A1A20]" />
           <div className="flex flex-col gap-2">
             {[1, 2, 3].map((i) => (
               <Skeleton key={i} className="h-14 w-full rounded-xl bg-slate-100 dark:bg-[#1A1A20]" />

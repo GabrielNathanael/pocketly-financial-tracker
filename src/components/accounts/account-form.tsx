@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Account, AccountType, CurrencyCode } from "@/types/database";
 import {
@@ -101,8 +101,7 @@ export function AccountForm({ initialData, onSuccess }: AccountFormProps) {
           setError(res.error);
           return;
         }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const createdId = (res.data as any)?.id;
+        const createdId = (res.data as { id?: string } | null | undefined)?.id;
         if (isDefault && createdId) {
           await setDefaultAccount(createdId);
           setDefaultAccountId(createdId); // sync cache lokal

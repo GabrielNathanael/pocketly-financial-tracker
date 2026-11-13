@@ -23,8 +23,7 @@ export async function fetchAndSaveForexRates(): Promise<ForexRatesMap> {
   if (!idr || !sgd) throw new Error("Data kurs dari API tidak valid");
 
   const now = new Date().toISOString();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase.from("exchange_rates") as any).insert([
+  const { error } = await supabase.from("exchange_rates").insert([
     {
       base_currency: "USD",
       target_currency: "IDR",
@@ -46,8 +45,7 @@ export async function fetchAndSaveForexRates(): Promise<ForexRatesMap> {
 
 export async function getLatestForexRates(): Promise<ForexRatesMap> {
   const supabase = await createServerSupabaseClient();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data } = await (supabase.from("exchange_rates") as any)
+  const { data } = await supabase.from("exchange_rates")
     .select("target_currency, rate, fetched_at")
     .eq("base_currency", "USD")
     .order("fetched_at", { ascending: false })
@@ -57,8 +55,7 @@ export async function getLatestForexRates(): Promise<ForexRatesMap> {
   const seen = new Set<string>();
 
   // Urut terbaru -> terlama; baris pertama per mata uang yang menang
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  for (const r of (data ?? []) as any[]) {
+  for (const r of (data ?? [])) {
     if (!r.target_currency || !r.rate || seen.has(r.target_currency)) continue;
     seen.add(r.target_currency);
     rates[r.target_currency] = Number(r.rate);
@@ -115,6 +112,7 @@ export async function getNetWorthData(
   // the view converts to the user's preferred display currency.
   _displayCurrency: CurrencyCode = "IDR",
 ): Promise<NetWorthSummary> {
+  void _displayCurrency;
   const supabase = await createServerSupabaseClient();
   const rates = await getLatestForexRates();
   const {
@@ -144,8 +142,7 @@ export async function getNetWorthData(
   }
 
   const prices = await getAssetPrices(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    supabase as any,
+    supabase as unknown as Parameters<typeof getAssetPrices>[0],
   );
   const latestPriceFetchedAt = Array.from(prices.values()).reduce<
     string | null
@@ -155,8 +152,7 @@ export async function getNetWorthData(
     null,
   );
   const c = await computeNetWorthForUser(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    supabase as any,
+    supabase as unknown as Parameters<typeof computeNetWorthForUser>[0],
     user.id,
     rates,
     prices,
@@ -189,14 +185,13 @@ export async function getNetWorthData(
 
 export async function getNetWorthSnapshots(): Promise<NetWorthSnapshotPoint[]> {
   const supabase = await createServerSupabaseClient();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await ((supabase as any).from("net_worth_snapshots") as any)
+  const { data, error } = await (supabase as unknown as { from: (table: "net_worth_snapshots") => { select: (q: string) => { order: (c: string, o: { ascending: boolean }) => { limit: (n: number) => Promise<{ data: Array<Record<string, unknown>> | null; error: unknown }> } } } }).from("net_worth_snapshots")
     .select("snapshot_date, net_worth_idr, total_assets_idr, total_liabilities_idr, rates")
     .order("snapshot_date", { ascending: true })
     .limit(730);
 
   if (error || !data) return [];
-  return (data as any[]).map((r) => ({
+  return (data as Array<Record<string, unknown>>).map((r) => ({
     date: String(r.snapshot_date).substring(0, 10),
     netWorthIdr: Number(r.net_worth_idr) || 0,
     assetsIdr: Number(r.total_assets_idr) || 0,
