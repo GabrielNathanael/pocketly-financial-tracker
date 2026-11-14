@@ -7,6 +7,7 @@ import { getCryptoHoldings } from '@/actions/crypto'
 import { getEtfHoldings } from '@/actions/etf'
 import { getAssetPrices } from '@/lib/net-worth/prices'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { AiCashflowExportCard } from '@/components/reports/ai-cashflow-export-card'
 import { ReportsView } from '@/components/reports/reports-view'
 
 export const dynamic = 'force-dynamic'
@@ -24,14 +25,19 @@ export default async function ReportsPage() {
   ])
 
   return (
-    <ReportsView
-      transactions={transactions}
-      categories={categories}
-      rates={rates}
-      stocks={stocks}
-      cryptos={cryptos}
-      etfs={etfs}
-      prices={Array.from(priceMap.values())}
-    />
+    <>
+      <div className="mb-4">
+        <AiCashflowExportCard />
+      </div>
+      <ReportsView
+        transactions={transactions}
+        categories={categories}
+        rates={rates}
+        stocks={stocks}
+        cryptos={cryptos}
+        etfs={etfs}
+        prices={Array.from(priceMap.values())}
+      />
+    </>
   )
 }

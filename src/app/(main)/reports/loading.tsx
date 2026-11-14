@@ -4,6 +4,20 @@ import { Skeleton } from '@/components/ui/skeleton'
 export default function ReportsLoading() {
   return (
     <div className="flex flex-col gap-6 animate-in fade-in-50 duration-150" aria-busy="true" aria-live="polite">
+      {/* 0. AI Cashflow Export Card Skeleton */}
+      <div className="p-4 sm:p-5 rounded-xl border border-border bg-surface flex flex-col gap-3.5">
+        <div className="flex items-start sm:items-center justify-between gap-3">
+          <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
+            <Skeleton className="w-9 h-9 rounded-lg bg-surface-muted shrink-0" />
+            <div className="min-w-0 flex-1 flex flex-col gap-1.5">
+              <Skeleton className="h-4 w-40 rounded-md bg-surface-muted" />
+              <Skeleton className="h-3 w-full max-w-md rounded-md bg-surface-subtle" />
+            </div>
+          </div>
+          <Skeleton className="h-9 w-28 rounded-md bg-surface-subtle shrink-0" />
+        </div>
+      </div>
+
       {/* 1. Header with Title & Action Buttons */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex flex-col gap-1.5">
