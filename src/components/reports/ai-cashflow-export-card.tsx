@@ -48,6 +48,7 @@ export function AiCashflowExportCard() {
 
   const [includeTransactionsCsv, setIncludeTransactionsCsv] = useState(false);
   const [includeTransfersCsv, setIncludeTransfersCsv] = useState(true);
+  const [includeTradesCsv, setIncludeTradesCsv] = useState(true);
   const [includeContextJson, setIncludeContextJson] = useState(false);
   const [compactMode, setCompactMode] = useState(false);
 
@@ -91,6 +92,7 @@ export function AiCashflowExportCard() {
         language: language === "en" ? "en" : "id",
         includeTransactionsCsv,
         includeTransfersCsv,
+        includeTradesCsv,
         includeContextJson,
         compactMode,
         metrics,
@@ -99,12 +101,12 @@ export function AiCashflowExportCard() {
       if (result.encoding === "utf-8") {
         downloadBlob(
           new Blob([result.content], { type: "text/markdown;charset=utf-8" }),
-          result.filename || `cashflow-ai-summary-${toDateStr(new Date())}.md`,
+          result.filename || `wealth-ai-summary-${toDateStr(new Date())}.md`,
         );
       } else {
         downloadBlob(
           base64ToBlob(result.content, result.mime || "application/zip"),
-          result.filename || `pocketly-ai-cashflow-${toDateStr(new Date())}.zip`,
+          result.filename || `pocketly-ai-wealth-export-${toDateStr(new Date())}.zip`,
         );
       }
 
@@ -271,6 +273,26 @@ export function AiCashflowExportCard() {
                   {includeTransfersCsv && <Check className="w-3 h-3" />}
                 </span>
                 {t.reports.aiExportFileTransfers || "transfers.csv"}
+              </button>
+
+              <button
+                type="button"
+                role="checkbox"
+                aria-checked={includeTradesCsv}
+                onClick={() => setIncludeTradesCsv((v) => !v)}
+                className="flex items-center gap-2.5 px-2 py-1.5 -mx-2 rounded-md text-left text-xs text-foreground hover:bg-surface-subtle transition-colors cursor-pointer"
+              >
+                <span
+                  className={cn(
+                    "w-4 h-4 shrink-0 rounded flex items-center justify-center border transition-colors",
+                    includeTradesCsv
+                      ? "bg-primary border-primary text-primary-foreground"
+                      : "border-border",
+                  )}
+                >
+                  {includeTradesCsv && <Check className="w-3 h-3" />}
+                </span>
+                {t.reports.aiExportFileTrades || "trades.csv"}
               </button>
 
               <button

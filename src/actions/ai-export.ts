@@ -4,6 +4,7 @@ import JSZip from "jszip";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { convertAmount, type ForexRatesMap, DEFAULT_FALLBACK_RATES } from "@/lib/utils/currency";
 import { getLatestForexRates } from "@/actions/exchange-rate";
+import { getAssetPrices, type AssetPrice } from "@/lib/net-worth/prices";
 import { getCleanDescription } from "@/lib/utils/description";
 import { normalizeStoredItems, formatItemsSummary } from "@/lib/utils/transaction-items";
 import { formatCategoryName } from "@/lib/utils/category-i18n";
@@ -34,6 +35,7 @@ export interface AiExportOptions {
   language: "id" | "en";
   includeTransactionsCsv: boolean;
   includeTransfersCsv: boolean;
+  includeTradesCsv?: boolean;
   includeContextJson: boolean;
   /** When true, produce a more compact/token-efficient summary (less verbose snapshots/breakdowns). */
   compactMode?: boolean;
@@ -77,7 +79,11 @@ interface TxRow {
   items_json: string;
   items_summary: string;
   transfer_id_ref: string | null;
+  /** Actual trade id when linked (related_trade_ref = <trade_id>) for reconciliation with trades.csv. */
   related_trade_ref: string | null;
+  stock_trade_id: string | null;
+  crypto_trade_id: string | null;
+  etf_trade_id: string | null;
   created_at: string;
   account_id: string;
   category_id: string | null;
@@ -89,6 +95,10 @@ interface TransferRow {
   date_local: string;
   from_account: string;
   to_account: string;
+  from_account_id: string;
+  to_account_id: string;
+  from_account_type: string | null;
+  to_account_type: string | null;
   amount_original: number;
   from_currency: string;
   to_currency: string;
@@ -101,6 +111,29 @@ interface TransferRow {
   net_amount: number | null;
   fee_normalized_base: number | null;
   description: string;
+}
+
+interface TradeRow {
+  trade_id: string;
+  date_iso: string;
+  date_local: string;
+  asset_class: "stock" | "etf" | "crypto";
+  symbol: string;
+  type: "buy" | "sell";
+  account_name: string;
+  quantity: number;
+  lots: number | null;
+  price_per_unit: number;
+  settlement_currency: string;
+  gross_amount: number;
+  fee_amount: number;
+  stamp_duty: number;
+  net_amount_original: number;
+  net_amount_normalized: number;
+  base_currency: string;
+  cost_basis_sold: number | null;
+  realized_pnl_normalized: number | null;
+  notes: string;
 }
 
 function parseBound(value?: string): string | undefined {
@@ -121,6 +154,10 @@ function csvCell(value: string | number | null | undefined): string {
 
 function round2(n: number) {
   return Math.round((n + Number.EPSILON) * 100) / 100;
+}
+function roundN(n: number, d = 8) {
+  const p = 10 ** d;
+  return Math.round((n + Number.EPSILON) * p) / p;
 }
 function median(nums: number[]): number {
   if (nums.length === 0) return 0;
@@ -245,6 +282,12 @@ function localDayKeysBetween(startYmd: string, endYmdInclusive: string): string[
   }
   return out;
 }
+function isTradeLinkedTx(r: Pick<TxRow, "related_trade_ref" | "stock_trade_id" | "crypto_trade_id" | "etf_trade_id">) {
+  return !!(r.related_trade_ref || r.stock_trade_id || r.crypto_trade_id || r.etf_trade_id);
+}
+function normalizeToBase(amount: number, currency: string, baseCurrency: string, rates: ForexRatesMap) {
+  return round2(convertAmount(amount || 0, currency || "IDR", baseCurrency, rates));
+}
 
 export async function exportAiCashflowData(
   options: AiExportOptions,
@@ -258,6 +301,7 @@ export async function exportAiCashflowData(
   const baseCurrency = options.baseCurrency || "IDR";
   const lang = options.language || "id";
   const compact = !!options.compactMode;
+  const includeTradesCsv = options.includeTradesCsv !== false; // default true for wealth export with trades data
   const timeZone = await getUserTimeZone();
 
   // Resolve period bounds in user-local calendar intent, half-open [rangeStart, rangeEnd)
@@ -325,8 +369,7 @@ export async function exportAiCashflowData(
   let fxFetchedAt: string | null = null;
   let fxNote = "default fallback USD-base rates (latest fetch unavailable)";
   try {
-    const supabaseFx = supabase;
-    const { data: fxRows } = await supabaseFx
+    const { data: fxRows } = await supabase
       .from("exchange_rates")
       .select("target_currency, rate, fetched_at")
       .eq("base_currency", "USD")
@@ -347,16 +390,10 @@ export async function exportAiCashflowData(
       fxFetchedAt = latest;
       fxNote = "latest stored exchange rates (USD base)";
     } else {
-      // try action fallback
       try {
         rates = await getLatestForexRates();
         fxSource = "latest_stored_exchange_rates_action";
         fxNote = "latest stored exchange rates (USD base)";
-        try {
-          const { data: tsRows } = await supabaseFx.from("exchange_rates").select("fetched_at").eq("base_currency", "USD").order("fetched_at", { ascending: false }).limit(1);
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          fxFetchedAt = (tsRows as any)?.[0]?.fetched_at || null;
-        } catch { /* ignore */ }
       } catch { /* keep default */ }
     }
   } catch {
@@ -364,11 +401,6 @@ export async function exportAiCashflowData(
       rates = await getLatestForexRates();
       fxSource = "latest_stored_exchange_rates_action";
       fxNote = "latest stored exchange rates (USD base)";
-      try {
-        const { data: tsRows } = await supabase.from("exchange_rates").select("fetched_at").eq("base_currency", "USD").order("fetched_at", { ascending: false }).limit(1);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        fxFetchedAt = (tsRows as any)?.[0]?.fetched_at || null;
-      } catch { /* ignore */ }
     } catch {
       rates = { ...DEFAULT_FALLBACK_RATES };
       fxSource = "fallback_default";
@@ -380,7 +412,7 @@ export async function exportAiCashflowData(
   let txQuery = supabase
     .from("transactions")
     .select(
-      "id, transaction_date, type, amount, currency, description, tags, items, created_at, account_id, category_id, transfer_id, crypto_trade_id, stock_trade_id, etf_trade_id, account:accounts(name,currency), category:categories(name,type)",
+      "id, transaction_date, type, amount, currency, description, tags, items, created_at, account_id, category_id, transfer_id, crypto_trade_id, stock_trade_id, etf_trade_id, account:accounts(name,currency,type), category:categories(name,type)",
     )
     .order("transaction_date", { ascending: true });
   if (rangeStart) txQuery = txQuery.gte("transaction_date", rangeStart);
@@ -390,7 +422,7 @@ export async function exportAiCashflowData(
   let trQuery = supabase
     .from("transfers")
     .select(
-      "id, transfer_date, from_account_id, to_account_id, amount, from_currency, to_currency, exchange_rate_used, fee_amount, fee_mode, net_amount, description, from_account:accounts!transfers_from_account_id_fkey(name), to_account:accounts!transfers_to_account_id_fkey(name)",
+      "id, transfer_date, from_account_id, to_account_id, amount, from_currency, to_currency, exchange_rate_used, fee_amount, fee_mode, net_amount, description, from_account:accounts!transfers_from_account_id_fkey(name,currency,type), to_account:accounts!transfers_to_account_id_fkey(name,currency,type)",
     )
     .order("transfer_date", { ascending: true });
   if (rangeStart) trQuery = trQuery.gte("transfer_date", rangeStart);
@@ -402,17 +434,52 @@ export async function exportAiCashflowData(
     .select("id,name,type,currency,current_balance,initial_balance,is_active,is_default")
     .order("created_at", { ascending: true });
 
-  const [txRes, trRes, accRes] = await Promise.all([txQuery, trQuery, accountsQuery]);
+  // 4) Trades in period (unified) - optional but fetched when selected or needed for cashflow_adjusted exclusions/basis
+  let stockTradesQuery = supabase
+    .from("stock_trades")
+    .select("id, trade_date, ticker, type, account_id, lots, shares, price_per_share, net_amount, buy_cost, realized_pnl, stamp_duty, notes, currency, created_at, account:accounts(name,currency)")
+    .order("trade_date", { ascending: true });
+  if (rangeStart) stockTradesQuery = stockTradesQuery.gte("trade_date", rangeStart);
+  if (rangeEnd) stockTradesQuery = stockTradesQuery.lt("trade_date", rangeEnd);
+
+  let cryptoTradesQuery = supabase
+    .from("crypto_trades")
+    .select("id, trade_date, symbol, type, account_id, quantity, gross_amount, fee_amount, fee_currency, price_per_unit, cost_basis, realized_pnl, notes, currency, created_at, account:accounts(name,currency)")
+    .order("trade_date", { ascending: true });
+  if (rangeStart) cryptoTradesQuery = cryptoTradesQuery.gte("trade_date", rangeStart);
+  if (rangeEnd) cryptoTradesQuery = cryptoTradesQuery.lt("trade_date", rangeEnd);
+
+  let etfTradesQuery = supabase
+    .from("etf_trades")
+    .select("id, trade_date, ticker, type, account_id, quantity, price_per_unit, gross_amount, fee_amount, buy_cost, realized_pnl, notes, currency, created_at, account:accounts(name,currency)")
+    .order("trade_date", { ascending: true });
+  if (rangeStart) etfTradesQuery = etfTradesQuery.gte("trade_date", rangeStart);
+  if (rangeEnd) etfTradesQuery = etfTradesQuery.lt("trade_date", rangeEnd);
+
+  // 5) Holdings snapshots (all active/relevant)
+  const stockHoldingsQuery = supabase.from("stock_holdings").select("id, ticker, account_id, currency, lots, total_shares, total_cost, avg_buy_price, account:accounts(name,currency)");
+  const cryptoHoldingsQuery = supabase.from("crypto_holdings").select("id, symbol, name, account_id, quantity, cost_basis, average_buy_price, price_currency, manual_price, account:accounts(name,currency)");
+  const etfHoldingsQuery = supabase.from("etf_holdings").select("id, ticker, account_id, currency, quantity, total_cost, avg_buy_price, broker_name, account:accounts(name,currency)");
+
+  const [txRes, trRes, accRes, stRes, ctRes, etRes, shRes, chRes, ehRes, prices] = await Promise.all([
+    txQuery, trQuery, accountsQuery,
+    stockTradesQuery, cryptoTradesQuery, etfTradesQuery,
+    stockHoldingsQuery, cryptoHoldingsQuery, etfHoldingsQuery,
+    getAssetPrices(supabase as never),
+  ]);
   if (txRes.error) throw new Error(`Export failed: ${txRes.error.message}`);
   if (trRes.error) throw new Error(`Export failed: ${trRes.error.message}`);
   if (accRes.error) throw new Error(`Export failed: ${accRes.error.message}`);
+  if (stRes.error) throw new Error(`Export failed: ${stRes.error.message}`);
+  if (ctRes.error) throw new Error(`Export failed: ${ctRes.error.message}`);
+  if (etRes.error) throw new Error(`Export failed: ${etRes.error.message}`);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const rawTx = (txRes.data || []) as any[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const rawTr = (trRes.data || []) as any[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const accountsSnap = (accRes.data || []) as any[];
+  const accountsSnapRaw = (accRes.data || []) as any[];
 
   const uncatLabel = lang === "id" ? "Tanpa Kategori" : "Uncategorized";
   const txRows: TxRow[] = rawTx.map((t) => {
@@ -421,13 +488,8 @@ export async function exportAiCashflowData(
     const amount_normalized = round2(convertAmount(amountOriginal, currencyOriginal, baseCurrency, rates));
     const categoryName = t.category?.name || "";
     const items = normalizeStoredItems(t.items) || [];
-    const tradeRef = t.stock_trade_id
-      ? `stock:${t.stock_trade_id}`
-      : t.crypto_trade_id
-        ? `crypto:${t.crypto_trade_id}`
-        : t.etf_trade_id
-          ? `etf:${t.etf_trade_id}`
-          : null;
+    // Reconciliation: related_trade_ref references the actual <trade_id> for trade-linked mirror rows
+    const tradeId = t.stock_trade_id || t.crypto_trade_id || t.etf_trade_id || null;
     return {
       id: t.id,
       date: t.transaction_date,
@@ -448,7 +510,10 @@ export async function exportAiCashflowData(
       items_json: items.length ? JSON.stringify(items) : "",
       items_summary: items.length ? formatItemsSummary(items, currencyOriginal) : "",
       transfer_id_ref: t.transfer_id || null,
-      related_trade_ref: tradeRef,
+      related_trade_ref: tradeId,
+      stock_trade_id: t.stock_trade_id || null,
+      crypto_trade_id: t.crypto_trade_id || null,
+      etf_trade_id: t.etf_trade_id || null,
       created_at: t.created_at || "",
       account_id: t.account_id || "",
       category_id: t.category_id || null,
@@ -467,6 +532,10 @@ export async function exportAiCashflowData(
       date_local: dateKeyFromIsoLocal(tr.transfer_date, timeZone),
       from_account: tr.from_account?.name || "",
       to_account: tr.to_account?.name || "",
+      from_account_id: tr.from_account_id || "",
+      to_account_id: tr.to_account_id || "",
+      from_account_type: tr.from_account?.type || null,
+      to_account_type: tr.to_account?.type || null,
       amount_original: amountOriginal,
       from_currency: fromCurrency,
       to_currency: tr.to_currency || "",
@@ -482,15 +551,200 @@ export async function exportAiCashflowData(
     };
   });
 
+  // Unified trades rows (period) from actual trade tables: buy/sell only
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const stockTrades = (stRes.data || []) as any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const cryptoTrades = (ctRes.data || []) as any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const etfTrades = (etRes.data || []) as any[];
+
+  const tradeRows: TradeRow[] = [];
+  for (const t of stockTrades) {
+    const settlementCurrency = t.currency || t.account?.currency || "IDR";
+    const lots = t.lots != null ? Number(t.lots) : (t.shares != null ? Number(t.shares) / 100 : null);
+    const shares = t.shares != null ? Number(t.shares) : (t.lots != null ? Number(t.lots) * 100 : 0);
+    const quantity = shares || (lots != null ? lots * 100 : 0);
+    const pricePerUnit = t.price_per_share != null ? Number(t.price_per_share) : (quantity ? Number(t.net_amount || 0) / quantity : 0);
+    const grossAmount = quantity * pricePerUnit;
+    const stampDuty = Number(t.stamp_duty || 0);
+    const netAmountStored = Number(t.net_amount || 0);
+    // Best-effort cash effect from real fields: buy cash out ~= net_amount + stamp_duty; sell cash in ~= net_amount - stamp_duty.
+    const netAmountOriginal = t.type === "buy" ? netAmountStored + stampDuty : netAmountStored - stampDuty;
+    const costBasisSold = t.type === "sell" ? Number(t.buy_cost || 0) : null;
+    const realizedPnlOrig = t.type === "sell" && t.realized_pnl != null ? Number(t.realized_pnl) : null;
+    tradeRows.push({
+      trade_id: t.id,
+      date_iso: t.trade_date,
+      date_local: dateKeyFromIsoLocal(t.trade_date, timeZone),
+      asset_class: "stock",
+      symbol: String(t.ticker || "").toUpperCase(),
+      type: t.type,
+      account_name: t.account?.name || "",
+      quantity,
+      lots,
+      price_per_unit: pricePerUnit,
+      settlement_currency: settlementCurrency,
+      gross_amount: round2(grossAmount),
+      fee_amount: 0,
+      stamp_duty: round2(stampDuty),
+      net_amount_original: round2(netAmountOriginal),
+      net_amount_normalized: normalizeToBase(netAmountOriginal, settlementCurrency, baseCurrency, rates),
+      base_currency: baseCurrency,
+      cost_basis_sold: costBasisSold != null ? round2(costBasisSold) : null,
+      realized_pnl_normalized: realizedPnlOrig != null ? normalizeToBase(realizedPnlOrig, settlementCurrency, baseCurrency, rates) : null,
+      notes: t.notes || "",
+    });
+  }
+  for (const t of cryptoTrades) {
+    const settlementCurrency = t.currency || t.fee_currency || t.account?.currency || "IDR";
+    const quantity = Number(t.quantity || 0);
+    const grossAmount = Number(t.gross_amount || 0);
+    const feeAmount = Number(t.fee_amount || 0);
+    const pricePerUnit = t.price_per_unit != null ? Number(t.price_per_unit) : (quantity ? grossAmount / quantity : 0);
+    const netAmountOriginal = t.type === "buy" ? grossAmount + feeAmount : grossAmount - feeAmount;
+    const costBasisSold = t.type === "sell" ? Number(t.cost_basis || 0) : null;
+    const realizedPnlOrig = t.type === "sell" && t.realized_pnl != null ? Number(t.realized_pnl) : null;
+    tradeRows.push({
+      trade_id: t.id,
+      date_iso: t.trade_date,
+      date_local: dateKeyFromIsoLocal(t.trade_date, timeZone),
+      asset_class: "crypto",
+      symbol: String(t.symbol || "").toUpperCase(),
+      type: t.type,
+      account_name: t.account?.name || "",
+      quantity,
+      lots: null,
+      price_per_unit: pricePerUnit,
+      settlement_currency: settlementCurrency,
+      gross_amount: round2(grossAmount),
+      fee_amount: round2(feeAmount),
+      stamp_duty: 0,
+      net_amount_original: round2(netAmountOriginal),
+      net_amount_normalized: normalizeToBase(netAmountOriginal, settlementCurrency, baseCurrency, rates),
+      base_currency: baseCurrency,
+      cost_basis_sold: costBasisSold != null ? round2(costBasisSold) : null,
+      realized_pnl_normalized: realizedPnlOrig != null ? normalizeToBase(realizedPnlOrig, settlementCurrency, baseCurrency, rates) : null,
+      notes: t.notes || "",
+    });
+  }
+  for (const t of etfTrades) {
+    const settlementCurrency = t.currency || t.account?.currency || "IDR";
+    const quantity = Number(t.quantity || 0);
+    const grossAmount = Number(t.gross_amount || 0);
+    const feeAmount = Number(t.fee_amount || 0);
+    const pricePerUnit = t.price_per_unit != null ? Number(t.price_per_unit) : (quantity ? grossAmount / quantity : 0);
+    const netAmountOriginal = t.type === "buy" ? grossAmount + feeAmount : grossAmount - feeAmount;
+    const costBasisSold = t.type === "sell" ? Number(t.buy_cost || 0) : null;
+    const realizedPnlOrig = t.type === "sell" && t.realized_pnl != null ? Number(t.realized_pnl) : null;
+    tradeRows.push({
+      trade_id: t.id,
+      date_iso: t.trade_date,
+      date_local: dateKeyFromIsoLocal(t.trade_date, timeZone),
+      asset_class: "etf",
+      symbol: String(t.ticker || "").toUpperCase(),
+      type: t.type,
+      account_name: t.account?.name || "",
+      quantity,
+      lots: null,
+      price_per_unit: pricePerUnit,
+      settlement_currency: settlementCurrency,
+      gross_amount: round2(grossAmount),
+      fee_amount: round2(feeAmount),
+      stamp_duty: 0,
+      net_amount_original: round2(netAmountOriginal),
+      net_amount_normalized: normalizeToBase(netAmountOriginal, settlementCurrency, baseCurrency, rates),
+      base_currency: baseCurrency,
+      cost_basis_sold: costBasisSold != null ? round2(costBasisSold) : null,
+      realized_pnl_normalized: realizedPnlOrig != null ? normalizeToBase(realizedPnlOrig, settlementCurrency, baseCurrency, rates) : null,
+      notes: t.notes || "",
+    });
+  }
+  tradeRows.sort((a, b) => (a.date_iso < b.date_iso ? -1 : a.date_iso > b.date_iso ? 1 : a.trade_id.localeCompare(b.trade_id)));
+
   // Actual data range (local dates) from returned records
-  const allDatesLocal = [...txRows.map((r) => r.date_local), ...trRows.map((r) => r.date_local)].sort();
+  const allDatesLocal = [...txRows.map((r) => r.date_local), ...trRows.map((r) => r.date_local), ...tradeRows.map((r) => r.date_local)].sort();
   const actualDataRange = {
     start_local: allDatesLocal[0] || null,
     end_local: allDatesLocal[allDatesLocal.length - 1] || null,
     has_data: allDatesLocal.length > 0,
   };
 
-  // Context snapshots (best-effort)
+  // Holdings snapshot (actual app data) with market valuation using cached prices (market-or-cost fallback)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const stockHoldings = (shRes.data || []) as any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const cryptoHoldings = (chRes.data || []) as any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const etfHoldings = (ehRes.data || []) as any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const holdingsSnap: any[] = [];
+  const pushHolding = (args: {
+    id: string; asset_class: "stock"|"etf"|"crypto"; symbol: string; name: string | null;
+    account_id: string; account_name: string; quantity: number; lots: number | null; settlement_currency: string;
+    cost_basis_original: number; avg_price_original: number;
+  }) => {
+    const qty = args.quantity || 0;
+    const settlement = args.settlement_currency || "IDR";
+    const cost = args.cost_basis_original || 0;
+    const cached = prices.get(`${args.asset_class}:${args.symbol.toUpperCase()}`) as AssetPrice | undefined;
+    let marketPriceOriginal: number | null = null;
+    let marketValueOriginal: number | null = null;
+    let marketValueNormalized = 0;
+    let valuationSource = "cost_fallback_no_cached_price";
+    let priceFetchedAt: string | null = null;
+    const costBasisNormalized = normalizeToBase(cost, settlement, baseCurrency, rates);
+    if (cached && cached.price > 0 && qty > 0) {
+      // cached price in cached.currency; convert to settlement/original for display and to base for normalized
+      marketPriceOriginal = roundN(convertAmount(cached.price, cached.currency || "IDR", settlement, rates), 8);
+      marketValueOriginal = round2(marketPriceOriginal * qty);
+      marketValueNormalized = normalizeToBase(cached.price * qty, cached.currency || "IDR", baseCurrency, rates);
+      valuationSource = "cached_market_price";
+      priceFetchedAt = cached.fetchedAt || null;
+    } else {
+      marketPriceOriginal = args.avg_price_original || null;
+      marketValueOriginal = round2(cost);
+      marketValueNormalized = costBasisNormalized;
+      if (!(qty > 0)) valuationSource = "cost_fallback_zero_quantity";
+    }
+    const unrealizedPnlNormalized = round2(marketValueNormalized - costBasisNormalized);
+    const unrealizedPnlPct = costBasisNormalized > 0 ? round2((unrealizedPnlNormalized / costBasisNormalized) * 100) : null;
+    holdingsSnap.push({
+      id: args.id,
+      asset_class: args.asset_class,
+      symbol: args.symbol,
+      ...(args.name ? { name: args.name } : {}),
+      account_id: args.account_id,
+      account_name: args.account_name,
+      quantity: args.quantity,
+      ...(args.lots != null ? { lots: args.lots } : {}),
+      settlement_currency: settlement,
+      cost_basis_original: round2(cost),
+      average_buy_price_original: roundN(args.avg_price_original || 0, 8),
+      market_price_original: marketPriceOriginal,
+      market_value_original: marketValueOriginal,
+      market_value_normalized: round2(marketValueNormalized),
+      unrealized_pnl_normalized: unrealizedPnlNormalized,
+      unrealized_pnl_pct: unrealizedPnlPct,
+      price_fetched_at: priceFetchedAt,
+      valuation_source: valuationSource,
+    });
+  };
+  for (const h of stockHoldings) {
+    const settlement = h.currency || h.account?.currency || "IDR";
+    const shares = Number(h.total_shares) || Number(h.lots || 0) * 100 || 0;
+    pushHolding({ id: h.id, asset_class: "stock", symbol: String(h.ticker || "").toUpperCase(), name: null, account_id: h.account_id || "", account_name: h.account?.name || "", quantity: shares, lots: h.lots != null ? Number(h.lots) : null, settlement_currency: settlement, cost_basis_original: Number(h.total_cost || 0), avg_price_original: Number(h.avg_buy_price || 0) });
+  }
+  for (const h of cryptoHoldings) {
+    const settlement = h.price_currency || "IDR";
+    pushHolding({ id: h.id, asset_class: "crypto", symbol: String(h.symbol || "").toUpperCase(), name: h.name || null, account_id: h.account_id || "", account_name: h.account?.name || "", quantity: Number(h.quantity || 0), lots: null, settlement_currency: settlement, cost_basis_original: Number(h.cost_basis || 0), avg_price_original: Number(h.average_buy_price || 0) });
+  }
+  for (const h of etfHoldings) {
+    const settlement = h.currency || h.account?.currency || "IDR";
+    pushHolding({ id: h.id, asset_class: "etf", symbol: String(h.ticker || "").toUpperCase(), name: null, account_id: h.account_id || "", account_name: h.account?.name || "", quantity: Number(h.quantity || 0), lots: null, settlement_currency: settlement, cost_basis_original: Number(h.total_cost || 0), avg_price_original: Number(h.avg_buy_price || 0) });
+  }
+
+  // Debts snapshot (from real debt records) + net worth liabilities/receivables
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let debtsSnap: any[] = [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -498,17 +752,22 @@ export async function exportAiCashflowData(
   try {
     const [d, g] = await Promise.all([getDebts("all", "active"), getSavingsGoals()]);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    debtsSnap = (d || []).map((x: any) => ({
-      id: x.id,
-      name: x.counterparty_name,
-      type: x.type,
-      status: x.status,
-      total_native: Number(x.initial_amount) || 0,
-      remaining_native: Number(x.remaining_amount) || 0,
-      currency: x.currency,
-      due_date: x.due_date,
-      note: "native_currency_not_normalized_to_base",
-    }));
+    debtsSnap = (d || []).map((x: any) => {
+      const currency = x.currency || "IDR";
+      const principal = Number(x.initial_amount) || 0;
+      const remaining = Number(x.remaining_amount) || 0;
+      return {
+        id: x.id,
+        counterparty: x.counterparty_name,
+        type: x.type === "receivable" ? "receivable" : "payable",
+        principal_amount_original: principal,
+        remaining_amount_original: remaining,
+        currency,
+        remaining_normalized: normalizeToBase(remaining, currency, baseCurrency, rates),
+        status: x.status || "active",
+        due_date: x.due_date || null,
+      };
+    });
     goalsSnap = (g || [])
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .filter((x: any) => x.status === "in_progress" || x.status === "active" || x.status === "paused")
@@ -679,10 +938,8 @@ export async function exportAiCashflowData(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let byCategory: any[] = [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let byAccount: any[] = [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let byOriginalCurrency: any[] = [];
-  if (options.metrics.breakdowns || true) { // totals by original currency always useful
+  {
     const totalsOrig = new Map<string, { currency_original: string; income_original: number; expense_original: number; income_normalized: number; expense_normalized: number; tx_count: number }>();
     for (const r of txRows) {
       if (!totalsOrig.has(r.currency_original)) totalsOrig.set(r.currency_original, { currency_original: r.currency_original, income_original: 0, expense_original: 0, income_normalized: 0, expense_normalized: 0, tx_count: 0 });
@@ -701,29 +958,21 @@ export async function exportAiCashflowData(
     if (options.metrics.breakdowns) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const catMap = new Map<string, any>();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const accMap = new Map<string, any>();
       for (const r of txRows) {
         const ck = `${r.type}:${r.category_key}`;
         if (!catMap.has(ck)) catMap.set(ck, { category_key: r.category_key, category: r.category_name_display, type: r.type, amount_normalized: 0, tx_count: 0 });
         const c = catMap.get(ck);
         c.amount_normalized += r.amount_normalized; c.tx_count += 1;
-        const ak = `${r.account_name}|${r.account_currency}`;
-        if (!accMap.has(ak)) accMap.set(ak, { account: r.account_name, account_currency: r.account_currency, income_normalized: 0, expense_normalized: 0, net_normalized: 0, tx_count: 0 });
-        const a = accMap.get(ak);
-        if (r.type === "income") a.income_normalized += r.amount_normalized; else a.expense_normalized += r.amount_normalized;
-        a.net_normalized = a.income_normalized - a.expense_normalized; a.tx_count += 1;
       }
       const catRows = Array.from(catMap.values()).map((c) => {
         const denom = c.type === "income" ? ledger.income_normalized : ledger.expense_normalized;
         return { ...c, amount_normalized: round2(c.amount_normalized), share_pct_of_type: pctValue(c.amount_normalized, denom), avg_tx_normalized: round2(c.tx_count ? c.amount_normalized / c.tx_count : 0) };
       });
       byCategory = [...catRows].sort((a, b) => b.amount_normalized - a.amount_normalized);
-      byAccount = Array.from(accMap.values()).map((a) => ({ ...a, income_normalized: round2(a.income_normalized), expense_normalized: round2(a.expense_normalized), net_normalized: round2(a.net_normalized) })).sort((a, b) => Math.abs(b.net_normalized) - Math.abs(a.net_normalized));
     }
   }
 
-  // No-spend days & volatility (expense days by local date)
+  // No-spend days & volatility
   let noSpend: { value: number | null; available: boolean; reason: string | null; basis: string } = { value: null, available: false, reason: "disabled", basis: "local_calendar_days_with_zero_expense_transactions" };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let volatility: any = null;
@@ -762,7 +1011,148 @@ export async function exportAiCashflowData(
   const transferFeeNormalizedTotal = round2(sum(trRows.map((t) => t.fee_normalized_base || 0)));
   const transferFeeCount = trRows.filter((t) => (t.fee_amount || 0) > 0).length;
   const linkedToTransferCount = txRows.filter((t) => !!t.transfer_id_ref).length;
-  const linkedToTradeCount = txRows.filter((t) => !!t.related_trade_ref).length;
+  const linkedToTradeCount = txRows.filter((t) => isTradeLinkedTx(t)).length;
+
+  // ---- cashflow_adjusted (best-effort, heuristic) ----
+  const isLoanPrincipalCategory = (name: string) => name === "Loan & Debt";
+  const isDiscrepancyCategory = (name: string) => name === "Discrepancy";
+  let excludedTradeMirrorExpense = 0, excludedTradeMirrorIncome = 0, excludedLoanPrincipalOut = 0, excludedLoanPrincipalIn = 0, excludedDiscrepancyOut = 0, excludedDiscrepancyIn = 0;
+  let opIncome = 0, opExpense = 0;
+  for (const r of txRows) {
+    const amt = r.amount_normalized;
+    const tradeMirror = isTradeLinkedTx(r);
+    const loan = isLoanPrincipalCategory(r.category_name);
+    const disc = isDiscrepancyCategory(r.category_name);
+    if (tradeMirror) {
+      if (r.type === "expense") excludedTradeMirrorExpense += amt; else excludedTradeMirrorIncome += amt;
+      continue; // excluded from operating (already represented in trades/capital flows)
+    }
+    if (loan) {
+      if (r.type === "expense") excludedLoanPrincipalOut += amt; else excludedLoanPrincipalIn += amt;
+      continue;
+    }
+    if (disc) {
+      if (r.type === "expense") excludedDiscrepancyOut += amt; else excludedDiscrepancyIn += amt;
+      continue;
+    }
+    if (r.type === "income") opIncome += amt; else opExpense += amt;
+  }
+  // Investment capital deployments via transfers to/from investment accounts (separate non-ledger flow; reported as excluded capital)
+  let excludedCapitalOutflow = 0, excludedCapitalInflow = 0;
+  for (const tr of trRows) {
+    const toInv = tr.to_account_type === "investment";
+    const fromInv = tr.from_account_type === "investment";
+    if (toInv && !fromInv) excludedCapitalOutflow += tr.amount_normalized_from;
+    else if (fromInv && !toInv) excludedCapitalInflow += tr.amount_normalized_from;
+    // investment<->investment internal moves not counted as external capital deployment
+  }
+  const operatingIncome = round2(opIncome);
+  const operatingExpense = round2(opExpense);
+  const operatingNet = round2(operatingIncome - operatingExpense);
+  const operatingSavingsRate = operatingIncome > 0 ? round2((operatingNet / operatingIncome) * 100) : null;
+  const cashflowAdjusted = {
+    operating_income_normalized: operatingIncome,
+    operating_expense_normalized: operatingExpense,
+    operating_net_surplus_normalized: operatingNet,
+    operating_savings_rate_pct: operatingSavingsRate,
+    excluded_capital_outflow_normalized: round2(excludedCapitalOutflow),
+    excluded_capital_inflow_normalized: round2(excludedCapitalInflow),
+    excluded_loan_principal_out_normalized: round2(excludedLoanPrincipalOut),
+    excluded_loan_principal_in_normalized: round2(excludedLoanPrincipalIn),
+    excluded_discrepancy_net_normalized: round2(excludedDiscrepancyOut - excludedDiscrepancyIn),
+    basis: "Best-effort operating view from real Pocketly data. Excludes (a) trade-linked mirror transaction rows (stock_trade_id/crypto_trade_id/etf_trade_id -> related_trade_ref) to reduce double-counting with trades, (b) transactions in canonical system category 'Loan & Debt' treated as debt/principal movements, and (c) transactions in canonical system category 'Discrepancy' treated as balance adjustments. excluded_capital_* are heuristic: inter-account transfers to/from accounts with type 'investment' (separate non-ledger flow); investment<->investment transfers excluded from these buckets. Classification depends on stored categories, refs, and account types and is not a guaranteed accounting statement.",
+    excluded_trade_mirror_expense_normalized: round2(excludedTradeMirrorExpense),
+    excluded_trade_mirror_income_normalized: round2(excludedTradeMirrorIncome),
+    excluded_discrepancy_out_normalized: round2(excludedDiscrepancyOut),
+    excluded_discrepancy_in_normalized: round2(excludedDiscrepancyIn),
+  };
+
+  // ---- Net worth & portfolio (from real app data) ----
+  const isCashAndBankAccount = (type: string | null | undefined) => ["bank", "cash", "ewallet"].includes(String(type || ""));
+  const isInvestmentAccount = (type: string | null | undefined) => String(type || "") === "investment";
+  let cashAndBankNormalized = 0;
+  let uninvestedBrokerageCashNormalized = 0;
+  for (const a of accountsSnapRaw) {
+    const bal = Number(a.current_balance) || 0;
+    const cur = a.currency || "IDR";
+    const val = convertAmount(bal, cur, baseCurrency, rates);
+    if (isCashAndBankAccount(a.type) && a.is_active !== false) cashAndBankNormalized += val;
+    else if (isInvestmentAccount(a.type) && a.is_active !== false) uninvestedBrokerageCashNormalized += val;
+    // other account types (e.g. credit_card) not included in liquid cash buckets
+  }
+  cashAndBankNormalized = round2(cashAndBankNormalized);
+  uninvestedBrokerageCashNormalized = round2(uninvestedBrokerageCashNormalized);
+  const totalLiquidCashNormalized = round2(cashAndBankNormalized + uninvestedBrokerageCashNormalized);
+
+  const investedMarketByClass = { stock: 0, etf: 0, crypto: 0 } as Record<string, number>;
+  const costByClass = { stock: 0, etf: 0, crypto: 0 } as Record<string, number>;
+  let totalInvestedMarket = 0, totalCostBasis = 0, totalUnrealized = 0, activeHoldingsCount = 0;
+  for (const h of holdingsSnap) {
+    totalInvestedMarket += Number(h.market_value_normalized) || 0;
+    const costNorm = normalizeToBase(Number(h.cost_basis_original) || 0, h.settlement_currency || "IDR", baseCurrency, rates);
+    totalCostBasis += costNorm;
+    totalUnrealized += Number(h.unrealized_pnl_normalized) || 0;
+    if ((Number(h.quantity) || 0) > 0 || (Number(h.market_value_normalized) || 0) !== 0) activeHoldingsCount++;
+    const cls = h.asset_class as keyof typeof investedMarketByClass;
+    if (investedMarketByClass[cls] != null) investedMarketByClass[cls] += Number(h.market_value_normalized) || 0;
+    if (costByClass[cls] != null) costByClass[cls] += costNorm;
+  }
+  totalInvestedMarket = round2(totalInvestedMarket);
+  totalCostBasis = round2(totalCostBasis);
+  totalUnrealized = round2(totalUnrealized);
+
+  const totalLiabilitiesNormalized = round2(sum(debtsSnap.filter((d) => d.type === "payable").map((d) => Number(d.remaining_normalized) || 0)));
+  const totalReceivablesNormalized = round2(sum(debtsSnap.filter((d) => d.type === "receivable").map((d) => Number(d.remaining_normalized) || 0)));
+  const totalAssetsNormalized = round2(totalLiquidCashNormalized + totalInvestedMarket + totalReceivablesNormalized);
+  const netWorthNormalized = round2(totalAssetsNormalized - totalLiabilitiesNormalized);
+  const allocBase = totalAssetsNormalized || 0;
+  const allocationPct = {
+    cash_and_bank: allocBase ? round2((cashAndBankNormalized / allocBase) * 100) : 0,
+    uninvested_brokerage_cash: allocBase ? round2((uninvestedBrokerageCashNormalized / allocBase) * 100) : 0,
+    stock: allocBase ? round2((investedMarketByClass.stock / allocBase) * 100) : 0,
+    etf: allocBase ? round2((investedMarketByClass.etf / allocBase) * 100) : 0,
+    crypto: allocBase ? round2((investedMarketByClass.crypto / allocBase) * 100) : 0,
+  };
+  const netWorthKpi = {
+    base_currency: baseCurrency,
+    cash_and_bank_normalized: cashAndBankNormalized,
+    uninvested_brokerage_cash_normalized: uninvestedBrokerageCashNormalized,
+    total_liquid_cash_normalized: totalLiquidCashNormalized,
+    invested_assets_market_value_normalized: totalInvestedMarket,
+    total_assets_normalized: totalAssetsNormalized,
+    total_liabilities_normalized: totalLiabilitiesNormalized,
+    total_receivables_normalized: totalReceivablesNormalized,
+    net_worth_normalized: netWorthNormalized,
+    allocation_pct: allocationPct,
+  };
+
+  // Portfolio performance (period realized from trades rows in selected period)
+  const periodRealizedByClass = { stock: 0, etf: 0, crypto: 0 } as Record<string, number>;
+  let periodTradingFeesTax = 0;
+  let periodRealizedTotal = 0;
+  for (const t of tradeRows) {
+    if (t.realized_pnl_normalized != null) {
+      periodRealizedTotal += t.realized_pnl_normalized;
+      if (periodRealizedByClass[t.asset_class] != null) periodRealizedByClass[t.asset_class] += t.realized_pnl_normalized;
+    }
+    const feeTaxNorm = normalizeToBase((t.fee_amount || 0) + (t.stamp_duty || 0), t.settlement_currency, baseCurrency, rates);
+    periodTradingFeesTax += feeTaxNorm;
+  }
+  const portfolioPerformance = {
+    base_currency: baseCurrency,
+    active_holdings_count: activeHoldingsCount,
+    total_cost_basis_normalized: totalCostBasis,
+    total_market_value_normalized: totalInvestedMarket,
+    total_unrealized_pnl_normalized: totalUnrealized,
+    total_unrealized_pnl_pct: totalCostBasis > 0 ? round2((totalUnrealized / totalCostBasis) * 100) : null,
+    period_realized_pnl_normalized: round2(periodRealizedTotal),
+    period_realized_pnl_by_asset_class: {
+      stock: round2(periodRealizedByClass.stock),
+      etf: round2(periodRealizedByClass.etf),
+      crypto: round2(periodRealizedByClass.crypto),
+    },
+    period_trading_fees_and_tax_normalized: round2(periodTradingFeesTax),
+  };
 
   // Top transactions & highlights
   let topExpenseTx: TxRow[] = [];
@@ -776,19 +1166,24 @@ export async function exportAiCashflowData(
     if (topExpenseTx[0]) highlights.push(`Largest expense (normalized): ${fmtMoney(topExpenseTx[0].amount_normalized, baseCurrency, lang)} — ${topExpenseTx[0].category_name_display}, ${topExpenseTx[0].date_local}, account ${topExpenseTx[0].account_name} (${topExpenseTx[0].currency_original} ${fmtNum(topExpenseTx[0].amount_original, lang)} original).`);
     if (ledger.expense_normalized > ledger.income_normalized) highlights.push(`Ledger deficit: expenses exceed income by ${fmtMoney(round2(ledger.expense_normalized - ledger.income_normalized), baseCurrency, lang)} (normalized).`);
     else highlights.push(`Ledger net surplus: ${fmtMoney(ledger.net_cashflow_normalized, baseCurrency, lang)} (normalized).`);
-    const uncatAmt = round2(sum(txRows.filter((r) => !r.category_id).map((r) => r.amount_normalized)));
-    if (ledger.uncategorized_count > 0) highlights.push(`Uncategorized ledger transactions: ${ledger.uncategorized_count} (normalized total ${fmtMoney(uncatAmt, baseCurrency, lang)}).`);
-    highlights.push(`Transfers (separate inter-account flow, excluded from ledger net): ${trRows.length} transfers, sent normalized ${fmtMoney(transferAmountNormalizedTotal, baseCurrency, lang)}, fees normalized ${fmtMoney(transferFeeNormalizedTotal, baseCurrency, lang)}. Reconciliation: ledger expense/net already includes any transfer fees recorded as ledger expense transactions; transfers_non_ledger.total_fee_normalized is separate and must not be added again without deduping via transfer_id_ref.`);
-    if (prevMetrics?.available) highlights.push(`Vs previous period (normalized): income Δ ${prevMetrics.income_delta_normalized >= 0 ? "+" : ""}${fmtMoney(prevMetrics.income_delta_normalized, baseCurrency, lang)}, expense Δ ${prevMetrics.expense_delta_normalized >= 0 ? "+" : ""}${fmtMoney(prevMetrics.expense_delta_normalized, baseCurrency, lang)}, net Δ ${prevMetrics.net_delta_normalized >= 0 ? "+" : ""}${fmtMoney(prevMetrics.net_delta_normalized, baseCurrency, lang)}.`);
-    else if (prevMetrics && !prevMetrics.available) highlights.push(`Previous-period comparison unavailable: ${prevMetrics.reason}.`);
+    highlights.push(`Adjusted operating net (excl. investment capital deployments, loan principal, discrepancy, trade-mirrored txs): ${fmtMoney(operatingNet, baseCurrency, lang)} (normalized).`);
+    highlights.push(`Net worth snapshot: ${fmtMoney(netWorthNormalized, baseCurrency, lang)} (assets ${fmtMoney(totalAssetsNormalized, baseCurrency, lang)}, liabilities ${fmtMoney(totalLiabilitiesNormalized, baseCurrency, lang)}), invested market ${fmtMoney(totalInvestedMarket, baseCurrency, lang)}.`);
+    if (prevMetrics?.available) highlights.push(`Vs previous period (normalized ledger): income Δ ${prevMetrics.income_delta_normalized >= 0 ? "+" : ""}${fmtMoney(prevMetrics.income_delta_normalized, baseCurrency, lang)}, expense Δ ${prevMetrics.expense_delta_normalized >= 0 ? "+" : ""}${fmtMoney(prevMetrics.expense_delta_normalized, baseCurrency, lang)}, net Δ ${prevMetrics.net_delta_normalized >= 0 ? "+" : ""}${fmtMoney(prevMetrics.net_delta_normalized, baseCurrency, lang)}.`);
   }
 
-  // Build manifest, definitions, KPI (self-describing)
   const generatedAt = new Date().toISOString();
   const fxRatesStructured = Object.fromEntries(Object.entries(rates).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>[k, Number(v)]));
+  const ts = generatedAt.slice(0, 10);
+
+  const summaryName = `wealth-ai-summary-${ts}.md`;
+  const txName = `transactions-${ts}.csv`;
+  const trName = `transfers-${ts}.csv`;
+  const tradesName = `trades-${ts}.csv`;
+  const contextName = `context-${ts}.json`;
+
   const manifest = {
-    schema_version: "2.0",
-    export_type: "ai_cashflow_raw_ledger",
+    schema_version: "pocketly-wealth-1",
+    export_type: "ai_wealth_export",
     generated_at: generatedAt,
     timezone: timeZone,
     requested_period: {
@@ -798,15 +1193,16 @@ export async function exportAiCashflowData(
       start_utc_inclusive: rangeStart,
       end_utc_exclusive: rangeEnd,
       resolution: periodResolution,
-      note: options.preset === "all" ? "All available records (no date bounds). Comparison and bounded-period day metrics are unavailable by design." : "Bounds are half-open [start_utc_inclusive, end_utc_exclusive) on transaction_date/transfer_date timestamps; local dates reflect user timezone intent.",
+      note: options.preset === "all" ? "All available records (no date bounds). Comparison and bounded-period day metrics are unavailable by design." : "Bounds are half-open [start_utc_inclusive, end_utc_exclusive) on transaction_date/transfer_date/trade_date timestamps; local dates reflect user timezone intent.",
     },
-    actual_data_range_covered: { ...actualDataRange, derived_from: "min/max date_local of included transaction and transfer rows in this export" },
+    actual_data_range_covered: { ...actualDataRange, derived_from: "min/max date_local of included transaction, transfer, and trade rows in this export" },
     base_currency: baseCurrency,
     included_files: [
-      { name: `cashflow-ai-summary-${generatedAt.slice(0,10)}.md`, type: "markdown" as const, rows: null as number | null, always_included: true, description: "manifest, definitions, KPIs, highlights" },
-      ...(options.includeTransactionsCsv ? [{ name: `transactions-${generatedAt.slice(0,10)}.csv`, type: "csv" as const, rows: txRows.length, always_included: false, description: "ledger transactions (income/expense)" }] : []),
-      ...(options.includeTransfersCsv ? [{ name: `transfers-${generatedAt.slice(0,10)}.csv`, type: "csv" as const, rows: trRows.length, always_included: false, description: "inter-account transfers (separate flow)" }] : []),
-      ...(options.includeContextJson ? [{ name: `context-${generatedAt.slice(0,10)}.json`, type: "json" as const, rows: null as number | null, always_included: false, description: "snapshots, manifest meta, structured rates" }] : []),
+      { name: summaryName, type: "markdown" as const, rows: null as number | null, always_included: true, description: "manifest, definitions, cashflow & net worth KPIs, holdings summary (from real Pocketly data)" },
+      ...(options.includeTransactionsCsv ? [{ name: txName, type: "csv" as const, rows: txRows.length, always_included: false, description: "ledger transactions (income/expense)" }] : []),
+      ...(options.includeTransfersCsv ? [{ name: trName, type: "csv" as const, rows: trRows.length, always_included: false, description: "inter-account transfers (separate flow)" }] : []),
+      ...(includeTradesCsv ? [{ name: tradesName, type: "csv" as const, rows: tradeRows.length, always_included: false, description: "investment trades from real tables (stock, etf, crypto; buy/sell)" }] : []),
+      ...(options.includeContextJson ? [{ name: contextName, type: "json" as const, rows: null as number | null, always_included: false, description: "snapshots (accounts, holdings, debts, budgets, goals), manifest meta, structured rates" }] : []),
     ],
     truncation: {
       trend_shown: trend.length,
@@ -817,104 +1213,141 @@ export async function exportAiCashflowData(
       top_income_shown: topIncomeTx.length,
       transfers_shown_in_summary: Math.min(trRows.length, 50),
       transfers_total: trRows.length,
+      holdings_shown_in_summary: holdingsSnap.length,
+      holdings_total: holdingsSnap.length,
     },
-    read_order: ["cashflow-ai-summary-*.md (manifest, definitions, KPIs, highlights)", "transactions-*.csv if included (full ledger detail)", "transfers-*.csv if included (full transfer detail)", "context-*.json if included (structured snapshots/meta/rates)"],
+    read_order: ["wealth-ai-summary-*.md (manifest, definitions, KPIs, highlights)", "transactions-*.csv if included (full ledger detail)", "transfers-*.csv if included (full transfer detail)", "trades-*.csv if included (unified trade detail)", "context-*.json if included (structured snapshots/meta/rates)"],
   };
 
   const definitions = {
-    schema_version: "2.0",
+    schema_version: "pocketly-wealth-1",
     glossary: {
       ledger: "Rows from transactions table in the selected period (income/expense), exported as-is for that scope.",
       net_cashflow: "Σ amount_normalized of income transactions − Σ amount_normalized of expense transactions, over ledger transactions only, in base_currency.",
-      tx_count_ledger: "Count of ledger transaction rows in period (income + expense).",
-      amount_original: "Original amount in the transaction/transfer native currency (currency_original/from_currency).",
+      cashflow_adjusted: "Best-effort operating view derived from real Pocketly data: ledger totals excluding (1) trade-linked mirror transaction rows (stock/crypto/etf trade FKs -> related_trade_ref=<trade_id>), (2) category 'Loan & Debt' (canonical system category) treated as debt/principal movements, and (3) category 'Discrepancy' (canonical system category) treated as balance adjustments. Investment capital movements are also approximated from transfers to/from investment accounts (account.type heuristic, separate non-ledger flow). This is a convenience view, not a guaranteed accounting statement.",
+      net_worth: "Snapshot from real app data: total liquid cash (cash/bank/ewallet + uninvested investment-account balances) + invested assets market value (stock/crypto/etf holdings, cached prices with market-or-cost fallback) + receivables − liabilities, normalized to base_currency using USD-base FX and cached asset prices.",
+      amount_original: "Original amount in native/settlement currency.",
       amount_normalized: "amount_original converted to base_currency using USD-base FX rates; formula: (amount_original / rate[currency_original_or_USD]) * rate[base_currency]. Rounded to 2 decimals per value.",
-      base_currency: "User-selected normalization currency for comparable KPIs (default often IDR).",
+      base_currency: "User-selected normalization currency for comparable KPIs.",
       uncategorized: { canonical_key: "__uncategorized__", condition: "category_id is null/empty", display_label_id: "Tanpa Kategori", display_label_en: "Uncategorized" },
-      transfer_flow: "Inter-account movement (transfers table). Separate from ledger income/expense and excluded from net_cashflow to avoid double-counting. Transfer fees may also appear as ledger expense transactions and can be linked via transfer_id_ref.",
-      exchange_rate: "USD-base map value means 1 USD = rate[currency] units of that currency. Conversion uses: amount_usd = amount_original / rate[from]; amount_normalized = amount_usd * rate[base].",
-      transfer_exchange_rate_field: "exchange_rate_used stored on transfer row (pair-specific as recorded by app); may differ in representation from USD-base normalization map.",
-      fee_amount_fee_mode_net_amount: "Transfer fee fields from transfers table in from_currency context unless stated; fee_mode/net_amount are recorded values. fee_normalized_base is normalized estimate to base_currency using same USD-base rates and from_currency as fee currency basis.",
-      transfer_id_ref: "Transaction row linked to a transfer (e.g. transfer-related fee or paired record) via transfer_id.",
-      related_trade_ref: "Transaction row linked to investment trade (stock:/crypto:/etf: trade id).",
-      trend_bucket_granularity: "Bounded period: daily_local if <= 120 calendar days else monthly_local. Unbounded/all: daily_local observed sparse buckets. Buckets are based on local dates in user timezone, ordered ascending, series_type=sparse_observed (filled_calendar=false): only periods with >=1 ledger transaction appear; missing bucket = zero ledger rows in that bucket, not missing export data.",
-      share_pct_of_type: "Category amount_normalized as percentage of total income_normalized or expense_normalized for that same type (denominator = type total).",
-      rounding_precision: "Monetary normalized amounts rounded to 2 decimals (round half up via epsilon method in code); FX rates shown as stored numeric values (up to source precision).",
-      reconciliation_rule: "Ledger expense_normalized/net_cashflow_normalized already include any transfer fees recorded as ledger expense transactions. transfers_non_ledger.total_fee_normalized is a separate inter-account flow metric for analysis/reconciliation only; do NOT add it to ledger expense/net_cashflow without deduping via transfer_id_ref/linked rows (see reconciliation counts).",
+      transfer_flow: "Inter-account movement (transfers table). Separate from ledger income/expense and excluded from net_cashflow to avoid double-counting.",
+      trade_flow: "Investment trade execution records from real trade tables (stock_trades/crypto_trades/etf_trades, buy/sell only). Fees/stamp duty fields come from actual trade records.",
+      exchange_rate: "USD-base map value means 1 USD = rate[currency] units of that currency.",
+      related_trade_ref: "Transaction row linked to an investment trade; value is the actual <trade_id> for reconciliation/joins with trades.csv. stock_trade_id/crypto_trade_id/etf_trade_id linkage fields exist in real data.",
+      reconciliation_rule: "Anti-double-counting guidance (best-effort): (1) Investment top-up/withdraw via transfers.csv (not operating expense). (2) Trade executions in trades.csv; if mirror rows exist in transactions.csv they carry related_trade_ref=<trade_id> and are excluded from the cashflow_adjusted operating view. (3) Trading fees/stamp duty appear in trades.csv fields and may also be represented in linked ledger rows depending on app behavior; use reconciliation counts/refs when interpreting.",
+      rounding_precision: "Monetary normalized amounts rounded to 2 decimals; FX/prices shown as stored numeric values.",
     },
     units: {
       normalized_amounts: `currency = base_currency (${baseCurrency})`,
-      original_amounts: "currency = currency_original / from_currency / to_currency as specified per row/field",
-      account_balances_snapshot: "native per-account currency (current_balance/initial_balance); not normalized to base and not directly summable with ledger KPIs across different currencies",
-      budget_snapshot: "native budget currency per row (limit/spent/remaining); representative approximation, not normalized to base, not part of ledger net",
+      original_amounts: "currency = currency_original / settlement_currency / from_currency / to_currency as specified",
+      account_balances_snapshot: "native per-account currency (current_balance/initial_balance); not directly summable with normalized KPIs across currencies",
+      holdings_snapshot: "original fields in settlement_currency, normalized fields in base_currency",
+      budget_snapshot: "native budget currency per row; representative approximation",
     },
     csv_schemas: {
       "transactions.csv": {
-        description: "Ledger transactions (income/expense) in period; same scope as net_cashflow. Read with summary/definitions for semantics.",
+        description: "Ledger transactions (income/expense) in period. Read with summary/definitions for semantics.",
         columns: {
-          date_iso: "Timestamp/string as stored (source transaction_date).",
+          date_iso: "Timestamp/string as stored (transaction_date).",
           date_local: "Local calendar date (YYYY-MM-DD) in export timezone.",
           type: "income|expense (ledger).",
           amount_original: "Original amount in currency_original.",
           currency_original: "Original/native currency code.",
-          amount_normalized: `Amount converted to base_currency (${baseCurrency}) using USD-base FX formula; rounded 2dp.`,
+          amount_normalized: `Amount converted to base_currency (${baseCurrency}) using USD-base FX; rounded 2dp.`,
           base_currency: "Normalization target currency.",
-          account_name: "Account name (display).",
+          account_name: "Account name.",
           account_currency: "Account native currency.",
           category_key: "Canonical category key (__uncategorized__ when category_id null).",
           category_name_display: "Display/localized category name.",
           description_raw: "Original description text.",
-          description_clean: "Cleaned description (metadata markers stripped).",
-          tags: "Semicolon-separated tags (may be empty).",
-          items_json: "JSON array of normalized items (may be empty).",
+          description_clean: "Cleaned description.",
+          tags: "Semicolon-separated tags.",
+          items_json: "JSON array of normalized items.",
           transaction_id: "Transaction id.",
           account_id: "Account id.",
           category_id: "Category id or empty.",
-          transfer_id_ref: "Linked transfer id if any (e.g. transfer fee recorded as ledger expense); use for reconciliation, not double-counting.",
-          related_trade_ref: "Linked trade ref (stock:/crypto:/etf:) if any.",
+          transfer_id_ref: "Linked transfer id if any.",
+          related_trade_ref: "Linked trade id (<trade_id>) if any; join key to trades.csv.",
           created_at: "Record creation timestamp.",
         },
       },
       "transfers.csv": {
         description: "Inter-account transfers (separate flow, excluded from ledger net_cashflow).",
         columns: {
-          date_iso: "Timestamp/string as stored (source transfer_date).",
+          date_iso: "Timestamp/string as stored (transfer_date).",
           date_local: "Local calendar date (YYYY-MM-DD) in export timezone.",
           from_account: "Source account name.",
           to_account: "Destination account name.",
-          amount_original: "Transfer amount in from_currency (as recorded).",
-          from_currency: "Source/from currency.",
-          to_currency: "Destination/to currency.",
-          amount_normalized_from: `amount_original converted from from_currency to base_currency (${baseCurrency}) using USD-base FX; basis for transfers_non_ledger totals.`,
+          amount_original: "Transfer amount in from_currency.",
+          from_currency: "Source currency.",
+          to_currency: "Destination currency.",
+          amount_normalized_from: `amount_original converted to base_currency (${baseCurrency}).`,
           base_currency: "Normalization target currency.",
-          exchange_rate_stored: "Stored transfer exchange rate (pair-specific as recorded by app; not the USD-base normalization map).",
-          fee_amount_original: "Fee amount in fee currency basis (from_currency basis) or empty.",
+          exchange_rate_stored: "Stored transfer exchange rate (pair-specific).",
+          fee_amount_original: "Fee amount in from_currency basis or empty.",
           fee_currency_basis: "Currency basis for fee normalization (from_currency).",
-          fee_mode: "Recorded fee mode or empty.",
-          net_amount_stored: "Stored net amount (recorded) or empty.",
-          fee_normalized_base: `Fee normalized to base_currency from from_currency basis; empty if no fee. Reconciliation: do NOT add to ledger expense/net (ledger may already include linked fee expense via transfer_id_ref).`,
+          fee_mode: "Recorded fee mode.",
+          net_amount_stored: "Stored net amount.",
+          fee_normalized_base: "Fee normalized to base_currency.",
           description: "Transfer description.",
           transfer_id: "Transfer id.",
         },
       },
+      "trades.csv": {
+        description: "Investment trades from real Pocketly tables (stock_trades, etf_trades, crypto_trades) for the period. Asset classes: stock/etf/crypto; types: buy/sell only.",
+        columns: {
+          trade_id: "Trade id (matches transactions.related_trade_ref / stock_trade_id / crypto_trade_id / etf_trade_id when linked).",
+          date_iso: "Trade timestamp as stored (trade_date).",
+          date_local: "Local calendar date (YYYY-MM-DD) in export timezone.",
+          asset_class: "stock | etf | crypto.",
+          symbol: "Ticker/symbol from the actual trade record.",
+          type: "buy | sell.",
+          account_name: "Account name.",
+          quantity: "Quantity/units/shares from trade data (stock derived from shares/lots when needed).",
+          lots: "Lots for stock trades when available, otherwise null.",
+          price_per_unit: "Price per unit/share from trade data (or derived when stored differently).",
+          settlement_currency: "Settlement currency from trade/account data.",
+          gross_amount: "Gross amount from/derived for the trade in settlement currency.",
+          fee_amount: "Fee amount in settlement currency (0 for stock trades where no separate fee field is stored).",
+          stamp_duty: "Stamp duty in settlement currency (stock trades; 0 otherwise).",
+          net_amount_original: "Best-effort cash effect in settlement currency derived from real trade fields (see assumptions).",
+          net_amount_normalized: "net_amount_original converted to base_currency.",
+          base_currency: "Normalization target currency.",
+          cost_basis_sold: "Cost basis for sell trades when available (null for buys).",
+          realized_pnl_normalized: "Realized P&L for sell trades normalized to base_currency when available (null for buys).",
+          notes: "Trade notes.",
+        },
+      },
+    },
+    assumptions: {
+      trade_cash_effect: "net_amount_original is a best-effort cash-effect approximation derived from real trade fields: stock buy ≈ net_amount+stamp_duty, stock sell ≈ net_amount-stamp_duty; crypto/etf buy ≈ gross_amount+fee_amount, sell ≈ gross_amount-fee_amount. Gross/fee/stamp_duty/realized fields reflect actual stored/derived trade data where available.",
+      holdings_valuation: "Holdings market values prefer cached asset_prices converted via USD-base rates; if no cached price or invalid quantity, market_value falls back to cost basis (valuation_source indicates fallback).",
+      cashflow_adjusted: cashflowAdjusted.basis,
+      supported_investment_data: "Real app investment data only: stock, etf, crypto holdings/trades (buy/sell). No mutual fund or dividend/staking reward records.",
     },
   };
 
   const kpi = {
-    schema_version: "2.0",
+    schema_version: "pocketly-wealth-1",
     meta: {
       formulas: {
         net_cashflow_normalized: "sum(income amount_normalized) - sum(expense amount_normalized) over ledger transactions only",
         amount_normalized: "(amount_original / usd_base_rate[currency_original]) * usd_base_rate[base_currency], rounded to 2 decimals",
+        net_worth_normalized: "total_assets_normalized - total_liabilities_normalized",
       },
       denominators: {
         share_pct_of_type: "total income_normalized or expense_normalized for the same transaction type",
         per_day_metrics: "calendar days in bounded period (user timezone) when available",
+        operating_savings_rate_pct: "operating_net_surplus_normalized / operating_income_normalized",
       },
       unavailable_metric_convention: "value null with available=false and reason string when metric is not meaningful/applicable",
+      cashflow_adjusted_note: "cashflow_adjusted is a best-effort operating view (heuristics from canonical categories, trade links, and investment-account transfers), not a guaranteed/spec-defined accounting classification.",
     },
     period: { ...manifest.requested_period, days_in_period: perDayDenom ? metricWithMeta(perDayDenom, true, null) : metricWithMeta<number | null>(null, false, options.preset === "all" ? "unbounded_period_all" : "no_bounded_period") },
     ledger: ledger,
+    cashflow_adjusted: cashflowAdjusted,
+    net_worth: netWorthKpi,
+    portfolio_performance: portfolioPerformance,
     totals_by_original_currency: byOriginalCurrency,
     averages: options.metrics.averagesMedian ? {
       per_tx_income_normalized: round2(incomeVals.length ? sum(incomeVals) / incomeVals.length : 0),
@@ -934,21 +1367,22 @@ export async function exportAiCashflowData(
       series_type: "sparse_observed",
       filled_calendar: false,
       rule: hasBoundedPeriod
-        ? "monthly_local if bounded period > 120 calendar days, else daily_local; buckets are sparse/observed local periods with >=1 ledger transaction (missing bucket = zero ledger rows in that bucket, not missing export data)"
-        : "daily_local for unbounded/all period (observed sparse local dates with >=1 ledger transaction; not a calendar-complete timeline)",
-      all_period_note: options.preset === "all" ? "Unbounded/all period: trend shows observed daily_local activity only, not a complete daily calendar series." : null,
+        ? "monthly_local if bounded period > 120 calendar days, else daily_local; buckets are sparse/observed local periods with >=1 ledger transaction"
+        : "daily_local for unbounded/all period (observed sparse local dates with >=1 ledger transaction)",
+      all_period_note: options.preset === "all" ? "Unbounded/all period: trend shows observed daily_local activity only." : null,
     } : undefined,
     transfers_non_ledger: {
       transfer_count: trRows.length,
       total_sent_amount_normalized_from_currency: { value: transferAmountNormalizedTotal, currency: baseCurrency, basis: "sum of amount_original converted from from_currency to base_currency" },
-      total_fee_normalized: { value: transferFeeNormalizedTotal, currency: baseCurrency, basis: "sum of fee_amount converted from from_currency (fee currency basis) to base_currency; null fees treated as 0" },
+      total_fee_normalized: { value: transferFeeNormalizedTotal, currency: baseCurrency, basis: "sum of fee_amount converted from from_currency basis to base_currency" },
       transfers_with_fee_count: transferFeeCount,
-      note: "Transfers are inter-account flows, excluded from ledger income/expense/net_cashflow. Some transfer fees may also exist as ledger expense transactions (linked via transfer_id_ref).",
-      reconciliation_rule: "Do NOT add total_fee_normalized to ledger expense/net_cashflow: ledger already includes transfer fees recorded as ledger expense transactions. Use reconciliation.transactions_linked_to_transfer and transfer_id_ref to dedupe.",
+      note: "Transfers are inter-account flows, excluded from ledger income/expense/net_cashflow.",
+      reconciliation_rule: "Do NOT add total_fee_normalized to ledger expense/net_cashflow without deduping via transfer_id_ref.",
     },
     reconciliation: {
       transactions_linked_to_transfer: linkedToTransferCount,
       transactions_linked_to_trade: linkedToTradeCount,
+      trades_in_period: tradeRows.length,
     },
     fx: {
       base_currency: baseCurrency,
@@ -961,73 +1395,43 @@ export async function exportAiCashflowData(
     },
   };
 
-  // Build summary markdown
+  // ---- Build summary markdown (aligned to real Pocketly data) ----
   const lines: string[] = [];
-  lines.push(`# Pocketly — AI Cashflow Export`);
+  lines.push(`# Pocketly — AI Wealth Export`);
   lines.push(``);
   lines.push(`## How to read / Manifest`);
   lines.push(`- schema_version: ${manifest.schema_version} | export_type: ${manifest.export_type} | generated_at: ${generatedAt}`);
+  lines.push(`- data source: real Pocketly records (accounts, ledger transactions/transfers, stock/crypto/etf holdings & buy/sell trades, cached FX/prices, debts/budgets/goals snapshots where available)`);
   lines.push(`- timezone: ${timeZone}`);
-  lines.push(`- requested period: preset=${options.preset}, local=${periodStartDateLocal || "null"}..${periodEndDateLocal || "null"} (inclusive), utc=[${rangeStart || "null"}, ${rangeEnd || "null"}) half-open on transaction/transfer timestamps | resolution=${periodResolution}`);
-  if (options.preset === "all") lines.push(`- preset "all": no date bounds (unbounded); actual_data_range_covered shows min/max local dates of returned rows. Comparison and bounded-calendar metrics (no_spend_days, per-day denominators/days_in_period) are n/a by design. Trend is daily_local sparse/observed (not calendar-complete).`);
-  lines.push(`- actual data range covered (local dates from returned records): ${actualDataRange.start_local || "n/a"} .. ${actualDataRange.end_local || "n/a"} (has_data=${actualDataRange.has_data})`);
+  lines.push(`- requested period: preset=${options.preset}, local=${periodStartDateLocal || "null"}..${periodEndDateLocal || "null"} (inclusive), utc=[${rangeStart || "null"}, ${rangeEnd || "null"}) half-open | resolution=${periodResolution}`);
+  if (options.preset === "all") lines.push(`- preset "all": no date bounds (unbounded); actual_data_range_covered shows min/max local dates of returned rows.`);
+  lines.push(`- actual data range covered (local dates): ${actualDataRange.start_local || "n/a"} .. ${actualDataRange.end_local || "n/a"} (has_data=${actualDataRange.has_data})`);
   lines.push(`- base_currency (normalized): ${baseCurrency}`);
   lines.push(`- read order: ${manifest.read_order.join(" -> ")}`);
   lines.push(`- included files:`);
   for (const f of manifest.included_files) lines.push(`  - ${f.name} (${f.type}${f.rows != null ? `, rows=${f.rows}` : ""}${f.description ? `, ${f.description}` : ""})`);
-  lines.push(`- truncation: categories shown ${manifest.truncation.categories_shown_in_summary}/${manifest.truncation.categories_total}, top expenses ${manifest.truncation.top_expenses_shown}, top income ${manifest.truncation.top_income_shown}, transfers shown in summary ${manifest.truncation.transfers_shown_in_summary}/${manifest.truncation.transfers_total}`);
   lines.push(``);
 
   lines.push(`## Definitions / Glossary (concise)`);
-  lines.push(`- ledger: transactions income/expense rows in period (as-is). net_cashflow_normalized = Σ income_normalized − Σ expense_normalized in ${baseCurrency} (ledger only). tx_count_ledger = income_count + expense_count.`);
-  lines.push(`- amount_original/currency_original = native values; amount_normalized = converted to base_currency via USD-base rates: (amount_original / rate[from]) * rate[base], rounded 2dp. base_currency=${baseCurrency}.`);
-  lines.push(`- uncategorized: canonical_key="__uncategorized__" when category_id null; display label "${uncatLabel}".`);
-  lines.push(`- transfers: separate inter-account flow (not in ledger net). Fees may also exist as ledger expense transactions (link via transfer_id_ref). related_trade_ref links investment trades.`);
-  lines.push(`- FX: source=${fxSource}${fxFetchedAt ? `, fetched_at=${fxFetchedAt}` : ""}; USD-base means 1 USD = X currency units. transfer.exchange_rate field is stored pair-specific; normalization uses USD-base map.`);
-  lines.push(`- trend buckets: ${kpi.trend_meta ? `${kpi.trend_meta.granularity}, ${kpi.trend_meta.series_type} (${kpi.trend_meta.rule})` : "n/a"}. share_pct_of_type denominator = type income/expense total. unavailable metrics use null + reason.`);
-  lines.push(`- reconciliation (transfer fees): ledger expense/net already includes any transfer fees recorded as ledger expense transactions; transfers_non_ledger.total_fee_normalized is separate and must NOT be added to ledger expense/net without deduping via transfer_id_ref (see reconciliation counts).`);
-  lines.push(`- budget snapshot: representative/non-period-aligned approximation (month=${(budgetCaveat as { representative_month_start?: string } | null)?.representative_month_start || "n/a"}), grouped by category_id+currency in native currency, no carryover, not part of ledger net, not normalized/summable with ledger KPIs.`);
+  lines.push(`- ledger net_cashflow_normalized = Σ income_normalized − Σ expense_normalized in ${baseCurrency} (ledger only).`);
+  lines.push(`- cashflow_adjusted is a best-effort operating view (not guaranteed): excludes trade-linked mirror tx rows (related_trade_ref=<trade_id>), canonical 'Loan & Debt' principal movements, and canonical 'Discrepancy' adjustments from ledger totals; investment capital movements are heuristically reported from transfers to/from investment accounts.`);
+  lines.push(`- amount_normalized: (amount_original / rate[from]) * rate[base], rounded 2dp. FX source=${fxSource}${fxFetchedAt ? `, fetched_at=${fxFetchedAt}` : ""}.`);
+  lines.push(`- reconciliation (best-effort): transfers are separate from ledger; trade executions/fees/tax come from real trade records; linked mirror tx rows can be identified by related_trade_ref/trade FKs and are excluded from the adjusted operating view to reduce double-counting.`);
   lines.push(``);
 
-  if (!compact) {
-    lines.push(`## Examples (how to read)`);
-    if (txRows[0]) {
-      const ex = txRows[0];
-      const rFrom = fxRatesStructured[ex.currency_original] || 1;
-      const rBase = fxRatesStructured[baseCurrency] || 1;
-      const calc = round2((ex.amount_original / rFrom) * rBase);
-      lines.push(`- Transaction example: id=${ex.id}, type=${ex.type}, date_local=${ex.date_local}, ${ex.currency_original} ${fmtNum(ex.amount_original, lang)} original -> ${baseCurrency} ${fmtNum(ex.amount_normalized, lang)} normalized using (amount/rate[${ex.currency_original}])*rate[${baseCurrency}] = (${fmtNum(ex.amount_original, lang)}/${rFrom})*${rBase} ≈ ${fmtNum(calc, lang)} (2dp). Counted in ledger net_cashflow; category_key="${ex.category_key}".`);
-    } else {
-      lines.push(`- Transaction example: (no ledger transactions in period).`);
-    }
-    if (trRows[0]) {
-      const ex = trRows[0];
-      lines.push(`- Transfer example: id=${ex.id}, ${ex.date_local}, ${ex.from_account} -> ${ex.to_account}, sent ${ex.from_currency} ${fmtNum(ex.amount_original, lang)} (normalized to base ${baseCurrency} ${fmtNum(ex.amount_normalized_from, lang)} for separate transfer metrics). This is inter-account flow, NOT included in ledger income/expense/net. Fee=${ex.fee_amount ?? "none"} ${ex.fee_currency}${ex.fee_amount != null ? ` (normalized ${baseCurrency} ${fmtNum(ex.fee_normalized_base || 0, lang)})` : ""}; any transfer fee recorded as a ledger expense transaction would appear separately and may carry transfer_id_ref.`);
-    } else {
-      lines.push(`- Transfer example: (no transfers in period).`);
-    }
-    lines.push(``);
-  }
-
-  lines.push(`## Executive Summary (${baseCurrency}, normalized ledger)`);
-  lines.push(`- Total income (normalized): ${fmtMoney(ledger.income_normalized, baseCurrency, lang)} | Total expense (normalized): ${fmtMoney(ledger.expense_normalized, baseCurrency, lang)} | Net cashflow (normalized): ${fmtMoney(ledger.net_cashflow_normalized, baseCurrency, lang)}`);
-  lines.push(`- Ledger tx_count: ${ledger.tx_count_ledger} (income ${ledger.income_count}, expense ${ledger.expense_count}), uncategorized: ${ledger.uncategorized_count}`);
-  lines.push(`- Transfers (separate, non-ledger): ${trRows.length} transfers, sent normalized ${fmtMoney(transferAmountNormalizedTotal, baseCurrency, lang)}, fees normalized ${fmtMoney(transferFeeNormalizedTotal, baseCurrency, lang)} (${transferFeeCount} with fee)`);
-  lines.push(`- Period days (bounded calendar, local): ${daysInPeriod ?? "n/a"}${options.metrics.noSpendDays ? ` | no-spend days: ${noSpend.available ? noSpend.value : `n/a (${noSpend.reason})`}` : ""}`);
-  if (prevMetrics?.available) {
-    const ip = prevMetrics.income_pct_change.available ? `${prevMetrics.income_pct_change.value}%` : `n/a (${prevMetrics.income_pct_change.reason})`;
-    const ep = prevMetrics.expense_pct_change.available ? `${prevMetrics.expense_pct_change.value}%` : `n/a (${prevMetrics.expense_pct_change.reason})`;
-    lines.push(`- Vs previous period: income Δ ${prevMetrics.income_delta_normalized>=0?"+":""}${fmtMoney(prevMetrics.income_delta_normalized,baseCurrency,lang)} (${ip}), expense Δ ${prevMetrics.expense_delta_normalized>=0?"+":""}${fmtMoney(prevMetrics.expense_delta_normalized,baseCurrency,lang)} (${ep}), net Δ ${prevMetrics.net_delta_normalized>=0?"+":""}${fmtMoney(prevMetrics.net_delta_normalized,baseCurrency,lang)}`);
-  } else if (options.metrics.comparePrevious) {
-    lines.push(`- Vs previous period: n/a (${prevMetrics?.reason || "unavailable"})`);
-  }
+  lines.push(`## Executive Summary (${baseCurrency}, normalized)`);
+  lines.push(`- Ledger: income ${fmtMoney(ledger.income_normalized, baseCurrency, lang)} | expense ${fmtMoney(ledger.expense_normalized, baseCurrency, lang)} | net ${fmtMoney(ledger.net_cashflow_normalized, baseCurrency, lang)} | tx ${ledger.tx_count_ledger}`);
+  lines.push(`- Adjusted operating: income ${fmtMoney(operatingIncome, baseCurrency, lang)} | expense ${fmtMoney(operatingExpense, baseCurrency, lang)} | net ${fmtMoney(operatingNet, baseCurrency, lang)} | savings rate ${operatingSavingsRate == null ? "n/a" : fmtNum(operatingSavingsRate, lang) + "%"}`);
+  lines.push(`- Net worth: ${fmtMoney(netWorthNormalized, baseCurrency, lang)} (assets ${fmtMoney(totalAssetsNormalized, baseCurrency, lang)}, liabilities ${fmtMoney(totalLiabilitiesNormalized, baseCurrency, lang)}, receivables ${fmtMoney(totalReceivablesNormalized, baseCurrency, lang)}) | liquid cash ${fmtMoney(totalLiquidCashNormalized, baseCurrency, lang)} | invested market ${fmtMoney(totalInvestedMarket, baseCurrency, lang)}`);
+  lines.push(`- Portfolio (period): realized P&L ${fmtMoney(portfolioPerformance.period_realized_pnl_normalized, baseCurrency, lang)} | fees+tax ${fmtMoney(portfolioPerformance.period_trading_fees_and_tax_normalized, baseCurrency, lang)} | unrealized ${fmtMoney(totalUnrealized, baseCurrency, lang)} (${portfolioPerformance.total_unrealized_pnl_pct == null ? "n/a" : fmtNum(portfolioPerformance.total_unrealized_pnl_pct, lang) + "%"})`);
+  lines.push(`- Transfers (separate): ${trRows.length} transfers, sent ${fmtMoney(transferAmountNormalizedTotal, baseCurrency, lang)}, fees ${fmtMoney(transferFeeNormalizedTotal, baseCurrency, lang)}. Trades in period: ${tradeRows.length}.`);
   if (highlights.length) for (const h of highlights.slice(0, compact ? 4 : 6)) lines.push(`- ${h}`);
   lines.push(``);
 
   if (!compact) {
     lines.push(`## FX & Normalization (reproducible)`);
     lines.push(`- base_currency: ${baseCurrency} | source: ${fxSource}${fxFetchedAt ? ` | fetched_at: ${fxFetchedAt}` : ""} | fallback_defaults_used: ${fxSource.startsWith("fallback")}`);
-    lines.push(`- policy: USD-base rate map (1 USD = rate[currency]). amount_normalized = (amount_original / rate[from_currency_or_USD]) * rate[${baseCurrency}], rounded to 2 decimals.`);
+    lines.push(`- policy: USD-base rate map (1 USD = rate[currency]). amount_normalized = (amount_original / rate[from]) * rate[${baseCurrency}], rounded 2dp.`);
     lines.push(`- rates (USD base): ${Object.entries(fxRatesStructured).map(([k,v])=>`${k}=${v}`).join(", ")}`);
     lines.push(``);
   }
@@ -1038,18 +1442,14 @@ export async function exportAiCashflowData(
   lines.push("```");
   lines.push(``);
 
-  lines.push(`## Definitions (machine-readable, includes glossary/units/csv_schemas)`);
+  lines.push(`## Definitions (machine-readable, includes glossary/units/csv_schemas/assumptions)`);
   lines.push("```json");
   lines.push(JSON.stringify(definitions, null, 2));
   lines.push("```");
   lines.push(``);
 
   if (options.metrics.trend && trend.length) {
-    lines.push(`## Trend (${trendGranularity}, local buckets, sparse/observed, ordered asc)`);
-    if (options.preset === "all") lines.push(`- Unbounded/all period: daily_local observed sparse series (not a calendar-complete timeline). Missing buckets = zero ledger rows in that bucket, not missing export data.`);
-    else if (trendGranularity === "daily_local") lines.push(`- Sparse observed series: only local days with >=1 ledger transaction are shown; missing days = zero ledger rows (see no_spend_days metric when available).`);
-    else lines.push(`- Sparse observed series: only local months with >=1 ledger transaction are shown; missing months = zero ledger rows in that month.`);
-    lines.push(``);
+    lines.push(`## Trend (${trendGranularity}, local buckets, sparse/observed)`);
     lines.push(`| Bucket (local) | Income (Normalized, ${baseCurrency}) | Expense (Normalized, ${baseCurrency}) | Net Cashflow (Normalized, ${baseCurrency}) | Tx Count (ledger) |`);
     lines.push(`|---|---:|---:|---:|---:|`);
     for (const t of trend) lines.push(`| ${t.bucket} | ${fmtNum(t.income_normalized,lang)} | ${fmtNum(t.expense_normalized,lang)} | ${fmtNum(t.net_cashflow_normalized,lang)} | ${t.tx_count_ledger} |`);
@@ -1059,107 +1459,131 @@ export async function exportAiCashflowData(
   if (options.metrics.breakdowns && !compact) {
     lines.push(`## Breakdown (ledger, normalized to ${baseCurrency})`);
     lines.push(``);
-    lines.push(`### Categories (top ${Math.min(byCategory.length, 20)} of ${byCategory.length}; share % of type total)`);
-    lines.push(``);
-    lines.push(`| Category (display) | Category key (canonical) | Type | Amount (Normalized, ${baseCurrency}) | Share % of type | Tx Count (ledger) | Avg Tx (Normalized, ${baseCurrency}) |`);
-    lines.push(`|---|---|---|---:|---:|---:|---:|`);
-    for (const c of byCategory.slice(0, 20)) lines.push(`| ${c.category} | ${c.category_key} | ${c.type} | ${fmtNum(c.amount_normalized,lang)} | ${fmtMaybeNum(c.share_pct_of_type,lang)} | ${c.tx_count} | ${fmtNum(c.avg_tx_normalized,lang)} |`);
-    lines.push(``);
-    lines.push(`### Accounts (ledger flow, normalized; account currency is native label)`);
-    lines.push(``);
-    lines.push(`| Account | Account Currency (native) | Income (Normalized, ${baseCurrency}) | Expense (Normalized, ${baseCurrency}) | Net (Normalized, ${baseCurrency}) | Tx Count (ledger) |`);
-    lines.push(`|---|---|---:|---:|---:|---:|`);
-    for (const a of byAccount) lines.push(`| ${a.account} | ${a.account_currency} | ${fmtNum(a.income_normalized,lang)} | ${fmtNum(a.expense_normalized,lang)} | ${fmtNum(a.net_normalized,lang)} | ${a.tx_count} |`);
-    lines.push(``);
-  }
-
-  if (byOriginalCurrency.length) {
-    lines.push(`## Totals by Original Currency (ledger)`);
-    lines.push(``);
-    lines.push(`| Currency (Original) | Income (Original) | Expense (Original) | Income (Normalized, ${baseCurrency}) | Expense (Normalized, ${baseCurrency}) | Net (Normalized, ${baseCurrency}) | Tx Count |`);
-    lines.push(`|---|---:|---:|---:|---:|---:|---:|`);
-    for (const o of byOriginalCurrency) lines.push(`| ${o.currency_original} | ${fmtNum(o.income_original,lang)} | ${fmtNum(o.expense_original,lang)} | ${fmtNum(o.income_normalized,lang)} | ${fmtNum(o.expense_normalized,lang)} | ${fmtNum(o.net_normalized,lang)} | ${o.tx_count} |`);
+    lines.push(`### Categories (top ${Math.min(byCategory.length, 20)} of ${byCategory.length})`);
+    lines.push(`| Category (display) | Category key | Type | Amount (Normalized) | Share % of type | Tx Count |`);
+    lines.push(`|---|---|---|---:|---:|---:|`);
+    for (const c of byCategory.slice(0, 20)) lines.push(`| ${c.category} | ${c.category_key} | ${c.type} | ${fmtNum(c.amount_normalized,lang)} | ${fmtMaybeNum(c.share_pct_of_type,lang)} | ${c.tx_count} |`);
     lines.push(``);
   }
 
   if (options.metrics.topTransactions) {
-    lines.push(`## Top Transactions (ledger, evidence; amounts show original + normalized)`);
-    lines.push(``);
-    lines.push(`### Top Expenses (by normalized amount)`);
-    lines.push(``);
-    lines.push(`| Date (local) | Amount (Original) | Currency (Original) | Amount (Normalized, ${baseCurrency}) | Category (display) | Category key | Account | Description (clean) | Tags |`);
-    lines.push(`|---|---:|---|---:|---|---|---|---|---|`);
-    for (const r of topExpenseTx) lines.push(`| ${r.date_local} | ${fmtNum(r.amount_original,lang)} | ${r.currency_original} | ${fmtNum(r.amount_normalized,lang)} | ${r.category_name_display} | ${r.category_key} | ${r.account_name} | ${(r.description_clean||r.description_raw).replace(/\|/g,"/").slice(0,80)} | ${r.tags.join(",")} |`);
-    lines.push(``);
-    lines.push(`### Top Income (by normalized amount)`);
-    lines.push(``);
-    lines.push(`| Date (local) | Amount (Original) | Currency (Original) | Amount (Normalized, ${baseCurrency}) | Category (display) | Category key | Account | Description (clean) |`);
+    lines.push(`## Top Transactions (ledger, evidence)`);
+    lines.push(`### Top Expenses`);
+    lines.push(`| Date (local) | Amount (Original) | Cur | Amount (Normalized) | Category | Account | Description | related_trade_ref |`);
     lines.push(`|---|---:|---|---:|---|---|---|---|`);
-    for (const r of topIncomeTx) lines.push(`| ${r.date_local} | ${fmtNum(r.amount_original,lang)} | ${r.currency_original} | ${fmtNum(r.amount_normalized,lang)} | ${r.category_name_display} | ${r.category_key} | ${r.account_name} | ${(r.description_clean||r.description_raw).replace(/\|/g,"/").slice(0,80)} |`);
+    for (const r of topExpenseTx) lines.push(`| ${r.date_local} | ${fmtNum(r.amount_original,lang)} | ${r.currency_original} | ${fmtNum(r.amount_normalized,lang)} | ${r.category_name_display} | ${r.account_name} | ${(r.description_clean||r.description_raw).replace(/\|/g,"/").slice(0,80)} | ${r.related_trade_ref || ""} |`);
     lines.push(``);
   }
 
   lines.push(`## Transfers — Inter-account Flow (SEPARATE, not in ledger net_cashflow)`);
-  lines.push(`- count=${trRows.length}, sent total normalized (from_currency->base, basis documented): ${fmtMoney(transferAmountNormalizedTotal, baseCurrency, lang)}, fees total normalized (from_currency basis): ${fmtMoney(transferFeeNormalizedTotal, baseCurrency, lang)}.`);
-  lines.push(`- Reconciliation: do NOT add transfer fees total to ledger expense/net_cashflow. Ledger already includes transfer fees recorded as ledger expense transactions (may be linked via transfer_id_ref; see reconciliation counts).`);
+  lines.push(`- count=${trRows.length}, sent normalized ${fmtMoney(transferAmountNormalizedTotal, baseCurrency, lang)}, fees normalized ${fmtMoney(transferFeeNormalizedTotal, baseCurrency, lang)}.`);
   if (trRows.length) {
     lines.push(``);
-    lines.push(`| Date (local) | From Account | To Account | Amount (Original) | From Currency | To Currency | Amount (Normalized from, ${baseCurrency}) | Fee (Original, from currency) | Fee (Normalized, ${baseCurrency}) | Fee Mode | Transfer Rate (stored) | Net Amount (stored) | Description |`);
-    lines.push(`|---|---|---|---:|---|---|---:|---:|---:|---|---:|---:|---|`);
-    for (const t of trRows.slice(0, 50)) lines.push(`| ${t.date_local} | ${t.from_account} | ${t.to_account} | ${fmtNum(t.amount_original,lang)} | ${t.from_currency} | ${t.to_currency} | ${fmtNum(t.amount_normalized_from,lang)} | ${t.fee_amount ?? ""} | ${t.fee_normalized_base ?? ""} | ${t.fee_mode ?? ""} | ${t.exchange_rate ?? ""} | ${t.net_amount ?? ""} | ${(t.description||"").replace(/\|/g,"/").slice(0,60)} |`);
+    lines.push(`| Date (local) | From | To | Amount (Original) | From Cur | To Cur | Amount (Normalized, ${baseCurrency}) | Fee Norm | Description |`);
+    lines.push(`|---|---|---|---:|---|---|---:|---:|---|`);
+    for (const t of trRows.slice(0, 50)) lines.push(`| ${t.date_local} | ${t.from_account} | ${t.to_account} | ${fmtNum(t.amount_original,lang)} | ${t.from_currency} | ${t.to_currency} | ${fmtNum(t.amount_normalized_from,lang)} | ${t.fee_normalized_base ?? ""} | ${(t.description||"").replace(/\|/g,"/").slice(0,60)} |`);
     if (trRows.length > 50) lines.push(`\n_(showing 50 of ${trRows.length} transfers in summary; see transfers.csv for full list)_`);
   } else {
     lines.push(`- (no transfers in period)`);
   }
   lines.push(``);
 
+  // --- Wealth / investment sections ---
+  lines.push(`## Balance Sheet & Net Worth Snapshot (${baseCurrency}, normalized)`);
+  lines.push(`- **Total Liquid Cash:** ${fmtMoney(totalLiquidCashNormalized, baseCurrency, lang)} (Bank/Cash/E-wallet: ${fmtMoney(cashAndBankNormalized, baseCurrency, lang)} | Uninvested Investment-account Cash: ${fmtMoney(uninvestedBrokerageCashNormalized, baseCurrency, lang)})`);
+  lines.push(`- **Invested Assets (Market Value):** ${fmtMoney(totalInvestedMarket, baseCurrency, lang)} (Cost Basis: ${fmtMoney(totalCostBasis, baseCurrency, lang)} | Unrealized P&L: ${fmtMoney(totalUnrealized, baseCurrency, lang)} / ${portfolioPerformance.total_unrealized_pnl_pct == null ? "n/a" : fmtNum(portfolioPerformance.total_unrealized_pnl_pct, lang) + "%"})`);
+  lines.push(`- **Total Liabilities:** ${fmtMoney(totalLiabilitiesNormalized, baseCurrency, lang)}`);
+  lines.push(`- **Total Net Worth:** ${fmtMoney(netWorthNormalized, baseCurrency, lang)}`);
+  lines.push(``);
+  lines.push(`| Asset Class | Market Value (${baseCurrency}) | Cost Basis (${baseCurrency}) | Unrealized P&L (${baseCurrency}) | Allocation (%) |`);
+  lines.push(`|---|---:|---:|---:|---:|`);
+  const cbNorm = cashAndBankNormalized; // cost/value same for cash
+  const ubNorm = uninvestedBrokerageCashNormalized;
+  lines.push(`| Cash & Bank | ${fmtNum(cbNorm, lang)} | ${fmtNum(cbNorm, lang)} | ${fmtNum(0, lang)} | ${fmtNum(allocationPct.cash_and_bank, lang)}% |`);
+  lines.push(`| Uninvested Investment-account Cash | ${fmtNum(ubNorm, lang)} | ${fmtNum(ubNorm, lang)} | ${fmtNum(0, lang)} | ${fmtNum(allocationPct.uninvested_brokerage_cash, lang)}% |`);
+  const cryptoUnreal = round2(investedMarketByClass.crypto - costByClass.crypto);
+  const stockUnreal = round2(investedMarketByClass.stock - costByClass.stock);
+  const etfUnreal = round2(investedMarketByClass.etf - costByClass.etf);
+  lines.push(`| Crypto | ${fmtNum(round2(investedMarketByClass.crypto), lang)} | ${fmtNum(round2(costByClass.crypto), lang)} | ${fmtNum(cryptoUnreal, lang)} | ${fmtNum(allocationPct.crypto, lang)}% |`);
+  lines.push(`| Stock | ${fmtNum(round2(investedMarketByClass.stock), lang)} | ${fmtNum(round2(costByClass.stock), lang)} | ${fmtNum(stockUnreal, lang)} | ${fmtNum(allocationPct.stock, lang)}% |`);
+  lines.push(`| ETF | ${fmtNum(round2(investedMarketByClass.etf), lang)} | ${fmtNum(round2(costByClass.etf), lang)} | ${fmtNum(etfUnreal, lang)} | ${fmtNum(allocationPct.etf, lang)}% |`);
+  lines.push(`| **Total Assets** | **${fmtNum(totalAssetsNormalized, lang)}** | **${fmtNum(round2(cbNorm + ubNorm + totalCostBasis), lang)}** | **${fmtNum(totalUnrealized, lang)}** | **100.00%** |`);
+  lines.push(``);
+
+  lines.push(`## Active Holdings Snapshot`);
+  if (holdingsSnap.length) {
+    lines.push(``);
+    lines.push(`| Asset Class | Symbol | Account | Quantity | Avg Buy (${baseCurrency} orig/settlement) | Market Price (orig) | Market Value (${baseCurrency}) | Unrealized P&L (${baseCurrency}) | Unrealized (%) |`);
+    lines.push(`|---|---|---|---:|---:|---:|---:|---:|---:|`);
+    for (const h of holdingsSnap) {
+      lines.push(`| ${h.asset_class} | ${h.symbol} | ${h.account_name} | ${h.quantity} | ${fmtNum(Number(h.average_buy_price_original)||0, lang)} ${h.settlement_currency} | ${h.market_price_original == null ? "n/a" : fmtNum(Number(h.market_price_original), lang)} ${h.settlement_currency} | ${fmtNum(Number(h.market_value_normalized)||0, lang)} | ${fmtNum(Number(h.unrealized_pnl_normalized)||0, lang)} | ${h.unrealized_pnl_pct == null ? "n/a" : fmtNum(Number(h.unrealized_pnl_pct), lang)+"%"} |`);
+    }
+  } else {
+    lines.push(`- (no holdings)`);
+  }
+  lines.push(``);
+
+  // Investment Realized P&L Summary (Period)
+  const tradeAgg = (cls: string) => {
+    const rows = tradeRows.filter((t) => t.asset_class === cls);
+    let buyVol = 0, sellVol = 0, feesTax = 0, realized = 0;
+    for (const t of rows) {
+      const grossNorm = normalizeToBase(t.gross_amount, t.settlement_currency, baseCurrency, rates);
+      const feeTaxNorm = normalizeToBase((t.fee_amount || 0) + (t.stamp_duty || 0), t.settlement_currency, baseCurrency, rates);
+      if (t.type === "buy") buyVol += grossNorm; else if (t.type === "sell") sellVol += grossNorm;
+      feesTax += feeTaxNorm;
+      if (t.realized_pnl_normalized != null) realized += t.realized_pnl_normalized;
+    }
+    return { buyVol: round2(buyVol), sellVol: round2(sellVol), feesTax: round2(feesTax), realized: round2(realized), count: rows.length };
+  };
+  const sAgg = tradeAgg("stock"), cAgg = tradeAgg("crypto"), eAgg = tradeAgg("etf");
+  const tAgg = {
+    buyVol: round2(sAgg.buyVol + cAgg.buyVol + eAgg.buyVol),
+    sellVol: round2(sAgg.sellVol + cAgg.sellVol + eAgg.sellVol),
+    feesTax: round2(sAgg.feesTax + cAgg.feesTax + eAgg.feesTax),
+    realized: round2(sAgg.realized + cAgg.realized + eAgg.realized),
+    count: sAgg.count + cAgg.count + eAgg.count,
+  };
+  lines.push(`## Investment Realized P&L Summary (Period)`);
+  lines.push(``);
+  lines.push(`| Asset Class | Buy Volume (${baseCurrency}) | Sell Volume (${baseCurrency}) | Fees & Stamp Duty (${baseCurrency}) | Realized P&L (${baseCurrency}) | Trade Count |`);
+  lines.push(`|---|---:|---:|---:|---:|---:|`);
+  lines.push(`| stock | ${fmtNum(sAgg.buyVol, lang)} | ${fmtNum(sAgg.sellVol, lang)} | ${fmtNum(sAgg.feesTax, lang)} | ${fmtNum(sAgg.realized, lang)} | ${sAgg.count} |`);
+  lines.push(`| etf | ${fmtNum(eAgg.buyVol, lang)} | ${fmtNum(eAgg.sellVol, lang)} | ${fmtNum(eAgg.feesTax, lang)} | ${fmtNum(eAgg.realized, lang)} | ${eAgg.count} |`);
+  lines.push(`| crypto | ${fmtNum(cAgg.buyVol, lang)} | ${fmtNum(cAgg.sellVol, lang)} | ${fmtNum(cAgg.feesTax, lang)} | ${fmtNum(cAgg.realized, lang)} | ${cAgg.count} |`);
+  lines.push(`| **Total** | **${fmtNum(tAgg.buyVol, lang)}** | **${fmtNum(tAgg.sellVol, lang)}** | **${fmtNum(tAgg.feesTax, lang)}** | **${fmtNum(tAgg.realized, lang)}** | **${tAgg.count}** |`);
+  lines.push(``);
+
   if (!compact) {
     lines.push(`## Context Snapshots (non-ledger, caveated)`);
-    lines.push(``);
-    lines.push(`### Accounts snapshot (native currencies; not normalized/summable with ledger KPIs across currencies)`);
-    if (accountsSnap.length) {
-      lines.push(``);
-      lines.push(`| Account | Type | Currency (native) | Current Balance (native) | Initial Balance (native) | Active |`);
-      lines.push(`|---|---|---|---:|---:|---|`);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      for (const a of accountsSnap as any[]) lines.push(`| ${a.name || ""} | ${a.type || ""} | ${a.currency || ""} | ${fmtNum(Number(a.current_balance)||0, lang)} | ${fmtNum(Number(a.initial_balance)||0, lang)} | ${a.is_active ? "yes" : "no"} |`);
+    lines.push(`### Accounts snapshot`);
+    if (accountsSnapRaw.length) {
+      lines.push(`| Account | Type | Currency | Current Balance | Active |`);
+      lines.push(`|---|---|---|---:|---|`);
+      for (const a of accountsSnapRaw) lines.push(`| ${a.name || ""} | ${a.type || ""} | ${a.currency || ""} | ${fmtNum(Number(a.current_balance)||0, lang)} | ${a.is_active ? "yes" : "no"} |`);
     } else lines.push(`- (no accounts)`);
+    lines.push(``);
+    lines.push(`### Debts snapshot (active)`);
+    if (debtsSnap.length) {
+      lines.push(`| Counterparty | Type | Remaining (orig) | Currency | Remaining (${baseCurrency}) | Status | Due |`);
+      lines.push(`|---|---|---:|---|---:|---|---|`);
+      for (const d of debtsSnap) lines.push(`| ${d.counterparty || ""} | ${d.type} | ${fmtNum(Number(d.remaining_amount_original)||0, lang)} | ${d.currency} | ${fmtNum(Number(d.remaining_normalized)||0, lang)} | ${d.status} | ${d.due_date || ""} |`);
+    } else lines.push(`- (none)`);
     lines.push(``);
     lines.push(`### Budget snapshot (representative, non-period-aligned approximation)`);
     lines.push(`- caveat: ${JSON.stringify(budgetCaveat)}`);
     if (budgetsSnap.length) {
-      lines.push(``);
-      lines.push(`| Category | Category key | Period Start | Limit (native) | Spent (native) | Remaining (native) | Currency (native) |`);
-      lines.push(`|---|---|---|---:|---:|---:|---|`);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      for (const b of budgetsSnap as any[]) lines.push(`| ${b.category} | ${b.category_key} | ${b.period_start} | ${fmtNum(b.limit_native, lang)} | ${fmtNum(b.spent_native, lang)} | ${fmtNum(b.remaining_native, lang)} | ${b.currency} |`);
+      lines.push(`| Category | Period Start | Limit (native) | Spent (native) | Remaining (native) | Currency |`);
+      lines.push(`|---|---|---:|---:|---:|---|`);
+      for (const b of budgetsSnap) lines.push(`| ${b.category} | ${b.period_start} | ${fmtNum(b.limit_native, lang)} | ${fmtNum(b.spent_native, lang)} | ${fmtNum(b.remaining_native, lang)} | ${b.currency} |`);
     } else lines.push(`- (no budget snapshot)`);
-    lines.push(``);
-    lines.push(`### Active debts (native currency, not normalized)`);
-    if (debtsSnap.length) {
-      lines.push(``);
-      lines.push(`| Name | Type | Status | Remaining (native) | Total (native) | Currency | Due |`);
-      lines.push(`|---|---|---|---:|---:|---|---|`);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      for (const d of debtsSnap as any[]) lines.push(`| ${d.name || ""} | ${d.type || ""} | ${d.status || ""} | ${fmtNum(Number(d.remaining_native)||0,lang)} | ${fmtNum(Number(d.total_native)||0,lang)} | ${d.currency || ""} | ${d.due_date || ""} |`);
-    } else lines.push(`- (none)`);
-    lines.push(``);
-    lines.push(`### Active goals (native currency, not normalized)`);
-    if (goalsSnap.length) {
-      lines.push(``);
-      lines.push(`| Name | Status | Current (native) | Target (native) | Currency | Target date |`);
-      lines.push(`|---|---|---:|---:|---|---|`);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      for (const g of goalsSnap as any[]) lines.push(`| ${g.name || ""} | ${g.status || ""} | ${fmtNum(Number(g.current_native)||0,lang)} | ${fmtNum(Number(g.target_native)||0,lang)} | ${g.currency || ""} | ${g.target_date || ""} |`);
-    } else lines.push(`- (none)`);
     lines.push(``);
   }
 
   lines.push(`## Data Quality & Notes`);
-  lines.push(`- Exported rows: transactions=${txRows.length}, transfers=${trRows.length}. uncategorized_ledger=${ledger.uncategorized_count}. linked_to_transfer=${linkedToTransferCount}, linked_to_trade=${linkedToTradeCount}.`);
-  lines.push(`- FX: source=${fxSource}${fxFetchedAt ? `, fetched_at=${fxFetchedAt}` : ""}, base=${baseCurrency}, rates_usd_base=${JSON.stringify(fxRatesStructured)}.`);
-  lines.push(`- Filter: [${rangeStart || "null"}, ${rangeEnd || "null"}) half-open on transaction_date/transfer_date. Ledger net uses only transactions (not transfers).`);
-  lines.push(`- Data shown as-is from ledger scope (no Reports exclusion logic applied).`);
+  lines.push(`- Exported: transactions=${txRows.length}, transfers=${trRows.length}, trades=${tradeRows.length}. linked_to_transfer=${linkedToTransferCount}, linked_to_trade=${linkedToTradeCount}.`);
+  lines.push(`- FX: source=${fxSource}${fxFetchedAt ? `, fetched_at=${fxFetchedAt}` : ""}, base=${baseCurrency}. Holdings use cached asset prices with market-or-cost fallback.`);
+  lines.push(`- Cashflow adjusted is best-effort: trade-mirrored txs excluded; loan principal identified by category 'Loan & Debt'; discrepancy by category 'Discrepancy'; investment capital deployments derived from transfers to/from investment accounts.`);
   lines.push(``);
 
   lines.push(`## Machine-readable block (manifest + kpi + definitions)`);
@@ -1169,7 +1593,7 @@ export async function exportAiCashflowData(
 
   const summaryMd = lines.join("\n");
 
-  // CSV builders (documented columns)
+  // CSV builders
   const txCsvHeader = "date_iso,type,amount_original,currency_original,amount_normalized,base_currency,date_local,account_name,account_currency,category_key,category_name_display,description_raw,description_clean,tags,items_json,transaction_id,account_id,category_id,transfer_id_ref,related_trade_ref,created_at\n";
   let txCsv = txCsvHeader;
   for (const r of txRows) {
@@ -1189,34 +1613,47 @@ export async function exportAiCashflowData(
       csvCell(t.description), t.id,
     ].join(",") + "\n";
   }
+  const tradesCsvHeader = "trade_id,date_iso,date_local,asset_class,symbol,type,account_name,quantity,lots,price_per_unit,settlement_currency,gross_amount,fee_amount,stamp_duty,net_amount_original,net_amount_normalized,base_currency,cost_basis_sold,realized_pnl_normalized,notes\n";
+  let tradesCsv = tradesCsvHeader;
+  for (const t of tradeRows) {
+    tradesCsv += [
+      t.trade_id, t.date_iso, t.date_local, t.asset_class, csvCell(t.symbol), t.type, csvCell(t.account_name),
+      t.quantity, t.lots ?? "", t.price_per_unit, t.settlement_currency, t.gross_amount, t.fee_amount, t.stamp_duty,
+      t.net_amount_original, t.net_amount_normalized, t.base_currency, t.cost_basis_sold ?? "", t.realized_pnl_normalized ?? "", csvCell(t.notes),
+    ].join(",") + "\n";
+  }
+
   const contextJson = JSON.stringify({
-    schema_version: "2.0",
+    schema_version: "pocketly-wealth-1",
     manifest,
     kpi,
     definitions,
     snapshots: {
-      accounts: accountsSnap,
-      budgets: budgetsSnap,
-      budget_caveat: budgetCaveat,
+      accounts: accountsSnapRaw,
+      holdings: holdingsSnap,
       debts: debtsSnap,
+      budgets: budgetsSnap,
       goals: goalsSnap,
+      budget_caveat: budgetCaveat,
     },
     fx: kpi.fx,
   }, null, 2);
 
-  const ts = generatedAt.slice(0, 10);
-  const files: { name: string; content: string }[] = [{ name: `cashflow-ai-summary-${ts}.md`, content: summaryMd }];
-  if (options.includeTransactionsCsv) files.push({ name: `transactions-${ts}.csv`, content: txCsv });
-  if (options.includeTransfersCsv) files.push({ name: `transfers-${ts}.csv`, content: trCsv });
-  if (options.includeContextJson) files.push({ name: `context-${ts}.json`, content: contextJson });
+  const files: { name: string; content: string }[] = [{ name: summaryName, content: summaryMd }];
+  if (options.includeTransactionsCsv) files.push({ name: txName, content: txCsv });
+  if (options.includeTransfersCsv) files.push({ name: trName, content: trCsv });
+  if (includeTradesCsv) files.push({ name: tradesName, content: tradesCsv });
+  if (options.includeContextJson) files.push({ name: contextName, content: contextJson });
 
-  // update manifest included file rows/names consistency? names already use ts; ok.
   if (files.length === 1) {
-    return { filename: files[0].name, mime: "text/markdown", content: files[0].content, encoding: "utf-8" };
+    return { filename: summaryName, mime: "text/markdown", content: summaryMd, encoding: "utf-8" };
   }
 
   const zip = new JSZip();
-  for (const f of files) zip.file(f.name, f.content);
+  const folderName = `pocketly-ai-wealth-export-${ts}`;
+  const folder = zip.folder(folderName);
+  if (!folder) throw new Error("Failed to create export bundle");
+  for (const f of files) folder.file(f.name, f.content);
   const b64 = await zip.generateAsync({ type: "base64" });
-  return { filename: `pocketly-ai-cashflow-${ts}.zip`, mime: "application/zip", content: b64, encoding: "base64" };
+  return { filename: `${folderName}.zip`, mime: "application/zip", content: b64, encoding: "base64" };
 }
