@@ -1275,7 +1275,7 @@ export function SplitBillDetailClient({
     </div>
   );
 
-  const buildMyPortionRecordItems = (): TransactionItem[] => {
+  const buildMyPortionRecordItems = useCallback((): TransactionItem[] => {
     if (!meParticipantKey) return [];
     const myLines = calc.per_person.find((p) => p.participant_id === meParticipantKey)?.item_lines ?? [];
     return myLines
@@ -1292,9 +1292,9 @@ export function SplitBillDetailClient({
         };
       })
       .filter((i) => i.name.trim() && (Number(i.subtotal) > 0 || Number(i.price) > 0));
-  };
+  }, [meParticipantKey, calc.per_person, items]);
 
-  const openRecord = () => {
+  const openRecord = useCallback(() => {
     const compatible = accounts.filter((a) => (a.currency || "").toUpperCase() === currency.toUpperCase());
     const preferred = compatible[0] || accounts[0];
     setRecordState({
@@ -1305,7 +1305,7 @@ export function SplitBillDetailClient({
     });
     setRecordItems(buildMyPortionRecordItems());
     setShowRecord(true);
-  };
+  }, [accounts, currency, myPortionDescription, billDate, buildMyPortionRecordItems]);
 
   const myPersonCalc = meParticipantKey
     ? calc.per_person.find((p) => p.participant_id === meParticipantKey)
@@ -1530,12 +1530,12 @@ export function SplitBillDetailClient({
     { id: 4 as const, label: t.splitBill.stepSummary },
   ];
 
-  const goToStep = (s: 1 | 2 | 3 | 4) => {
+  const goToStep = useCallback((s: 1 | 2 | 3 | 4) => {
     if (s === 3 && participants.length > 0) {
       setActiveAssigneeKey((cur) => (cur && participants.some((p) => p.key === cur)) ? cur : participants[0].key);
     }
     setStep(s);
-  };
+  }, [participants]);
 
   const personLabel = (p: { name: string; is_me: boolean }) => {
     if (!p.is_me) return p.name;
@@ -1857,11 +1857,11 @@ export function SplitBillDetailClient({
 
   // Gesture: geser ke atas pada kartu hasil = catat porsi saya (mobile)
   const resultTouchStartRef = useRef<{ x: number; y: number } | null>(null);
-  const handleResultTouchStart = (e: React.TouchEvent) => {
+  const handleResultTouchStart = useCallback((e: React.TouchEvent | TouchEvent) => {
     const touch = e.touches[0];
     resultTouchStartRef.current = { x: touch.clientX, y: touch.clientY };
-  };
-  const handleResultTouchEnd = (e: React.TouchEvent | TouchEvent) => {
+  }, []);
+  const handleResultTouchEnd = useCallback((e: React.TouchEvent | TouchEvent) => {
     const start = resultTouchStartRef.current;
     resultTouchStartRef.current = null;
     if (!start) return;
@@ -1878,7 +1878,7 @@ export function SplitBillDetailClient({
         );
         return;
       }
-      if (!meParticipant) {
+      if (!meParticipantKey) {
         toast.error(
           language === "id"
             ? "Belum ada peserta yang ditandai sebagai 'Saya'. Tahan avatar (atau klik 2×) untuk menandainya."
@@ -1889,15 +1889,15 @@ export function SplitBillDetailClient({
       if (canMarkBalanced) openRecord();
       else toast.error(t.splitBill.mustBalance);
     }
-  };
+  }, [myRecordedTxId, meParticipantKey, canMarkBalanced, language, t.splitBill.mustBalance, openRecord]);
 
-  const handleStepTouchStart = (e: React.TouchEvent | TouchEvent) => {
+  const handleStepTouchStart = useCallback((e: React.TouchEvent | TouchEvent) => {
     const t0 = e.touches[0];
     if (!t0) return;
     stepTouchStart.current = { x: t0.clientX, y: t0.clientY };
-  };
+  }, []);
 
-  const handleStepTouchEnd = (e: React.TouchEvent | TouchEvent) => {
+  const handleStepTouchEnd = useCallback((e: React.TouchEvent | TouchEvent) => {
     if (!stepTouchStart.current) return;
     const t1 = e.changedTouches[0];
     if (!t1) return;
@@ -1907,7 +1907,7 @@ export function SplitBillDetailClient({
     if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
     if (dx < 0 && step < 4) goToStep((step + 1) as 1 | 2 | 3 | 4);
     if (dx > 0 && step > 1) goToStep((step - 1) as 1 | 2 | 3 | 4);
-  };
+  }, [step, goToStep]);
 
   // Capture swipes even when they start on page background/gutters (outside inner cards),
   // including layout/background areas outside the split-bill component.
@@ -1923,11 +1923,11 @@ export function SplitBillDetailClient({
     document.addEventListener("touchend", onEnd, opts);
     document.addEventListener("touchcancel", onCancel, opts);
     return () => {
-      document.removeEventListener("touchstart", onStart, { capture: true } as any);
-      document.removeEventListener("touchend", onEnd, { capture: true } as any);
-      document.removeEventListener("touchcancel", onCancel, { capture: true } as any);
+      document.removeEventListener("touchstart", onStart, opts);
+      document.removeEventListener("touchend", onEnd, opts);
+      document.removeEventListener("touchcancel", onCancel, opts);
     };
-  }, [isEditing, entryMode, cameraActive, scanSheetOpen, step, goToStep]);
+  }, [isEditing, entryMode, cameraActive, scanSheetOpen, handleStepTouchStart, handleStepTouchEnd]);
 
   useEffect(() => {
     if (entryMode === "choose" || cameraActive || scanSheetOpen) return;
@@ -1941,21 +1941,11 @@ export function SplitBillDetailClient({
     document.addEventListener("touchend", onEnd, opts);
     document.addEventListener("touchcancel", onCancel, opts);
     return () => {
-      document.removeEventListener("touchstart", onStart, { capture: true } as any);
-      document.removeEventListener("touchend", onEnd, { capture: true } as any);
-      document.removeEventListener("touchcancel", onCancel, { capture: true } as any);
+      document.removeEventListener("touchstart", onStart, opts);
+      document.removeEventListener("touchend", onEnd, opts);
+      document.removeEventListener("touchcancel", onCancel, opts);
     };
-  }, [
-    entryMode,
-    cameraActive,
-    scanSheetOpen,
-    myRecordedTxId,
-    meParticipant,
-    canMarkBalanced,
-    language,
-    t.splitBill.mustBalance,
-    openRecord,
-  ]);
+  }, [entryMode, cameraActive, scanSheetOpen, handleResultTouchStart, handleResultTouchEnd]);
 
   // Initial choice screen for new split bills
   if (entryMode === "choose" && !billId) {
