@@ -27,6 +27,8 @@ export interface SplitBill {
   my_participant_id: string | null;
   my_recorded_transaction_id: string | null;
   my_recorded_at: string | null;
+  /** Client-generated idempotency key for manual draft creation attempts. */
+  manual_draft_key?: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'Pocketly - Personal Finance Tracker',
     short_name: 'Pocketly',
-    description: 'Ultra-fast, mobile-first personal finance tracker with multi-currency and offline readiness.',
+    description: 'Ultra-fast, mobile-first personal finance tracker with multi-currency support.',
     start_url: '/dashboard',
     id: '/',
     display: 'standalone',

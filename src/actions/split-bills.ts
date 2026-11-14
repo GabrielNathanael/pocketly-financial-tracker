@@ -184,20 +184,59 @@ type SaveSplitBillInput = {
   assignments: Array<{ item_key: string; participant_key: string; share_quantity: number }>;
 };
 
-export async function createManualSplitBillDraft(): Promise<{ id?: string; error?: string }> {
-  return saveSplitBill({
-    title: "",
-    bill_date: new Date().toISOString().slice(0, 10),
-    currency: DEFAULT_CURRENCY,
-    subtotal_amount: 0,
-    grand_total_amount: 0,
-    status: "draft",
-    participants: [],
-    items: [],
-    charges: [],
-    assignments: [],
-    skipRevalidate: true,
-  });
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export async function createManualSplitBillDraft(input?: {
+  attemptKey?: string | null;
+}): Promise<{ id?: string; error?: string; deduped?: boolean }> {
+  try {
+    const { supabase, user } = await getAuthed();
+    const sb = supabase as any;
+
+    const rawKey = typeof input?.attemptKey === "string" ? input.attemptKey.trim() : "";
+    const attemptKey = UUID_RE.test(rawKey) ? rawKey : null;
+
+    const billPayload = {
+      user_id: user.id,
+      title: "",
+      bill_date: new Date().toISOString().slice(0, 10),
+      currency: DEFAULT_CURRENCY,
+      subtotal_amount: 0,
+      grand_total_amount: 0,
+      status: "draft" as const,
+      split_mode: "proportional" as const,
+      notes: null,
+      manual_draft_key: attemptKey,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data, error } = await sb.from("split_bills").insert(billPayload).select("id").single();
+
+    if (!error && data?.id) {
+      return { id: data.id as string };
+    }
+
+    // Idempotency: same attempt key retried/raced -> return the existing draft instead of creating another.
+    const isDuplicateKey =
+      !!attemptKey &&
+      (error?.code === "23505" ||
+        /duplicate key|unique constraint/i.test(String(error?.message || "")));
+    if (isDuplicateKey) {
+      const { data: existing, error: existingError } = await sb
+        .from("split_bills")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("manual_draft_key", attemptKey)
+        .maybeSingle();
+      if (!existingError && existing?.id) {
+        return { id: existing.id as string, deduped: true };
+      }
+    }
+
+    throw new Error(error?.message || "Gagal membuat split bill");
+  } catch (e) {
+    return { error: friendlySaveError(e) };
+  }
 }
 
 export async function saveSplitBill(input: SaveSplitBillInput): Promise<{ id?: string; error?: string }> {

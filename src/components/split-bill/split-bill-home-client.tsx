@@ -11,6 +11,8 @@ import { useLanguage } from "@/lib/i18n/language-context";
  
 import type { SplitBill } from "@/types/split-bill";
 
+const MANUAL_DRAFT_ATTEMPT_KEY = "split-bill:manual-draft-attempt-key";
+
 /** Tanggal singkat untuk "terakhir dibuka". */
 function formatRecentDate(iso: string, language: "id" | "en"): string {
   if (!iso) return "-";
@@ -38,6 +40,12 @@ export function SplitBillHomeClient({ bills }: { bills: SplitBill[] }) {
   const startManual = () => {
     if (isStartingManual) return;
     setIsStartingManual(true);
+    // New intentional start: clear any stale attempt key so this creates a fresh draft.
+    try {
+      window.sessionStorage.removeItem(MANUAL_DRAFT_ATTEMPT_KEY);
+    } catch {
+      // ignore storage errors
+    }
     router.push("/split-bill?mode=manual");
   };
 

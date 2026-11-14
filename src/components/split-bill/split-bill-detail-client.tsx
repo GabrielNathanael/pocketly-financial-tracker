@@ -1557,22 +1557,6 @@ export function SplitBillDetailClient({
     }
   };
 
-  const handleStepTouchStart = (e: React.TouchEvent) => {
-    const t0 = e.touches[0];
-    stepTouchStart.current = { x: t0.clientX, y: t0.clientY };
-  };
-
-  const handleStepTouchEnd = (e: React.TouchEvent) => {
-    if (!stepTouchStart.current) return;
-    const t1 = e.changedTouches[0];
-    const dx = t1.clientX - stepTouchStart.current.x;
-    const dy = t1.clientY - stepTouchStart.current.y;
-    stepTouchStart.current = null;
-    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
-    if (dx < 0 && step < 4) goToStep((step + 1) as 1 | 2 | 3 | 4);
-    if (dx > 0 && step > 1) goToStep((step - 1) as 1 | 2 | 3 | 4);
-  };
-
   const renderScanSheet = () => {
     if (!scanSheetOpen) return null;
     const canAddMore = scanImages.length < 3;
@@ -1877,7 +1861,7 @@ export function SplitBillDetailClient({
     const touch = e.touches[0];
     resultTouchStartRef.current = { x: touch.clientX, y: touch.clientY };
   };
-  const handleResultTouchEnd = (e: React.TouchEvent) => {
+  const handleResultTouchEnd = (e: React.TouchEvent | TouchEvent) => {
     const start = resultTouchStartRef.current;
     resultTouchStartRef.current = null;
     if (!start) return;
@@ -1906,6 +1890,72 @@ export function SplitBillDetailClient({
       else toast.error(t.splitBill.mustBalance);
     }
   };
+
+  const handleStepTouchStart = (e: React.TouchEvent | TouchEvent) => {
+    const t0 = e.touches[0];
+    if (!t0) return;
+    stepTouchStart.current = { x: t0.clientX, y: t0.clientY };
+  };
+
+  const handleStepTouchEnd = (e: React.TouchEvent | TouchEvent) => {
+    if (!stepTouchStart.current) return;
+    const t1 = e.changedTouches[0];
+    if (!t1) return;
+    const dx = t1.clientX - stepTouchStart.current.x;
+    const dy = t1.clientY - stepTouchStart.current.y;
+    stepTouchStart.current = null;
+    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
+    if (dx < 0 && step < 4) goToStep((step + 1) as 1 | 2 | 3 | 4);
+    if (dx > 0 && step > 1) goToStep((step - 1) as 1 | 2 | 3 | 4);
+  };
+
+  // Capture swipes even when they start on page background/gutters (outside inner cards),
+  // including layout/background areas outside the split-bill component.
+  useEffect(() => {
+    if (!isEditing || entryMode === "choose" || cameraActive || scanSheetOpen) return;
+    const onStart = (e: TouchEvent) => handleStepTouchStart(e);
+    const onEnd = (e: TouchEvent) => handleStepTouchEnd(e);
+    const onCancel = () => {
+      stepTouchStart.current = null;
+    };
+    const opts: AddEventListenerOptions = { passive: true, capture: true };
+    document.addEventListener("touchstart", onStart, opts);
+    document.addEventListener("touchend", onEnd, opts);
+    document.addEventListener("touchcancel", onCancel, opts);
+    return () => {
+      document.removeEventListener("touchstart", onStart, { capture: true } as any);
+      document.removeEventListener("touchend", onEnd, { capture: true } as any);
+      document.removeEventListener("touchcancel", onCancel, { capture: true } as any);
+    };
+  }, [isEditing, entryMode, cameraActive, scanSheetOpen, step, goToStep]);
+
+  useEffect(() => {
+    if (entryMode === "choose" || cameraActive || scanSheetOpen) return;
+    const onStart = (e: TouchEvent) => handleResultTouchStart(e);
+    const onEnd = (e: TouchEvent) => handleResultTouchEnd(e);
+    const onCancel = () => {
+      resultTouchStartRef.current = null;
+    };
+    const opts: AddEventListenerOptions = { passive: true, capture: true };
+    document.addEventListener("touchstart", onStart, opts);
+    document.addEventListener("touchend", onEnd, opts);
+    document.addEventListener("touchcancel", onCancel, opts);
+    return () => {
+      document.removeEventListener("touchstart", onStart, { capture: true } as any);
+      document.removeEventListener("touchend", onEnd, { capture: true } as any);
+      document.removeEventListener("touchcancel", onCancel, { capture: true } as any);
+    };
+  }, [
+    entryMode,
+    cameraActive,
+    scanSheetOpen,
+    myRecordedTxId,
+    meParticipant,
+    canMarkBalanced,
+    language,
+    t.splitBill.mustBalance,
+    openRecord,
+  ]);
 
   // Initial choice screen for new split bills
   if (entryMode === "choose" && !billId) {
@@ -1980,13 +2030,13 @@ export function SplitBillDetailClient({
    * Tampilan HASIL — inilah "ringkasan" yang jadi hasil akhir.
    * Satu kartu bersih: angka struk (subtotal → biaya → total) lalu rincian per orang.
    */
-  const renderResultView = (opts?: { showShare?: boolean }) => (
-    <div className="flex flex-col gap-4">
-      <div
-        className="rounded-2xl border border-border bg-surface p-4 sm:p-5 flex flex-col gap-4 shadow-sm"
-        onTouchStart={handleResultTouchStart}
-        onTouchEnd={handleResultTouchEnd}
-      >
+  const renderResultView = (opts?: { showShare?: boolean; enableRecordSwipe?: boolean }) => (
+    <div
+      className="flex flex-col gap-4"
+      onTouchStart={opts?.enableRecordSwipe ? handleResultTouchStart : undefined}
+      onTouchEnd={opts?.enableRecordSwipe ? handleResultTouchEnd : undefined}
+    >
+      <div className="rounded-2xl border border-border bg-surface p-4 sm:p-5 flex flex-col gap-4 shadow-sm">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-lg font-bold text-foreground">{title || t.splitBill.title}</p>
@@ -2140,7 +2190,11 @@ export function SplitBillDetailClient({
   );
 
   return (
-    <div className={cn("flex flex-col w-full", (billId && !isEditing) ? "max-w-4xl mx-auto gap-4" : "max-w-3xl mx-auto bg-canvas")}>
+    <div
+      className={cn("flex flex-col w-full", (billId && !isEditing) ? "max-w-4xl mx-auto gap-4" : "max-w-3xl mx-auto bg-canvas")}
+      onTouchStart={isEditing ? handleStepTouchStart : undefined}
+      onTouchEnd={isEditing ? handleStepTouchEnd : undefined}
+    >
       {/* View mode for saved bills: the result IS the summary */}
       {billId && !isEditing ? (
         <>
@@ -2165,8 +2219,10 @@ export function SplitBillDetailClient({
                 {renderReceiptPhotos()}
               </div>
             )}
-            {renderResultView()}
-            {renderMyPortionBlock()}
+            <div onTouchStart={handleResultTouchStart} onTouchEnd={handleResultTouchEnd}>
+              {renderResultView({ enableRecordSwipe: false })}
+              {renderMyPortionBlock()}
+            </div>
           </div>
         </>
       ) : (
@@ -2276,7 +2332,7 @@ export function SplitBillDetailClient({
           </div>
 
           {/* Step content (1 step bergantian, scroll halaman normal) */}
-          <div className="px-1 py-2" onTouchStart={handleStepTouchStart} onTouchEnd={handleStepTouchEnd}>
+          <div className="px-1 py-2">
       {/* Step 1: Review items/prices (read-only by default), edit only when needed */}
       {step === 1 && (
         <div className="rounded-xl border border-border bg-surface p-4 flex flex-col gap-4">
@@ -2831,8 +2887,10 @@ export function SplitBillDetailClient({
               {renderReceiptPhotos()}
             </div>
           )}
-          {renderResultView()}
-          {renderMyPortionBlock()}
+          <div onTouchStart={handleResultTouchStart} onTouchEnd={handleResultTouchEnd}>
+            {renderResultView({ enableRecordSwipe: false })}
+            {renderMyPortionBlock()}
+          </div>
         </div>
       )}
           </div>

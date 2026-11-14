@@ -73,7 +73,7 @@ export default function RootLayout({
       className={`${jakartaSans.variable} ${geistMono.variable}`}
       suppressHydrationWarning
     >
-      <body className="min-h-screen bg-canvas text-foreground font-sans antialiased selection:bg-primary selection:text-primary-foreground">
+      <body className="min-h-dvh bg-canvas text-foreground font-sans antialiased selection:bg-primary selection:text-primary-foreground">
         <ThemeProvider>
           <LanguageProvider>
             <UndoProvider>
