@@ -9,8 +9,8 @@ export default function manifest(): MetadataRoute.Manifest {
     id: '/',
     display: 'standalone',
     orientation: 'portrait-primary',
-    background_color: '#0F1311',
-    theme_color: '#9FC3AF',
+    background_color: '#FFFAFB',
+    theme_color: '#D48497',
     icons: [
       {
         src: '/favicon/web-app-manifest-192x192.png',
@@ -40,11 +40,6 @@ export default function manifest(): MetadataRoute.Manifest {
         src: '/favicon/favicon-96x96.png',
         sizes: '96x96',
         type: 'image/png',
-      },
-      {
-        src: '/favicon/favicon.svg',
-        sizes: 'any',
-        type: 'image/svg+xml',
       },
     ],
   }

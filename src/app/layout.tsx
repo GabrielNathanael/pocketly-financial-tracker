@@ -31,7 +31,6 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: "/favicon/favicon.ico" },
-      { url: "/favicon/favicon.svg", type: "image/svg+xml" },
       { url: "/favicon/favicon-96x96.png", sizes: "96x96", type: "image/png" },
     ],
     shortcut: "/favicon/favicon.ico",
@@ -53,8 +52,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#FFFFFF" },
-    { media: "(prefers-color-scheme: dark)", color: "#0F1311" },
+    { media: "(prefers-color-scheme: light)", color: "#FFFAFB" },
+    { media: "(prefers-color-scheme: dark)", color: "#171318" },
   ],
   width: "device-width",
   initialScale: 1,
