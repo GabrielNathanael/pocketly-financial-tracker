@@ -79,46 +79,46 @@
     --font-mono: var(--font-mono), monospace;
 
     /* Backward-compatible aliases */
-    --canvas: #FFFFFF;
+    --canvas: #FFFAFB;
     --surface: #FFFFFF;
-    --surface-sub: #F4F8F5;
-    --border: #DCE6E0;
-    --border-active: #3E5B4E;
-    --ink-primary: #1E2A25;
-    --ink-secondary: #5E7067;
-    --ink-muted: #8A9A91;
+    --surface-sub: #FFF1F4;
+    --border: #EDD9DE;
+    --border-active: #C98998;
+    --ink-primary: #2C2225;
+    --ink-secondary: #6F5C61;
+    --ink-muted: #9C888D;
 
-    /* Semantic tokens (light) - White + Soft Sage */
-    --token-canvas: #FFFFFF;
+    /* Semantic tokens (light) - Sakura (cherry blossom) */
+    --token-canvas: #FFFAFB;
     --token-surface: #FFFFFF;
-    --token-surface-subtle: #F4F8F5;
-    --token-surface-muted: #E9F1EC;
-    --token-surface-inverse: #2F4A3F;
-    --token-surface-inverse-hover: #385748;
+    --token-surface-subtle: #FFF1F4;
+    --token-surface-muted: #FCE6EB;
+    --token-surface-inverse: #4A353A;
+    --token-surface-inverse-hover: #584046;
     --token-surface-contrast: #FFFFFF;
 
-    --token-border: #DCE6E0;
-    --token-border-strong: #3E5B4E;
-    --token-border-inverse: #4C675B;
+    --token-border: #EDD9DE;
+    --token-border-strong: #C98998;
+    --token-border-inverse: #6B5057;
 
-    --token-foreground: #1E2A25;
-    --token-foreground-secondary: #5E7067;
-    --token-foreground-muted: #8A9A91;
+    --token-foreground: #2C2225;
+    --token-foreground-secondary: #6F5C61;
+    --token-foreground-muted: #9C888D;
     --token-foreground-inverse: #FFFFFF;
 
-    --token-primary: #4E6F60;
-    --token-primary-hover: #425F52;
+    --token-primary: #D48497;
+    --token-primary-hover: #C57286;
     --token-primary-foreground: #FFFFFF;
 
-    --token-secondary: #F4F8F5;
-    --token-secondary-hover: #E3EDE7;
-    --token-secondary-foreground: #2F4A3F;
+    --token-secondary: #FFF1F4;
+    --token-secondary-hover: #F9E3E8;
+    --token-secondary-foreground: #4A353A;
 
-    --token-accent: #E1EBE5;
-    --token-accent-foreground: #2F4A3F;
+    --token-accent: #F9E3E8;
+    --token-accent-foreground: #4A353A;
 
-    --token-muted: #F4F8F5;
-    --token-muted-foreground: #6C7D74;
+    --token-muted: #FFF1F4;
+    --token-muted-foreground: #7C686D;
 
     --token-destructive: #B85C5C;
     --token-destructive-hover: #A24E4E;
@@ -137,52 +137,52 @@
     --token-info-foreground: #FFFFFF;
     --token-info-muted: #EDF3F8;
 
-    --token-ring: #4E6F60;
-    --token-overlay: rgba(30, 42, 37, 0.45);
+    --token-ring: #D48497;
+    --token-overlay: rgba(44, 34, 37, 0.45);
   }
 
   .dark {
     /* Backward-compatible aliases */
-    --canvas: #0F1311;
-    --surface: #151A17;
-    --surface-sub: #1A211D;
-    --border: #2A332D;
-    --border-active: #CFE0D5;
-    --ink-primary: #EAF3EE;
-    --ink-secondary: #AAB8B0;
-    --ink-muted: #7E8C84;
+    --canvas: #171318;
+    --surface: #1E181E;
+    --surface-sub: #261E26;
+    --border: #3A2E38;
+    --border-active: #F0C4CF;
+    --ink-primary: #F7EEF1;
+    --ink-secondary: #CDBEC4;
+    --ink-muted: #9E8C93;
 
-    /* Semantic tokens (dark) - Dark + Soft Sage */
-    --token-canvas: #0F1311;
-    --token-surface: #151A17;
-    --token-surface-subtle: #1A211D;
-    --token-surface-muted: #202923;
-    --token-surface-inverse: #EAF3EE;
-    --token-surface-inverse-hover: #DCE8E1;
-    --token-surface-contrast: #202923;
+    /* Semantic tokens (dark) - Yozakura (sakura at night) */
+    --token-canvas: #171318;
+    --token-surface: #1E181E;
+    --token-surface-subtle: #261E26;
+    --token-surface-muted: #2F252F;
+    --token-surface-inverse: #FCEEF1;
+    --token-surface-inverse-hover: #FFF5F7;
+    --token-surface-contrast: #2F252F;
 
-    --token-border: #2A332D;
-    --token-border-strong: #CFE0D5;
-    --token-border-inverse: #3C4A43;
+    --token-border: #3A2E38;
+    --token-border-strong: #F0C4CF;
+    --token-border-inverse: #564651;
 
-    --token-foreground: #EAF3EE;
-    --token-foreground-secondary: #AAB8B0;
-    --token-foreground-muted: #7E8C84;
-    --token-foreground-inverse: #151A17;
+    --token-foreground: #F7EEF1;
+    --token-foreground-secondary: #CDBEC4;
+    --token-foreground-muted: #9E8C93;
+    --token-foreground-inverse: #1E181E;
 
-    --token-primary: #9FC3AF;
-    --token-primary-hover: #B2D1C0;
-    --token-primary-foreground: #122019;
+    --token-primary: #F0B7C6;
+    --token-primary-hover: #F7C6D2;
+    --token-primary-foreground: #2A1C22;
 
-    --token-secondary: #1A211D;
-    --token-secondary-hover: #243029;
-    --token-secondary-foreground: #EAF3EE;
+    --token-secondary: #261E26;
+    --token-secondary-hover: #312632;
+    --token-secondary-foreground: #F7EEF1;
 
-    --token-accent: #243029;
-    --token-accent-foreground: #EAF3EE;
+    --token-accent: #312632;
+    --token-accent-foreground: #F7EEF1;
 
-    --token-muted: #1A211D;
-    --token-muted-foreground: #8F9E96;
+    --token-muted: #261E26;
+    --token-muted-foreground: #B5A4AB;
 
     --token-destructive: #D48787;
     --token-destructive-hover: #C97878;
@@ -201,8 +201,8 @@
     --token-info-foreground: #101A24;
     --token-info-muted: rgba(144, 171, 196, 0.16);
 
-    --token-ring: #9FC3AF;
-    --token-overlay: rgba(8, 12, 10, 0.62);
+    --token-ring: #F0B7C6;
+    --token-overlay: rgba(10, 8, 11, 0.64);
   }
 }
 

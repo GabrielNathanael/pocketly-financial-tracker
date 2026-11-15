@@ -131,17 +131,17 @@ export function AiCashflowExportCard() {
   ];
 
   return (
-    <div className="p-4 sm:p-5 rounded-xl bg-surface border border-border flex flex-col gap-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-8 h-8 shrink-0 rounded-lg bg-surface-subtle border border-border text-foreground flex items-center justify-center">
-            <Bot className="w-4 h-4" />
+    <div className="p-3 sm:p-5 rounded-xl bg-surface border border-border flex flex-col gap-3 sm:gap-4">
+      <div className="flex items-start justify-between gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 shrink-0 rounded-lg bg-surface-subtle border border-border text-foreground flex items-center justify-center">
+            <Bot className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </div>
           <div className="min-w-0">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">
+            <h3 className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-foreground leading-tight">
               {t.reports.aiExportTitle || "AI Cashflow Export"}
             </h3>
-            <p className="text-xs text-muted-foreground leading-relaxed">
+            <p className="text-[11px] sm:text-xs text-muted-foreground leading-snug sm:leading-relaxed mt-0.5">
               {t.reports.aiExportDesc ||
                 "Generate a markdown summary and raw data files for AI analysis."}
             </p>
@@ -151,18 +151,19 @@ export function AiCashflowExportCard() {
           size="sm"
           variant="outline"
           onClick={() => setIsOpen((v) => !v)}
-          className="shrink-0 gap-1.5"
+          className="shrink-0 h-8 px-2.5 sm:px-3 gap-1 sm:gap-1.5"
           aria-expanded={isOpen}
+          aria-label={isOpen ? (t.reports.aiExportClose || "Close") : (t.reports.aiExportOpen || "Open")}
         >
           {isOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-          <span>{isOpen ? (t.reports.aiExportClose || "Close") : (t.reports.aiExportOpen || "Open")}</span>
+          <span className="hidden sm:inline">{isOpen ? (t.reports.aiExportClose || "Close") : (t.reports.aiExportOpen || "Open")}</span>
         </Button>
       </div>
 
       {isOpen && (
-        <div className="flex flex-col gap-4 pt-3.5 border-t border-border">
+        <div className="flex flex-col gap-3 sm:gap-4 pt-3 border-t border-border">
           {/* Period */}
-          <div className="flex flex-col gap-2.5">
+          <div className="flex flex-col gap-2">
             <div className="flex items-center gap-1.5 text-muted-foreground">
               <CalendarDays className="w-3.5 h-3.5 shrink-0" />
               <span className="text-[10px] font-bold uppercase tracking-wider">
@@ -176,7 +177,7 @@ export function AiCashflowExportCard() {
                   type="button"
                   onClick={() => setPreset(key)}
                   className={cn(
-                    "px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer whitespace-nowrap",
+                    "px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-medium transition-all cursor-pointer whitespace-nowrap",
                     preset === key
                       ? "bg-primary text-primary-foreground font-bold"
                       : "bg-surface-subtle text-muted-foreground border border-border hover:text-foreground",
@@ -228,7 +229,7 @@ export function AiCashflowExportCard() {
               {t.reports.aiExportFiles || "Files"}
             </span>
             <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2.5 px-2 py-1.5 -mx-2 text-xs text-foreground opacity-70">
+              <div className="flex items-center gap-2 px-2 py-1 sm:py-1.5 -mx-2 text-[11px] sm:text-xs text-foreground opacity-70">
                 <span className="w-4 h-4 shrink-0 rounded flex items-center justify-center border bg-primary border-primary text-primary-foreground">
                   <Check className="w-3 h-3" />
                 </span>
@@ -240,7 +241,7 @@ export function AiCashflowExportCard() {
                 role="checkbox"
                 aria-checked={includeTransactionsCsv}
                 onClick={() => setIncludeTransactionsCsv((v) => !v)}
-                className="flex items-center gap-2.5 px-2 py-1.5 -mx-2 rounded-md text-left text-xs text-foreground hover:bg-surface-subtle transition-colors cursor-pointer"
+                className="flex items-center gap-2 px-2 py-1 sm:py-1.5 -mx-2 rounded-md text-left text-[11px] sm:text-xs text-foreground hover:bg-surface-subtle transition-colors cursor-pointer"
               >
                 <span
                   className={cn(
@@ -260,7 +261,7 @@ export function AiCashflowExportCard() {
                 role="checkbox"
                 aria-checked={includeTransfersCsv}
                 onClick={() => setIncludeTransfersCsv((v) => !v)}
-                className="flex items-center gap-2.5 px-2 py-1.5 -mx-2 rounded-md text-left text-xs text-foreground hover:bg-surface-subtle transition-colors cursor-pointer"
+                className="flex items-center gap-2 px-2 py-1 sm:py-1.5 -mx-2 rounded-md text-left text-[11px] sm:text-xs text-foreground hover:bg-surface-subtle transition-colors cursor-pointer"
               >
                 <span
                   className={cn(
@@ -280,7 +281,7 @@ export function AiCashflowExportCard() {
                 role="checkbox"
                 aria-checked={includeTradesCsv}
                 onClick={() => setIncludeTradesCsv((v) => !v)}
-                className="flex items-center gap-2.5 px-2 py-1.5 -mx-2 rounded-md text-left text-xs text-foreground hover:bg-surface-subtle transition-colors cursor-pointer"
+                className="flex items-center gap-2 px-2 py-1 sm:py-1.5 -mx-2 rounded-md text-left text-[11px] sm:text-xs text-foreground hover:bg-surface-subtle transition-colors cursor-pointer"
               >
                 <span
                   className={cn(
@@ -300,7 +301,7 @@ export function AiCashflowExportCard() {
                 role="checkbox"
                 aria-checked={includeContextJson}
                 onClick={() => setIncludeContextJson((v) => !v)}
-                className="flex items-center gap-2.5 px-2 py-1.5 -mx-2 rounded-md text-left text-xs text-foreground hover:bg-surface-subtle transition-colors cursor-pointer"
+                className="flex items-center gap-2 px-2 py-1 sm:py-1.5 -mx-2 rounded-md text-left text-[11px] sm:text-xs text-foreground hover:bg-surface-subtle transition-colors cursor-pointer"
               >
                 <span
                   className={cn(
@@ -320,7 +321,7 @@ export function AiCashflowExportCard() {
                 role="checkbox"
                 aria-checked={compactMode}
                 onClick={() => setCompactMode((v) => !v)}
-                className="flex items-center gap-2.5 px-2 py-1.5 -mx-2 rounded-md text-left text-xs text-foreground hover:bg-surface-subtle transition-colors cursor-pointer"
+                className="flex items-center gap-2 px-2 py-1 sm:py-1.5 -mx-2 rounded-md text-left text-[11px] sm:text-xs text-foreground hover:bg-surface-subtle transition-colors cursor-pointer"
               >
                 <span
                   className={cn(
@@ -359,7 +360,7 @@ export function AiCashflowExportCard() {
                         toggleMetric(key);
                       }
                     }}
-                    className="flex items-center gap-2.5 px-2 py-1.5 -mx-2 rounded-md text-left text-xs text-foreground hover:bg-surface-subtle transition-colors cursor-pointer"
+                    className="flex items-center gap-2 px-2 py-1 sm:py-1.5 -mx-2 rounded-md text-left text-[11px] sm:text-xs text-foreground hover:bg-surface-subtle transition-colors cursor-pointer"
                   >
                     <span
                       className={cn(
@@ -377,7 +378,7 @@ export function AiCashflowExportCard() {
           </div>
 
           {t.reports.aiExportNote ? (
-            <p className="text-[11px] text-muted-foreground leading-relaxed">
+            <p className="text-[10px] sm:text-[11px] text-muted-foreground leading-snug sm:leading-relaxed">
               {t.reports.aiExportNote}
             </p>
           ) : null}
@@ -388,7 +389,7 @@ export function AiCashflowExportCard() {
               onClick={runExport}
               isLoading={isExporting}
               disabled={isCustomInvalid || isExporting}
-              className="gap-1.5 flex-1 sm:flex-none justify-center"
+              className="gap-1.5 flex-1 sm:flex-none justify-center h-9 sm:h-8 text-xs"
             >
               <Bot className="w-3.5 h-3.5" />
               <span>{isExporting ? (t.reports.aiExportGenerating || "Generating...") : (t.reports.aiExportGenerate || "Generate & Download")}</span>
