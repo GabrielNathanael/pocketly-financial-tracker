@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { cookies } from "next/headers";
 import { Plus_Jakarta_Sans, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { LanguageProvider } from "@/lib/i18n/language-context";
@@ -62,11 +63,14 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const appLockHint = cookieStore.get("pocketly_app_lock")?.value === "1";
+
   return (
     <html
       lang="id"
@@ -77,7 +81,7 @@ export default function RootLayout({
         <ThemeProvider>
           <LanguageProvider>
             <UndoProvider>
-              <AppLockGate>
+              <AppLockGate initialLocked={appLockHint}>
                 {children}
                 <UndoSnackbar />
                 <Toaster

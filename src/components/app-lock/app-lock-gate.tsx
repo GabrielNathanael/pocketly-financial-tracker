@@ -8,9 +8,10 @@ const RELOCK_COOLDOWN_MS = 20_000;
 
 interface AppLockGateProps {
   children: React.ReactNode;
+  initialLocked?: boolean;
 }
 
-export function AppLockGate({ children }: AppLockGateProps) {
+export function AppLockGate({ children, initialLocked = false }: AppLockGateProps) {
   const config = useAppLockConfig();
   const shouldLock = Boolean(config.enabled && config.credentialId);
   const credentialId = config.credentialId;
@@ -58,6 +59,15 @@ export function AppLockGate({ children }: AppLockGateProps) {
       window.removeEventListener("pageshow", onPageShow);
     };
   }, [shouldLock, relockIfNeeded]);
+
+  // Server cookie hint: block content until client resolves (prevents dashboard flash)
+  if (initialLocked && !unlockedCredentialId) {
+    if (credentialId) {
+      return <AppLockScreen credentialId={credentialId} onUnlocked={markUnlocked} />;
+    }
+    // Cookie says locked but client config not yet available (SSR/hydration) — show cover
+    return <div className="fixed inset-0 z-[120] bg-canvas" aria-busy="true" />;
+  }
 
   if (shouldLock && !isUnlocked && credentialId) {
     return <AppLockScreen credentialId={credentialId} onUnlocked={markUnlocked} />;

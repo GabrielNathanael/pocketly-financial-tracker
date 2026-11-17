@@ -10,7 +10,17 @@ export type AppLockConfigV1 = {
 };
 
 const STORAGE_KEY = "pocketly_app_lock_v1";
+const APP_LOCK_COOKIE = "pocketly_app_lock";
 const APP_LOCK_EVENT = "pocketly_app_lock_changed";
+
+function syncAppLockCookie(enabled: boolean) {
+  if (typeof document === "undefined") return;
+  if (enabled) {
+    document.cookie = `${APP_LOCK_COOKIE}=1; path=/; max-age=31536000; samesite=lax`;
+  } else {
+    document.cookie = `${APP_LOCK_COOKIE}=; path=/; max-age=0; samesite=lax`;
+  }
+}
 
 export const APP_LOCK_DEFAULT: AppLockConfigV1 = {
   version: 1,
@@ -44,6 +54,8 @@ function getSnapshot(): AppLockConfigV1 {
   if (typeof window === "undefined") return APP_LOCK_DEFAULT;
   if (cachedConfig) return cachedConfig;
   cachedConfig = parseConfig(localStorage.getItem(STORAGE_KEY));
+  // Keep cookie hint in sync (e.g. if storage was cleared externally)
+  syncAppLockCookie(cachedConfig.enabled && Boolean(cachedConfig.credentialId));
   return cachedConfig;
 }
 
@@ -77,6 +89,7 @@ export function setAppLockConfig(next: AppLockConfigV1): void {
     createdAt: next.createdAt,
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+  syncAppLockCookie(normalized.enabled);
   cachedConfig = normalized;
   window.dispatchEvent(new Event(APP_LOCK_EVENT));
 }
