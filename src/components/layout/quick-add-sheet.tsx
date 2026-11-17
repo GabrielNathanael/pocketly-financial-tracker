@@ -100,17 +100,17 @@ export function QuickAddSheet({
 }: QuickAddSheetProps) {
   const { t } = useLanguage();
 
-  if (!isOpen) return null;
-
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose} title={t.quickAdd.title}>
-      <QuickAddSheetContent
-        accounts={accounts}
-        categories={categories}
-        onClose={onClose}
-        onSuccess={onSuccess}
-        mostUsedCategoryByAccount={mostUsedCategoryByAccount}
-      />
+      {isOpen ? (
+        <QuickAddSheetContent
+          accounts={accounts}
+          categories={categories}
+          onClose={onClose}
+          onSuccess={onSuccess}
+          mostUsedCategoryByAccount={mostUsedCategoryByAccount}
+        />
+      ) : null}
     </BottomSheet>
   );
 }

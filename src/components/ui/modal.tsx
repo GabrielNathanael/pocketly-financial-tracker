@@ -1,8 +1,9 @@
 'use client'
 
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
+import { lockBodyScroll, unlockBodyScroll } from '@/lib/utils/scroll-lock'
 
 interface ModalProps {
   isOpen: boolean
@@ -23,14 +24,24 @@ export function Modal({
   className,
   maxWidth = 'md',
 }: ModalProps) {
+  const lockedByMeRef = useRef(false)
+
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = 'unset'
+      if (!lockedByMeRef.current) {
+        lockBodyScroll()
+        lockedByMeRef.current = true
+      }
+    } else if (lockedByMeRef.current) {
+      unlockBodyScroll()
+      lockedByMeRef.current = false
     }
+
     return () => {
-      document.body.style.overflow = 'unset'
+      if (lockedByMeRef.current) {
+        unlockBodyScroll()
+        lockedByMeRef.current = false
+      }
     }
   }, [isOpen])
 

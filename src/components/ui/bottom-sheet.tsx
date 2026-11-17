@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { lockBodyScroll, unlockBodyScroll } from "@/lib/utils/scroll-lock";
 
 interface BottomSheetProps {
   isOpen: boolean;
@@ -33,18 +34,21 @@ export function BottomSheet({
   const isDraggingRef = useRef<boolean>(false);
   const enterFrameRef = useRef<number | null>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lockedByMeRef = useRef(false);
 
   const closeSheet = useCallback(() => {
     if (isClosing) return;
     setIsClosing(true);
-    closeTimerRef.current = setTimeout(onClose, 200);
+    closeTimerRef.current = setTimeout(() => {
+      closeTimerRef.current = null;
+      onClose();
+    }, 200);
   }, [isClosing, onClose]);
 
   useEffect(() => {
     if (isOpen) {
       queueMicrotask(() => {
         setIsMounted(true);
-        document.body.style.overflow = "hidden";
         setDragOffset(0);
         setIsClosing(false);
         setIsEntered(false);
@@ -65,23 +69,38 @@ export function BottomSheet({
           enterFrameRef.current = null;
         }
       };
-    } else {
-      document.body.style.overflow = "unset";
-      queueMicrotask(() => {
-        setIsEntered(false);
-        setIsClosing(true);
-      });
-      const timeout = setTimeout(() => setIsMounted(false), 200);
-      return () => clearTimeout(timeout);
     }
+
+    queueMicrotask(() => {
+      setIsEntered(false);
+      setIsClosing(true);
+    });
+    const timeout = setTimeout(() => setIsMounted(false), 200);
+    return () => clearTimeout(timeout);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isMounted) {
+      if (!lockedByMeRef.current) {
+        lockBodyScroll();
+        lockedByMeRef.current = true;
+      }
+    } else if (lockedByMeRef.current) {
+      unlockBodyScroll();
+      lockedByMeRef.current = false;
+    }
+
     return () => {
-      document.body.style.overflow = "unset";
+      if (lockedByMeRef.current) {
+        unlockBodyScroll();
+        lockedByMeRef.current = false;
+      }
       if (closeTimerRef.current) {
         clearTimeout(closeTimerRef.current);
         closeTimerRef.current = null;
       }
     };
-  }, [isOpen]);
+  }, [isMounted]);
 
   const handleDragStart = useCallback((clientY: number) => {
     startYRef.current = clientY;
