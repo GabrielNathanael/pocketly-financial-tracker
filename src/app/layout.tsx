@@ -9,6 +9,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { PwaRegister } from "@/components/pwa/pwa-register";
 import { TimezoneCookieSync } from "@/components/layout/timezone-cookie-sync";
 import { PinnedTemplatesAuthSync } from "@/lib/storage/pinned-templates-auth-sync";
+import { AppLockGate } from "@/components/app-lock/app-lock-gate";
 import "./globals.css";
 
 const jakartaSans = Plus_Jakarta_Sans({
@@ -76,16 +77,18 @@ export default function RootLayout({
         <ThemeProvider>
           <LanguageProvider>
             <UndoProvider>
-              {children}
-              <UndoSnackbar />
-              <Toaster
-                position="top-center"
-                richColors
-                closeButton
-                toastOptions={{
-                  className: "!font-sans !text-xs !rounded-xl !shadow-xl",
-                }}
-              />
+              <AppLockGate>
+                {children}
+                <UndoSnackbar />
+                <Toaster
+                  position="top-center"
+                  richColors
+                  closeButton
+                  toastOptions={{
+                    className: "!font-sans !text-xs !rounded-xl !shadow-xl",
+                  }}
+                />
+              </AppLockGate>
             </UndoProvider>
           </LanguageProvider>
         </ThemeProvider>

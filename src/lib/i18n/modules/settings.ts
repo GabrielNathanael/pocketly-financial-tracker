@@ -93,10 +93,6 @@ export const settings = {
       appLockScreenDesc:
         "Verifikasi dengan Face ID, sidik jari, atau kunci layar untuk membuka aplikasi.",
       appLockUnlockBtn: "Buka dengan Biometrik",
-      appLockCantUnlock: "Tidak bisa membuka?",
-      appLockDisableLocalBtn: "Matikan kunci",
-      appLockDisableLocalConfirmDesc:
-        "Ini hanya menonaktifkan kunci di perangkat ini. Kamu bisa mengaktifkannya lagi dari Pengaturan setelah masuk.",
   },
   en: {
       title: "System Settings",
@@ -191,9 +187,5 @@ export const settings = {
       appLockScreenDesc:
         "Verify with Face ID, fingerprint, or your device screen lock to unlock the app.",
       appLockUnlockBtn: "Unlock with Biometrics",
-      appLockCantUnlock: "Can't unlock?",
-      appLockDisableLocalBtn: "Turn off lock",
-      appLockDisableLocalConfirmDesc:
-        "This only disables the lock on this device. You can enable it again from Settings after unlocking.",
   },
 };

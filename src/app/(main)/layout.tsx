@@ -10,7 +10,6 @@ import {
 import { getDebts } from "@/actions/debts";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { DemoNoticeBanner } from "@/components/dashboard/demo-notice-banner";
-import { AppLockGate } from "@/components/app-lock/app-lock-gate";
 
 export const dynamic = "force-dynamic";
 
@@ -42,20 +41,18 @@ export default async function MainLayout({
 
   return (
     <div className="min-h-dvh bg-canvas text-foreground flex flex-col pb-20 md:pb-10">
-      <AppLockGate>
-        <DemoNoticeBanner userEmail={user.email} />
-        <main className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 md:px-8 pt-5 md:pt-7 pb-6 md:pl-72">
-          {children}
-        </main>
+      <DemoNoticeBanner userEmail={user.email} />
+      <main className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 md:px-8 pt-5 md:pt-7 pb-6 md:pl-72">
+        {children}
+      </main>
 
-        <BottomNav
-          accounts={accounts}
-          categories={categories}
-          transactions={transactions}
-          debts={debts}
-          mostUsedCategoryByAccount={mostUsedCategoryByAccount}
-        />
-      </AppLockGate>
+      <BottomNav
+        accounts={accounts}
+        categories={categories}
+        transactions={transactions}
+        debts={debts}
+        mostUsedCategoryByAccount={mostUsedCategoryByAccount}
+      />
     </div>
   );
 }

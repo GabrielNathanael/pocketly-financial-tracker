@@ -180,7 +180,7 @@ export async function authenticatePlatformCredential(opts: {
           {
             id: fromBase64Url(opts.credentialId),
             type: "public-key",
-            transports: ["internal", "hybrid"],
+            transports: ["internal"],
           },
         ],
         userVerification: "required",

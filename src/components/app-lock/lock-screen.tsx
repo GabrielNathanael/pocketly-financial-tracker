@@ -1,10 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { Fingerprint, Lock, LogOut, ShieldOff } from "lucide-react";
+import { Fingerprint, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { logout } from "@/actions/auth";
-import { disableAppLock } from "@/lib/storage/app-lock";
 import { authenticatePlatformCredential } from "@/lib/app-lock/webauthn";
 import { useLanguage } from "@/lib/i18n/language-context";
 
@@ -17,7 +15,6 @@ export function AppLockScreen({ credentialId, onUnlocked }: AppLockScreenProps) 
   const { t } = useLanguage();
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showDisableConfirm, setShowDisableConfirm] = useState(false);
 
   const handleUnlock = async () => {
     if (isUnlocking) return;
@@ -38,11 +35,6 @@ export function AppLockScreen({ credentialId, onUnlocked }: AppLockScreenProps) 
       setError(t.settings.appLockFailed);
     }
     setIsUnlocking(false);
-  };
-
-  const handleDisableLocal = () => {
-    disableAppLock();
-    onUnlocked();
   };
 
   return (
@@ -74,55 +66,6 @@ export function AppLockScreen({ credentialId, onUnlocked }: AppLockScreenProps) 
           <Fingerprint className="w-4 h-4" />
           {t.settings.appLockUnlockBtn}
         </Button>
-
-        {!showDisableConfirm ? (
-          <button
-            type="button"
-            onClick={() => setShowDisableConfirm(true)}
-            className="text-xs font-medium text-muted-foreground hover:text-foreground underline underline-offset-2 cursor-pointer"
-          >
-            {t.settings.appLockCantUnlock}
-          </button>
-        ) : (
-          <div className="w-full rounded-xl border border-border bg-surface-subtle p-3 flex flex-col gap-2">
-            <p className="text-xs text-foreground-secondary text-left">
-              {t.settings.appLockDisableLocalConfirmDesc}
-            </p>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="flex-1"
-                onClick={() => setShowDisableConfirm(false)}
-              >
-                {t.settings.exportCancel}
-              </Button>
-              <Button
-                type="button"
-                variant="danger"
-                size="sm"
-                className="flex-1 gap-1.5"
-                onClick={handleDisableLocal}
-              >
-                <ShieldOff className="w-3.5 h-3.5" />
-                {t.settings.appLockDisableLocalBtn}
-              </Button>
-            </div>
-          </div>
-        )}
-
-        <form action={logout} className="w-full">
-          <Button
-            type="submit"
-            variant="ghost"
-            size="sm"
-            className="w-full gap-1.5 text-muted-foreground"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            {t.settings.signOutBtn}
-          </Button>
-        </form>
       </div>
     </div>
   );
