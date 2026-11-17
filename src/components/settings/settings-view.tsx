@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { ExportDataCard } from "@/components/settings/export-data-card";
+import { AppLockCard } from "@/components/settings/app-lock-card";
 import { logout } from "@/actions/auth";
 import {
   fetchAndSaveForexRates,
@@ -308,6 +309,9 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
         </div>
         <ThemeToggle showLabels className="w-full sm:w-auto" />
       </div>
+
+      {/* App Lock (per-device biometric gate) */}
+      <AppLockCard userEmail={userEmail} />
 
       {/* User Guide Card */}
       <div className="p-4 sm:p-5 rounded-xl bg-surface border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
