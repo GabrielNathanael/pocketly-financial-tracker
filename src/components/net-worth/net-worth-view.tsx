@@ -251,27 +251,27 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
         </Link>
       </div>
 
-      {/* HERO — dark balance-sheet card */}
-      <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-foreground to-foreground/90 p-5 sm:p-8 text-background shadow-md">
-        <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-info/20 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-info/20 blur-3xl" />
+      {/* HERO — balance-sheet card */}
+      <div className="relative overflow-hidden rounded-2xl border border-[#C98998]/30 bg-linear-to-br from-[#4A353A] to-[#5C4248] p-5 sm:p-8 text-[#FFF7F8] shadow-md dark:border-[#8F6A74]/40 dark:from-[#2A2226] dark:to-[#342A2F] dark:text-[#FCEEF1]">
+        <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[#D48497]/20 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-[#D48497]/20 blur-3xl" />
         <div className="relative flex flex-col gap-3">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-background/70">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-[#FFF7F8]/70 dark:text-[#FCEEF1]/70">
             {t.netWorth.netWorthLabel} ({displayCurrency})
           </span>
-          <h1 className="font-mono text-4xl sm:text-5xl font-black tracking-tight tnum leading-none wrap-break-word">
+          <h1 className="font-mono text-4xl sm:text-5xl font-black tracking-tight tnum leading-none wrap-break-word text-white dark:text-[#FFF5F7]">
             {fmt(netWorth)}
           </h1>
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-xs">
-            <span className="font-bold text-success">
+            <span className="font-bold text-[#9FD9B3] dark:text-[#9BCFAE]">
               +{fmt(totalAssets)} {t.netWorth.assets}
             </span>
-            <span className="text-background/60">−</span>
-            <span className="font-bold text-destructive">
+            <span className="text-[#FFF7F8]/60 dark:text-[#FCEEF1]/60">−</span>
+            <span className="font-bold text-[#F2A3B1] dark:text-[#E8A3AE]">
               {fmt(totalDebts)} {t.netWorth.debts}
             </span>
             {displayCurrency !== "IDR" && (
-              <span className="text-background/60 tnum">
+              <span className="text-[#FFF7F8]/60 dark:text-[#FCEEF1]/60 tnum">
                 (≈ {maskCurrency(formatCurrency(data.netWorthIdr, "IDR"), isPrivate)})
               </span>
             )}
@@ -298,7 +298,7 @@ export function NetWorthView({ data, snapshots }: NetWorthViewProps) {
             (data.stocks.length > 0 ||
               data.crypto.length > 0 ||
               data.etf.length > 0) && (
-              <span className="text-[10px] text-background/60">
+              <span className="text-[10px] text-[#FFF7F8]/60 dark:text-[#FCEEF1]/60">
                 {language === "en" ? "Prices as of " : "Harga per "}
                 {new Date(data.latestPriceFetchedAt).toLocaleString(
                   language === "en" ? "en-US" : "id-ID",
