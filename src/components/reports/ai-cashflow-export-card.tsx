@@ -9,7 +9,7 @@ import { usePreferredCurrency } from "@/lib/storage/preferred-currency";
 import { exportAiCashflowData, type AiExportPreset } from "@/actions/ai-export";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Bot, CalendarDays, Check, ChevronDown, ChevronUp } from "lucide-react";
+import { Bot, CalendarDays, Check, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 
 type DatePreset = "all" | "thisMonth" | "lastMonth" | "thisYear" | "custom";
 
@@ -387,12 +387,15 @@ export function AiCashflowExportCard() {
             <Button
               size="sm"
               onClick={runExport}
-              isLoading={isExporting}
               disabled={isCustomInvalid || isExporting}
               className="gap-1.5 flex-1 sm:flex-none justify-center h-9 sm:h-8 text-xs"
             >
-              <Bot className="w-3.5 h-3.5" />
-              <span>{isExporting ? (t.reports.aiExportGenerating || "Generating...") : (t.reports.aiExportGenerate || "Generate & Download")}</span>
+              {isExporting ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Bot className="w-3.5 h-3.5" />
+              )}
+              <span>{t.reports.aiExportGenerate || "Generate & Download"}</span>
             </Button>
           </div>
         </div>

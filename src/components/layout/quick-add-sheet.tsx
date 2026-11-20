@@ -1494,11 +1494,14 @@ function QuickAddSheetContent({
             <Button
               type="button"
               onClick={handleSave}
-              isLoading={isLoading}
-              disabled={numericAmount <= 0}
+              disabled={numericAmount <= 0 || isLoading}
               className="flex-1 py-2.5 h-auto font-bold text-xs rounded-xl bg-primary text-primary-foreground hover:bg-primary-hover active:scale-95 shadow-sm"
             >
-              <Check className="w-3.5 h-3.5 mr-1 stroke-3" />
+              {isLoading ? (
+                <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+              ) : (
+                <Check className="w-3.5 h-3.5 mr-1 stroke-3" />
+              )}
               <span>{t.quickAdd.recordBtn}</span>
             </Button>
           </div>

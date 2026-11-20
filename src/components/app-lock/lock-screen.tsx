@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Fingerprint, Lock } from "lucide-react";
+import { Fingerprint, Lock, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { authenticatePlatformCredential } from "@/lib/app-lock/webauthn";
 import { useLanguage } from "@/lib/i18n/language-context";
@@ -60,10 +60,14 @@ export function AppLockScreen({ credentialId, onUnlocked }: AppLockScreenProps) 
         <Button
           type="button"
           onClick={handleUnlock}
-          isLoading={isUnlocking}
+          disabled={isUnlocking}
           className="w-full gap-2"
         >
-          <Fingerprint className="w-4 h-4" />
+          {isUnlocking ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Fingerprint className="w-4 h-4" />
+          )}
           {t.settings.appLockUnlockBtn}
         </Button>
       </div>

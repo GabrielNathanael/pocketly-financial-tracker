@@ -15,6 +15,7 @@ import {
   FileCode,
   Check,
   CalendarDays,
+  Loader2,
 } from "lucide-react";
 import {
   addDays,
@@ -421,11 +422,14 @@ export function ExportDataCard() {
               <Button
                 size="sm"
                 onClick={() => runExport(openFormat)}
-                isLoading={isExporting}
-                disabled={noSectionSelected}
+                disabled={noSectionSelected || isExporting}
                 className="gap-1.5 flex-1 sm:flex-none justify-center"
               >
-                <Download className="w-3.5 h-3.5" />
+                {isExporting ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Download className="w-3.5 h-3.5" />
+                )}
                 <span>{t.settings.exportConfirm}</span>
               </Button>
               <Button

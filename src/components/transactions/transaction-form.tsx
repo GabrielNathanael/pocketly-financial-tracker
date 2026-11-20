@@ -30,7 +30,6 @@ import {
   AlignLeft,
   Plus,
   Trash2,
-  Delete,
   Pin,
   X,
   Hash,
@@ -38,7 +37,6 @@ import {
   AlertCircle,
   Camera,
   Loader2,
-  Calculator,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { toast } from "sonner";
@@ -304,27 +302,6 @@ export function TransactionForm({
     items.length > 0 &&
     remainingAmount > 0 &&
     numericAmount > 0;
-
-  // Quick Keypad Press (Always enabled so user can type main amount freely)
-  const handleKeypadPress = (val: string) => {
-    setError(null);
-    if (amountStr === "0") {
-      if (val === "000") return;
-      setAmountStr(val);
-    } else {
-      if (amountStr.length >= 12) return;
-      setAmountStr((prev) => prev + val);
-    }
-  };
-
-  const handleKeypadBackspace = () => {
-    setError(null);
-    if (amountStr.length <= 1) {
-      setAmountStr("0");
-    } else {
-      setAmountStr((prev) => prev.slice(0, -1));
-    }
-  };
 
   // Type change
   const handleTypeChange = (newType: TransactionType) => {
@@ -687,679 +664,533 @@ export function TransactionForm({
           )}
         </div>
       </div>
-      <div
-        className={cn(
-          "relative hidden rounded-xl bg-surface border shadow-2xs overflow-hidden transition-all group",
-          isNumpadOpen
-            ? "border-primary ring-2 ring-ring/20"
-            : "border-border",
+      {/* The amount is edited through NumberInput's calculator bottom sheet
+          above; the rest of the form stays visible while it is open. */}
+      {/* 3. Date Picker (Placed above Account & Category) */}
+      <DatePicker value={txDate} onChange={setTxDate} />
+
+      {/* 4. Account Selector */}
+      <div className="flex flex-col gap-1">
+        <label className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary">
+          {t.quickAdd.account}
+        </label>
+        <SearchableSelect
+          value={selectedAccountId}
+          onValueChange={(val) => {
+            setSelectedAccountId(val);
+
+            // Edit mode: never auto-suggest category on account change
+            if (!isEditing) {
+              const matchingCats = categories.filter(
+                (c) => c.type === type,
+              );
+              const suggestedId =
+                mostUsedCategoryByAccount[`${val}_${type}`];
+              const suggestedStillValid =
+                suggestedId &&
+                matchingCats.some((c) => c.id === suggestedId);
+              const defaultCategoryId = suggestedStillValid
+                ? suggestedId
+                : matchingCats[0]?.id;
+
+              if (defaultCategoryId) {
+                setSelectedCategoryId(defaultCategoryId);
+              }
+            }
+          }}
+          options={accounts.map((acc) => ({
+            value: acc.id,
+            label: acc.name,
+            icon: acc.icon || "Wallet",
+            badge: `(${acc.currency})`,
+          }))}
+          placeholder={t.quickAdd.selectAccount}
+          searchPlaceholder={t.transactions.searchAccountPlaceholder}
+          emptyText={t.transactions.noAccountFound}
+          triggerClassName="py-2.5 rounded-xl bg-surface"
+        />
+      </div>
+
+      {/* 5. Category Selector */}
+      <div className="flex flex-col gap-1">
+        <label className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary">
+          {t.quickAdd.category}
+        </label>
+        <SearchableSelect
+          value={selectedCategoryId}
+          onValueChange={setSelectedCategoryId}
+          options={filteredCategories.map((c) => ({
+            value: c.id,
+            label: formatCategoryName(c.name, language),
+            icon: c.icon || "Tag",
+            iconColor:
+              type === "expense" ? "text-destructive" : "text-success",
+          }))}
+          placeholder={t.quickAdd.selectCategory}
+          searchPlaceholder={t.transactions.searchCategoryPlaceholder}
+          emptyText={t.transactions.noCategoryFound}
+          triggerClassName="py-2.5 rounded-xl bg-surface"
+        />
+      </div>
+
+      {/* 6. Base Description Input (Full Width) */}
+      <div className="flex flex-col gap-2">
+        <input
+          type="text"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder={t.quickAdd.notePlaceholder}
+          className="w-full px-3.5 py-2.5 rounded-xl bg-surface border border-border text-xs font-medium text-foreground placeholder:text-foreground-muted focus:outline-none focus:border-primary"
+        />
+
+        {/* Hidden File Input for Receipt Photo */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          accept="image/*"
+          className="hidden"
+          onChange={handleReceiptUpload}
+        />
+        <input
+          type="file"
+          ref={cameraInputRef}
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+          onChange={handleReceiptUpload}
+        />
+
+        {/* OCR Scanning Status Banner */}
+        {isScanning && (
+          <div className="p-2.5 rounded-xl bg-info-muted border border-info/20 flex items-center justify-between gap-2 animate-pulse">
+            <div className="flex items-center gap-2 min-w-0">
+              <Loader2 className="w-4 h-4 text-info animate-spin shrink-0" />
+              <span className="text-xs font-medium text-foreground truncate">
+                {ocrStatus || t.quickAdd.scanningReceipt}
+              </span>
+            </div>
+            <span className="text-xs font-mono font-bold text-info shrink-0">
+              {ocrProgress}%
+            </span>
+          </div>
         )}
-      >
-        <button
-          type="button"
-          onClick={() => setIsNumpadOpen(!isNumpadOpen)}
-          className="w-full p-3.5 sm:p-4 flex flex-col gap-1 text-left cursor-pointer hover:bg-secondary transition-colors"
-        >
-          <div className="flex items-center justify-between pr-8">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary">
-              {t.quickAdd.nominal}
-            </span>
 
-            <Calculator
-              className={cn(
-                "w-4 h-4 transition-colors",
-                isNumpadOpen
-                  ? "text-foreground"
-                  : "text-foreground-muted group-hover:text-info",
-              )}
-            />
-          </div>
-
-          <div className="flex items-baseline gap-2 pt-0.5">
-            <span className="text-xl sm:text-2xl font-bold text-foreground">
-              {currentCurrency}
-            </span>
-            <span
-              className={cn(
-                "flex-1 min-w-0 text-2xl sm:text-3xl font-mono font-bold tracking-tight truncate",
-                numericAmount > 0
-                  ? "text-foreground"
-                  : "text-foreground-muted",
-              )}
-            >
-              {formatCurrency(numericAmount, currentCurrency)}
-            </span>
-          </div>
-        </button>
-
-        {/* Pin button on top right */}
-        <div className="absolute top-2.5 right-2.5 z-10">
+        {/* Action Toolbar Grid (3 Columns: Items, Memo, Tags) — scan lives in amount card */}
+        <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+          {/* Breakdown Items Button */}
           <button
             type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsPinned(!isPinned);
-            }}
+            onClick={() => setShowItemsBreakdown(!showItemsBreakdown)}
             className={cn(
-              "p-1.5 rounded-md transition-colors cursor-pointer",
-              isPinned
-                ? "text-warning bg-warning-muted"
-                : "text-foreground-muted hover:text-foreground",
+              "py-2 px-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none",
+              showItemsBreakdown
+                ? "bg-primary text-primary-foreground border-transparent shadow-xs"
+                : "bg-canvas dark:bg-surface-subtle text-foreground-muted hover:text-foreground border-border",
             )}
-            title={isPinned ? t.common.pinActive : t.common.pinInactive}
           >
-            <Pin className="w-3.5 h-3.5" />
+            <ListPlus className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">{t.transactions.itemsLabel}</span>
+            {items.length > 0 && (
+              <span className="px-1 py-0.2 rounded-full bg-primary-foreground/20 text-[9px] font-bold">
+                {items.length}
+              </span>
+            )}
+          </button>
+
+          {/* Free Text Memo Button */}
+          <button
+            type="button"
+            onClick={() => setShowFreeMemo(!showFreeMemo)}
+            className={cn(
+              "py-2 px-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none",
+              showFreeMemo
+                ? "bg-primary text-primary-foreground border-transparent shadow-xs"
+                : "bg-canvas dark:bg-surface-subtle text-foreground-muted hover:text-foreground border-border",
+            )}
+          >
+            <AlignLeft className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">{t.transactions.memoLabel}</span>
+          </button>
+
+          {/* Tags (#tags) Button */}
+          <button
+            type="button"
+            onClick={() => setShowTags(!showTags)}
+            className={cn(
+              "py-2 px-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none",
+              showTags
+                ? "bg-primary text-primary-foreground border-transparent shadow-xs"
+                : "bg-canvas dark:bg-surface-subtle text-foreground-muted hover:text-foreground border-border",
+            )}
+          >
+            <Hash className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">Tags</span>
+            {tags.length > 0 && (
+              <span className="px-1 py-0.2 rounded-full bg-primary-foreground/20 text-[9px] font-bold">
+                {tags.length}
+              </span>
+            )}
           </button>
         </div>
       </div>
 
-      {/* Conditionally render: If Numpad Open -> In-Place Keypad Grid; Else -> Form Fields */}
-      {isNumpadOpen ? (
-        <div className="hidden flex-col gap-2 pt-1 animate-in fade-in-50 zoom-in-98 duration-150">
-          <div className="grid grid-cols-4 gap-1.5">
-            {["1", "2", "3"].map((n) => (
-              <button
-                key={n}
-                type="button"
-                onClick={() => handleKeypadPress(n)}
-                className="py-3.5 sm:py-4 rounded-xl bg-secondary font-mono font-bold text-base sm:text-lg hover:bg-secondary-hover text-foreground border border-border active:scale-95 transition-all cursor-pointer select-none"
+      {/* 6.5 Expandable Tags (#tags) Drawer */}
+      {showTags && (
+        <div className="p-3 rounded-xl bg-canvas dark:bg-surface-subtle border border-border flex flex-col gap-2 animate-in fade-in duration-150">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary">
+            {t.transactions.tagLabel}
+          </span>
+          <div className="flex flex-wrap items-center gap-1.5 min-h-7">
+            {tags.map((tag) => (
+              <span
+                key={tag}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-surface border border-border text-xs font-bold text-foreground shadow-2xs"
               >
-                {n}
-              </button>
+                <span>#{tag}</span>
+                <button
+                  type="button"
+                  onClick={() => setTags(tags.filter((t) => t !== tag))}
+                  className="text-foreground-muted hover:text-destructive cursor-pointer"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
             ))}
-            <button
-              type="button"
-              onClick={handleKeypadBackspace}
-              className="py-3.5 sm:py-4 rounded-xl bg-secondary flex items-center justify-center text-foreground-muted hover:text-foreground hover:bg-secondary-hover border border-border active:scale-95 transition-all cursor-pointer select-none"
-            >
-              <Delete className="w-5 h-5" />
-            </button>
-
-            {["4", "5", "6"].map((n) => (
-              <button
-                key={n}
-                type="button"
-                onClick={() => handleKeypadPress(n)}
-                className="py-3.5 sm:py-4 rounded-xl bg-secondary font-mono font-bold text-base sm:text-lg hover:bg-secondary-hover text-foreground border border-border active:scale-95 transition-all cursor-pointer select-none"
-              >
-                {n}
-              </button>
-            ))}
-            <button
-              type="button"
-              onClick={() => handleKeypadPress("000")}
-              className="py-3.5 sm:py-4 rounded-xl bg-secondary font-mono font-bold text-xs sm:text-sm hover:bg-secondary-hover text-foreground border border-border active:scale-95 transition-all cursor-pointer select-none"
-            >
-              .000
-            </button>
-
-            {["7", "8", "9"].map((n) => (
-              <button
-                key={n}
-                type="button"
-                onClick={() => handleKeypadPress(n)}
-                className="py-3.5 sm:py-4 rounded-xl bg-secondary font-mono font-bold text-base sm:text-lg hover:bg-secondary-hover text-foreground border border-border active:scale-95 transition-all cursor-pointer select-none"
-              >
-                {n}
-              </button>
-            ))}
-            <button
-              type="button"
-              onClick={() => setAmountStr("0")}
-              className="py-3.5 sm:py-4 rounded-xl bg-destructive-muted text-destructive font-mono font-bold text-sm hover:bg-destructive/20 border border-destructive/20 active:scale-95 transition-all cursor-pointer select-none"
-            >
-              C
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleKeypadPress("00")}
-              className="py-3.5 sm:py-4 rounded-xl bg-secondary font-mono font-bold text-sm hover:bg-secondary-hover text-foreground border border-border active:scale-95 transition-all cursor-pointer select-none"
-            >
-              00
-            </button>
-            <button
-              type="button"
-              onClick={() => handleKeypadPress("0")}
-              className="py-3.5 sm:py-4 rounded-xl bg-secondary font-mono font-bold text-base sm:text-lg hover:bg-secondary-hover text-foreground border border-border active:scale-95 transition-all cursor-pointer select-none"
-            >
-              0
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsNumpadOpen(false)}
-              className="col-span-2 py-3.5 sm:py-4 rounded-xl bg-primary text-primary-foreground font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-primary-hover active:scale-95 shadow-md transition-all cursor-pointer select-none"
-            >
-              <Check className="w-4 h-4 stroke-3" />
-              <span>{t.transactions.doneLabel}</span>
-            </button>
-          </div>
-        </div>
-      ) : (
-        <>
-          {/* 3. Date Picker (Placed above Account & Category) */}
-          <DatePicker value={txDate} onChange={setTxDate} />
-
-          {/* 4. Account Selector */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary">
-              {t.quickAdd.account}
-            </label>
-            <SearchableSelect
-              value={selectedAccountId}
-              onValueChange={(val) => {
-                setSelectedAccountId(val);
-
-                // Edit mode: never auto-suggest category on account change
-                if (!isEditing) {
-                  const matchingCats = categories.filter(
-                    (c) => c.type === type,
-                  );
-                  const suggestedId =
-                    mostUsedCategoryByAccount[`${val}_${type}`];
-                  const suggestedStillValid =
-                    suggestedId &&
-                    matchingCats.some((c) => c.id === suggestedId);
-                  const defaultCategoryId = suggestedStillValid
-                    ? suggestedId
-                    : matchingCats[0]?.id;
-
-                  if (defaultCategoryId) {
-                    setSelectedCategoryId(defaultCategoryId);
+            <input
+              type="text"
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === ",") {
+                  e.preventDefault();
+                  const clean = tagInput
+                    .replace(/^#/, "")
+                    .toLowerCase()
+                    .trim();
+                  if (clean && !tags.includes(clean)) {
+                    setTags([...tags, clean]);
+                    setTagInput("");
                   }
                 }
               }}
-              options={accounts.map((acc) => ({
-                value: acc.id,
-                label: acc.name,
-                icon: acc.icon || "Wallet",
-                badge: `(${acc.currency})`,
-              }))}
-              placeholder={t.quickAdd.selectAccount}
-              searchPlaceholder={t.transactions.searchAccountPlaceholder}
-              emptyText={t.transactions.noAccountFound}
-              triggerClassName="py-2.5 rounded-xl bg-surface"
+              placeholder={
+                tags.length === 0
+                  ? t.transactions.tagPlaceholder
+                  : t.common.moreTagsPlaceholder
+              }
+              className="flex-1 min-w-30 px-2 py-1 bg-transparent text-xs text-foreground placeholder:text-foreground-muted focus:outline-none"
             />
           </div>
+        </div>
+      )}
 
-          {/* 5. Category Selector */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary">
-              {t.quickAdd.category}
-            </label>
-            <SearchableSelect
-              value={selectedCategoryId}
-              onValueChange={setSelectedCategoryId}
-              options={filteredCategories.map((c) => ({
-                value: c.id,
-                label: formatCategoryName(c.name, language),
-                icon: c.icon || "Tag",
-                iconColor:
-                  type === "expense" ? "text-destructive" : "text-success",
-              }))}
-              placeholder={t.quickAdd.selectCategory}
-              searchPlaceholder={t.transactions.searchCategoryPlaceholder}
-              emptyText={t.transactions.noCategoryFound}
-              triggerClassName="py-2.5 rounded-xl bg-surface"
-            />
+      {/* 7. Expandable Sub-items Breakdown Drawer */}
+      {showItemsBreakdown && (
+        <div className="p-3 rounded-xl bg-canvas dark:bg-surface-subtle border border-border flex flex-col gap-2">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary truncate">
+              {t.quickAdd.itemizedBreakdownTitle}
+            </span>
+            <button
+              type="button"
+              onClick={handleAddItem}
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-surface border border-border text-[11px] font-bold text-foreground hover:bg-secondary active:scale-95 transition-all cursor-pointer shrink-0"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">{t.quickAdd.addItem}</span>
+            </button>
           </div>
 
-          {/* 6. Base Description Input (Full Width) */}
-          <div className="flex flex-col gap-2">
-            <input
-              type="text"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder={t.quickAdd.notePlaceholder}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-surface border border-border text-xs font-medium text-foreground placeholder:text-foreground-muted focus:outline-none focus:border-primary"
-            />
-
-            {/* Hidden File Input for Receipt Photo */}
-            <input
-              type="file"
-              ref={fileInputRef}
-              accept="image/*"
-              className="hidden"
-              onChange={handleReceiptUpload}
-            />
-            <input
-              type="file"
-              ref={cameraInputRef}
-              accept="image/*"
-              capture="environment"
-              className="hidden"
-              onChange={handleReceiptUpload}
-            />
-
-            {/* OCR Scanning Status Banner */}
-            {isScanning && (
-              <div className="p-2.5 rounded-xl bg-info-muted border border-info/20 flex items-center justify-between gap-2 animate-pulse">
-                <div className="flex items-center gap-2 min-w-0">
-                  <Loader2 className="w-4 h-4 text-info animate-spin shrink-0" />
-                  <span className="text-xs font-medium text-foreground truncate">
-                    {ocrStatus || t.quickAdd.scanningReceipt}
-                  </span>
-                </div>
-                <span className="text-xs font-mono font-bold text-info shrink-0">
-                  {ocrProgress}%
-                </span>
-              </div>
-            )}
-
-            {/* Action Toolbar Grid (3 Columns: Items, Memo, Tags) — scan lives in amount card */}
-            <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
-              {/* Breakdown Items Button */}
-              <button
-                type="button"
-                onClick={() => setShowItemsBreakdown(!showItemsBreakdown)}
-                className={cn(
-                  "py-2 px-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none",
-                  showItemsBreakdown
-                    ? "bg-primary text-primary-foreground border-transparent shadow-xs"
-                    : "bg-canvas dark:bg-surface-subtle text-foreground-muted hover:text-foreground border-border",
-                )}
-              >
-                <ListPlus className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">{t.transactions.itemsLabel}</span>
-                {items.length > 0 && (
-                  <span className="px-1 py-0.2 rounded-full bg-primary-foreground/20 text-[9px] font-bold">
-                    {items.length}
-                  </span>
-                )}
-              </button>
-
-              {/* Free Text Memo Button */}
-              <button
-                type="button"
-                onClick={() => setShowFreeMemo(!showFreeMemo)}
-                className={cn(
-                  "py-2 px-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none",
-                  showFreeMemo
-                    ? "bg-primary text-primary-foreground border-transparent shadow-xs"
-                    : "bg-canvas dark:bg-surface-subtle text-foreground-muted hover:text-foreground border-border",
-                )}
-              >
-                <AlignLeft className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">{t.transactions.memoLabel}</span>
-              </button>
-
-              {/* Tags (#tags) Button */}
-              <button
-                type="button"
-                onClick={() => setShowTags(!showTags)}
-                className={cn(
-                  "py-2 px-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none",
-                  showTags
-                    ? "bg-primary text-primary-foreground border-transparent shadow-xs"
-                    : "bg-canvas dark:bg-surface-subtle text-foreground-muted hover:text-foreground border-border",
-                )}
-              >
-                <Hash className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">Tags</span>
-                {tags.length > 0 && (
-                  <span className="px-1 py-0.2 rounded-full bg-primary-foreground/20 text-[9px] font-bold">
-                    {tags.length}
-                  </span>
-                )}
-              </button>
+          {items.length === 0 ? (
+            <div className="text-center py-3 text-xs text-foreground-muted">
+              {t.quickAdd.emptyItems}
             </div>
-          </div>
-
-          {/* 6.5 Expandable Tags (#tags) Drawer */}
-          {showTags && (
-            <div className="p-3 rounded-xl bg-canvas dark:bg-surface-subtle border border-border flex flex-col gap-2 animate-in fade-in duration-150">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary">
-                {t.transactions.tagLabel}
-              </span>
-              <div className="flex flex-wrap items-center gap-1.5 min-h-7">
-                {tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-surface border border-border text-xs font-bold text-foreground shadow-2xs"
-                  >
-                    <span>#{tag}</span>
-                    <button
-                      type="button"
-                      onClick={() => setTags(tags.filter((t) => t !== tag))}
-                      className="text-foreground-muted hover:text-destructive cursor-pointer"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
-                ))}
-                <input
-                  type="text"
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === ",") {
-                      e.preventDefault();
-                      const clean = tagInput
-                        .replace(/^#/, "")
-                        .toLowerCase()
-                        .trim();
-                      if (clean && !tags.includes(clean)) {
-                        setTags([...tags, clean]);
-                        setTagInput("");
-                      }
-                    }
-                  }}
-                  placeholder={
-                    tags.length === 0
-                      ? t.transactions.tagPlaceholder
-                      : t.common.moreTagsPlaceholder
-                  }
-                  className="flex-1 min-w-30 px-2 py-1 bg-transparent text-xs text-foreground placeholder:text-foreground-muted focus:outline-none"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* 7. Expandable Sub-items Breakdown Drawer */}
-          {showItemsBreakdown && (
-            <div className="p-3 rounded-xl bg-canvas dark:bg-surface-subtle border border-border flex flex-col gap-2">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-secondary truncate">
-                  {t.quickAdd.itemizedBreakdownTitle}
-                </span>
-                <button
-                  type="button"
-                  onClick={handleAddItem}
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-surface border border-border text-[11px] font-bold text-foreground hover:bg-secondary active:scale-95 transition-all cursor-pointer shrink-0"
+          ) : (
+            <div className="flex flex-col max-h-36 overflow-y-auto pr-0.5">
+              {items.map((item, idx) => (
+                <div
+                  key={idx}
+                  className="flex flex-col gap-1 py-2 border-b border-border last:border-b-0"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">{t.quickAdd.addItem}</span>
-                </button>
-              </div>
-
-              {items.length === 0 ? (
-                <div className="text-center py-3 text-xs text-foreground-muted">
-                  {t.quickAdd.emptyItems}
-                </div>
-              ) : (
-                <div className="flex flex-col max-h-36 overflow-y-auto pr-0.5">
-                  {items.map((item, idx) => (
-                    <div
-                      key={idx}
-                      className="flex flex-col gap-1 py-2 border-b border-border last:border-b-0"
-                    >
-                      {/* Row 1: Name + Total */}
-                      <div className="flex items-center justify-between gap-2">
-                        <input
-                          type="text"
-                          placeholder={`Item ${idx + 1}`}
-                          value={item.name}
-                          onChange={(e) =>
-                            handleUpdateItem(idx, "name", e.target.value)
-                          }
-                          className="flex-1 min-w-0 bg-transparent text-sm font-medium text-foreground placeholder:text-foreground-muted focus:outline-none"
-                        />
-                        <div className="w-28 shrink-0">
-                          <NumberInput
-                            value={
-                              item.subtotal ??
-                              String(getItemTotal(item, currentCurrency))
-                            }
-                            onValueChange={(value) =>
-                              handleUpdateItem(idx, "subtotal", value)
-                            }
-                            allowDecimal={false}
-                            maxDigits={12}
-                            placeholder="0"
-                            currency={currentCurrency}
-                            compact
-                            showCurrency={false}
-                            bare
-                            className="w-full"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Row 2: Qty controls + price + trash */}
-                      <div className="flex items-center gap-2">
-                        {/* Minus */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const base = parseFloat(item.quantity);
-                            const cur = Number.isFinite(base) && base > 0 ? base : 1;
-                            const next = cur > 1 ? cur - 1 : cur;
-                            handleUpdateItem(idx, "quantity", String(Number(next.toFixed(6))));
-                          }}
-                          className="flex h-6 w-6 items-center justify-center rounded-md border border-border text-foreground-secondary text-sm"
-                        >
-                          −
-                        </button>
-
-                        <input
-                          type="number"
-                          inputMode="decimal"
-                          min={0.001}
-                          step="any"
-                          value={item.quantity}
-                          onChange={(e) => {
-                            const v = e.target.value;
-                            if (v === "") {
-                              handleUpdateItem(idx, "quantity", "");
-                              return;
-                            }
-                            const n = parseFloat(v);
-                            if (Number.isFinite(n) && n <= 0) return;
-                            handleUpdateItem(idx, "quantity", v);
-                          }}
-                          onBlur={(e) => {
-                            const n = parseFloat(e.target.value);
-                            if (!Number.isFinite(n) || n <= 0) {
-                              handleUpdateItem(idx, "quantity", "1");
-                            }
-                          }}
-                          className="w-10 bg-transparent text-xs text-center text-foreground focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        />
-
-                        {/* Plus */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const base = parseFloat(item.quantity);
-                            const cur = Number.isFinite(base) && base > 0 ? base : 1;
-                            handleUpdateItem(idx, "quantity", String(Number((cur + 1).toFixed(6))));
-                          }}
-                          className="flex h-6 w-6 items-center justify-center rounded-md border border-border text-foreground-secondary text-sm"
-                        >
-                          +
-                        </button>
-
-                        {/* Multiply + unit price */}
-                        <span className="text-xs text-foreground-muted">×</span>
-                        <div className="flex-1 min-w-0">
-                          <NumberInput
-                            value={item.price}
-                            onValueChange={(value) =>
-                              handleUpdateItem(idx, "price", value)
-                            }
-                            allowDecimal={false}
-                            maxDigits={12}
-                            placeholder="0"
-                            currency={currentCurrency}
-                            compact
-                            showCurrency={false}
-                            className="w-full bg-transparent text-xs text-foreground-secondary focus:outline-none"
-                          />
-                        </div>
-
-                        {/* Trash */}
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveItem(idx)}
-                          className="p-1 text-foreground-muted hover:text-destructive active:scale-90 transition-all cursor-pointer shrink-0"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-
-                      {/* Row 3: Split/patungan controls (optional) */}
-                      <div className="flex items-center gap-2 pt-1">
-                        <span className="text-[10px] text-foreground-secondary shrink-0">
-                          {language === "id" ? "Dibagi ke" : "Split with"}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const cur = parseInt(item.shareCount ?? "1", 10) || 1;
-                            handleUpdateItem(idx, "shareCount", String(Math.max(1, cur - 1)));
-                          }}
-                          className="flex h-5 w-5 items-center justify-center rounded border border-border text-foreground-secondary text-xs"
-                        >
-                          −
-                        </button>
-                        <span className="w-5 text-center text-xs font-medium text-foreground">
-                          {Math.max(1, parseInt(item.shareCount ?? "1", 10) || 1)}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const cur = parseInt(item.shareCount ?? "1", 10) || 1;
-                            handleUpdateItem(idx, "shareCount", String(cur + 1));
-                          }}
-                          className="flex h-5 w-5 items-center justify-center rounded border border-border text-foreground-secondary text-xs"
-                        >
-                          +
-                        </button>
-                        <span className="text-[10px] text-foreground-secondary shrink-0">
-                          {language === "id" ? "orang" : "people"}
-                        </span>
-
-                        <div className="flex-1 min-w-0 flex items-center justify-end gap-1.5">
-                          <span className="text-[10px] text-foreground-secondary shrink-0">
-                            {t.quickAdd.myPortionTotalLabel}:
-                          </span>
-                          <div className="w-24">
-                            <NumberInput
-                              value={
-                                item.mySubtotal ??
-                                String(getItemMyTotal(item, currentCurrency))
-                              }
-                              onValueChange={(value) =>
-                                handleUpdateItem(idx, "mySubtotal", value)
-                              }
-                              allowDecimal={false}
-                              maxDigits={12}
-                              placeholder="0"
-                              currency={currentCurrency}
-                              compact
-                              showCurrency={false}
-                              bare
-                              className="w-full text-right"
-                            />
-                          </div>
-                        </div>
-                      </div>
+                  {/* Row 1: Name + Total */}
+                  <div className="flex items-center justify-between gap-2">
+                    <input
+                      type="text"
+                      placeholder={`Item ${idx + 1}`}
+                      value={item.name}
+                      onChange={(e) =>
+                        handleUpdateItem(idx, "name", e.target.value)
+                      }
+                      className="flex-1 min-w-0 bg-transparent text-sm font-medium text-foreground placeholder:text-foreground-muted focus:outline-none"
+                    />
+                    <div className="w-28 shrink-0">
+                      <NumberInput
+                        value={
+                          item.subtotal ??
+                          String(getItemTotal(item, currentCurrency))
+                        }
+                        onValueChange={(value) =>
+                          handleUpdateItem(idx, "subtotal", value)
+                        }
+                        allowDecimal={false}
+                        maxDigits={12}
+                        placeholder="0"
+                        currency={currentCurrency}
+                        compact
+                        showCurrency={false}
+                        bare
+                        className="w-full"
+                      />
                     </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Smart Allocation Summary Bar */}
-              {items.length > 0 && (
-                <div className="pt-2 border-t border-border flex flex-col gap-2">
-                  <div className="flex flex-col gap-1 text-[11px] font-mono">
-                    <div className="flex items-center justify-between">
-                      <span className="text-foreground-secondary">
-                        {t.quickAdd.receiptTotalLabel}:{" "}
-                        <strong className="text-foreground">
-                          {formatCurrency(itemsTotal, currentCurrency)}
-                        </strong>
-                      </span>
-                      <span className="text-foreground-secondary">
-                        {t.quickAdd.myPortionTotalLabel}:{" "}
-                        <strong className="text-success">
-                          {formatCurrency(myPortionTotal, currentCurrency)}
-                        </strong>
-                      </span>
-                    </div>
-
-                    {isItemsMatching ? (
-                      <span className="text-[10px] font-bold text-success flex items-center gap-1">
-                        <Check className="w-3 h-3" />
-                        <span>{t.transactions.matchedFull}</span>
-                      </span>
-                    ) : hasRemainingUnitemized ? (
-                      <span className="text-[10px] font-bold text-info">
-                        {t.quickAdd.unitemizedRemaining}: +
-                        {formatCurrency(remainingAmount, currentCurrency)}
-                      </span>
-                    ) : isItemsExceeding ? (
-                      <span className="text-[10px] font-bold text-destructive flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" />
-                        <span>
-                          +
-                          {formatCurrency(
-                            myPortionTotal - numericAmount,
-                            currentCurrency,
-                          )}{" "}
-                          ({t.transactions.exceedsLabel})
-                        </span>
-                      </span>
-                    ) : null}
                   </div>
 
-                  {/* Sync Button when total does not match */}
-                  {myPortionTotal > 0 && myPortionTotal !== numericAmount && (
+                  {/* Row 2: Qty controls + price + trash */}
+                  <div className="flex items-center gap-2">
+                    {/* Minus */}
                     <button
                       type="button"
                       onClick={() => {
-                        setAmountStr(String(Math.round(myPortionTotal)));
-                        setError(null);
+                        const base = parseFloat(item.quantity);
+                        const cur = Number.isFinite(base) && base > 0 ? base : 1;
+                        const next = cur > 1 ? cur - 1 : cur;
+                        handleUpdateItem(idx, "quantity", String(Number(next.toFixed(6))));
                       }}
-                      className="w-full py-1.5 px-2 rounded-lg bg-surface border border-dashed border-border-strong hover:border-foreground text-[11px] font-medium text-foreground-secondary flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      className="flex h-6 w-6 items-center justify-center rounded-md border border-border text-foreground-secondary text-sm"
                     >
-                      <Check className="w-3 h-3 text-success" />
-                      <span>
-                        {t.quickAdd.syncTotalWithItems}:{" "}
-                        <strong>
-                          {formatCurrency(myPortionTotal, currentCurrency)}
-                        </strong>
-                      </span>
+                      −
                     </button>
-                  )}
+
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      min={0.001}
+                      step="any"
+                      value={item.quantity}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (v === "") {
+                          handleUpdateItem(idx, "quantity", "");
+                          return;
+                        }
+                        const n = parseFloat(v);
+                        if (Number.isFinite(n) && n <= 0) return;
+                        handleUpdateItem(idx, "quantity", v);
+                      }}
+                      onBlur={(e) => {
+                        const n = parseFloat(e.target.value);
+                        if (!Number.isFinite(n) || n <= 0) {
+                          handleUpdateItem(idx, "quantity", "1");
+                        }
+                      }}
+                      className="w-10 bg-transparent text-xs text-center text-foreground focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+
+                    {/* Plus */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const base = parseFloat(item.quantity);
+                        const cur = Number.isFinite(base) && base > 0 ? base : 1;
+                        handleUpdateItem(idx, "quantity", String(Number((cur + 1).toFixed(6))));
+                      }}
+                      className="flex h-6 w-6 items-center justify-center rounded-md border border-border text-foreground-secondary text-sm"
+                    >
+                      +
+                    </button>
+
+                    {/* Multiply + unit price */}
+                    <span className="text-xs text-foreground-muted">×</span>
+                    <div className="flex-1 min-w-0">
+                      <NumberInput
+                        value={item.price}
+                        onValueChange={(value) =>
+                          handleUpdateItem(idx, "price", value)
+                        }
+                        allowDecimal={false}
+                        maxDigits={12}
+                        placeholder="0"
+                        currency={currentCurrency}
+                        compact
+                        showCurrency={false}
+                        className="w-full bg-transparent text-xs text-foreground-secondary focus:outline-none"
+                      />
+                    </div>
+
+                    {/* Trash */}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveItem(idx)}
+                      className="p-1 text-foreground-muted hover:text-destructive active:scale-90 transition-all cursor-pointer shrink-0"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  {/* Row 3: Split/patungan controls (optional) */}
+                  <div className="flex items-center gap-2 pt-1">
+                    <span className="text-[10px] text-foreground-secondary shrink-0">
+                      {language === "id" ? "Dibagi ke" : "Split with"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const cur = parseInt(item.shareCount ?? "1", 10) || 1;
+                        handleUpdateItem(idx, "shareCount", String(Math.max(1, cur - 1)));
+                      }}
+                      className="flex h-5 w-5 items-center justify-center rounded border border-border text-foreground-secondary text-xs"
+                    >
+                      −
+                    </button>
+                    <span className="w-5 text-center text-xs font-medium text-foreground">
+                      {Math.max(1, parseInt(item.shareCount ?? "1", 10) || 1)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const cur = parseInt(item.shareCount ?? "1", 10) || 1;
+                        handleUpdateItem(idx, "shareCount", String(cur + 1));
+                      }}
+                      className="flex h-5 w-5 items-center justify-center rounded border border-border text-foreground-secondary text-xs"
+                    >
+                      +
+                    </button>
+                    <span className="text-[10px] text-foreground-secondary shrink-0">
+                      {language === "id" ? "orang" : "people"}
+                    </span>
+
+                    <div className="flex-1 min-w-0 flex items-center justify-end gap-1.5">
+                      <span className="text-[10px] text-foreground-secondary shrink-0">
+                        {t.quickAdd.myPortionTotalLabel}:
+                      </span>
+                      <div className="w-24">
+                        <NumberInput
+                          value={
+                            item.mySubtotal ??
+                            String(getItemMyTotal(item, currentCurrency))
+                          }
+                          onValueChange={(value) =>
+                            handleUpdateItem(idx, "mySubtotal", value)
+                          }
+                          allowDecimal={false}
+                          maxDigits={12}
+                          placeholder="0"
+                          currency={currentCurrency}
+                          compact
+                          showCurrency={false}
+                          bare
+                          className="w-full text-right"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
+              ))}
+            </div>
+          )}
+
+          {/* Smart Allocation Summary Bar */}
+          {items.length > 0 && (
+            <div className="pt-2 border-t border-border flex flex-col gap-2">
+              <div className="flex flex-col gap-1 text-[11px] font-mono">
+                <div className="flex items-center justify-between">
+                  <span className="text-foreground-secondary">
+                    {t.quickAdd.receiptTotalLabel}:{" "}
+                    <strong className="text-foreground">
+                      {formatCurrency(itemsTotal, currentCurrency)}
+                    </strong>
+                  </span>
+                  <span className="text-foreground-secondary">
+                    {t.quickAdd.myPortionTotalLabel}:{" "}
+                    <strong className="text-success">
+                      {formatCurrency(myPortionTotal, currentCurrency)}
+                    </strong>
+                  </span>
+                </div>
+
+                {isItemsMatching ? (
+                  <span className="text-[10px] font-bold text-success flex items-center gap-1">
+                    <Check className="w-3 h-3" />
+                    <span>{t.transactions.matchedFull}</span>
+                  </span>
+                ) : hasRemainingUnitemized ? (
+                  <span className="text-[10px] font-bold text-info">
+                    {t.quickAdd.unitemizedRemaining}: +
+                    {formatCurrency(remainingAmount, currentCurrency)}
+                  </span>
+                ) : isItemsExceeding ? (
+                  <span className="text-[10px] font-bold text-destructive flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    <span>
+                      +
+                      {formatCurrency(
+                        myPortionTotal - numericAmount,
+                        currentCurrency,
+                      )}{" "}
+                      ({t.transactions.exceedsLabel})
+                    </span>
+                  </span>
+                ) : null}
+              </div>
+
+              {/* Sync Button when total does not match */}
+              {myPortionTotal > 0 && myPortionTotal !== numericAmount && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAmountStr(String(Math.round(myPortionTotal)));
+                    setError(null);
+                  }}
+                  className="w-full py-1.5 px-2 rounded-lg bg-surface border border-dashed border-border-strong hover:border-foreground text-[11px] font-medium text-foreground-secondary flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Check className="w-3 h-3 text-success" />
+                  <span>
+                    {t.quickAdd.syncTotalWithItems}:{" "}
+                    <strong>
+                      {formatCurrency(myPortionTotal, currentCurrency)}
+                    </strong>
+                  </span>
+                </button>
               )}
             </div>
           )}
-
-          {/* 8. Expandable Free Text Memo Drawer */}
-          {showFreeMemo && (
-            <div className="p-3 rounded-xl bg-canvas dark:bg-surface-subtle border border-border">
-              <textarea
-                rows={2}
-                value={freeTextMemo}
-                onChange={(e) => setFreeTextMemo(e.target.value)}
-                placeholder={t.quickAdd.memoPlaceholder}
-                className="w-full p-2 rounded-lg bg-surface border border-border text-xs text-foreground placeholder:text-foreground-muted focus:outline-none"
-              />
-            </div>
-          )}
-
-          {error && (
-            <p className="text-xs font-semibold text-destructive text-center pt-1">
-              {error}
-            </p>
-          )}
-
-          {/* 9. Action Footer Bar: Save only — Cancel lives in the page
-              header above, and Delete lives outside this form entirely. */}
-          <div className="mt-auto flex items-center gap-2 pt-2 border-t border-border">
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold bg-primary text-primary-foreground hover:bg-primary-hover active:scale-95 transition-all shadow-sm cursor-pointer disabled:opacity-60"
-            >
-              <Check className="w-3.5 h-3.5 stroke-3" />
-              <span>{isLoading ? t.common.loading : t.common.save}</span>
-            </button>
-          </div>
-        </>
+        </div>
       )}
+
+      {/* 8. Expandable Free Text Memo Drawer */}
+      {showFreeMemo && (
+        <div className="p-3 rounded-xl bg-canvas dark:bg-surface-subtle border border-border">
+          <textarea
+            rows={2}
+            value={freeTextMemo}
+            onChange={(e) => setFreeTextMemo(e.target.value)}
+            placeholder={t.quickAdd.memoPlaceholder}
+            className="w-full p-2 rounded-lg bg-surface border border-border text-xs text-foreground placeholder:text-foreground-muted focus:outline-none"
+          />
+        </div>
+      )}
+
+      {error && (
+        <p className="text-xs font-semibold text-destructive text-center pt-1">
+          {error}
+        </p>
+      )}
+
+      {/* 9. Action Footer Bar: Save only — Cancel lives in the page
+          header above, and Delete lives outside this form entirely. */}
+      <div className="mt-auto flex items-center gap-2 pt-2 border-t border-border">
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold bg-primary text-primary-foreground hover:bg-primary-hover active:scale-95 transition-all shadow-sm cursor-pointer disabled:opacity-60"
+        >
+          {isLoading ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <Check className="w-3.5 h-3.5 stroke-3" />
+          )}
+          <span>{t.common.save}</span>
+        </button>
+      </div>
       <CameraCaptureModal
         isOpen={showCameraModal}
         onClose={() => setShowCameraModal(false)}

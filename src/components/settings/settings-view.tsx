@@ -41,6 +41,7 @@ import {
   ArrowRight,
   History,
   Coins,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { toast } from "sonner";
@@ -205,10 +206,15 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
             size="sm"
             variant="outline"
             onClick={handleSyncRate}
-            isLoading={isSyncing}
+            disabled={isSyncing}
             className="gap-1.5 shrink-0 whitespace-nowrap self-start sm:self-auto"
           >
-            {syncSuccess ? (
+            {isSyncing ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>{t.settings.syncLiveRate}</span>
+              </>
+            ) : syncSuccess ? (
               <>
                 <Check className="w-3.5 h-3.5 text-success" />
                 <span>{t.settings.syncedSuccess}</span>

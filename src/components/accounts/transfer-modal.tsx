@@ -26,7 +26,7 @@ import {
 } from "@/lib/utils/currency";
 import { useLanguage } from "@/lib/i18n/language-context";
 
-import { ArrowRightLeft, RefreshCw } from "lucide-react";
+import { ArrowRightLeft, RefreshCw, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { localDateToISO, getLocalDateString } from "@/lib/utils/date";
 interface TransferModalProps {
@@ -522,11 +522,14 @@ function TransferForm({
         </Button>
         <Button
           type="submit"
-          isLoading={isLoading}
-          disabled={!toAccountId}
+          disabled={!toAccountId || isLoading}
           className="flex-1 font-bold"
         >
-          <ArrowRightLeft className="w-3.5 h-3.5 mr-1" />
+          {isLoading ? (
+            <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+          ) : (
+            <ArrowRightLeft className="w-3.5 h-3.5 mr-1" />
+          )}
           {t.transfer.executeBtn}
         </Button>
       </div>

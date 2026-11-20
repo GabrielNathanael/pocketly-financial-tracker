@@ -13,7 +13,7 @@ interface NumberKeypadProps {
   minorUnitMode?: boolean;
   maxDigits?: number;
   showThousandsShortcuts?: boolean;
-  doneLabel?: string;
+  doneLabel: string;
   compact?: boolean;
   className?: string;
 }
@@ -38,7 +38,7 @@ export function NumberKeypad({
   maxDigits = 24,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   showThousandsShortcuts = true,
-  doneLabel = "Selesai",
+  doneLabel,
   compact = false,
   className,
 }: NumberKeypadProps) {
@@ -127,7 +127,7 @@ export function NumberKeypad({
   const clearClass =
     "min-h-16 rounded-xl border border-destructive/30 bg-destructive-muted font-mono text-lg font-bold text-destructive transition-all hover:bg-destructive/10 active:scale-95 sm:min-h-19";
   const doneClass =
-    "flex min-h-16 items-center justify-center gap-1.5 rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-md transition-all hover:bg-primary-hover active:scale-95 sm:min-h-19";
+    "flex w-full min-h-14 items-center justify-center gap-1.5 rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-md transition-all hover:bg-primary-hover active:scale-95";
   const key = (value: string) => (
     <button
       key={value}
@@ -154,12 +154,8 @@ export function NumberKeypad({
     </button>
   );
   const doneButton = onDone ? (
-    <button
-      type="button"
-      onClick={onDone}
-      className={cn(doneClass, allowDecimal ? "col-span-3" : "col-span-2")}
-    >
-      <Check className="h-4 w-4 stroke-3" />
+    <button type="button" onClick={onDone} className={doneClass}>
+      <Check className="h-5 w-5 stroke-3" />
       {doneLabel}
     </button>
   ) : null;
@@ -195,8 +191,9 @@ export function NumberKeypad({
           </button>
         )}
         {key("0")}
-        {doneButton}
       </div>
+      {/* Done sits on its own full-width row below the keypad grid. */}
+      {doneButton}
     </div>
   );
 }

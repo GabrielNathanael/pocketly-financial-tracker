@@ -314,10 +314,14 @@ export function RecurringDetailModal({
               onClose()
               onPayNow(recurring)
             }}
-            isLoading={isProcessing}
+            disabled={isProcessing}
             className="w-full py-2.5 h-auto cursor-pointer text-xs font-bold bg-primary text-primary-foreground rounded-xl flex items-center justify-center gap-1.5 shadow-sm"
           >
-            <CheckCircle2 className="w-4 h-4" />
+            {isProcessing ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <CheckCircle2 className="w-4 h-4" />
+            )}
             <span>{t.recurring.payNowRecord}</span>
           </Button>
 

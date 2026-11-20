@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils/cn";
 import { formatCurrency } from "@/lib/utils/currency";
 import { NumberKeypad } from "@/components/ui/number-keypad";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
+import { useLanguage } from "@/lib/i18n/language-context";
 
 const NUMBER_INPUT_OPEN_EVENT = "pocketly:number-input-open";
 
@@ -65,6 +66,7 @@ export function NumberInput({
   open: controlledOpen,
   onOpenChange,
 }: NumberInputProps) {
+  const { t } = useLanguage();
   const instanceId = useRef(Symbol("number-input"));
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const isOpen = controlledOpen ?? uncontrolledOpen;
@@ -124,7 +126,7 @@ export function NumberInput({
       minorUnitMode={currency === "USD" || currency === "SGD"}
       maxDigits={maxDigits}
       showThousandsShortcuts={showThousandsShortcuts}
-      doneLabel={doneLabel}
+      doneLabel={doneLabel ?? t.transactions.doneLabel}
       compact={false}
     />
   );
@@ -142,36 +144,61 @@ export function NumberInput({
     </>
   );
 
-  if (variant === "card") {
-    return (
-      <div
-        className={cn(
-          "relative overflow-hidden rounded-xl border bg-surface shadow-2xs transition-all",
-          isOpen
-            ? "border-border-strong ring-2 ring-ring/10"
-            : "border-border",
-          className,
-        )}
-      >
-        <button
-          type="button"
-          disabled={disabled}
-          data-required={required || undefined}
-          onClick={() => setOpen(!isOpen)}
-          className="group w-full cursor-pointer p-4 text-left transition-all hover:bg-canvas dark:hover:bg-surface-subtle"
-        >
-          <div className="flex items-center justify-between pr-8">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              {label}
-            </span>
-            <Calculator className="h-4 w-4 text-foreground-muted group-hover:text-info" />
-          </div>
-          <div className="mt-1 overflow-x-auto whitespace-nowrap text-right text-xs font-mono font-semibold tracking-wide text-muted-foreground no-scrollbar">
+  // The keypad lives in a BottomSheet shared by both variants.
+  const keypadSheet = (
+    <BottomSheet
+      isOpen={isOpen}
+      onClose={() => setOpen(false)}
+      title={label}
+      className="max-w-lg"
+    >
+      <div className="flex flex-col gap-3">
+        <div className="rounded-xl border border-border bg-surface p-4">
+          <div className="overflow-x-auto whitespace-nowrap text-right text-xs font-mono font-semibold tracking-wide text-muted-foreground no-scrollbar">
             {formattedValue}
           </div>
-          <div className="flex items-baseline gap-2 pt-1 text-4xl">{display}</div>
-        </button>
+          <div className="flex items-baseline gap-2 pt-1 text-4xl sm:text-5xl">
+            {display}
+          </div>
+        </div>
+        {keypad}
       </div>
+    </BottomSheet>
+  );
+
+  if (variant === "card") {
+    return (
+      <>
+        <div
+          className={cn(
+            "relative overflow-hidden rounded-xl border bg-surface shadow-2xs transition-all",
+            isOpen
+              ? "border-border-strong ring-2 ring-ring/10"
+              : "border-border",
+            className,
+          )}
+        >
+          <button
+            type="button"
+            disabled={disabled}
+            data-required={required || undefined}
+            onClick={() => setOpen(!isOpen)}
+            className="group w-full cursor-pointer p-4 text-left transition-all hover:bg-canvas dark:hover:bg-surface-subtle"
+          >
+            <div className="flex items-center justify-between pr-8">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                {label}
+              </span>
+              <Calculator className="h-4 w-4 text-foreground-muted group-hover:text-info" />
+            </div>
+            <div className="mt-1 overflow-x-auto whitespace-nowrap text-right text-xs font-mono font-semibold tracking-wide text-muted-foreground no-scrollbar">
+              {formattedValue}
+            </div>
+            <div className="flex items-baseline gap-2 pt-1 text-4xl">{display}</div>
+          </button>
+        </div>
+        {keypadSheet}
+      </>
     );
   }
 
@@ -207,24 +234,7 @@ export function NumberInput({
         </span>
       </button>
       {error && <p className="mt-0.5 text-xs font-semibold text-destructive">{error}</p>}
-      <BottomSheet
-        isOpen={isOpen}
-        onClose={() => setOpen(false)}
-        title={label}
-        className="max-w-lg"
-      >
-        <div className="flex flex-col gap-3">
-          <div className="rounded-xl border border-border bg-surface p-4">
-            <div className="overflow-x-auto whitespace-nowrap text-right text-xs font-mono font-semibold tracking-wide text-muted-foreground no-scrollbar">
-              {formattedValue}
-            </div>
-            <div className="flex items-baseline gap-2 pt-1 text-4xl sm:text-5xl">
-              {display}
-            </div>
-          </div>
-          {keypad}
-        </div>
-      </BottomSheet>
+      {keypadSheet}
     </div>
   );
 }
