@@ -88,8 +88,8 @@ export function DueCenterView({
       daysDiff,
       icon: rec.category?.icon || 'Repeat',
       color: 'var(--token-muted-foreground)',
-      link: '/recurring',
-      ctaText: t.dueCenter.payBill,
+      link: `/recurring/${rec.id}`,
+      ctaText: t.dueCenter.viewDetails,
       accountName: rec.account?.name,
       categoryName: rec.category?.name,
     })
@@ -138,7 +138,7 @@ export function DueCenterView({
       daysDiff,
       icon: goal.icon || 'Target',
       color: goal.color || 'var(--token-info)',
-      link: '/goals',
+      link: `/goals/${goal.id}`,
       ctaText: t.dueCenter.depositGoal,
       categoryName: goal.category?.name,
     })
@@ -378,23 +378,7 @@ export function DueCenterView({
                     </span>
                   </div>
 
-                  {item.source === 'recurring' ? (
-                    <button
-                      type="button"
-                      disabled={processingId === item.rawId}
-                      onClick={() => handleQuickPayRecurring(item.rawId)}
-                      className="px-3.5 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold hover:bg-primary-hover active:scale-95 transition-all cursor-pointer flex items-center gap-1.5 shrink-0"
-                    >
-                      {processingId === item.rawId ? (
-                        <span>{t.dueCenter.processing}</span>
-                      ) : (
-                        <>
-                          <Check className="w-3.5 h-3.5" />
-                          <span>{t.dueCenter.payBill}</span>
-                        </>
-                      )}
-                    </button>
-                  ) : (
+                  <div className="flex items-center gap-2 shrink-0">
                     <Link
                       href={item.link}
                       className="px-3.5 py-1.5 rounded-xl bg-surface dark:bg-surface-subtle border border-border text-foreground text-xs font-bold hover:bg-surface-subtle dark:hover:bg-surface-muted active:scale-95 transition-all cursor-pointer flex items-center gap-1 shrink-0 shadow-2xs"
@@ -402,7 +386,25 @@ export function DueCenterView({
                       <span>{item.ctaText}</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
-                  )}
+
+                    {item.source === 'recurring' && (
+                      <button
+                        type="button"
+                        disabled={processingId === item.rawId}
+                        onClick={() => handleQuickPayRecurring(item.rawId)}
+                        className="px-3.5 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold hover:bg-primary-hover active:scale-95 transition-all cursor-pointer flex items-center gap-1.5 shrink-0"
+                      >
+                        {processingId === item.rawId ? (
+                          <span>{t.dueCenter.processing}</span>
+                        ) : (
+                          <>
+                            <Check className="w-3.5 h-3.5" />
+                            <span>{t.dueCenter.payBill}</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             )

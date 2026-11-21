@@ -1,5 +1,6 @@
 import { formatCurrency } from "@/lib/utils/currency";
 import { SUPPORTED_CURRENCIES } from "@/lib/constants/currencies";
+import { findBracketTag } from "@/lib/utils/bracket-tags";
 
 /**
  * Shared helpers for the `[Items: ...]` compound description format.
@@ -184,9 +185,10 @@ export function parseItemsFromDescription(
   rawDesc?: string | null,
 ): TransactionItem[] {
   if (!rawDesc) return [];
-  const match = rawDesc.match(/\[Items:\s*([^\]]+)\]/);
-  if (!match) return [];
-  return parseItemsSummary(match[1]);
+  // Balanced parser: split-bill metadata uses nested `[÷3, mine Rp …]` brackets.
+  const tag = findBracketTag(rawDesc, "Items");
+  if (!tag) return [];
+  return parseItemsSummary(tag.inner);
 }
 
 /**

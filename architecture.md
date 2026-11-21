@@ -91,10 +91,10 @@ public/           # Static assets
   - `/accounts`, `/accounts/[id]`
   - `/categories`
   - `/budget`, `/budget/[categoryId]`
-  - `/debts`, `/debts/[id]`
-  - `/due-center`
-  - `/goals`
-  - `/recurring`
+  - `/debts`, `/debts/[id]`, `/debts/[id]/history`
+  - `/due-center` (links to per-item detail pages)
+  - `/goals`, `/goals/[id]`, `/goals/[id]/history`
+  - `/recurring`, `/recurring/[id]`, `/recurring/[id]/history` (detail and history on separate pages)
   - `/reports`
   - `/investments`
   - `/net-worth`
@@ -193,7 +193,7 @@ Server Actions are the primary mutation/query boundary. Common conventions:
 - Actions `receipt-ai.ts` and `split-bill-scan.ts` produce normalized draft structures for transaction and split-bill flows
 
 ### 8.6 Client storage and context
-- `storage/*`: preferred currency, privacy mode, default-account cache (legacy), pinned templates cache/sync
+- `storage/*`: preferred currency, privacy mode, privacy-screen toggle (best-effort recent-apps cover), app-lock config, default-account cache (legacy), pinned templates cache/sync
 - `context/undo-context.tsx`: deferred delete with timed execution/undo
 
 ## 9. Types and schema contracts (`src/types`, Supabase)

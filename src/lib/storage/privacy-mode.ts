@@ -32,6 +32,11 @@ export function usePrivacyMode(): boolean {
   return useSyncExternalStore(subscribePrivacy, getPrivacySnapshot, () => false)
 }
 
+/** Current stored privacy-mode value (client only). */
+export function getPrivacyMode(): boolean {
+  return getPrivacySnapshot()
+}
+
 export function togglePrivacyMode(): boolean {
   if (typeof window === 'undefined') return false
   const current = getPrivacySnapshot()

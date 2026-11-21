@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { EnrichedDebtWithPayments, EnrichedDebtPayment } from '@/actions/debts'
+import { EnrichedDebtWithPayments } from '@/actions/debts'
 import { Account } from '@/types/database'
 import { formatCurrency } from '@/lib/utils/currency'
 import { formatDate } from '@/lib/utils/date'
@@ -13,8 +13,7 @@ import { Modal } from '@/components/ui/modal'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { DebtForm } from '@/components/debts/debt-form'
 import { DebtPaymentModal } from '@/components/debts/debt-payment-modal'
-import { DebtPaymentEditModal } from '@/components/debts/debt-payment-edit-modal'
-import { deleteDebtPayment, deleteDebt } from '@/actions/debts'
+import { deleteDebt } from '@/actions/debts'
 import { useLanguage } from '@/lib/i18n/language-context'
 import { toast } from 'sonner'
 import {
@@ -25,10 +24,8 @@ import {
   Trash2,
   Calendar,
   Edit2,
-  CheckCircle2,
-  Clock,
   FileText,
-  Pencil,
+  History,
 } from 'lucide-react'
 
 interface DebtDetailViewProps {
@@ -41,11 +38,8 @@ export function DebtDetailView({ debt, accounts }: DebtDetailViewProps) {
   const { t, language } = useLanguage()
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isPaymentOpen, setIsPaymentOpen] = useState(false)
-  const [editingPayment, setEditingPayment] = useState<EnrichedDebtPayment | null>(null)
-  const [deletingPaymentId, setDeletingPaymentId] = useState<string | null>(null)
   const [showDeleteDebtConfirm, setShowDeleteDebtConfirm] = useState(false)
   const [deleteTransactions, setDeleteTransactions] = useState(false)
-  const [displayLimit, setDisplayLimit] = useState(30)
   const [isDeletingDebt, setIsDeletingDebt] = useState(false)
 
   const isDebt = debt.type === 'debt'
@@ -56,24 +50,6 @@ export function DebtDetailView({ debt, accounts }: DebtDetailViewProps) {
       : 100
 
   const totalPaid = Number(debt.initial_amount) - Number(debt.remaining_amount)
-
-  const handleDeletePayment = async (paymentId: string) => {
-    setDeletingPaymentId(paymentId)
-    try {
-      const res = await deleteDebtPayment(paymentId, debt.id)
-      if (res?.error) {
-        toast.error(t.debts.deletePaymentFailed, { description: res.error })
-      } else {
-        toast.success(t.debts.deletePaymentSuccess)
-        router.refresh()
-      }
-    } catch (err) {
-      const msg = (err as Error).message
-      toast.error(t.common.error, { description: msg })
-    } finally {
-      setDeletingPaymentId(null)
-    }
-  }
 
   const handleDeleteDebt = async () => {
     setIsDeletingDebt(true)
@@ -97,13 +73,21 @@ export function DebtDetailView({ debt, accounts }: DebtDetailViewProps) {
   return (
     <div className="flex flex-col gap-4 sm:gap-5 max-w-xl mx-auto w-full px-0.5">
       {/* Top Navigation */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <Link
           href="/debts"
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>{t.debts.backToDebts}</span>
+        </Link>
+        <Link
+          href={`/debts/${debt.id}/history`}
+          title={t.debts.viewFullHistory}
+          aria-label={t.debts.viewFullHistory}
+          className="h-9 w-9 flex items-center justify-center rounded-xl border border-border bg-surface text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors shrink-0"
+        >
+          <History className="w-4 h-4" />
         </Link>
       </div>
 
@@ -192,171 +176,53 @@ export function DebtDetailView({ debt, accounts }: DebtDetailViewProps) {
           </div>
         )}
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-2 pt-2 border-t border-border">
+        {/* Action Buttons: primary action on its own row, secondary actions below */}
+        <div className="flex flex-col gap-2 pt-2 border-t border-border">
           {!isPaid && (
             <Button
               onClick={() => setIsPaymentOpen(true)}
-              className="gap-1.5 flex-1 font-bold whitespace-nowrap"
+              className="h-10 w-full rounded-xl gap-1.5 min-w-0 text-xs px-3 font-bold"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-4 h-4 shrink-0" />
               <span>{t.debts.recordPayment}</span>
             </Button>
           )}
 
-          <Button
-            variant="outline"
-            onClick={() => setIsEditOpen(true)}
-            className="gap-1.5 flex-1 whitespace-nowrap"
-          >
-            <Edit2 className="w-3.5 h-3.5" />
-            <span>{t.common.edit}</span>
-          </Button>
+          <div className={`grid gap-2 ${isPaid ? 'grid-cols-2' : 'grid-cols-3'}`}>
+            <Button
+              variant="outline"
+              onClick={() => setIsEditOpen(true)}
+              className="h-10 w-full rounded-xl gap-1.5 min-w-0 text-xs px-3"
+            >
+              <Edit2 className="w-3.5 h-3.5 shrink-0" />
+              <span>{t.common.edit}</span>
+            </Button>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setDeleteTransactions(true)
-              setShowDeleteDebtConfirm(true)
-            }}
-            className="px-3 shrink-0"
-          >
-            <span className="hidden sm:inline">{t.debts.deleteAndRollback}</span>
-            <span className="sm:hidden">Rollback</span>
-          </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteTransactions(true)
+                setShowDeleteDebtConfirm(true)
+              }}
+              className="h-10 w-full rounded-xl min-w-0 text-xs px-3"
+              title={t.debts.deleteAndRollback}
+            >
+              <span>{t.debts.rollbackShort}</span>
+            </Button>
 
-          <Button
-            variant="danger"
-            size="sm"
-            onClick={() => {
-              setDeleteTransactions(false)
-              setShowDeleteDebtConfirm(true)
-            }}
-            className="px-3 shrink-0"
-            title={t.common.delete}
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Payment Installments History */}
-      <div className="flex flex-col gap-2.5">
-        <div className="flex items-center justify-between px-0.5">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">
-            {t.debts.installmentsTitle} ({debt.payments.length})
-          </h2>
-          {isPaid && (
-            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-success">
-              <CheckCircle2 className="w-3.5 h-3.5" /> Lunas Sepenuhnya
-            </span>
-          )}
-        </div>
-
-        {debt.payments.length === 0 ? (
-          <div className="p-8 text-center bg-surface border border-border rounded-2xl text-foreground-muted text-xs">
-            {t.debts.installmentsEmpty}
+            <Button
+              variant="danger"
+              onClick={() => {
+                setDeleteTransactions(false)
+                setShowDeleteDebtConfirm(true)
+              }}
+              className="h-10 w-full rounded-xl min-w-0 text-xs px-3 justify-center"
+              title={t.common.delete}
+            >
+              <Trash2 className="w-3.5 h-3.5 shrink-0" />
+            </Button>
           </div>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {debt.payments
-              .sort((a, b) => new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime())
-              .slice(0, displayLimit)
-              .map((p, idx) => (
-                <div
-                  key={p.id}
-                  className="flex items-center justify-between p-3 sm:p-3.5 rounded-xl bg-surface border border-border hover:border-border-strong transition-colors gap-3"
-                >
-                  {p.linked_transaction_id ? (
-                    <Link
-                      href={`/transactions/${p.linked_transaction_id}`}
-                      className="flex items-center gap-3 min-w-0 flex-1 hover:opacity-80 transition-opacity cursor-pointer group"
-                    >
-                      <div className="w-7 h-7 rounded-full bg-success-muted text-success flex items-center justify-center text-xs font-bold shrink-0 group-hover:scale-105 transition-transform">
-                        {debt.payments.length - idx}
-                      </div>
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-xs sm:text-sm font-mono font-bold text-foreground tnum truncate group-hover:text-success transition-colors">
-                          {formatCurrency(p.amount, debt.currency)}
-                        </span>
-                        <div className="flex items-center gap-1 text-[10px] font-mono text-foreground-muted truncate">
-                          <Clock className="w-3 h-3 shrink-0" />
-                          <span>{formatDate(p.payment_date, 'd MMM yyyy, HH:mm', language)}</span>
-                          <span className="text-[9px] text-success underline ml-1 hidden sm:inline">Lihat Transaksi</span>
-                        </div>
-                      </div>
-                    </Link>
-                  ) : (
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <div className="w-7 h-7 rounded-full bg-success-muted text-success flex items-center justify-center text-xs font-bold shrink-0">
-                        {debt.payments.length - idx}
-                      </div>
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-xs sm:text-sm font-mono font-bold text-foreground tnum truncate">
-                          {formatCurrency(p.amount, debt.currency)}
-                        </span>
-                        <div className="flex items-center gap-1 text-[10px] font-mono text-foreground-muted truncate">
-                          <Clock className="w-3 h-3 shrink-0" />
-                          <span>{formatDate(p.payment_date, 'd MMM yyyy, HH:mm', language)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Actions for installment: Edit & Delete */}
-                  <div className="flex items-center gap-1 shrink-0">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setEditingPayment(p)}
-                      className="h-auto w-auto p-1.5 text-foreground-muted hover:text-foreground rounded-md"
-                      title={t.common.edit}
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                    </Button>
-                    <button
-                      type="button"
-                      disabled={deletingPaymentId === p.id}
-                      onClick={() => handleDeletePayment(p.id)}
-                      className="p-1.5 text-foreground-muted hover:text-destructive rounded-md transition-colors cursor-pointer"
-                      title={t.common.delete}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-
-            {/* Pagination Load More Controls */}
-            {displayLimit < debt.payments.length && (
-              <div className="pt-1 flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 rounded-xl bg-surface border border-border text-xs">
-                <span className="text-muted-foreground font-medium text-center sm:text-left">
-                  {t.common.showing} <span className="font-bold text-foreground">{Math.min(displayLimit, debt.payments.length)}</span> / {debt.payments.length}
-                </span>
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setDisplayLimit((prev) => prev + 30)}
-                    className="flex-1 sm:flex-initial text-xs font-bold cursor-pointer"
-                  >
-                    {t.common.loadMore} (+{Math.min(30, debt.payments.length - displayLimit)})
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setDisplayLimit(debt.payments.length)}
-                    className="flex-1 sm:flex-initial text-xs text-muted-foreground hover:text-foreground cursor-pointer"
-                  >
-                    {t.common.showAll}
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+        </div>
       </div>
 
       {/* Edit Debt Modal */}
@@ -383,19 +249,6 @@ export function DebtDetailView({ debt, accounts }: DebtDetailViewProps) {
         accounts={accounts}
         onSuccess={() => {
           setIsPaymentOpen(false)
-          router.refresh()
-        }}
-      />
-
-      {/* Payment Edit Modal */}
-      <DebtPaymentEditModal
-        isOpen={Boolean(editingPayment)}
-        onClose={() => setEditingPayment(null)}
-        payment={editingPayment}
-        debt={debt}
-        accounts={accounts}
-        onSuccess={() => {
-          setEditingPayment(null)
           router.refresh()
         }}
       />

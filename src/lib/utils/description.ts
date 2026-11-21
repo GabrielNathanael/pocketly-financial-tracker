@@ -1,3 +1,5 @@
+import { findBracketTag, stripSystemTags } from './bracket-tags'
+
 /**
  * Clean up transaction description to extract pure human-readable text
  * and strip out system metadata tags like [Items: ...], [Memo: ...], [Tukar Valas: ...]
@@ -5,17 +7,12 @@
 export function getCleanDescription(rawDesc?: string | null): string {
   if (!rawDesc) return ''
 
-  // Extract memo if present
-  const memoMatch = rawDesc.match(/\[Memo:\s*([^\]]+)\]/)
-  const memo = memoMatch ? memoMatch[1].trim() : ''
+  // Extract memo if present (balanced: item metadata may contain nested brackets)
+  const memoTag = findBracketTag(rawDesc, 'Memo')
+  const memo = memoTag ? memoTag.inner.trim() : ''
 
   // Clean description removing all structured metadata brackets
-  const clean = rawDesc
-    .replace(/\[Items:\s*[^\]]+\]/g, '')
-    .replace(/\[Memo:\s*[^\]]+\]/g, '')
-    .replace(/\[Tukar Valas:\s*[^\]]+\]/g, '')
-    .replace(/\[Ref:\s*[^\]]+\]/gi, '')
-    .trim()
+  const clean = stripSystemTags(rawDesc)
 
   if (clean) return clean
   if (memo) return memo
@@ -28,18 +25,13 @@ export function getCleanDescription(rawDesc?: string | null): string {
 export function getCleanTransferDescription(rawDesc?: string | null): string {
   if (!rawDesc) return ''
 
-  const userNote = rawDesc
-    .replace(/\[Tukar Valas:\s*[^\]]+\]/g, '')
-    .replace(/\[Items:\s*[^\]]+\]/g, '')
-    .replace(/\[Memo:\s*[^\]]+\]/g, '')
-    .replace(/\[Ref:\s*[^\]]+\]/gi, '')
-    .trim()
+  const userNote = stripSystemTags(rawDesc)
 
   if (userNote) return userNote
 
-  const valasMatch = rawDesc.match(/\[Tukar Valas:\s*([^\]]+)\]/)
-  if (valasMatch) {
-    return valasMatch[1].trim() // e.g. "1 USD = 16.200 IDR • Terima: Rp 4.050.000"
+  const valasTag = findBracketTag(rawDesc, 'Tukar Valas')
+  if (valasTag) {
+    return valasTag.inner.trim() // e.g. "1 USD = 16.200 IDR • Terima: Rp 4.050.000"
   }
 
   return ''

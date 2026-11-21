@@ -466,6 +466,26 @@ export function RecurringFormModal({
           />
         </div>
 
+        {/* Auto-process Option */}
+        <div className="p-3.5 rounded-xl bg-surface-subtle border border-border">
+          <label className="flex items-start gap-2.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={autoProcess}
+              onChange={(e) => setAutoProcess(e.target.checked)}
+              className="mt-0.5 w-4 h-4 rounded border-border text-primary focus:ring-ring cursor-pointer"
+            />
+            <div className="flex flex-col gap-0.5">
+              <span className="text-xs font-bold text-foreground">
+                {t.recurring.autoProcessLabel}
+              </span>
+              <span className="text-[11px] text-muted-foreground">
+                {t.recurring.autoProcessDesc}
+              </span>
+            </div>
+          </label>
+        </div>
+
         {/* Footer Actions */}
         <div className="pt-3 border-t border-border flex items-center justify-end gap-2">
           <Button

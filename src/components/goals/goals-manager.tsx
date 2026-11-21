@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useMemo } from 'react'
+import Link from 'next/link'
 import { Account, Category, EnrichedSavingsGoal } from '@/types/database'
 import { formatCurrency, convertAmount, ForexRatesMap } from '@/lib/utils/currency'
 import { usePreferredCurrency } from '@/lib/storage/preferred-currency'
@@ -9,7 +10,6 @@ import { useLanguage } from '@/lib/i18n/language-context'
 import { updateSavingsGoal, deleteSavingsGoal } from '@/actions/goals'
 import { GoalFormModal } from '@/components/goals/goal-form-modal'
 import { GoalDepositModal } from '@/components/goals/goal-deposit-modal'
-import { GoalDetailModal } from '@/components/goals/goal-detail-modal'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { DynamicIcon } from '@/components/ui/dynamic-icon'
 import { Button } from '@/components/ui/button'
@@ -60,9 +60,7 @@ export function GoalsManager({
   const [searchQuery, setSearchQuery] = useState('')
   const [formModalOpen, setFormModalOpen] = useState(false)
   const [depositModalOpen, setDepositModalOpen] = useState(false)
-  const [detailModalOpen, setDetailModalOpen] = useState(false)
   const [selectedGoal, setSelectedGoal] = useState<EnrichedSavingsGoal | null>(null)
-  const [detailGoal, setDetailGoal] = useState<EnrichedSavingsGoal | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
@@ -391,11 +389,8 @@ export function GoalsManager({
                 )}
               >
                 {/* Card Click Area (Top & Middle) */}
-                <div
-                  onClick={() => {
-                    setDetailGoal(goal)
-                    setDetailModalOpen(true)
-                  }}
+                <Link
+                  href={`/goals/${goal.id}`}
                   className="cursor-pointer flex flex-col gap-4"
                 >
                   {/* Card Top: Icon, Name, Category & Badges */}
@@ -520,7 +515,7 @@ export function GoalsManager({
                       )}
                     </div>
                   </div>
-                </div>
+                </Link>
 
                 {/* Card Bottom Actions */}
                 <div className="pt-2 border-t border-border flex items-center justify-between gap-2">
@@ -586,26 +581,6 @@ export function GoalsManager({
           })}
         </div>
       )}
-
-      {/* Goal Detail Modal */}
-      <GoalDetailModal
-        isOpen={detailModalOpen}
-        onClose={() => {
-          setDetailModalOpen(false)
-          setDetailGoal(null)
-        }}
-        goal={detailGoal}
-        onDeposit={(g) => {
-          setSelectedGoal(g)
-          setDepositModalOpen(true)
-        }}
-        onEdit={(g) => {
-          setSelectedGoal(g)
-          setFormModalOpen(true)
-        }}
-        onTogglePause={handleToggleStatus}
-        onDelete={(id) => setDeletingId(id)}
-      />
 
       {/* Goal Form Modal */}
       <GoalFormModal

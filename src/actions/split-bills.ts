@@ -10,6 +10,7 @@ import {
   buildMyPortionDescriptionFromRows,
 } from "@/lib/utils/split-bill";
 import type { TransactionItem } from "@/lib/utils/transaction-items";
+import { findBracketTag } from "@/lib/utils/bracket-tags";
 
 const SUPPORTED_CURRENCIES = new Set<string>(CURRENCY_CODES);
 function normalizeCurrency(v: unknown): CurrencyCode {
@@ -533,8 +534,8 @@ export async function saveSplitBill(input: SaveSplitBillInput): Promise<{ id?: s
           if (tx) {
             const existingDesc = String(tx.description || "");
             // Jangan timpa memo/catatan yang sudah ada (mis. diskon atau hasil edit user).
-            const memoMatch = existingDesc.match(/\[Memo:\s*([\s\S]*?)\]/);
-            const preservedMemo = memoMatch ? ` [Memo: ${memoMatch[1].trim()}]` : "";
+            const memoTag = findBracketTag(existingDesc, "Memo");
+            const preservedMemo = memoTag ? ` [Memo: ${memoTag.inner.trim()}]` : "";
             const nextDesc = `${description}${preservedMemo}`.slice(0, 2000);
             const sameAmount = Number(tx.amount) === myTotal;
             const sameDesc = existingDesc === nextDesc;

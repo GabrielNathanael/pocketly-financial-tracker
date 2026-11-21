@@ -8,6 +8,7 @@ import { UndoSnackbar } from "@/components/ui/undo-snackbar";
 import { Toaster } from "sonner";
 import { Analytics } from "@vercel/analytics/next";
 import { PwaRegister } from "@/components/pwa/pwa-register";
+import { PrivacyScreen } from "@/components/pwa/privacy-screen";
 import { TimezoneCookieSync } from "@/components/layout/timezone-cookie-sync";
 import { PinnedTemplatesAuthSync } from "@/lib/storage/pinned-templates-auth-sync";
 import { AppLockGate } from "@/components/app-lock/app-lock-gate";
@@ -80,6 +81,7 @@ export default async function RootLayout({
       <body className="min-h-dvh bg-canvas text-foreground font-sans antialiased selection:bg-primary selection:text-primary-foreground">
         <ThemeProvider>
           <LanguageProvider>
+            <PrivacyScreen />
             <UndoProvider>
               <AppLockGate initialLocked={appLockHint}>
                 {children}

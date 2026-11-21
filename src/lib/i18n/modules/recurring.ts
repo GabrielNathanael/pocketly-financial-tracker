@@ -41,6 +41,8 @@ export const recurring = {
       autoProcessLabel: "Eksekusi Otomatis",
       autoProcessDesc:
         "Otomatis catat transaksi saat jatuh tempo tanpa perlu konfirmasi manual",
+      autoProcessEnabled: "Eksekusi otomatis diaktifkan",
+      autoProcessDisabled: "Eksekusi otomatis dinonaktifkan",
       deleteConfirm: "Apakah Anda yakin ingin menghapus jadwal berulang ini?",
       processSuccess:
         "Transaksi berhasil dieksekusi dan saldo akun telah diperbarui!",
@@ -70,10 +72,14 @@ export const recurring = {
       historyCount: "{count} transaksi",
       loadingHistory: "Memuat riwayat...",
       noHistory: "Belum ada riwayat transaksi tercatat untuk tagihan ini.",
+      viewHistory: "Lihat Riwayat",
+      autoProcessOn: "Aktif",
+      autoProcessOff: "Nonaktif",
       payNowRecord: "Bayar & Catat Transaksi",
       activate: "Aktifkan",
       payNowBtn: "Bayar Sekarang",
       nextDueDate: "Jatuh Tempo Berikutnya",
+      viewFullHistory: "Lihat Riwayat Lengkap",
   },
   en: {
       title: "Recurring Transactions",
@@ -116,6 +122,8 @@ export const recurring = {
       autoProcessLabel: "Auto-process",
       autoProcessDesc:
         "Automatically log transaction on due date without manual confirmation",
+      autoProcessEnabled: "Auto-process enabled",
+      autoProcessDisabled: "Auto-process disabled",
       deleteConfirm: "Are you sure you want to delete this recurring schedule?",
       processSuccess:
         "Transaction executed and account balance updated successfully!",
@@ -145,9 +153,13 @@ export const recurring = {
       historyCount: "{count} transactions",
       loadingHistory: "Loading history...",
       noHistory: "No recorded transactions yet for this schedule.",
+      viewHistory: "View History",
+      autoProcessOn: "On",
+      autoProcessOff: "Off",
       payNowRecord: "Pay Now & Record Transaction",
       activate: "Activate",
       payNowBtn: "Pay Now",
       nextDueDate: "Next Due Date",
+      viewFullHistory: "View Full History",
   },
 };

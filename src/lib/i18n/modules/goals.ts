@@ -86,6 +86,9 @@ export const goals = {
       remainingTargetLabel: "Sisa Target",
       depositDestinationAccountLabel: "Rekening Tujuan",
       depositNotesPlaceholder: "misal: Setoran THR, Bonus Kerja",
+      viewFullHistory: "Lihat Riwayat Lengkap",
+      backToGoal: "Kembali ke Target",
+      detailPageSubtitle: "Ringkasan target tabungan dan progres Anda",
   },
   en: {
       title: "Savings Goals & Wishlist",
@@ -174,5 +177,8 @@ export const goals = {
       remainingTargetLabel: "Remaining Target",
       depositDestinationAccountLabel: "Destination Account",
       depositNotesPlaceholder: "e.g. Holiday bonus, work bonus",
+      viewFullHistory: "View Full History",
+      backToGoal: "Back to Goal",
+      detailPageSubtitle: "Overview of your savings goal and progress",
   },
 };

@@ -1,14 +1,14 @@
 'use client'
 
 import React, { useState, useMemo } from 'react'
+import Link from 'next/link'
 import { Account, Category, EnrichedRecurringTransaction } from '@/types/database'
 import { formatCurrency, convertAmount, ForexRatesMap } from '@/lib/utils/currency'
 import { usePreferredCurrency } from '@/lib/storage/preferred-currency'
 import { usePrivacyMode, maskCurrency } from '@/lib/storage/privacy-mode'
 import { useLanguage } from '@/lib/i18n/language-context'
-import { processRecurringPayment, toggleRecurringActive, deleteRecurringTransaction } from '@/actions/recurring'
+import { processRecurringPayment, toggleRecurringActive, deleteRecurringTransaction, updateRecurringTransaction } from '@/actions/recurring'
 import { RecurringFormModal } from '@/components/recurring/recurring-form-modal'
-import { RecurringDetailModal } from '@/components/recurring/recurring-detail-modal'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { DynamicIcon } from '@/components/ui/dynamic-icon'
 import { Button } from '@/components/ui/button'
@@ -28,6 +28,7 @@ import {
   CheckCircle2,
   PauseCircle,
   PlayCircle,
+  Repeat,
   Edit2,
   Trash2,
   Flame,
@@ -61,13 +62,12 @@ export function RecurringManager({
   const [activeTab, setActiveTab] = useState<TabType>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
-  const [detailModalOpen, setDetailModalOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<EnrichedRecurringTransaction | null>(null)
-  const [detailRecurring, setDetailRecurring] = useState<EnrichedRecurringTransaction | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [processingId, setProcessingId] = useState<string | null>(null)
   const [togglingId, setTogglingId] = useState<string | null>(null)
+  const [togglingAutoId, setTogglingAutoId] = useState<string | null>(null)
 
   const today = new Date()
 
@@ -176,6 +176,28 @@ export function RecurringManager({
       toast.error('Error toggling status')
     } finally {
       setTogglingId(null)
+    }
+  }
+
+  // Handle Auto-process toggle (cron will log the transaction automatically)
+  const handleToggleAutoProcess = async (item: EnrichedRecurringTransaction) => {
+    setTogglingAutoId(item.id)
+    try {
+      const nextValue = !item.auto_process
+      const res = await updateRecurringTransaction(item.id, { autoProcess: nextValue })
+      if (res.error) {
+        toast.error(res.error)
+      } else {
+        toast.success(
+          nextValue
+            ? t.recurring.autoProcessEnabled
+            : t.recurring.autoProcessDisabled
+        )
+      }
+    } catch {
+      toast.error(t.recurring.unexpectedError)
+    } finally {
+      setTogglingAutoId(null)
     }
   }
 
@@ -429,11 +451,8 @@ export function RecurringManager({
                 )}
               >
                 {/* Card Clickable Top & Middle Area */}
-                <div
-                  onClick={() => {
-                    setDetailRecurring(item)
-                    setDetailModalOpen(true)
-                  }}
+                <Link
+                  href={`/recurring/${item.id}`}
                   className="cursor-pointer flex flex-col gap-4"
                 >
                   {/* Card Top: Icon, Name, Category, Badges */}
@@ -531,7 +550,7 @@ export function RecurringManager({
                       </span>
                     </div>
                   </div>
-                </div>
+                </Link>
 
                 {/* Card Bottom Actions */}
                 <div className="pt-2 border-t border-border flex items-center justify-between gap-2">
@@ -550,6 +569,29 @@ export function RecurringManager({
                         <PauseCircle className="w-3.5 h-3.5" />
                       ) : (
                         <PlayCircle className="w-3.5 h-3.5 text-success" />
+                      )}
+                    </button>
+
+                    {/* Auto-process Toggle Button */}
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={!!item.auto_process}
+                      aria-label={t.recurring.autoProcessLabel}
+                      title={t.recurring.autoProcessLabel}
+                      disabled={togglingAutoId === item.id}
+                      onClick={() => handleToggleAutoProcess(item)}
+                      className={cn(
+                        'p-1.5 rounded-lg transition-colors cursor-pointer',
+                        item.auto_process
+                          ? 'text-primary bg-surface-subtle'
+                          : 'text-foreground-secondary hover:text-foreground hover:bg-surface-subtle'
+                      )}
+                    >
+                      {togglingAutoId === item.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Repeat className="w-3.5 h-3.5" />
                       )}
                     </button>
 
@@ -602,25 +644,6 @@ export function RecurringManager({
           })}
         </div>
       )}
-
-      {/* Recurring Detail Modal */}
-      <RecurringDetailModal
-        isOpen={detailModalOpen}
-        onClose={() => {
-          setDetailModalOpen(false)
-          setDetailRecurring(null)
-        }}
-        recurring={detailRecurring}
-        rates={rates}
-        onPayNow={(r) => handleProcess(r)}
-        onEdit={(r) => {
-          setEditingItem(r)
-          setModalOpen(true)
-        }}
-        onToggleActive={(r) => handleToggleActive(r)}
-        onDelete={(id) => setDeletingId(id)}
-        isProcessing={processingId === detailRecurring?.id}
-      />
 
       {/* Form Modal */}
       <RecurringFormModal

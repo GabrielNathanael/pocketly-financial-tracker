@@ -7,6 +7,7 @@ import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { ExportDataCard } from "@/components/settings/export-data-card";
 import { AppLockCard } from "@/components/settings/app-lock-card";
+import { PrivacyScreenCard } from "@/components/settings/privacy-screen-card";
 import { logout } from "@/actions/auth";
 import {
   fetchAndSaveForexRates,
@@ -318,6 +319,9 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
 
       {/* App Lock (per-device biometric gate) */}
       <AppLockCard userEmail={userEmail} />
+
+      {/* Recent apps privacy cover */}
+      <PrivacyScreenCard />
 
       {/* User Guide Card */}
       <div className="p-4 sm:p-5 rounded-xl bg-surface border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">

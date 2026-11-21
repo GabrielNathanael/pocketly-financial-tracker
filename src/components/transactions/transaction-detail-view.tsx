@@ -10,6 +10,7 @@ import { DynamicIcon } from "@/components/ui/dynamic-icon";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { formatCurrency } from "@/lib/utils/currency";
+import { findBracketTag, stripSystemTags } from "@/lib/utils/bracket-tags";
 import {
   getItemMyTotal,
   getItemTotal,
@@ -65,9 +66,9 @@ export function TransactionDetailView({
   const rawDesc = transaction.description || "";
   let memoText = "";
 
-  const memoMatch = rawDesc.match(/\[Memo:\s*([^\]]+)\]/);
-  if (memoMatch) {
-    memoText = memoMatch[1].trim();
+  const memoTag = findBracketTag(rawDesc, "Memo");
+  if (memoTag) {
+    memoText = memoTag.inner.trim();
   }
 
   // Structured parse: handles "KOL BEIJING x0.414 (Rp 24.900) = Rp 10.309",
@@ -77,11 +78,7 @@ export function TransactionDetailView({
   const itemsList =
     storedItems.length > 0 ? storedItems : parseItemsFromDescription(rawDesc);
 
-  const cleanDescription = rawDesc
-    .replace(/\[Memo:\s*[^\]]+\]/g, "")
-    .replace(/\[Items:\s*[^\]]+\]/g, "")
-    .replace(/\[Tukar Valas:\s*[^\]]+\]/g, "")
-    .replace(/\[Ref:\s*[^\]]+\]/gi, "")
+  const cleanDescription = stripSystemTags(rawDesc)
     .replace(/#[a-zA-Z0-9_\-]+/g, "")
     .trim();
 

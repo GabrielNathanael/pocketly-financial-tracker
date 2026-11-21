@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:description": "node --experimental-strip-types --test tests/description-tags.test.mjs"
   },
   "dependencies": {
     "@dicebear/core": "^10.7.0",

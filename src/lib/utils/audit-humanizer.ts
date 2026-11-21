@@ -2,6 +2,7 @@ import { AuditLog } from "@/types/database";
 import { formatCurrency } from "@/lib/utils/currency";
 import { formatDate } from "@/lib/utils/date";
 import { getCleanDescription } from "@/lib/utils/description";
+import { findBracketTag } from "@/lib/utils/bracket-tags";
 import {
   formatItemsSummary,
   normalizeStoredItems,
@@ -56,8 +57,8 @@ export function humanizeAuditLog(
     const stored = normalizeStoredItems(v.items);
     if (stored.length > 0) return stored;
     const rawDesc = asStr(v.description);
-    const m = rawDesc.match(/\[Items:\s*([^\]]+)\]/);
-    return m ? parseItemsSummary(m[1]) : [];
+    const tag = findBracketTag(rawDesc, "Items");
+    return tag ? parseItemsSummary(tag.inner) : [];
   };
   const sameItems = (a: TransactionItem[], b: TransactionItem[]) =>
     JSON.stringify(a) === JSON.stringify(b);
@@ -1640,7 +1641,7 @@ export function humanizeAuditLog(
     const cleanDesc = getCleanDescription(asStr(newVal.description));
     const txItems = getTxItems(newVal);
     const rawDesc = asStr(newVal.description);
-    const memoMatch = rawDesc.match(/\[Memo:\s*([^\]]+)\]/);
+    const memoTag = findBracketTag(rawDesc, "Memo");
     const txDateFormatted = newVal.transaction_date
       ? formatDate(asStr(newVal.transaction_date).substring(0, 10), "d MMM yyyy", lang)
       : "";
@@ -1656,8 +1657,8 @@ export function humanizeAuditLog(
           ? "Transaksi baru berhasil dicatat"
           : "New transaction recorded",
       changes: [
-        ...(memoMatch
-          ? [{ field: isId ? "Catatan Memo" : "Memo", to: memoMatch[1].trim() }]
+        ...(memoTag
+          ? [{ field: isId ? "Catatan Memo" : "Memo", to: memoTag.inner.trim() }]
           : []),
         ...(txItems.length > 0
           ? [
@@ -1682,7 +1683,7 @@ export function humanizeAuditLog(
     const cleanDesc = getCleanDescription(asStr(oldVal.description));
     const rawDesc = asStr(oldVal.description);
     const txItems = getTxItems(oldVal);
-    const memoMatch = rawDesc.match(/\[Memo:\s*([^\]]+)\]/);
+    const memoTag = findBracketTag(rawDesc, "Memo");
     const currency = asStr(oldVal.currency) || "IDR";
     const tagArr = Array.isArray(oldVal.tags) ? (oldVal.tags as unknown[]) : [];
     const deletedTags: string[] = Array.from(
@@ -1717,7 +1718,7 @@ export function humanizeAuditLog(
               },
             ]
           : []),
-        ...(memoMatch ? [{ field: isId ? "Catatan Memo" : "Memo", from: memoMatch[1].trim() }] : []),
+        ...(memoTag ? [{ field: isId ? "Catatan Memo" : "Memo", from: memoTag.inner.trim() }] : []),
         ...(deletedTags.length > 0
           ? [{ field: isId ? "Tagar (#tags)" : "Tags", from: deletedTags.map((t) => `#${t}`).join(", ") }]
           : []),

@@ -14,6 +14,7 @@ import { NumberInput } from "@/components/ui/number-input";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useLanguage } from "@/lib/i18n/language-context";
 import { formatCurrency } from "@/lib/utils/currency";
+import { findBracketTag } from "@/lib/utils/bracket-tags";
 import { SUPPORTED_CURRENCIES } from "@/lib/constants/currencies";
 import {
   formatItemsSummary,
@@ -84,20 +85,19 @@ function parseTransactionDescription(
   let memo = "";
   const tagsSet = new Set<string>(rawTags || []);
 
-  // Extract [Items: ...] — shared parser handles qty suffix
-  // ("KOL BEIJING x0.414 (Rp 24.900) = Rp 10.309") and legacy
-  // format ("Beras (Rp 75.000)").
-  const itemsMatch = text.match(/\[Items:\s*([^\]]+)\]/);
-  if (itemsMatch) {
-    items.push(...parseItemsSummary(itemsMatch[1]));
-    text = text.replace(itemsMatch[0], "").trim();
+  // Extract [Items: ...] — balanced parser handles nested split metadata
+  // like `[÷3, mine Rp 8.334]`, plus qty suffix and legacy item formats.
+  const itemsTag = findBracketTag(text, "Items");
+  if (itemsTag) {
+    items.push(...parseItemsSummary(itemsTag.inner));
+    text = (text.slice(0, itemsTag.start) + text.slice(itemsTag.end)).trim();
   }
 
-  // Extract [Memo: ...]
-  const memoMatch = text.match(/\[Memo:\s*([^\]]+)\]/);
-  if (memoMatch) {
-    memo = memoMatch[1].trim();
-    text = text.replace(memoMatch[0], "").trim();
+  // Extract [Memo: ...] (balanced, like the items tag)
+  const memoTag = findBracketTag(text, "Memo");
+  if (memoTag) {
+    memo = memoTag.inner.trim();
+    text = (text.slice(0, memoTag.start) + text.slice(memoTag.end)).trim();
   }
 
   // Extract inline hashtags #tag

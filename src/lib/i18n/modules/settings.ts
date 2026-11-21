@@ -93,6 +93,11 @@ export const settings = {
       appLockScreenDesc:
         "Verifikasi dengan Face ID, sidik jari, atau kunci layar untuk membuka aplikasi.",
       appLockUnlockBtn: "Buka dengan Biometrik",
+      privacyScreenTitle: "Layar Privasi Recent Apps",
+      privacyScreenDesc:
+        "Tutup layar otomatis saat aplikasi pindah ke recent apps agar saldo tidak terlihat di pratinjau.",
+      privacyScreenOn: "Aktif",
+      privacyScreenOff: "Nonaktif",
   },
   en: {
       title: "System Settings",
@@ -187,5 +192,10 @@ export const settings = {
       appLockScreenDesc:
         "Verify with Face ID, fingerprint, or your device screen lock to unlock the app.",
       appLockUnlockBtn: "Unlock with Biometrics",
+      privacyScreenTitle: "Recent Apps Privacy Screen",
+      privacyScreenDesc:
+        "Automatically cover the screen when the app goes to the background, keeping balances out of the recent apps preview.",
+      privacyScreenOn: "On",
+      privacyScreenOff: "Off",
   },
 };
